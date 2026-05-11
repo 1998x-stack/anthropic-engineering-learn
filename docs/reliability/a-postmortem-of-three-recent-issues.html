@@ -1,0 +1,411 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：A Postmortem of Three Recent Issues</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;
+      --border:#e2e8f0;--radius:14px;
+      --purple:#6366f1;--amber:#f59e0b;--green:#10b981;--red:#ef4444;--blue:#3b82f6;--pink:#ec4899;--teal:#14b8a6;
+      --mono:'JetBrains Mono','SF Mono',monospace;
+      --sans:'Noto Sans SC','Inter',system-ui,sans-serif;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7;-webkit-font-smoothing:antialiased}
+    a{color:inherit;text-decoration:none}
+    img{max-width:100%;display:block}
+
+    .nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.88);backdrop-filter:blur(14px);border-bottom:1px solid var(--border)}
+    .nav-inner{max-width:1200px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:52px}
+    .nav-brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px}
+    .nav-back{font-size:13px;color:var(--text-secondary);transition:color .15s}
+    .nav-back:hover{color:var(--purple)}
+
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#7f1d1d 40%,#b91c1c 70%,#0f172a 100%);color:#fff;padding:80px 24px 64px;text-align:center;position:relative;overflow:hidden}
+    .hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 30% 60%,rgba(185,28,28,.15) 0%,transparent 55%),radial-gradient(ellipse at 70% 30%,rgba(127,29,29,.08) 0%,transparent 55%)}
+    .hero-inner{position:relative;max-width:800px;margin:0 auto}
+    .hero-tag{display:inline-block;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:5px 16px;font-size:12px;letter-spacing:.5px;text-transform:uppercase;margin-bottom:20px}
+    .hero h1{font-size:clamp(22px,4.5vw,38px);font-weight:800;line-height:1.2;margin-bottom:12px;letter-spacing:-.02em}
+    .hero .sub{font-size:15px;opacity:.65;margin-bottom:28px}
+    .hero-stats{display:flex;gap:20px;justify-content:center;flex-wrap:wrap}
+    .hero-stat{text-align:center;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:16px 20px;min-width:120px}
+    .hero-stat .v{font-size:26px;font-weight:800;background:linear-gradient(135deg,#fca5a5,#fbbf24);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .hero-stat .l{font-size:12px;opacity:.6;margin-top:4px}
+
+    .page{max-width:900px;margin:0 auto;padding:0 24px}
+
+    .toc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px 28px;margin:32px 0}
+    .toc h3{font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-secondary);margin-bottom:12px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
+    .toc a{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;font-size:14px;color:var(--text);transition:background .15s}
+    .toc a:hover{background:#f1f5f9}
+    .toc .num{background:var(--red);color:#fff;width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+
+    .section{margin:48px 0}
+    .section h2{font-size:24px;font-weight:700;margin-bottom:8px;padding-bottom:10px;border-bottom:2px solid var(--border);display:flex;align-items:center;gap:10px}
+    .section .lead{font-size:16px;color:var(--text-secondary);line-height:1.8;margin-bottom:24px}
+
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+    .card h3{font-size:17px;font-weight:700;margin-bottom:10px}
+    .card p{font-size:14px;color:var(--text-secondary);line-height:1.7}
+
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:24px 0}
+    .compare-card{border-radius:var(--radius);padding:24px;border:1px solid}
+    .compare-card h4{font-size:15px;font-weight:700;margin-bottom:10px}
+    .compare-card p{font-size:14px;line-height:1.7;color:var(--text-secondary)}
+
+    .timeline{position:relative;padding-left:32px;margin:24px 0}
+    .timeline::before{content:'';position:absolute;left:14px;top:8px;bottom:8px;width:3px;background:linear-gradient(to bottom,#b91c1c,#ef4444,#f59e0b);border-radius:2px}
+    .tl-item{position:relative;margin-bottom:28px}
+    .tl-item:last-child{margin-bottom:0}
+    .tl-dot{position:absolute;left:-25px;top:4px;width:16px;height:16px;border-radius:50%;border:3px solid #fff}
+    .tl-item:nth-child(1) .tl-dot{background:#b91c1c;box-shadow:0 0 0 2px #b91c1c}
+    .tl-item:nth-child(2) .tl-dot{background:#dc2626;box-shadow:0 0 0 2px #dc2626}
+    .tl-item:nth-child(3) .tl-dot{background:#ef4444;box-shadow:0 0 0 2px #ef4444}
+    .tl-item:nth-child(4) .tl-dot{background:#f87171;box-shadow:0 0 0 2px #f87171}
+    .tl-item:nth-child(5) .tl-dot{background:#f59e0b;box-shadow:0 0 0 2px #f59e0b}
+    .tl-item:nth-child(6) .tl-dot{background:#d97706;box-shadow:0 0 0 2px #d97706}
+    .tl-phase{font-size:14px;font-weight:700;margin-bottom:4px}
+    .tl-item:nth-child(1) .tl-phase{color:#b91c1c}
+    .tl-item:nth-child(2) .tl-phase{color:#dc2626}
+    .tl-item:nth-child(3) .tl-phase{color:#ef4444}
+    .tl-item:nth-child(4) .tl-phase{color:#f87171}
+    .tl-item:nth-child(5) .tl-phase{color:#f59e0b}
+    .tl-item:nth-child(6) .tl-phase{color:#d97706}
+    .tl-desc{font-size:14px;color:var(--text-secondary);line-height:1.7}
+
+    .fail-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:20px 0}
+    .fail-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px}
+    .fail-card h4{font-size:14px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+    .fail-card p{font-size:13px;color:var(--text-secondary);line-height:1.5}
+
+    .badge{display:inline-block;font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;letter-spacing:.3px}
+    .badge-red{background:#fee2e2;color:#dc2626}
+    .badge-amber{background:#fef3c7;color:#b45309}
+    .badge-green{background:#dcfce7;color:#16a34a}
+    .badge-blue{background:#dbeafe;color:#1d4ed8}
+    .badge-purple{background:#ede9fe;color:#6d28d9}
+
+    .block-q{background:#fef2f2;border-left:4px solid #dc2626;border-radius:0 12px 12px 0;padding:20px 24px;margin:28px 0}
+    .block-q p{font-size:15px;line-height:1.8;color:#991b1b;font-style:italic}
+
+    .agent-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin:20px 0}
+    .agent-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px}
+    .agent-card h4{font-size:15px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+    .agent-card p{font-size:13px;color:var(--text-secondary);line-height:1.6}
+
+    .footer{text-align:center;padding:40px 24px 48px;border-top:1px solid var(--border);margin-top:60px;font-size:13px;color:var(--text-secondary)}
+    .footer a{color:var(--purple)}
+
+    @media(max-width:768px){
+      .hero-stats{gap:12px}
+      .compare-grid,.agent-grid,.fail-grid{grid-template-columns:1fr}
+      .toc-grid{grid-template-columns:1fr}
+      .flow{flex-direction:column;gap:8px}
+      .flow-arrow{transform:rotate(90deg)}
+    }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../" class="nav-brand"><span class="nav-logo">⚡</span><span>Anthropic Engineering Notes</span></a>
+    <a href="../" class="nav-back">← 返回首页</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="hero-inner">
+    <div class="hero-tag">🔧 Postmortem · 基础设施 Bug · 深度解析</div>
+    <h1>三个近期基础设施 Bug 的复盘</h1>
+    <div class="sub">A Postmortem of Three Recent Issues · Published 2023-11-03 · Sam McAllister</div>
+    <div class="hero-stats">
+      <div class="hero-stat"><div class="v">3</div><div class="l">重叠的基础设施 Bug</div></div>
+      <div class="hero-stat"><div class="v">44天</div><div class="l">从首次报告到全部修复</div></div>
+      <div class="hero-stat"><div class="v">16%</div><div class="l">Sonnet 4 峰值受影响率</div></div>
+      <div class="hero-stat"><div class="v">0</div><div class="l">因需求降低质量</div></div>
+    </div>
+  </div>
+</header>
+
+<div class="page">
+
+<nav class="toc">
+  <h3>📑 本文导航</h3>
+  <div class="toc-grid">
+    <a href="#s1"><span class="num">1</span>背景与声明</a>
+    <a href="#s2"><span class="num">2</span>Claude 服务架构</a>
+    <a href="#s3"><span class="num">3</span>时间线</a>
+    <a href="#s4"><span class="num">4</span>Bug 1: 上下文窗口路由</a>
+    <a href="#s5"><span class="num">5</span>Bug 2: 输出损坏</a>
+    <a href="#s6"><span class="num">6</span>Bug 3: XLA:TPU 编译错误</a>
+    <a href="#s7"><span class="num">7</span>为什么检测困难</a>
+    <a href="#s8"><span class="num">8</span>改进措施</a>
+  </div>
+</nav>
+
+<!-- ====== 1. Background ====== -->
+<section class="section" id="s1">
+  <h2><span class="emoji">📋</span> 背景与声明</h2>
+  <p class="lead">8 月到 9 月初，三个基础设施 bug 间歇性地降低了 Claude 的响应质量。这些 bug 现已全部解决。</p>
+
+  <div class="card" style="border-left:4px solid var(--green)">
+    <h3>📢 明确声明</h3>
+    <p style="font-size:16px;font-weight:600;color:var(--text)">"We never reduce model quality due to demand, time of day, or server load. The problems our users reported were due to infrastructure bugs alone."</p>
+    <p style="margin-top:8px;font-size:14px;color:var(--text-secondary)">我们绝不会因需求、时间段或服务器负载降低模型质量。用户报告的问题完全源于基础设施 bug。</p>
+  </div>
+
+  <div class="card">
+    <h3>🔍 为什么公开技术细节</h3>
+    <p>通常不分享如此详细的基础设施技术细节，但这些问题的<strong>范围和复杂度</strong>证明了需要更全面的解释。</p>
+  </div>
+</section>
+
+<!-- ====== 2. Infrastructure ====== -->
+<section class="section" id="s2">
+  <h2><span class="emoji">🏗️</span> Claude 大规模服务架构</h2>
+  <p class="lead">通过第一方 API、Amazon Bedrock 和 Google Cloud Vertex AI 向数百万用户提供服务。部署在多种硬件平台上。</p>
+
+  <div class="agent-grid">
+    <div class="agent-card">
+      <h4><span style="font-size:20px">🔶</span> AWS Trainium</h4>
+      <p>Anthropic 自研芯片，针对 Claude 优化。</p>
+    </div>
+    <div class="agent-card">
+      <h4><span style="font-size:20px">🟢</span> NVIDIA GPUs</h4>
+      <p>通用 GPU 加速推理。</p>
+    </div>
+    <div class="agent-card">
+      <h4><span style="font-size:20px">🔵</span> Google TPUs</h4>
+      <p>Google 张量处理单元，使用 XLA 编译器。</p>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h3>🎯 等价标准</h3>
+    <p>每个硬件平台有不同特性和特定优化。但有<strong>严格的模型实现等价标准</strong>：用户应获得相同质量的响应，无论哪个平台服务请求。</p>
+    <p style="margin-top:8px">这种复杂性意味着任何基础设施变更都需要在所有平台和配置上仔细验证。</p>
+  </div>
+</section>
+
+<!-- ====== 3. Timeline ====== -->
+<section class="section" id="s3">
+  <h2><span class="emoji">📅</span> 时间线</h2>
+
+  <div class="timeline">
+    <div class="tl-item">
+      <div class="tl-dot"></div>
+      <div class="tl-phase">8 月 5 日: Bug 1 引入</div>
+      <div class="tl-desc">上下文窗口路由错误引入，影响约 0.8% 的 Sonnet 4 请求。</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot"></div>
+      <div class="tl-phase">8 月 25-26 日: Bug 2 和 3 引入</div>
+      <div class="tl-desc">TPU 服务器输出损坏配置部署 + XLA:TPU 编译错误代码部署。</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot"></div>
+      <div class="tl-phase">8 月 29 日: 负载均衡变更扩大影响</div>
+      <div class="tl-desc">常规负载均衡变更无意中将更多短上下文请求路由到 1M 上下文服务器。更多用户体验问题，其他人继续看到正常性能。</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot"></div>
+      <div class="tl-phase">8 月 31 日: 峰值影响</div>
+      <div class="tl-desc">最受影响的小时，16% 的 Sonnet 4 请求受影响。约 30% 的 Claude Code 用户至少有一条消息路由到错误的服务器类型。</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot"></div>
+      <div class="tl-phase">9 月 2-18 日: 修复部署</div>
+      <div class="tl-desc">各 bug 逐一识别和修复，9 月 18 日 AWS Bedrock 完成最后修复。</div>
+    </div>
+  </div>
+</section>
+
+<!-- ====== 4. Bug 1 ====== -->
+<section class="section" id="s4">
+  <h2><span class="emoji">🔀</span> Bug 1: 上下文窗口路由错误</h2>
+  <p class="lead">部分 Sonnet 4 请求被错误路由到为即将到来的 <strong>1M token 上下文窗口</strong>配置的服务器。</p>
+
+  <div class="compare-grid">
+    <div class="compare-card" style="background:#fef2f2;border-color:#fecaca">
+      <h4 style="color:#dc2626">❌ 错误路由</h4>
+      <p>短上下文请求路由到 1M 上下文服务器。路由是"粘性"的——一旦请求被错误服务器服务，后续跟进很可能被同一错误服务器服务。</p>
+    </div>
+    <div class="compare-card" style="background:#f0fdf4;border-color:#bbf7d0">
+      <h4 style="color:#16a34a">✅ 修复</h4>
+      <p>修复路由逻辑确保短和长上下文请求定向到正确的服务器池。9 月 4 日部署，9 月 16-18 日全平台完成。</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>📊 影响范围</h3>
+    <div class="fail-grid">
+      <div class="fail-card">
+        <h4>🏠 第一方 API</h4>
+        <p>约 30% 的 Claude Code 用户在此期间至少一条消息路由错误</p>
+      </div>
+      <div class="fail-card">
+        <h4>☁️ Amazon Bedrock</h4>
+        <p>错误路由流量峰值占所有 Sonnet 4 请求的 0.18%（8 月 12 日起）</p>
+      </div>
+      <div class="fail-card">
+        <h4>🔵 Google Vertex AI</h4>
+        <p>8 月 27 日至 9 月 16 日影响小于 0.0004%</p>
+      </div>
+      <div class="fail-card">
+        <h4>📈 峰值</h4>
+        <p>8 月 31 日最受影响小时：16% 的 Sonnet 4 请求受影响</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ====== 5. Bug 2 ====== -->
+<section class="section" id="s5">
+  <h2><span class="emoji">💥</span> Bug 2: 输出损坏</h2>
+  <p class="lead">8 月 25 日部署到 Claude API TPU 服务器的错误配置导致 token 生成期间出错。</p>
+
+  <div class="card">
+    <h3>🔧 根因</h3>
+    <p>运行时性能优化偶尔给本不应在上下文中产生的 token 赋予高概率。例如：</p>
+    <ul style="margin-top:8px;padding-left:20px;font-size:14px;color:var(--text-secondary)">
+      <li>对英文提示产生泰语或中文字符</li>
+      <li>在代码中产生明显的语法错误</li>
+      <li>用户可能在英文响应中间看到 "สวัสดี"</li>
+    </ul>
+  </div>
+
+  <div class="fail-grid">
+    <div class="fail-card">
+      <h4>📅 受影响时间</h4>
+      <p>Opus 4.1 和 Opus 4：8 月 25-28 日<br>Sonnet 4：8 月 25 日 – 9 月 2 日</p>
+    </div>
+    <div class="fail-card">
+      <h4>🌐 受影响平台</h4>
+      <p>仅第一方 Claude API。第三方平台未受影响。</p>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:12px">
+    <h3>✅ 修复</h3>
+    <p>9 月 2 日识别问题并回滚变更。已在部署流程中添加<strong>意外字符输出检测测试</strong>。</p>
+  </div>
+</section>
+
+<!-- ====== 6. Bug 3 ====== -->
+<section class="section" id="s6">
+  <h2><span class="emoji">🔬</span> Bug 3: 近似 top-k XLA:TPU 编译错误</h2>
+  <p class="lead">8 月 25 日部署改进 Claude 选择 token 方式的代码，无意触发了 XLA:TPU 编译器中的潜在 bug。</p>
+
+  <div class="card">
+    <h3>🧠 TPU 上的文本生成复杂性</h3>
+    <ul style="padding-left:20px;font-size:14px;line-height:1.8">
+      <li>Claude 生成文本时计算每个可能下一个词的概率，然后从概率分布中随机采样</li>
+      <li>使用 <strong>top-p 采样</strong>避免荒谬输出——只考虑累积概率达到阈值的词</li>
+      <li>在 TPU 上，模型跨多个芯片运行，概率计算在不同位置发生</li>
+      <li>排序这些概率需要<strong>芯片间协调数据</strong>，这很复杂</li>
+    </ul>
+  </div>
+
+  <div class="card">
+    <h3>🔍 精度不匹配根因</h3>
+    <p>模型用 <strong>bf16</strong>（16 位浮点）计算下一个 token 概率。但向量处理器是 <strong>fp32 原生</strong>，所以 TPU 编译器（XLA）可以通过将一些操作转换为 fp32 来优化运行时。</p>
+    <div class="compare-grid" style="margin-top:12px">
+      <div class="compare-card" style="background:#fef2f2;border-color:#fecaca">
+        <h4 style="color:#dc2626">❌ 问题</h4>
+        <p>应以最高概率 token 同意的操作在不同精度级别运行，导致它们不同意哪个 token 概率最高。最高概率 token 有时完全从考虑中消失。</p>
+      </div>
+      <div class="compare-card" style="background:#f0fdf4;border-color:#bbf7d0">
+        <h4 style="color:#16a34a">✅ 修复</h4>
+        <p>从近似 top-k 切换到精确 top-k，在 fp32 精度上标准化一些额外操作。接受轻微效率影响——模型质量不可协商。</p>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>🔀 Bug 行为的 frustrating 不一致性</h3>
+    <ul style="padding-left:20px;font-size:14px;color:var(--text-secondary)">
+      <li>根据无关因素变化：之前或之后运行什么操作、是否启用调试工具</li>
+      <li><strong>相同提示可能在一个请求上完美工作，在下一个请求上失败</strong></li>
+      <li>12 月的 workaround 无意中掩盖了这个问题——修复它暴露了更深层的 bug</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ====== 7. Detection Difficulties ====== -->
+<section class="section" id="s7">
+  <h2><span class="emoji">🔍</span> 为什么检测困难</h2>
+  <p class="lead">这些 bug 暴露了关键的检测差距。</p>
+
+  <div class="fail-grid">
+    <div class="fail-card">
+      <h4><span class="badge badge-red">评估未捕获降级</span></h4>
+      <p>运行的评估没有捕获用户报告的降级。部分因为 Claude 通常能从孤立错误中恢复良好。</p>
+    </div>
+    <div class="fail-card">
+      <h4><span class="badge badge-amber">隐私限制调试</span></h4>
+      <p>内部隐私和安全控制限制工程师何时能访问用户交互。保护隐私但阻止工程师检查识别或复现 bug 所需的有问题的交互。</p>
+    </div>
+    <div class="fail-card">
+      <h4><span class="badge badge-purple">不同症状</span></h4>
+      <p>每个 bug 在不同平台以不同比率产生不同症状。看起来像随机、不一致的降级。</p>
+    </div>
+    <div class="fail-card">
+      <h4><span class="badge badge-blue">社区报告脱节</span></h4>
+      <p>意识到在线报告增加，但缺乏清晰方式将这些与最近的每次变更联系起来。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ====== 8. Improvements ====== -->
+<section class="section" id="s8">
+  <h2><span class="emoji">🔮</span> 改进措施</h2>
+
+  <div class="agent-grid">
+    <div class="agent-card">
+      <h4><span style="font-size:20px">📊</span> 更敏感的评估</h4>
+      <p>开发了能更可靠区分工作和损坏实现的评估。持续改进以密切关注模型质量。</p>
+    </div>
+    <div class="agent-card">
+      <h4><span style="font-size:20px">🔄</span> 更多地方运行评估</h4>
+      <p>在真实生产系统上持续运行评估，捕获上下文窗口负载均衡等错误。</p>
+    </div>
+    <div class="agent-card">
+      <h4><span style="font-size:20px">⚡</span> 更快的调试工具</h4>
+      <p>开发基础设施和工具以更好地调试社区来源反馈，同时不牺牲用户隐私。</p>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h3>📢 用户反馈至关重要</h3>
+    <p>这些事件表明还需要用户在 Claude 响应达不到通常标准时的<strong>持续信号</strong>：</p>
+    <ul style="margin-top:8px;padding-left:20px;font-size:14px;color:var(--text-secondary)">
+      <li>观察到的具体变更报告</li>
+      <li>遇到的意外行为示例</li>
+      <li>不同用例的模式</li>
+      <li>在 Claude Code 中使用 <code>/bug</code> 命令或在 Claude 应用中使用"踩"按钮</li>
+    </ul>
+  </div>
+
+  <div class="block-q">
+    <p>"Reports of specific changes observed, examples of unexpected behavior encountered, and patterns across different use cases all helped us isolate the issues."</p>
+  </div>
+
+  <p style="font-size:14px;color:var(--text-secondary);margin-top:32px">Written by Sam McAllister · Source: <a href="https://www.anthropic.com/engineering/a-postmortem-of-three-recent-issues" target="_blank" rel="noopener" style="color:var(--purple)">anthropic.com/engineering</a></p>
+</section>
+
+</div>
+
+<footer class="footer">
+  <p><a href="../">← Anthropic Engineering Notes</a></p>
+  <p class="footer-sub" style="margin-top:8px">Source: <a href="https://www.anthropic.com/engineering" target="_blank" rel="noopener">Anthropic Engineering Blog</a></p>
+</footer>
+
+</body>
+</html>

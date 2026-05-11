@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Making Claude Code More Secure with Sandboxing</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;
+      --border:#e2e8f0;--radius:14px;
+      --purple:#6366f1;--amber:#f59e0b;--green:#10b981;--red:#ef4444;--blue:#3b82f6;--pink:#ec4899;--teal:#14b8a6;
+      --mono:'JetBrains Mono','SF Mono',monospace;
+      --sans:'Noto Sans SC','Inter',system-ui,sans-serif;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7;-webkit-font-smoothing:antialiased}
+    a{color:inherit;text-decoration:none}
+    img{max-width:100%;display:block}
+
+    .nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.88);backdrop-filter:blur(14px);border-bottom:1px solid var(--border)}
+    .nav-inner{max-width:1200px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:52px}
+    .nav-brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px}
+    .nav-back{font-size:13px;color:var(--text-secondary);transition:color .15s}
+    .nav-back:hover{color:var(--purple)}
+
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 40%,#1d4ed8 70%,#0f172a 100%);color:#fff;padding:80px 24px 64px;text-align:center;position:relative;overflow:hidden}
+    .hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 30% 60%,rgba(29,78,216,.15) 0%,transparent 55%),radial-gradient(ellipse at 70% 30%,rgba(99,102,241,.08) 0%,transparent 55%)}
+    .hero-inner{position:relative;max-width:800px;margin:0 auto}
+    .hero-tag{display:inline-block;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:5px 16px;font-size:12px;letter-spacing:.5px;text-transform:uppercase;margin-bottom:20px}
+    .hero h1{font-size:clamp(22px,4.5vw,38px);font-weight:800;line-height:1.2;margin-bottom:12px;letter-spacing:-.02em}
+    .hero .sub{font-size:15px;opacity:.65;margin-bottom:28px}
+    .hero-stats{display:flex;gap:20px;justify-content:center;flex-wrap:wrap}
+    .hero-stat{text-align:center;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:16px 20px;min-width:120px}
+    .hero-stat .v{font-size:26px;font-weight:800;background:linear-gradient(135deg,#93c5fd,#a5b4fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .hero-stat .l{font-size:12px;opacity:.6;margin-top:4px}
+
+    .page{max-width:900px;margin:0 auto;padding:0 24px}
+
+    .toc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px 28px;margin:32px 0}
+    .toc h3{font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-secondary);margin-bottom:12px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
+    .toc a{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;font-size:14px;color:var(--text);transition:background .15s}
+    .toc a:hover{background:#f1f5f9}
+    .toc .num{background:var(--blue);color:#fff;width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+
+    .section{margin:48px 0}
+    .section h2{font-size:24px;font-weight:700;margin-bottom:8px;padding-bottom:10px;border-bottom:2px solid var(--border);display:flex;align-items:center;gap:10px}
+    .section .lead{font-size:16px;color:var(--text-secondary);line-height:1.8;margin-bottom:24px}
+
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+    .card h3{font-size:17px;font-weight:700;margin-bottom:10px}
+    .card p{font-size:14px;color:var(--text-secondary);line-height:1.7}
+
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:24px 0}
+    .compare-card{border-radius:var(--radius);padding:24px;border:1px solid}
+    .compare-card h4{font-size:15px;font-weight:700;margin-bottom:10px}
+    .compare-card p{font-size:14px;line-height:1.7;color:var(--text-secondary)}
+
+    .timeline{position:relative;padding-left:32px;margin:24px 0}
+    .timeline::before{content:'';position:absolute;left:14px;top:8px;bottom:8px;width:3px;background:linear-gradient(to bottom,#1d4ed8,#6366f1,#a855f7);border-radius:2px}
+    .tl-item{position:relative;margin-bottom:28px}
+    .tl-item:last-child{margin-bottom:0}
+    .tl-dot{position:absolute;left:-25px;top:4px;width:16px;height:16px;border-radius:50%;border:3px solid #fff}
+    .tl-item:nth-child(1) .tl-dot{background:#1d4ed8;box-shadow:0 0 0 2px #1d4ed8}
+    .tl-item:nth-child(2) .tl-dot{background:#3b82f6;box-shadow:0 0 0 2px #3b82f6}
+    .tl-item:nth-child(3) .tl-dot{background:#6366f1;box-shadow:0 0 0 2px #6366f1}
+    .tl-item:nth-child(4) .tl-dot{background:#8b5cf6;box-shadow:0 0 0 2px #8b5cf6}
+    .tl-item:nth-child(5) .tl-dot{background:#a855f7;box-shadow:0 0 0 2px #a85cf6}
+    .tl-phase{font-size:14px;font-weight:700;margin-bottom:4px}
+    .tl-item:nth-child(1) .tl-phase{color:#1d4ed8}
+    .tl-item:nth-child(2) .tl-phase{color:#3b82f6}
+    .tl-item:nth-child(3) .tl-phase{color:#6366f1}
+    .tl-item:nth-child(4) .tl-phase{color:#8b5cf6}
+    .tl-item:nth-child(5) .tl-phase{color:#a855f7}
+    .tl-desc{font-size:14px;color:var(--text-secondary);line-height:1.7}
+
+    .tbl-wrap{overflow-x:auto;margin:20px 0}
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    th{background:#f8fafc;font-weight:600;text-align:left;padding:10px 14px;border-bottom:2px solid var(--border)}
+    td{padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+    tr:last-child td{border-bottom:none}
+
+    .badge{display:inline-block;font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;letter-spacing:.3px}
+    .badge-purple{background:#ede9fe;color:#6d28d9}
+    .badge-amber{background:#fef3c7;color:#b45309}
+    .badge-red{background:#fee2e2;color:#dc2626}
+    .badge-green{background:#dcfce7;color:#16a34a}
+    .badge-blue{background:#dbeafe;color:#1d4ed8}
+    .badge-teal{background:#ccfbf1;color:#0d9488}
+
+    .diagram{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px;margin:24px 0;text-align:center}
+    .diagram h4{font-size:15px;font-weight:700;margin-bottom:16px}
+    .flow{display:flex;align-items:center;justify-content:center;gap:0;flex-wrap:wrap}
+    .flow-step{background:linear-gradient(135deg,#1d4ed8,#3b82f6);color:#fff;padding:10px 14px;border-radius:10px;font-size:12px;font-weight:600;text-align:center;max-width:150px}
+    .flow-step.purple{background:linear-gradient(135deg,#6366f1,#8b5cf6)}
+    .flow-step.green{background:linear-gradient(135deg,#10b981,#34d399)}
+    .flow-step.amber{background:linear-gradient(135deg,#f59e0b,#fbbf24)}
+    .flow-step.red{background:linear-gradient(135deg,#ef4444,#f87171)}
+    .flow-arrow{font-size:18px;color:var(--blue);padding:0 6px}
+
+    .agent-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin:20px 0}
+    .agent-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px}
+    .agent-card h4{font-size:15px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+    .agent-card p{font-size:13px;color:var(--text-secondary);line-height:1.6}
+
+    .block-q{background:#f5f3ff;border-left:4px solid #8b5cf6;border-radius:0 12px 12px 0;padding:20px 24px;margin:28px 0}
+    .block-q p{font-size:15px;line-height:1.8;color:#4c1d95;font-style:italic}
+
+    .fail-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:20px 0}
+    .fail-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px}
+    .fail-card h4{font-size:14px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+    .fail-card p{font-size:13px;color:var(--text-secondary);line-height:1.5}
+
+    .footer{text-align:center;padding:40px 24px 48px;border-top:1px solid var(--border);margin-top:60px;font-size:13px;color:var(--text-secondary)}
+    .footer a{color:var(--purple)}
+
+    @media(max-width:768px){
+      .hero-stats{gap:12px}
+      .compare-grid,.agent-grid,.fail-grid{grid-template-columns:1fr}
+      .toc-grid{grid-template-columns:1fr}
+      .flow{flex-direction:column;gap:8px}
+      .flow-arrow{transform:rotate(90deg)}
+    }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../" class="nav-brand"><span class="nav-logo">⚡</span><span>Anthropic Engineering Notes</span></a>
+    <a href="../" class="nav-back">← 返回首页</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="hero-inner">
+    <div class="hero-tag">🛡️ Claude Code · Sandboxing · 深度解析</div>
+    <h1>用沙盒让 Claude Code 更安全更自主</h1>
+    <div class="sub">Making Claude Code More Secure and Autonomous with Sandboxing · Published 2025-04-22 · David Dworken, Oliver Weller-Davies</div>
+    <div class="hero-stats">
+      <div class="hero-stat"><div class="v">84%</div><div class="l">审批提示减少</div></div>
+      <div class="hero-stat"><div class="v">2</div><div class="l">隔离边界</div></div>
+      <div class="hero-stat"><div class="v">2</div><div class="l">沙盒特性</div></div>
+      <div class="hero-stat"><div class="v">OS</div><div class="l">级别强制执行</div></div>
+    </div>
+  </div>
+</header>
+
+<div class="page">
+
+<nav class="toc">
+  <h3>📑 本文导航</h3>
+  <div class="toc-grid">
+    <a href="#s1"><span class="num">1</span>审批疲劳问题</a>
+    <a href="#s2"><span class="num">2</span>沙盒核心概念</a>
+    <a href="#s3"><span class="num">3</span>沙盒 Bash 工具</a>
+    <a href="#s4"><span class="num">4</span>Claude Code on the Web</a>
+    <a href="#s5"><span class="num">5</span>Git 安全代理</a>
+    <a href="#s6"><span class="num">6</span>开源与开始使用</a>
+  </div>
+</nav>
+
+<!-- ====== 1. Approval Fatigue ====== -->
+<section class="section" id="s1">
+  <h2><span class="emoji">🔑</span> 审批疲劳问题</h2>
+  <p class="lead">Claude Code 默认使用基于权限的模型：<strong>只读</strong>，在修改或运行任何命令前请求许可。少数安全命令（如 echo、cat）自动放行，但大多数操作仍需明确批准。</p>
+
+  <div class="card">
+    <h3>⚠️ 审批疲劳的危害</h3>
+    <ul style="padding-left:20px;font-size:14px;line-height:1.8">
+      <li>不断点击"批准"<strong>拖慢开发周期</strong></li>
+      <li>用户可能<strong>不再仔细关注</strong>他们批准的内容</li>
+      <li>反而使开发<strong>更不安全</strong></li>
+    </ul>
+  </div>
+
+  <div class="card" style="border-left:4px solid var(--green)">
+    <h3>✅ 沙盒的解决方案</h3>
+    <p>沙盒创建<strong>预定义的边界</strong>，Claude 可以在其中更自由地工作，而不是为每个行动请求许可。内部使用中，沙盒安全地减少了 <strong>84%</strong> 的权限提示。</p>
+  </div>
+</section>
+
+<!-- ====== 2. Sandboxing Core ====== -->
+<section class="section" id="s2">
+  <h2><span class="emoji">🏗️</span> 沙盒核心概念</h2>
+  <p class="lead">沙盒方法建立在操作系统级功能之上，实现两个边界：</p>
+
+  <div class="compare-grid">
+    <div class="compare-card" style="background:#eff6ff;border-color:#bfdbfe">
+      <h4 style="color:#2563eb">📁 文件系统隔离</h4>
+      <p>确保 Claude 只能访问或修改<strong>特定目录</strong>。防止被提示注入的 Claude 修改敏感系统文件。</p>
+      <p style="margin-top:8px"><strong>实现</strong>：允许对当前工作目录的读写，阻止对其外任何文件的修改。</p>
+    </div>
+    <div class="compare-card" style="background:#f0fdf4;border-color:#bbf7d0">
+      <h4 style="color:#16a34a">🌐 网络隔离</h4>
+      <p>确保 Claude 只能连接到<strong>批准的服务器</strong>。防止被提示注入的 Claude 泄露敏感信息或下载恶意软件。</p>
+      <p style="margin-top:8px"><strong>实现</strong>：仅通过连接到沙盒外代理服务器的 unix domain socket 允许互联网访问。</p>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>🔒 为什么两者都需要</h3>
+    <div class="fail-grid">
+      <div class="fail-card">
+        <h4><span class="badge badge-red">没有网络隔离</span></h4>
+        <p>被妥协的 Agent 可以外泄 SSH 密钥等敏感文件</p>
+      </div>
+      <div class="fail-card">
+        <h4><span class="badge badge-red">没有文件系统隔离</span></h4>
+        <p>被妥协的 Agent 可以轻松逃逸沙盒并获得网络访问</p>
+      </div>
+    </div>
+    <p style="margin-top:8px"><strong>只有同时使用两种技术</strong>才能为 Claude Code 用户提供更安全、更快的 Agent 体验。</p>
+  </div>
+
+  <div class="diagram">
+    <h4>沙盒架构</h4>
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:20px;margin-top:16px;text-align:left">
+      <div style="padding:16px;background:#f8fafc;border-radius:10px;border:2px solid #3b82f6">
+        <h4 style="font-size:14px;font-weight:700;color:#2563eb;margin-bottom:8px">🖥️ 沙盒内</h4>
+        <p style="font-size:13px;color:var(--text-secondary)">Claude Code + Bash 工具。只能访问当前工作目录。网络通过 unix socket 代理。任何子进程/脚本也受同样限制。</p>
+      </div>
+      <div style="padding:16px;background:#f8fafc;border-radius:10px;border:2px solid #10b981">
+        <h4 style="font-size:14px;font-weight:700;color:#059669;margin-bottom:8px">🌍 沙盒外</h4>
+        <p style="font-size:13px;color:var(--text-secondary)">代理服务器：强制执行域限制 + 处理新请求域的用户确认。支持自定义代理以强制执行任意传出流量规则。</p>
+      </div>
+    </div>
+    <p style="font-size:13px;color:var(--text-secondary);margin-top:16px">基于 OS 级原语：Linux bubblewrap + MacOS seatbelt</p>
+  </div>
+</section>
+
+<!-- ====== 3. Sandboxed Bash ====== -->
+<section class="section" id="s3">
+  <h2><span class="emoji">💻</span> 沙盒 Bash 工具</h2>
+  <p class="lead">新的沙盒运行时（Beta 研究预览）让你精确定义 Agent 可以访问哪些目录和网络主机。</p>
+
+  <div class="agent-grid">
+    <div class="agent-card">
+      <h4><span style="font-size:20px">📂</span> 文件系统隔离</h4>
+      <p>允许对当前工作目录的读写访问。阻止对目录外任何文件的修改。不仅覆盖 Claude Code 的直接交互，还覆盖命令生成的任何脚本、程序或子进程。</p>
+    </div>
+    <div class="agent-card">
+      <h4><span style="font-size:20px">🌐</span> 网络隔离</h4>
+      <p>仅通过连接到沙盒外代理服务器的 unix domain socket 允许互联网访问。代理强制执行进程可连接域的限制，处理新请求域的用户确认。</p>
+    </div>
+    <div class="agent-card">
+      <h4><span style="font-size:20px">⚙️</span> OS 级别强制执行</h4>
+      <p>基于 Linux <strong>bubblewrap</strong> 和 MacOS <strong>seatbelt</strong>。覆盖 Claude Code 的直接交互以及任何生成的子进程。</p>
+    </div>
+    <div class="agent-card">
+      <h4><span style="font-size:20px">🔧</span> 可配置</h4>
+      <p>轻松选择允许或禁止特定文件路径或域。支持自定义代理以强制执行任意传出流量规则。</p>
+    </div>
+  </div>
+
+  <div class="card" style="border-left:4px solid var(--green)">
+    <h3>✅ 即使提示注入也安全</h3>
+    <p>沙盒确保<strong>即使成功的提示注入也完全隔离</strong>，无法影响整体用户安全。被妥协的 Claude Code 无法窃取 SSH 密钥，也无法回拨到攻击者的服务器。</p>
+  </div>
+</section>
+
+<!-- ====== 4. Claude Code on the Web ====== -->
+<section class="section" id="s4">
+  <h2><span class="emoji">☁️</span> Claude Code on the Web</h2>
+  <p class="lead">在云中隔离沙盒中运行 Claude Code。每次会话在隔离沙盒中执行，在其中安全地拥有对服务器的完全访问权限。</p>
+
+  <div class="card">
+    <h3>🔐 安全设计原则</h3>
+    <p>敏感凭据（如 git 凭据或签名密钥）<strong>永远不会在沙盒内与 Claude Code 一起存在</strong>。即使沙盒中运行的代码被妥协，用户也不会受到进一步伤害。</p>
+  </div>
+
+  <div class="card">
+    <h3>🔄 自定义代理处理 Git 交互</h3>
+    <p>使用自定义代理服务透明地处理所有 git 交互：</p>
+    <div class="timeline">
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-phase">Step 1: 沙盒内认证</div>
+        <div class="tl-desc">沙盒内的 git 客户端使用自定义构建的<strong>范围限定凭据</strong>认证到此服务。</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-phase">Step 2: 代理验证</div>
+        <div class="tl-desc">代理验证此凭据和 git 交互的内容（例如确保只推送到配置的分支）。</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-phase">Step 3: 附加正确 token</div>
+        <div class="tl-desc">代理附加正确的认证 token，然后将请求发送到 GitHub。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="border-left:4px solid var(--green)">
+    <h3>✅ 安全版本控制工作流</h3>
+    <p>Git 集成通过安全代理路由命令，验证认证 token、分支名称和仓库目标——允许安全的版本控制工作流，同时防止未经授权的推送。</p>
+  </div>
+</section>
+
+<!-- ====== 5. Git Proxy ====== -->
+<section class="section" id="s5">
+  <h2><span class="emoji">🔗</span> Git 安全代理架构</h2>
+
+  <div class="diagram">
+    <h4>Git 命令流向</h4>
+    <div class="flow">
+      <div class="flow-step">Claude Code<br>沙盒内 git 命令</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step green">范围限定凭据<br>认证到代理</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step amber">代理验证<br>凭据 + 分支 + 目标</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step purple">附加正确 token<br>发送到 GitHub</div>
+    </div>
+    <p style="font-size:13px;color:var(--text-secondary);margin-top:16px">凭据永远不会进入沙盒。代理在外部安全处理所有认证。</p>
+  </div>
+</section>
+
+<!-- ====== 6. Getting Started ====== -->
+<section class="section" id="s6">
+  <h2><span class="emoji">🚀</span> 开始使用与开源</h2>
+  <p class="lead">两个新特性为使用 Claude 进行工程开发的开发者在安全性和生产力方面提供了实质性改进。</p>
+
+  <div class="compare-grid">
+    <div class="compare-card" style="background:#eff6ff;border-color:#bfdbfe">
+      <h4 style="color:#2563eb">💻 沙盒 Bash 工具</h4>
+      <p>在 Claude Code 中运行 <code>/sandbox</code>，查看<a href="https://docs.claude.com/en/docs/claude-code/sandboxing" target="_blank" rel="noopener" style="color:var(--blue)">配置文档</a>。</p>
+    </div>
+    <div class="compare-card" style="background:#f0fdf4;border-color:#bbf7d0">
+      <h4 style="color:#16a34a">☁️ Claude Code on the Web</h4>
+      <p>前往 <a href="http://claude.ai/redirect/website.v1.b12ae42e-bc9c-4ca3-a819-5fc1a2b3aef2/code" target="_blank" rel="noopener" style="color:var(--green)">claude.com/code</a> 试用。</p>
+    </div>
+  </div>
+
+  <div class="card" style="border-left:4px solid var(--amber)">
+    <h3>📦 开源沙盒运行时</h3>
+    <p>Anthropic 已<a href="https://github.com/anthropic-experimental/sandbox-runtime" target="_blank" rel="noopener" style="color:var(--amber)">开源沙盒运行时</a>，让其他团队可以为自己构建的 Agent 采用此技术，增强 Agent 的安全态势。</p>
+    <p style="margin-top:8px">适用于沙盒任意进程、Agent 和 MCP 服务器，无需启动和管理容器的开销。</p>
+  </div>
+
+  <p style="font-size:14px;color:var(--text-secondary);margin-top:32px">Written by David Dworken and Oliver Weller-Davies · Source: <a href="https://www.anthropic.com/engineering/claude-code-sandboxing" target="_blank" rel="noopener" style="color:var(--purple)">anthropic.com/engineering</a></p>
+</section>
+
+</div>
+
+<footer class="footer">
+  <p><a href="../">← Anthropic Engineering Notes</a></p>
+  <p class="footer-sub" style="margin-top:8px">Source: <a href="https://www.anthropic.com/engineering" target="_blank" rel="noopener">Anthropic Engineering Blog</a></p>
+</footer>
+
+</body>
+</html>

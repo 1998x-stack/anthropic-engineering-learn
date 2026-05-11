@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Anthropic Engineering Notes</title>
+<style>
+  :root {
+    --bg: #fafafa;
+    --surface: #ffffff;
+    --text: #1a1a2e;
+    --text-secondary: #555770;
+    --accent: #d97706;
+    --accent-light: #fef3c7;
+    --border: #e5e7eb;
+    --gradient-start: #7c3aed;
+    --gradient-end: #d97706;
+    --success: #059669;
+    --todo-bg: #f1f5f9;
+  }
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: var(--bg);
+    color: var(--text);
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+  .hero {
+    background: linear-gradient(135deg, #1a1a2e 0%, #2d1b69 40%, #4a1942 70%, #1a1a2e 100%);
+    color: #fff;
+    padding: 80px 24px 60px;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+  }
+  .hero::before {
+    content: '';
+    position: absolute;
+    inset: 0;
+    background: radial-gradient(ellipse at 30% 50%, rgba(124,58,237,0.15) 0%, transparent 60%),
+                radial-gradient(ellipse at 70% 50%, rgba(217,119,6,0.1) 0%, transparent 60%);
+  }
+  .hero-inner { position: relative; max-width: 800px; margin: 0 auto; }
+  .hero h1 { font-size: clamp(28px, 5vw, 42px); font-weight: 700; margin-bottom: 16px; letter-spacing: -0.02em; }
+  .hero p { font-size: 16px; opacity: 0.75; max-width: 600px; margin: 0 auto; }
+  .stats {
+    display: flex;
+    justify-content: center;
+    gap: 32px;
+    margin-top: 28px;
+    flex-wrap: wrap;
+  }
+  .stats span { font-size: 14px; background: rgba(255,255,255,0.1); padding: 6px 14px; border-radius: 999px; }
+  .container { max-width: 960px; margin: 0 auto; padding: 0 24px; }
+  .category { margin: 40px 0; }
+  .category h2 {
+    font-size: 22px;
+    font-weight: 700;
+    padding-bottom: 10px;
+    border-bottom: 2px solid var(--border);
+    margin-bottom: 16px;
+    display: flex;
+    align-items: center;
+    gap: 8px;
+  }
+  .articles { display: grid; gap: 12px; }
+  .article {
+    display: flex;
+    align-items: center;
+    gap: 16px;
+    padding: 16px 20px;
+    border-radius: 10px;
+    transition: transform 0.15s, box-shadow 0.15s;
+  }
+  .article.done {
+    background: linear-gradient(135deg, var(--accent-light), #fff7ed);
+    border: 1px solid #fde68a;
+    text-decoration: none;
+    color: var(--text);
+    cursor: pointer;
+  }
+  .article.done:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 16px rgba(217,119,6,0.12);
+  }
+  .article.todo {
+    background: var(--todo-bg);
+    border: 1px solid var(--border);
+    opacity: 0.7;
+  }
+  .article .icon {
+    font-size: 20px;
+    flex-shrink: 0;
+    width: 36px;
+    height: 36px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    border-radius: 8px;
+  }
+  .article.done .icon { background: var(--accent); color: #fff; }
+  .article.todo .icon { background: #94a3b8; color: #fff; }
+  .article .info { flex: 1; min-width: 0; }
+  .article .title { font-size: 15px; font-weight: 600; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+  .article .meta { font-size: 13px; color: var(--text-secondary); margin-top: 2px; }
+  .article .badge {
+    font-size: 11px;
+    padding: 3px 10px;
+    border-radius: 999px;
+    font-weight: 600;
+    flex-shrink: 0;
+  }
+  .article.done .badge { background: var(--accent); color: #fff; }
+  .article.todo .badge { background: #94a3b8; color: #fff; }
+  .footer {
+    text-align: center;
+    padding: 40px 24px;
+    border-top: 1px solid var(--border);
+    margin-top: 60px;
+    font-size: 13px;
+    color: var(--text-secondary);
+  }
+  @media (max-width: 640px) {
+    .hero { padding: 60px 20px 40px; }
+    .article { padding: 12px 14px; }
+  }
+</style>
+</head>
+<body>
+
+<div class="hero">
+  <div class="hero-inner">
+    <h1>Anthropic Engineering Notes</h1>
+    <p>Curated summaries and analyses of Anthropic's engineering blog posts.</p>
+    <div class="stats">
+      <span>📄 23 articles total</span>
+      <span>✅ 1 analyzed</span>
+      <span>📝 22 pending</span>
+    </div>
+  </div>
+</div>
+
+<div class="container">
+
+  <!-- Evals -->
+  <div class="category">
+    <h2>🧪 Evals</h2>
+    <div class="articles">
+      <a href="evals/eval-awareness-browsecomp.html" class="article done">
+        <div class="icon">✓</div>
+        <div class="info">
+          <div class="title">Eval awareness in Claude Opus 4.6's BrowseComp performance</div>
+          <div class="meta">2026-03-06 · Model independently identified and decrypted its own benchmark</div>
+        </div>
+        <span class="badge">Done</span>
+      </a>
+      <div class="article todo">
+        <div class="icon">📝</div>
+        <div class="info">
+          <div class="title">Demystifying evals for AI agents</div>
+          <div class="meta">2026-01-08</div>
+        </div>
+        <span class="badge">TODO</span>
+      </div>
+      <div class="article todo">
+        <div class="icon">📝</div>
+        <div class="info">
+          <div class="title">Designing AI resistant technical evaluations</div>
+          <div class="meta">2025-03-19</div>
+        </div>
+        <span class="badge">TODO</span>
+      </div>
+      <div class="article todo">
+        <div class="icon">📝</div>
+        <div class="info">
+          <div class="title">Claude SWE-Bench Performance</div>
+          <div class="meta">2024-12-17</div>
+        </div>
+        <span class="badge">TODO</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Agents -->
+  <div class="category">
+    <h2>🤖 Agents</h2>
+    <div class="articles">
+      <div class="article todo"><div class="icon">📝</div><div class="info"><div class="title">Building a C compiler with a team of parallel Claudes</div><div class="meta">2026-02-05</div></div><span class="badge">TODO</span></div>
+      <div class="article todo"><div class="icon">📝</div><div class="info"><div class="title">Building Effective AI Agents</div><div class="meta">2025-01-06</div></div><span class="badge">TODO</span></div>
+      <div class="article todo"><div class="icon">📝</div><div class="info"><div class="title">Effective context engineering for AI agents</div><div class="meta">2025-04-22</div></div><span class="badge">TODO</span></div>
+      <div class="article todo"><div class="icon">📝</div><div class="info"><div class="title">Effective harnesses for long-running agents</div><div class="meta">2025-11-21</div></div><span class="badge">TODO</span></div>
+      <div class="article todo"><div class="icon">📝</div><div class="info"><div class="title">Equipping agents for the real world with Agent Skills</div><div class="meta">2025-10-12</div></div><span class="badge">TODO</span></div>
+      <div class="article todo"><div class="icon">📝</div><div class="info"><div class="title">Harness design for long-running application development</div><div class="meta">2026-03-24</div></div><span class="badge">TODO</span></div>
+      <div class="article todo"><div class="icon">📝</div><div class="info"><div class="title">Scaling Managed Agents: Decoupling the brain from the hands</div><div class="meta">2026-02-04</div></div><span class="badge">TODO</span></div>
+      <div class="article todo"><div class="icon">📝</div><div class="info"><div class="title">How we built our multi-agent research system</div><div class="meta">2025-04-22</div></div><span class="badge">TODO</span></div>
+    </div>
+  </div>
+
+  <!-- Claude Code -->
+  <div class="category">
+    <h2>💻 Claude Code</h2>
+    <div class="articles">
+      <div class="article todo"><div class="icon">📝</div><div class="info"><div class="title">Claude Code auto mode: a safer way to skip permissions</div><div class="meta">2026-03-24</div></div><span class="badge">TODO</span></div>
+      <div class="article todo"><div class="icon">📝</div><div class="info"><div class="title">Making Claude Code more secure and autonomous with sandboxing</div><div class="meta">2025-04-22</div></div><span class="badge">TODO</span></div>
+    </div>
+  </div>
+
+  <!-- Reliability -->
+  <div class="category">
+    <h2>🔧 Reliability</h2>
+    <div class="articles">
+      <div class="article todo"><div class="icon">📝</div><div class="info"><div class="title">A postmortem of three recent issues</div><div class="meta">2023-11-03</div></div><span class="badge">TODO</span></div>
+      <div class="article todo"><div class="icon">📝</div><div class="info"><div class="title">An update on recent Claude Code quality reports</div><div class="meta">2026-04-23</div></div><span class="badge">TODO</span></div>
+      <div class="article todo"><div class="icon">📝</div><div class="info"><div class="title">Quantifying infrastructure noise in agentic coding evals</div><div class="meta">2026-02-03</div></div><span class="badge">TODO</span></div>
+    </div>
+  </div>
+
+  <!-- Tools & MCP -->
+  <div class="category">
+    <h2>🔌 Tools & MCP</h2>
+    <div class="articles">
+      <div class="article todo"><div class="icon">📝</div><div class="info"><div class="title">Introducing advanced tool use on the Claude Developer Platform</div><div class="meta">2024-11-06</div></div><span class="badge">TODO</span></div>
+      <div class="article todo"><div class="icon">📝</div><div class="info"><div class="title">The "think" tool: Enabling Claude to stop and think</div><div class="meta">2025-02-12</div></div><span class="badge">TODO</span></div>
+      <div class="article todo"><div class="icon">📝</div><div class="info"><div class="title">Code execution with MCP: building more efficient AI agents</div><div class="meta">2025-10-30</div></div><span class="badge">TODO</span></div>
+      <div class="article todo"><div class="icon">📝</div><div class="info"><div class="title">Contextual Retrieval in AI Systems</div><div class="meta">2025-01-06</div></div><span class="badge">TODO</span></div>
+      <div class="article todo"><div class="icon">📝</div><div class="info"><div class="title">Claude Desktop Extensions: One-click MCP server installation</div><div class="meta">2023-11-03</div></div><span class="badge">TODO</span></div>
+      <div class="article todo"><div class="icon">📝</div><div class="info"><div class="title">Writing effective tools for AI agents—using AI agents</div><div class="meta">2025-06-18</div></div><span class="badge">TODO</span></div>
+    </div>
+  </div>
+
+</div>
+
+<div class="footer">
+  <p>Source: <a href="https://www.anthropic.com/engineering" target="_blank" rel="noopener">Anthropic Engineering Blog</a></p>
+  <p style="margin-top:6px;">Built with ❤️ for learning</p>
+</div>
+
+</body>
+</html>

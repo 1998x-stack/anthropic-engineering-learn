@@ -1,0 +1,387 @@
+{
+  "metadata": {
+    "source": "https://www.anthropic.com/engineering",
+    "total_articles": 24,
+    "downloaded": 23,
+    "total_words": 62604,
+    "last_updated": "2026-05-11",
+    "categories": [
+      "agents",
+      "evals",
+      "reliability",
+      "tools-mcp",
+      "claude-code"
+    ]
+  },
+  "categories": {
+    "agents": {
+      "count": 8,
+      "articles": [
+        "building-effective-agents",
+        "multi-agent-research-system",
+        "effective-harnesses-for-long-running-agents",
+        "harness-design-long-running-apps",
+        "managed-agents",
+        "equipping-agents-for-the-real-world-with-agent-skills",
+        "building-c-compiler",
+        "effective-context-engineering-for-ai-agents"
+      ]
+    },
+    "evals": {
+      "count": 4,
+      "articles": [
+        "demystifying-evals-for-ai-agents",
+        "eval-awareness-browsecomp",
+        "AI-resistant-technical-evaluations",
+        "swe-bench-sonnet"
+      ]
+    },
+    "reliability": {
+      "count": 3,
+      "articles": [
+        "a-postmortem-of-three-recent-issues",
+        "april-23-postmortem",
+        "infrastructure-noise"
+      ]
+    },
+    "tools-mcp": {
+      "count": 6,
+      "articles": [
+        "advanced-tool-use",
+        "code-execution-with-mcp",
+        "claude-think-tool",
+        "contextual-retrieval",
+        "writing-tools-for-agents",
+        "desktop-extensions"
+      ]
+    },
+    "claude-code": {
+      "count": 2,
+      "articles": [
+        "claude-code-auto-mode",
+        "claude-code-sandboxing"
+      ]
+    }
+  },
+  "articles": [
+    {
+      "slug": "building-effective-agents",
+      "title": "Building Effective AI Agents",
+      "date": "2025-01-06",
+      "url": "https://www.anthropic.com/engineering/building-effective-agents",
+      "file": "agents/building-effective-agents.md",
+      "word_count": 2744,
+      "category": "agents",
+      "tags": [
+        "agents",
+        "architecture",
+        "patterns",
+        "best-practices"
+      ]
+    },
+    {
+      "slug": "multi-agent-research-system",
+      "title": "How we built our multi-agent research system",
+      "date": "2025-04-22",
+      "url": "https://www.anthropic.com/engineering/multi-agent-research-system",
+      "file": "agents/multi-agent-research-system.md",
+      "word_count": 3794,
+      "category": "agents",
+      "tags": [
+        "multi-agent",
+        "research",
+        "orchestration"
+      ]
+    },
+    {
+      "slug": "effective-harnesses-for-long-running-agents",
+      "title": "Effective harnesses for long-running agents",
+      "date": "2025-11-21",
+      "url": "https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents",
+      "file": "agents/effective-harnesses-for-long-running-agents.md",
+      "word_count": 2128,
+      "category": "agents",
+      "tags": [
+        "harness",
+        "long-running",
+        "context-management"
+      ]
+    },
+    {
+      "slug": "harness-design-long-running-apps",
+      "title": "Harness design for long-running application development",
+      "date": "2026-03-24",
+      "url": "https://www.anthropic.com/engineering/harness-design-long-running-apps",
+      "file": "agents/harness-design-long-running-apps.md",
+      "word_count": 5216,
+      "category": "agents",
+      "tags": [
+        "harness",
+        "long-running",
+        "app-development",
+        "GAN"
+      ]
+    },
+    {
+      "slug": "managed-agents",
+      "title": "Scaling Managed Agents: Decoupling the brain from the hands",
+      "date": "2026-02-04",
+      "url": "https://www.anthropic.com/engineering/managed-agents",
+      "file": "agents/managed-agents.md",
+      "word_count": 2098,
+      "category": "agents",
+      "tags": [
+        "managed-agents",
+        "scaling",
+        "automation"
+      ]
+    },
+    {
+      "slug": "equipping-agents-for-the-real-world-with-agent-skills",
+      "title": "Equipping agents for the real world with Agent Skills",
+      "date": "2025-10-12",
+      "url": "https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills",
+      "file": "agents/equipping-agents-for-the-real-world-with-agent-skills.md",
+      "word_count": 1482,
+      "category": "agents",
+      "tags": [
+        "agent-skills",
+        "modular",
+        "capabilities"
+      ]
+    },
+    {
+      "slug": "building-c-compiler",
+      "title": "Building a C compiler with a team of parallel Claudes",
+      "date": "2026-02-05",
+      "url": "https://www.anthropic.com/engineering/building-c-compiler",
+      "file": "agents/building-c-compiler.md",
+      "word_count": 2490,
+      "category": "agents",
+      "tags": [
+        "parallel-agents",
+        "software-dev",
+        "autonomous"
+      ]
+    },
+    {
+      "slug": "effective-context-engineering-for-ai-agents",
+      "title": "Effective context engineering for AI agents",
+      "date": "2025-04-22",
+      "url": "https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents",
+      "file": "agents/effective-context-engineering-for-ai-agents.md",
+      "word_count": 3128,
+      "category": "agents",
+      "tags": [
+        "context-engineering",
+        "context-management"
+      ]
+    },
+    {
+      "slug": "demystifying-evals-for-ai-agents",
+      "title": "Demystifying evals for AI agents",
+      "date": "2026-01-08",
+      "url": "https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents",
+      "file": "evals/demystifying-evals-for-ai-agents.md",
+      "word_count": 5971,
+      "category": "evals",
+      "tags": [
+        "evals",
+        "measurement"
+      ]
+    },
+    {
+      "slug": "eval-awareness-browsecomp",
+      "title": "Eval awareness in Claude Opus 4.6's BrowseComp performance",
+      "date": "2026-03-06",
+      "url": "https://www.anthropic.com/engineering/eval-awareness-browsecomp",
+      "file": "evals/eval-awareness-browsecomp.md",
+      "word_count": 2090,
+      "category": "evals",
+      "tags": [
+        "eval-awareness",
+        "browsecomp",
+        "contamination"
+      ]
+    },
+    {
+      "slug": "AI-resistant-technical-evaluations",
+      "title": "Designing AI resistant technical evaluations",
+      "date": "2025-03-19",
+      "url": "https://www.anthropic.com/engineering/AI-resistant-technical-evaluations",
+      "file": "evals/AI-resistant-technical-evaluations.md",
+      "word_count": 2703,
+      "category": "evals",
+      "tags": [
+        "evals",
+        "robustness",
+        "performance"
+      ]
+    },
+    {
+      "slug": "swe-bench-sonnet",
+      "title": "Claude SWE-Bench Performance",
+      "date": "2024-12-17",
+      "url": "https://www.anthropic.com/engineering/swe-bench-sonnet",
+      "file": "evals/swe-bench-sonnet.md",
+      "word_count": 2860,
+      "category": "evals",
+      "tags": [
+        "swe-bench",
+        "code-generation",
+        "benchmark"
+      ]
+    },
+    {
+      "slug": "a-postmortem-of-three-recent-issues",
+      "title": "A postmortem of three recent issues",
+      "date": "2025-09-17",
+      "url": "https://www.anthropic.com/engineering/a-postmortem-of-three-recent-issues",
+      "file": "reliability/a-postmortem-of-three-recent-issues.md",
+      "word_count": 2121,
+      "category": "reliability",
+      "tags": [
+        "postmortem",
+        "bugs",
+        "reliability"
+      ]
+    },
+    {
+      "slug": "april-23-postmortem",
+      "title": "An update on recent Claude Code quality reports",
+      "date": "2026-04-23",
+      "url": "https://www.anthropic.com/engineering/april-23-postmortem",
+      "file": "reliability/april-23-postmortem.md",
+      "word_count": 1734,
+      "category": "reliability",
+      "tags": [
+        "postmortem",
+        "quality-reports"
+      ]
+    },
+    {
+      "slug": "infrastructure-noise",
+      "title": "Quantifying infrastructure noise in agentic coding evals",
+      "date": "2026-02-03",
+      "url": "https://www.anthropic.com/engineering/infrastructure-noise",
+      "file": "reliability/infrastructure-noise.md",
+      "word_count": 1824,
+      "category": "reliability",
+      "tags": [
+        "infrastructure",
+        "noise",
+        "evals"
+      ]
+    },
+    {
+      "slug": "advanced-tool-use",
+      "title": "Introducing advanced tool use on the Claude Developer Platform",
+      "date": "2024-11-06",
+      "url": "https://www.anthropic.com/engineering/advanced-tool-use",
+      "file": "tools-mcp/advanced-tool-use.md",
+      "word_count": 3261,
+      "category": "tools-mcp",
+      "tags": [
+        "tool-use",
+        "mcp",
+        "dynamic-tools"
+      ]
+    },
+    {
+      "slug": "code-execution-with-mcp",
+      "title": "Code execution with MCP: building more efficient AI agents",
+      "date": "2025-10-30",
+      "url": "https://www.anthropic.com/engineering/code-execution-with-mcp",
+      "file": "tools-mcp/code-execution-with-mcp.md",
+      "word_count": 1965,
+      "category": "tools-mcp",
+      "tags": [
+        "code-execution",
+        "mcp",
+        "token-optimization"
+      ]
+    },
+    {
+      "slug": "claude-think-tool",
+      "title": "The \"think\" tool: Enabling claude to stop and think",
+      "date": "2025-02-12",
+      "url": "https://www.anthropic.com/engineering/claude-think-tool",
+      "file": "tools-mcp/claude-think-tool.md",
+      "word_count": 2269,
+      "category": "tools-mcp",
+      "tags": [
+        "think-tool",
+        "reasoning",
+        "tool-use"
+      ]
+    },
+    {
+      "slug": "contextual-retrieval",
+      "title": "Contextual Retrieval in AI Systems",
+      "date": "2025-01-06",
+      "url": "https://www.anthropic.com/engineering/contextual-retrieval",
+      "file": "tools-mcp/contextual-retrieval.md",
+      "word_count": 2356,
+      "category": "tools-mcp",
+      "tags": [
+        "retrieval",
+        "context",
+        "RAG"
+      ]
+    },
+    {
+      "slug": "writing-tools-for-agents",
+      "title": "Writing effective tools for AI agents—using AI agents",
+      "date": "2025-06-18",
+      "url": "https://www.anthropic.com/engineering/writing-tools-for-agents",
+      "file": "tools-mcp/writing-tools-for-agents.md",
+      "word_count": 3263,
+      "category": "tools-mcp",
+      "tags": [
+        "tool-development",
+        "agent-built-tools"
+      ]
+    },
+    {
+      "slug": "desktop-extensions",
+      "title": "Claude Desktop Extensions: One-click MCP server installation",
+      "date": "2025-04-22",
+      "url": "https://www.anthropic.com/engineering/desktop-extensions",
+      "file": "tools-mcp/desktop-extensions.md",
+      "word_count": 2385,
+      "category": "tools-mcp",
+      "tags": [
+        "desktop-extensions",
+        "mcp-servers"
+      ]
+    },
+    {
+      "slug": "claude-code-auto-mode",
+      "title": "Claude Code auto mode: a safer way to skip permissions",
+      "date": "2026-03-24",
+      "url": "https://www.anthropic.com/engineering/claude-code-auto-mode",
+      "file": "claude-code/claude-code-auto-mode.md",
+      "word_count": 3562,
+      "category": "claude-code",
+      "tags": [
+        "auto-mode",
+        "safety",
+        "permissions"
+      ]
+    },
+    {
+      "slug": "claude-code-sandboxing",
+      "title": "Making Claude Code more secure and autonomous with sandboxing",
+      "date": "2025-04-22",
+      "url": "https://www.anthropic.com/engineering/claude-code-sandboxing",
+      "file": "claude-code/claude-code-sandboxing.md",
+      "word_count": 1162,
+      "category": "claude-code",
+      "tags": [
+        "sandboxing",
+        "security",
+        "isolation"
+      ]
+    }
+  ]
+}

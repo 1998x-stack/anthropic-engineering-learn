@@ -1,0 +1,346 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：AI 浏览器 Prompt Injection 与遏制策略</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    :root{
+      --bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;
+      --border:#e2e8f0;--radius:14px;
+      --orange:#ea580c;--orange-light:#fb923c;--amber:#f59e0b;
+      --purple:#6366f1;--green:#10b981;--red:#ef4444;--blue:#3b82f6;--teal:#14b8a6;
+      --mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif;
+    }
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+    .nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;justify-content:space-between;align-items:center;font-size:14px}
+    .nav a{color:var(--text);text-decoration:none;font-weight:600}
+    .nav a:hover{color:var(--orange)}
+    .nav .back{color:var(--text-secondary);font-weight:400}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#7c2d12 50%,#ea580c 100%);color:#fff;padding:80px 24px 60px;text-align:center}
+    .hero h1{font-size:clamp(28px,4vw,44px);font-weight:800;margin-bottom:12px;line-height:1.2}
+    .hero .subtitle{font-size:18px;opacity:.85;max-width:720px;margin:0 auto 8px}
+    .hero .meta{font-size:14px;opacity:.6;margin-bottom:36px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;max-width:800px;margin:0 auto}
+    .stat{background:rgba(255,255,255,.1);border-radius:var(--radius);padding:20px;backdrop-filter:blur(6px)}
+    .stat .num{font-size:32px;font-weight:800;font-family:var(--mono)}
+    .stat .label{font-size:13px;opacity:.7;margin-top:4px}
+    .page{max-width:900px;margin:0 auto;padding:40px 24px 80px}
+    .toc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px;margin-bottom:48px}
+    .toc h3{font-size:15px;color:var(--text-secondary);margin-bottom:16px;text-transform:uppercase;letter-spacing:1px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .toc-grid a{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;background:var(--bg);transition:all .2s}
+    .toc-grid a:hover{background:#fff7ed;color:var(--orange)}
+    .toc-grid .num{font-family:var(--mono);font-size:12px;color:var(--orange);font-weight:700;min-width:22px}
+    .section{margin-bottom:56px}
+    .section h2{font-size:24px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+    .lead{color:var(--text-secondary);font-size:16px;margin-bottom:24px;line-height:1.6}
+    p{margin-bottom:16px}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+    .card h4{font-weight:700;margin-bottom:8px;font-size:16px}
+    .block-q{border-left:4px solid var(--orange);background:#fff7ed;padding:20px 24px;border-radius:0 var(--radius) var(--radius) 0;margin:20px 0;font-size:15px;font-style:italic}
+    .danger-q{border-left:4px solid var(--red);background:#fef2f2;padding:20px 24px;border-radius:0 var(--radius) var(--radius) 0;margin:20px 0;font-size:15px;font-style:italic}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}
+    .compare-card{border-radius:var(--radius);padding:24px;font-size:14px}
+    .compare-card.old{background:#fef2f2;border:2px solid #fecaca}
+    .compare-card.new{background:#f0fdf4;border:2px solid #bbf7d0}
+    .compare-card h4{margin-bottom:10px;font-size:15px}
+    .flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:20px 0;justify-content:center}
+    .flow-step{background:var(--surface);border:2px solid var(--border);border-radius:12px;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;min-width:110px}
+    .flow-step.red{border-color:var(--red);background:#fef2f2;color:#991b1b}
+    .flow-step.orange{border-color:var(--orange);background:#fff7ed;color:#7c2d12}
+    .flow-step.green{border-color:var(--green);background:#ecfdf5;color:#065f46}
+    .flow-step.purple{border-color:var(--purple);background:#eef2ff;color:#312e81}
+    .flow-arrow{font-size:22px;color:var(--text-secondary);font-weight:700}
+    .chart{margin:20px 0}
+    .chart-row{display:flex;align-items:center;margin-bottom:10px;gap:12px}
+    .chart-label{min-width:160px;font-size:13px;font-weight:600;text-align:right}
+    .chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}
+    .chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;padding:0 12px;font-size:12px;font-weight:700;color:#fff;transition:width .6s}
+    .chart-bar.orange{background:linear-gradient(90deg,#ea580c,#fb923c)}
+    .chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}
+    .chart-bar.purple{background:linear-gradient(90deg,#6366f1,#818cf8)}
+    .chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .chart-bar.green{background:linear-gradient(90deg,#10b981,#34d399)}
+    .chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+    .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600}
+    .badge-green{background:#d1fae5;color:#065f46}
+    .badge-red{background:#fee2e2;color:#b91c1c}
+    .badge-orange{background:#ffedd5;color:#9a3412}
+    .badge-purple{background:#e0e7ff;color:#3730a3}
+    .badge-amber{background:#fef3c7;color:#92400e}
+    .timeline{position:relative;padding-left:32px;margin:20px 0}
+    .timeline::before{content:'';position:absolute;left:11px;top:0;bottom:0;width:3px;background:linear-gradient(to bottom,var(--red),var(--green))}
+    .tl-item{margin-bottom:28px;position:relative}
+    .tl-dot{position:absolute;left:-28px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid var(--red);background:#fff}
+    .tl-item:nth-child(2) .tl-dot{border-color:var(--orange)}
+    .tl-item:nth-child(3) .tl-dot{border-color:var(--amber)}
+    .tl-item:nth-child(4) .tl-dot{border-color:var(--green)}
+    .tl-phase{font-weight:700;font-size:15px;margin-bottom:4px}
+    .tl-desc{font-size:14px;color:var(--text-secondary)}
+    .fail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:20px 0}
+    .fail-grid .card{text-align:center;padding:20px}
+    .fail-grid .card .icon{font-size:28px;margin-bottom:8px}
+    .attack-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin:20px 0}
+    .attack-card{background:var(--surface);border:2px solid #fecaca;border-radius:var(--radius);padding:20px}
+    .attack-card h4{color:var(--red);margin-bottom:8px;font-size:15px}
+    .attack-card p{font-size:14px;margin-bottom:0}
+    .defense-card{background:var(--surface);border:2px solid #bbf7d0;border-radius:var(--radius);padding:20px}
+    .defense-card h4{color:var(--green);margin-bottom:8px;font-size:15px}
+    .defense-card p{font-size:14px;margin-bottom:0}
+    code{font-family:var(--mono);background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:13px}
+    .code-block{background:#1e293b;color:#e2e8f0;padding:20px 24px;border-radius:var(--radius);font-family:var(--mono);font-size:13px;line-height:1.6;overflow-x:auto;margin:20px 0;white-space:pre}
+    .footer{text-align:center;padding:40px 24px;border-top:1px solid var(--border);color:var(--text-secondary);font-size:14px}
+    .footer a{color:var(--orange);text-decoration:none;font-weight:500}
+    .footer a:hover{text-decoration:underline}
+    @media(max-width:768px){
+      .compare-grid,.fail-grid,.attack-grid{grid-template-columns:1fr}
+      .flow{flex-direction:column;gap:6px}
+      .flow-arrow{transform:rotate(90deg)}
+      .chart-label{min-width:100px;font-size:12px}
+      .toc-grid{grid-template-columns:1fr}
+      .stats{grid-template-columns:repeat(2,1fr)}
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a href="../">Browserbase Deep Dives</a>
+    <a href="../" class="back">&larr; Back to Hub</a>
+  </nav>
+
+  <header class="hero">
+    <h1>AI 浏览器 Prompt Injection 与遏制策略</h1>
+    <p class="subtitle">你的 AI 浏览器离失控只差一个恶意 &lt;div&gt; — 为什么遏制 (Containment) 是唯一可扩展的防御</p>
+    <p class="meta">Jane Manchun Wong &middot; 2026-02-13</p>
+    <div class="stats">
+      <div class="stat"><div class="num">&gt;0%</div><div class="label">攻击成功率 (非零风险)</div></div>
+      <div class="stat"><div class="num">3</div><div class="label">攻击向量类别</div></div>
+      <div class="stat"><div class="num">VM</div><div class="label">隔离方案 (Containment)</div></div>
+      <div class="stat"><div class="num">1 行</div><div class="label">npx create-browser-app</div></div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc">
+      <h3>目录</h3>
+      <div class="toc-grid">
+        <a href="#s1"><span class="num">01</span> Prompt Injection 是什么</a>
+        <a href="#s2"><span class="num">02</span> 为什么浏览器放大了风险</a>
+        <a href="#s3"><span class="num">03</span> 真实攻击场景</a>
+        <a href="#s4"><span class="num">04</span> 实测：攻击 AI 浏览器</a>
+        <a href="#s5"><span class="num">05</span> 遏制策略 (Containment)</a>
+        <a href="#s6"><span class="num">06</span> Stagehand 的安全自动化</a>
+      </div>
+    </nav>
+
+    <!-- Section 1 -->
+    <section class="section" id="s1">
+      <h2>🎯 Prompt Injection 是什么</h2>
+      <p class="lead">当不可信的内容变成了指令 — 在非 AI 聊天机器人中，注入意味着模型说错话；在浏览器 Agent 中，注入意味着模型做错事。</p>
+
+      <div class="block-q">
+        <p>"A Prompt Injection Vulnerability occurs when user prompts alter the LLM's behavior or output in unintended ways. These inputs can affect the model even if they are imperceptible to humans."<br>— OWASP</p>
+      </div>
+
+      <div class="block-q">
+        <p>"Every webpage an agent visits is a potential vector for attack."<br>— Anthropic</p>
+      </div>
+
+      <p>不可信内容的形式多种多样 — 从白底白字的隐藏文本，到 Base64 编码在 QR Code 图片中的 prompt injection。关键在于：这些内容不需要对人类可见，只要能被模型解析就够了。</p>
+
+      <div class="compare-grid">
+        <div class="compare-card old">
+          <h4>传统 Chatbot Injection</h4>
+          <p>模型<strong>说</strong>错话</p>
+          <p>泄露 system prompt</p>
+          <p>影响范围有限</p>
+        </div>
+        <div class="compare-card old">
+          <h4>浏览器 Agent Injection</h4>
+          <p>模型<strong>做</strong>错事</p>
+          <p>填写表单、下载文件、导航到恶意 URL</p>
+          <p>可能窃取敏感数据并外泄</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2 -->
+    <section class="section" id="s2">
+      <h2>🔥 为什么浏览器放大了风险</h2>
+      <p class="lead">浏览器使用从两个维度放大了 prompt injection 的风险：攻击面巨大，而且 Agent 能做的事情正好是攻击者想要的。</p>
+
+      <div class="chart">
+        <div class="chart-row">
+          <div class="chart-label">攻击面 (Attack Surface)</div>
+          <div class="chart-bar-wrap">
+            <div class="chart-bar red" style="width:95%">每个网页、广告、嵌入文档、脚本</div>
+          </div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-label">Agent 能力 (Capabilities)</div>
+          <div class="chart-bar-wrap">
+            <div class="chart-bar orange" style="width:85%">填写表单、下载、导航、触发 Webhook</div>
+          </div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-label">暴露的敏感数据</div>
+          <div class="chart-bar-wrap">
+            <div class="chart-bar amber" style="width:75%">Cookies、Auth Sessions、API Tokens</div>
+          </div>
+        </div>
+      </div>
+
+      <p>当消费者将 AI 浏览器作为日常驱动时，它会吸收所有敏感信息 — cookies、认证 session 等。一旦 prompt injection 攻击成功，所有这些信息都可能被暴露。</p>
+    </section>
+
+    <!-- Section 3 -->
+    <section class="section" id="s3">
+      <h2>💀 真实攻击场景</h2>
+      <p class="lead">从覆盖原始目标到数据外泄 — 只需要一次成功的攻击就能打通 "读取不可信内容" 到 "移动敏感数据" 的路径。</p>
+
+      <div class="attack-grid">
+        <div class="attack-card">
+          <h4>目标覆盖 (Goal Override)</h4>
+          <p>说服 Agent 放弃原始指令，转而执行攻击者的任意任务</p>
+        </div>
+        <div class="attack-card">
+          <h4>数据外泄 (Data Exfiltration)</h4>
+          <p>利用 Agent 的访问权限窃取 private keys、session cookies、API tokens</p>
+        </div>
+        <div class="attack-card">
+          <h4>Webhook 触发</h4>
+          <p>让 Agent 触发外部 Webhook 或获取恶意资源，间接外泄数据</p>
+        </div>
+        <div class="attack-card">
+          <h4>恶意导航</h4>
+          <p>在用户不知情的情况下导航到恶意 URL</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h4>PromptArmor 案例：Google Antigravity</h4>
+        <p>PromptArmor 发布了一个涉及 Google 的 agentic IDE "Antigravity" 的案例。他们在 "实现指南" 中嵌入了<strong>间接 prompt injection</strong> — 使用 1pt 字体（人眼几乎不可见但 AI 可读）— 指示 Agent 收集环境变量等敏感数据，然后通过编码为 URL 进行外泄。</p>
+      </div>
+
+      <div class="flow">
+        <div class="flow-step">访问包含注入的页面</div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step red">Agent 解析恶意指令</div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step red">收集敏感数据</div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step red">编码为 URL 外泄</div>
+      </div>
+
+      <div class="danger-q">
+        <p>"Out of all the prompt injection attacks that may or may not work, it'd only take one successful attempt to create a path from 'read untrusted content' to 'move sensitive data.'"</p>
+      </div>
+    </section>
+
+    <!-- Section 4 -->
+    <section class="section" id="s4">
+      <h2>🧪 实测：攻击 AI 浏览器</h2>
+      <p class="lead">作者在 LinkedIn 个人资料中嵌入经典注入 prompt，测试了 Atlas、Dia、Comet 等流行 AI 浏览器。</p>
+
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">实验 1：明文注入</div>
+          <div class="tl-desc">在 LinkedIn 个人资料中嵌入明文 prompt injection，尝试干扰浏览器的页面摘要能力</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">实验 2：Base64 编码注入</div>
+          <div class="tl-desc">使用 Base64 编码文本作为第二次尝试</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">测试结果</div>
+          <div class="tl-desc">截至写作时，AI 浏览器厂商已经意识到安全问题，基本忽略了这些文本，将其识别为操纵企图</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">但这是猫鼠游戏</div>
+          <div class="tl-desc">威胁行为者会想出更新、更创意的注入方式，浏览器厂商再修补。成功率低但非零，风险真实存在。</div>
+        </div>
+      </div>
+
+      <div class="block-q">
+        <p>"Despite new protections against prompt injections, no browser agent is immune from potential attacks. The success rate is low, but still non-zero and carries meaningful risk."<br>— 引用 Anthropic 观点</p>
+      </div>
+    </section>
+
+    <!-- Section 5 -->
+    <section class="section" id="s5">
+      <h2>🛡️ 遏制策略 (Containment)</h2>
+      <p class="lead">你无法修补整个互联网。可扩展的缓解措施是遏制：隔离浏览器、约束它能触及的范围、让失败可存活。</p>
+
+      <div class="compare-grid">
+        <div class="compare-card old">
+          <h4>❌ 无隔离</h4>
+          <p>零日漏洞执行时，AI 浏览器被完全攻陷</p>
+          <p>敏感数据（<code>.env</code>、SSH keys）暴露给攻击者</p>
+          <p>组织级别的数据泄露</p>
+        </div>
+        <div class="compare-card new">
+          <h4>✅ VM 隔离 (Browserbase)</h4>
+          <p>即使零日漏洞被执行，损害被控制在专为浏览 session 生成的虚拟机中</p>
+          <p>虚拟机通常没有组织级别的敏感信息访问权</p>
+          <p>失败可存活，爆炸半径最小</p>
+        </div>
+      </div>
+
+      <div class="flow">
+        <div class="flow-step red">恶意内容触发</div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step orange">攻击在 VM 内执行</div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step green">损害被控制在隔离 VM 中</div>
+      </div>
+    </section>
+
+    <!-- Section 6 -->
+    <section class="section" id="s6">
+      <h2>🤖 Stagehand 的安全自动化</h2>
+      <p class="lead">Agent 栈的失败模式之一是模型行为未被良好定义 — 让它们在互联网上自由发挥、即兴创作工作流。Stagehand 提供确定性的原子级自动化。</p>
+
+      <div class="fail-grid">
+        <div class="card">
+          <div class="icon">🔬</div>
+          <h4>原子化</h4>
+          <p>工作流是原子的、可审计的，而非一个巨大的不透明 Agent blob</p>
+        </div>
+        <div class="card">
+          <div class="icon">🔒</div>
+          <h4>LLM 仅作备选</h4>
+          <p>仅在特定步骤遇到边缘情况时才使用 LLM 作为 fallback</p>
+        </div>
+        <div class="card">
+          <div class="icon">💉</div>
+          <h4>参数化模板</h4>
+          <p>Prompt 模板将敏感数据作为参数，在运行时注入，最小化暴露</p>
+        </div>
+      </div>
+
+      <div class="block-q">
+        <p>"Prompt injection is a natural consequence of mixing instruction-following models with untrusted content and then giving them tools. The mitigation that scales is containment."</p>
+      </div>
+
+      <div class="card">
+        <h4>Browserbase 的核心赌注</h4>
+        <p>通过<strong>安全的浏览器基础设施</strong>和<strong>确定性自动化</strong>，在（不是 "如果"）互联网试图说服你的 Agent 失控时，将潜在损害的范围保持在最小。</p>
+      </div>
+
+      <div class="code-block">npx create-browser-app</div>
+    </section>
+  </div>
+
+  <footer class="footer">
+    <p><a href="../">返回 Hub</a> &middot; 原文：<a href="https://www.browserbase.com/blog/ai-browser-prompt-injection-containment-security" target="_blank">Your AI browser is one malicious &lt;div&gt; away from going rogue</a></p>
+  </footer>
+</body>
+</html>

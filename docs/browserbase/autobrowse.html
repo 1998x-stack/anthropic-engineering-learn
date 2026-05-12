@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Autobrowse — 浏览器 Agent 的记忆革命</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    :root{
+      --bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;
+      --border:#e2e8f0;--radius:14px;
+      --orange:#ea580c;--orange-light:#fb923c;--amber:#f59e0b;
+      --purple:#6366f1;--green:#10b981;--red:#ef4444;--blue:#3b82f6;--teal:#14b8a6;
+      --mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif;
+    }
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+    .nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;justify-content:space-between;align-items:center;font-size:14px}
+    .nav a{color:var(--text);text-decoration:none;font-weight:600}
+    .nav a:hover{color:var(--orange)}
+    .nav .back{color:var(--text-secondary);font-weight:400}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#7c2d12 50%,#ea580c 100%);color:#fff;padding:80px 24px 60px;text-align:center}
+    .hero h1{font-size:clamp(28px,4vw,44px);font-weight:800;margin-bottom:12px;line-height:1.2}
+    .hero .subtitle{font-size:18px;opacity:.85;max-width:700px;margin:0 auto 8px}
+    .hero .meta{font-size:14px;opacity:.6;margin-bottom:36px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;max-width:800px;margin:0 auto}
+    .stat{background:rgba(255,255,255,.1);border-radius:var(--radius);padding:20px;backdrop-filter:blur(6px)}
+    .stat .num{font-size:32px;font-weight:800;font-family:var(--mono)}
+    .stat .label{font-size:13px;opacity:.7;margin-top:4px}
+    .page{max-width:900px;margin:0 auto;padding:40px 24px 80px}
+    .toc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px;margin-bottom:48px}
+    .toc h3{font-size:15px;color:var(--text-secondary);margin-bottom:16px;text-transform:uppercase;letter-spacing:1px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .toc-grid a{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;background:var(--bg);transition:all .2s}
+    .toc-grid a:hover{background:#fff7ed;color:var(--orange)}
+    .toc-grid .num{font-family:var(--mono);font-size:12px;color:var(--orange);font-weight:700;min-width:22px}
+    .section{margin-bottom:56px}
+    .section h2{font-size:24px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+    .lead{color:var(--text-secondary);font-size:16px;margin-bottom:24px;line-height:1.6}
+    p{margin-bottom:16px}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+    .card h4{font-weight:700;margin-bottom:8px;font-size:16px}
+    .block-q{border-left:4px solid var(--orange);background:#fff7ed;padding:20px 24px;border-radius:0 var(--radius) var(--radius) 0;margin:20px 0;font-size:15px;font-style:italic}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}
+    .compare-card{border-radius:var(--radius);padding:24px;font-size:14px}
+    .compare-card.old{background:#fef2f2;border:2px solid #fecaca}
+    .compare-card.new{background:#f0fdf4;border:2px solid #bbf7d0}
+    .compare-card h4{margin-bottom:10px;font-size:15px}
+    .flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:20px 0;justify-content:center}
+    .flow-step{background:var(--surface);border:2px solid var(--border);border-radius:12px;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;min-width:110px}
+    .flow-step.orange{border-color:var(--orange);background:#fff7ed;color:#7c2d12}
+    .flow-step.purple{border-color:var(--purple);background:#eef2ff;color:#312e81}
+    .flow-step.green{border-color:var(--green);background:#ecfdf5;color:#065f46}
+    .flow-step.amber{border-color:var(--amber);background:#fffbeb;color:#92400e}
+    .flow-step.blue{border-color:var(--blue);background:#eff6ff;color:#1e40af}
+    .flow-arrow{font-size:22px;color:var(--text-secondary);font-weight:700}
+    .chart{margin:20px 0}
+    .chart-row{display:flex;align-items:center;margin-bottom:10px;gap:12px}
+    .chart-label{min-width:160px;font-size:13px;font-weight:600;text-align:right}
+    .chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}
+    .chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;padding:0 12px;font-size:12px;font-weight:700;color:#fff;transition:width .6s}
+    .chart-bar.orange{background:linear-gradient(90deg,#ea580c,#fb923c)}
+    .chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}
+    .chart-bar.purple{background:linear-gradient(90deg,#6366f1,#818cf8)}
+    .chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .chart-bar.green{background:linear-gradient(90deg,#10b981,#34d399)}
+    .chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+    .chart-bar.teal{background:linear-gradient(90deg,#0d9488,#14b8a6)}
+    .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600}
+    .badge-orange{background:#ffedd5;color:#9a3412}
+    .badge-green{background:#d1fae5;color:#065f46}
+    .badge-red{background:#fee2e2;color:#b91c1c}
+    .badge-purple{background:#e0e7ff;color:#3730a3}
+    .badge-amber{background:#fef3c7;color:#92400e}
+    .badge-blue{background:#dbeafe;color:#1e40af}
+    .timeline{position:relative;padding-left:32px;margin:20px 0}
+    .timeline::before{content:'';position:absolute;left:11px;top:0;bottom:0;width:3px;background:linear-gradient(to bottom,var(--orange),var(--purple))}
+    .tl-item{margin-bottom:28px;position:relative}
+    .tl-dot{position:absolute;left:-28px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid var(--orange);background:#fff}
+    .tl-item:nth-child(2) .tl-dot{border-color:var(--purple)}
+    .tl-item:nth-child(3) .tl-dot{border-color:var(--amber)}
+    .tl-item:nth-child(4) .tl-dot{border-color:var(--green)}
+    .tl-item:nth-child(5) .tl-dot{border-color:var(--blue)}
+    .tl-phase{font-weight:700;font-size:15px;margin-bottom:4px}
+    .tl-desc{font-size:14px;color:var(--text-secondary)}
+    .fail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:20px 0}
+    .fail-grid .card{text-align:center;padding:20px}
+    .fail-grid .card .icon{font-size:28px;margin-bottom:8px}
+    .agent-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}
+    code{font-family:var(--mono);background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:13px}
+    .footer{text-align:center;padding:40px 24px;border-top:1px solid var(--border);color:var(--text-secondary);font-size:14px}
+    .footer a{color:var(--orange);text-decoration:none;font-weight:500}
+    .footer a:hover{text-decoration:underline}
+    .cost-table{width:100%;border-collapse:collapse;margin:20px 0;font-size:14px}
+    .cost-table th,.cost-table td{padding:12px 16px;text-align:left;border-bottom:1px solid var(--border)}
+    .cost-table th{background:var(--bg);font-weight:700;font-size:13px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-secondary)}
+    .cost-table tr:hover td{background:#fff7ed}
+    .tbl-wrap{overflow-x:auto}
+    @media(max-width:768px){
+      .compare-grid,.fail-grid,.agent-grid{grid-template-columns:1fr}
+      .flow{flex-direction:column;gap:6px}
+      .flow-arrow{transform:rotate(90deg)}
+      .chart-label{min-width:100px;font-size:12px}
+      .toc-grid{grid-template-columns:1fr}
+      .stats{grid-template-columns:repeat(2,1fr)}
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a href="../">Browserbase Deep Dives</a>
+    <a href="../" class="back">&larr; Back to Hub</a>
+  </nav>
+
+  <header class="hero">
+    <h1>Autobrowse: 浏览器 Agent 的记忆革命</h1>
+    <p class="subtitle">Agent 不再从零开始 — 通过迭代学习将探索收敛为可复用的 Skill，终结每次运行的 "发现税"</p>
+    <p class="meta">Kyle Jeong &middot; 2026-05-06</p>
+    <div class="stats">
+      <div class="stat"><div class="num">45%</div><div class="label">成本降低 (Cost Reduction)</div></div>
+      <div class="stat"><div class="num">62%</div><div class="label">时间缩短 (Time Saved)</div></div>
+      <div class="stat"><div class="num">3~5</div><div class="label">迭代次数 (Iterations)</div></div>
+      <div class="stat"><div class="num">1</div><div class="label">Markdown Skill 输出</div></div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc">
+      <h3>目录</h3>
+      <div class="toc-grid">
+        <a href="#s1"><span class="num">01</span> 核心问题：失忆的天才</a>
+        <a href="#s2"><span class="num">02</span> Autobrowse 是什么</a>
+        <a href="#s3"><span class="num">03</span> 学习循环 (Learning Loop)</a>
+        <a href="#s4"><span class="num">04</span> 产出物：Skill 文件</a>
+        <a href="#s5"><span class="num">05</span> 基准测试：Craigslist</a>
+        <a href="#s6"><span class="num">06</span> 适用场景与局限</a>
+        <a href="#s7"><span class="num">07</span> 工作流革命</a>
+        <a href="#s8"><span class="num">08</span> 未来方向</a>
+      </div>
+    </nav>
+
+    <!-- Section 1 -->
+    <section class="section" id="s1">
+      <h2>🧠 核心问题：失忆的天才</h2>
+      <p class="lead">浏览器 Agent 的真正瓶颈不是推理能力，而是记忆 — 一种人类和 Agent 都能读懂和信任的记忆形式。</p>
+
+      <div class="block-q">
+        <p>"The real bottleneck for browser agents in production is memory, in a form humans and agents can both read and trust. Reasoning has stopped being the constraint."</p>
+      </div>
+
+      <p>当你把一个浏览器 Agent 部署到生产环境，第一次运行是令人兴奋的 — 它会探索页面、理解结构、最终完成任务。但第二次运行看起来几乎一模一样。到了第 100 次运行时，你已经为相同的探索支付了 100 次费用，成本曲线是一条直线上升。</p>
+
+      <div class="compare-grid">
+        <div class="compare-card old">
+          <h4>❌ 传统 Agent 模式</h4>
+          <p>每次运行都从零开始探索</p>
+          <p>推理成果随 session 关闭蒸发</p>
+          <p>成本线性增长，无学习曲线</p>
+          <p>没有可交付的知识产物</p>
+        </div>
+        <div class="compare-card new">
+          <h4>✅ Autobrowse 模式</h4>
+          <p>首次运行学习，后续运行复用</p>
+          <p>知识固化为 Markdown Skill 文件</p>
+          <p>成本随迭代收敛急剧下降</p>
+          <p>产出可读、可编辑、可版本化的工件</p>
+        </div>
+      </div>
+
+      <p>真实网站充满混乱：不同 User Agent 的渲染差异、JavaScript 门控内容、未文档化的 JSON endpoint、验证码、以及可能在某个周二突然改版的页面流程。通用 Agent 循环在当下能灵活应对这些，但一旦 session 关闭，所有推理都消失了。</p>
+    </section>
+
+    <!-- Section 2 -->
+    <section class="section" id="s2">
+      <h2>🔧 Autobrowse 是什么</h2>
+      <p class="lead">一个用 AI 改进 AI 的工作流 — 让 Agent 在真实任务中迭代，直到找到可靠路径，然后将其固化为可复用的 Skill。</p>
+
+      <p>Autobrowse 类似于 Karpathy 的 <code>autoresearch</code> harness，但专注于更快更便宜地学习浏览器技能。第一次运行故意很贵 — 它是为后续所有运行买单的那一次。</p>
+
+      <div class="card">
+        <h4>核心理念</h4>
+        <p>你给 Agent 一个真实任务（如 "在 OpenTable 上预订晚 7 点的餐厅"），它端到端执行任务、分析自己的 trace、迭代策略，直到工作流从 "碰运气" 变成 "可靠"。收敛后，它把最佳方案毕业为一个可复用的 Skill。</p>
+      </div>
+
+      <div class="card">
+        <h4>关键区别：产物即目标</h4>
+        <p>每次 Autobrowse 运行都会产出一个持久的 Markdown 文件，任何未来的 Agent 都可以加载和执行。这不是副产品 — 这个 artifact 才是重点。</p>
+      </div>
+    </section>
+
+    <!-- Section 3 -->
+    <section class="section" id="s3">
+      <h2>🔄 学习循环 (Learning Loop)</h2>
+      <p class="lead">从 Objective 到 Graduate，一个结构化的收敛流程。</p>
+
+      <div class="flow">
+        <div class="flow-step orange">Objective</div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step">Run</div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step purple">Study</div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step amber">Strategy</div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step">Iterate</div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step green">Converge</div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step blue">Graduate</div>
+      </div>
+
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">1. Objective — 定义任务</div>
+          <div class="tl-desc">给 Agent 一个在真实网站上的真实任务，如 "在 OpenTable 上预订晚餐"</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">2. Run & Study — 执行与反思</div>
+          <div class="tl-desc">Agent 端到端执行任务，然后审查自己的 trace：哪里卡住了？哪里浪费了 token？</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">3. Strategy — 策略迭代</div>
+          <div class="tl-desc">维护 <code>strategy.md</code> 文件作为草稿本，记录每次迭代的观察（什么有效、什么失败、下次尝试什么）</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">4. Converge — 收敛判定</div>
+          <div class="tl-desc">连续迭代在成本和步骤数上不再有显著改善时，短路退出（通常 3-5 次迭代）</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">5. Graduate — 毕业输出</div>
+          <div class="tl-desc">写出 <code>SKILL.md</code> 加辅助脚本到公共 Skills 仓库</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 4 -->
+    <section class="section" id="s4">
+      <h2>📄 产出物：Skill 文件</h2>
+      <p class="lead">不是 transcript，不是 embedding 向量，不是截图集 — 只是 Markdown。</p>
+
+      <p>产出是一个小型、可读的文件。如果 Agent 发现了一个未文档化的 JSON endpoint，那个 endpoint 就在文件里。如果某个表单提交前需要等待，那也在文件里。如果特定域名的辅助脚本值得保留（如 <code>helpers/amazon.py</code>），它会被检入到 Skill 旁边。</p>
+
+      <div class="card">
+        <h4>Skill 文件结构</h4>
+        <p>Frontmatter（名称、描述、网站、分类、状态、推荐方法）+ 正文（Purpose、When to Use、Workflow 步骤、Site-Specific Gotchas）+ 可选的辅助脚本。</p>
+      </div>
+
+      <div class="block-q">
+        <p>"Autobrowse pushes that idea one layer further: the agent writes its own skill, learned by actually doing the task."</p>
+      </div>
+
+      <p>手写的 Skills 和 Autobrowse 毕业的 Skills 是完全相同类型的工件。一旦 Skill 存在，Agent 加载和运行它时完全不关心它是人类还是另一个 Agent 写的。</p>
+    </section>
+
+    <!-- Section 5 -->
+    <section class="section" id="s5">
+      <h2>📊 基准测试：Craigslist</h2>
+      <p class="lead">从通用循环到毕业 Skill 的成本和时间对比。</p>
+
+      <div class="chart">
+        <div class="chart-row">
+          <div class="chart-label">传统 Claude Code 循环</div>
+          <div class="chart-bar-wrap">
+            <div class="chart-bar red" style="width:100%">$0.22 / 71s</div>
+          </div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-label">毕业 Autobrowse Skill</div>
+          <div class="chart-bar-wrap">
+            <div class="chart-bar green" style="width:45%">$0.12 / 27s</div>
+          </div>
+        </div>
+      </div>
+
+      <p>绝对数字不如趋势重要。第一次运行的成本与通用 Agent 循环差不多。但毕业的 Skill 改变了后续每一次运行的单位经济学 — 一个数量级或更多的改善，因为它编码了 Agent 能找到的最短可靠路径。</p>
+
+      <div class="tbl-wrap">
+        <table class="cost-table">
+          <thead>
+            <tr><th>指标</th><th>传统循环</th><th>Autobrowse Skill</th><th>改善</th></tr>
+          </thead>
+          <tbody>
+            <tr><td>单次成本</td><td>$0.22</td><td>$0.12</td><td><span class="badge badge-green">-45%</span></td></tr>
+            <tr><td>执行时间</td><td>71s</td><td>27s</td><td><span class="badge badge-green">-62%</span></td></tr>
+            <tr><td>表单填充实验</td><td>$1.40/run</td><td>$0.24/run</td><td><span class="badge badge-green">-83%</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Section 6 -->
+    <section class="section" id="s6">
+      <h2>🎯 适用场景与局限</h2>
+      <p class="lead">Autobrowse 在特定问题形状上非常强大，但在另一种形状上是错误的工具。不用 Autobrowse 的纪律也是使用它的一部分。</p>
+
+      <div class="agent-grid">
+        <div class="card">
+          <h4>✅ 适合 Autobrowse</h4>
+          <p>隐藏/未文档化的 API（需要从网络流量中发现）</p>
+          <p>重度客户端渲染（内容需要交互才出现）</p>
+          <p>多步登录或向导流程</p>
+          <p>最短可靠路径不显而易见的 UI</p>
+          <p>有 token 节省机会的冗余循环</p>
+        </div>
+        <div class="card">
+          <h4>❌ 不适合 Autobrowse</h4>
+          <p>确定性解析任务（静态 HTML 数据在标记中直接可见）</p>
+          <p>一个 167 行的静态目录花了 ~$24 四次迭代仍未完成</p>
+          <p>200 行确定性 Python + BeautifulSoup 亚秒完成</p>
+          <p>规则：先用 <code>fetch</code> 探测，干净返回就写解析器，否则才升级到 Autobrowse</p>
+        </div>
+      </div>
+
+      <div class="block-q">
+        <p>"Autobrowse sits at the high-agency end of that spectrum, and like any high-agency tool, you reach for it once the cheaper, more deterministic options have given up."</p>
+      </div>
+
+      <div class="card">
+        <h4>联邦拨款门户案例</h4>
+        <p>看起来需要爬 28 页的内容，Autobrowse 让 Agent 发现了一个未文档化的 JSON endpoint，返回所有当前拨款信息。28 页爬取坍缩为单次 <code>browse fetch</code>。这种模式反复出现：<strong>Agent 尝试人类不会尝试的东西，发现人类永远看不到的东西。</strong></p>
+      </div>
+    </section>
+
+    <!-- Section 7 -->
+    <section class="section" id="s7">
+      <h2>🔄 工作流革命</h2>
+      <p class="lead">从 "信任 Agent 的输出" 到 "阅读 Agent 的剧本"。</p>
+
+      <p>今天，当一个 Agent 成功完成工作时，客户的工程团队得到一个 trace，也许一个 session 回放，也许一段自然语言推理。这些对实际拥有工作流的人来说都不可读。</p>
+
+      <div class="fail-grid">
+        <div class="card">
+          <div class="icon">📖</div>
+          <h4>可读</h4>
+          <p>工程师和 PM 都能读懂</p>
+        </div>
+        <div class="card">
+          <div class="icon">🔧</div>
+          <h4>可调试</h4>
+          <p>可编辑、可 commit、可 review</p>
+        </div>
+        <div class="card">
+          <div class="icon">📈</div>
+          <h4>可复利</h4>
+          <p>Skill 库随时间增长，Agent 越来越快越来越便宜</p>
+        </div>
+      </div>
+
+      <p>Skill 是一种客户交付物，具有 "交付" 这个词所暗示的全部分量。它是持久的、可调试的、人类可审计的、可拥有的。一个非工程师（技术 PM、技术 VP、了解其门户的拨款经理）也能读懂它，大致理解 Agent 在做什么，而无需接触任何代码。</p>
+
+      <p>复利效应同样重要。Agent 遇到的每个新站点都会产出一个持久的 Skill。库不断增长。Agent 在长尾重复性工作流上变得更便宜更快，因为它不再支付发现税。</p>
+    </section>
+
+    <!-- Section 8 -->
+    <section class="section" id="s8">
+      <h2>🚀 未来方向</h2>
+      <p class="lead">从更智能的停止标准到递归的 Autobrowse — Agent 改进自身改进能力。</p>
+
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Smarter Stopping — 更智能的收敛</div>
+          <div class="tl-desc">让 Agent 不仅比较成本和步骤数，还比较 trace 的结构差异来判断收敛。保留随机变异发现更短路径的概率。</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Better Priors — 更好的探索先验</div>
+          <div class="tl-desc">确保 Agent 在启动完整浏览器 session 之前先用 <code>fetch</code> 和 <code>search</code> 原语探测。高级任务可检查浏览器 trace、网络事件和 CDP 日志。</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Recursive Autobrowse — 递归自我改进</div>
+          <div class="tl-desc">最令人兴奋的方向：用 Autobrowse 改进 Autobrowse 自身 — 更好的 prompt、更好的先验、更好的 Skill 模板。</div>
+        </div>
+      </div>
+
+      <div class="block-q">
+        <p>"Even a perfect model still has to discover (on every new site) what a perfect model would already know if it had been there before. Without a place to put what the agent learns, every run is a fresh start."</p>
+      </div>
+
+      <p>关于浏览器 Agent 的主流叙事是：等底层模型变好就行了。Browserbase 不完全认同。即使是一个完美的模型，如果没有存放学习成果的地方，每次运行都是一个全新的开始。真正的瓶颈是记忆。</p>
+    </section>
+  </div>
+
+  <footer class="footer">
+    <p><a href="../">返回 Hub</a> &middot; 原文：<a href="https://www.browserbase.com/blog/autobrowse" target="_blank">Autobrowse: The Mythos moment for Browser Agents</a></p>
+  </footer>
+</body>
+</html>

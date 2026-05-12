@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Benchmarks are Marathons — 5 倍浏览器性能提升之路</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    :root{
+      --bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;
+      --border:#e2e8f0;--radius:14px;
+      --orange:#ea580c;--orange-light:#fb923c;--amber:#f59e0b;
+      --purple:#6366f1;--green:#10b981;--red:#ef4444;--blue:#3b82f6;--teal:#14b8a6;
+      --mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif;
+    }
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+    .nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;justify-content:space-between;align-items:center;font-size:14px}
+    .nav a{color:var(--text);text-decoration:none;font-weight:600}
+    .nav a:hover{color:var(--orange)}
+    .nav .back{color:var(--text-secondary);font-weight:400}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#7c2d12 50%,#ea580c 100%);color:#fff;padding:80px 24px 60px;text-align:center}
+    .hero h1{font-size:clamp(28px,4vw,44px);font-weight:800;margin-bottom:12px;line-height:1.2}
+    .hero .subtitle{font-size:18px;opacity:.85;max-width:700px;margin:0 auto 8px}
+    .hero .meta{font-size:14px;opacity:.6;margin-bottom:36px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;max-width:800px;margin:0 auto}
+    .stat{background:rgba(255,255,255,.1);border-radius:var(--radius);padding:20px;backdrop-filter:blur(6px)}
+    .stat .num{font-size:32px;font-weight:800;font-family:var(--mono)}
+    .stat .label{font-size:13px;opacity:.7;margin-top:4px}
+    .page{max-width:900px;margin:0 auto;padding:40px 24px 80px}
+    .toc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px;margin-bottom:48px}
+    .toc h3{font-size:15px;color:var(--text-secondary);margin-bottom:16px;text-transform:uppercase;letter-spacing:1px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .toc-grid a{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;background:var(--bg);transition:all .2s}
+    .toc-grid a:hover{background:#fff7ed;color:var(--orange)}
+    .toc-grid .num{font-family:var(--mono);font-size:12px;color:var(--orange);font-weight:700;min-width:22px}
+    .section{margin-bottom:56px}
+    .section h2{font-size:24px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+    .lead{color:var(--text-secondary);font-size:16px;margin-bottom:24px;line-height:1.6}
+    p{margin-bottom:16px}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+    .card h4{font-weight:700;margin-bottom:8px;font-size:16px}
+    .block-q{border-left:4px solid var(--orange);background:#fff7ed;padding:20px 24px;border-radius:0 var(--radius) var(--radius) 0;margin:20px 0;font-size:15px;font-style:italic}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}
+    .compare-card{border-radius:var(--radius);padding:24px;font-size:14px}
+    .compare-card.old{background:#fef2f2;border:2px solid #fecaca}
+    .compare-card.new{background:#f0fdf4;border:2px solid #bbf7d0}
+    .compare-card h4{margin-bottom:10px;font-size:15px}
+    .flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:20px 0;justify-content:center}
+    .flow-step{background:var(--surface);border:2px solid var(--border);border-radius:12px;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;min-width:110px}
+    .flow-step.orange{border-color:var(--orange);background:#fff7ed;color:#7c2d12}
+    .flow-step.green{border-color:var(--green);background:#ecfdf5;color:#065f46}
+    .flow-step.purple{border-color:var(--purple);background:#eef2ff;color:#312e81}
+    .flow-step.blue{border-color:var(--blue);background:#eff6ff;color:#1e40af}
+    .flow-arrow{font-size:22px;color:var(--text-secondary);font-weight:700}
+    .chart{margin:20px 0}
+    .chart-row{display:flex;align-items:center;margin-bottom:10px;gap:12px}
+    .chart-label{min-width:160px;font-size:13px;font-weight:600;text-align:right}
+    .chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}
+    .chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;padding:0 12px;font-size:12px;font-weight:700;color:#fff;transition:width .6s}
+    .chart-bar.orange{background:linear-gradient(90deg,#ea580c,#fb923c)}
+    .chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}
+    .chart-bar.purple{background:linear-gradient(90deg,#6366f1,#818cf8)}
+    .chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .chart-bar.green{background:linear-gradient(90deg,#10b981,#34d399)}
+    .chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+    .chart-bar.teal{background:linear-gradient(90deg,#0d9488,#14b8a6)}
+    .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600}
+    .badge-green{background:#d1fae5;color:#065f46}
+    .badge-red{background:#fee2e2;color:#b91c1c}
+    .badge-orange{background:#ffedd5;color:#9a3412}
+    .badge-purple{background:#e0e7ff;color:#3730a3}
+    .badge-amber{background:#fef3c7;color:#92400e}
+    .timeline{position:relative;padding-left:32px;margin:20px 0}
+    .timeline::before{content:'';position:absolute;left:11px;top:0;bottom:0;width:3px;background:linear-gradient(to bottom,var(--orange),var(--green))}
+    .tl-item{margin-bottom:28px;position:relative}
+    .tl-dot{position:absolute;left:-28px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid var(--orange);background:#fff}
+    .tl-item:nth-child(2) .tl-dot{border-color:var(--purple)}
+    .tl-item:nth-child(3) .tl-dot{border-color:var(--amber)}
+    .tl-item:nth-child(4) .tl-dot{border-color:var(--green)}
+    .tl-item:nth-child(5) .tl-dot{border-color:var(--blue)}
+    .tl-phase{font-weight:700;font-size:15px;margin-bottom:4px}
+    .tl-desc{font-size:14px;color:var(--text-secondary)}
+    .fail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:20px 0}
+    .fail-grid .card{text-align:center;padding:20px}
+    .fail-grid .card .icon{font-size:28px;margin-bottom:8px}
+    .agent-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}
+    .priority-list{list-style:none;padding:0;margin:20px 0}
+    .priority-list li{display:flex;align-items:center;gap:12px;padding:16px 20px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);margin-bottom:10px;font-size:15px;font-weight:600}
+    .priority-list .rank{font-family:var(--mono);font-size:24px;font-weight:800;min-width:36px;text-align:center}
+    code{font-family:var(--mono);background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:13px}
+    .footer{text-align:center;padding:40px 24px;border-top:1px solid var(--border);color:var(--text-secondary);font-size:14px}
+    .footer a{color:var(--orange);text-decoration:none;font-weight:500}
+    .footer a:hover{text-decoration:underline}
+    @media(max-width:768px){
+      .compare-grid,.fail-grid,.agent-grid{grid-template-columns:1fr}
+      .flow{flex-direction:column;gap:6px}
+      .flow-arrow{transform:rotate(90deg)}
+      .chart-label{min-width:100px;font-size:12px}
+      .toc-grid{grid-template-columns:1fr}
+      .stats{grid-template-columns:repeat(2,1fr)}
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a href="../">Browserbase Deep Dives</a>
+    <a href="../" class="back">&larr; Back to Hub</a>
+  </nav>
+
+  <header class="hero">
+    <h1>Benchmarks are Marathons：5 倍性能提升之路</h1>
+    <p class="subtitle">好的 Benchmark 是公平、持续更新的马拉松，不是一次性的营销快照。来自 100M+ 浏览器会话的性能经验。</p>
+    <p class="meta">Paul Klein &middot; 2026-04-30</p>
+    <div class="stats">
+      <div class="stat"><div class="num">5x</div><div class="label">浏览器性能提升</div></div>
+      <div class="stat"><div class="num">100M+</div><div class="label">浏览器会话经验</div></div>
+      <div class="stat"><div class="num">5</div><div class="label">核心经验教训</div></div>
+      <div class="stat"><div class="num">#1</div><div class="label">ComputeSDK 排名</div></div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc">
+      <h3>目录</h3>
+      <div class="toc-grid">
+        <a href="#s1"><span class="num">01</span> 优先级：Security > Reliability > Performance</a>
+        <a href="#s2"><span class="num">02</span> 可观测性是一切</a>
+        <a href="#s3"><span class="num">03</span> RTT 是最重要的指标</a>
+        <a href="#s4"><span class="num">04</span> CDP Connect Time 不说谎</a>
+        <a href="#s5"><span class="num">05</span> 更少的 Hop，更快的速度</a>
+        <a href="#s6"><span class="num">06</span> Goroutines vs Event Loops</a>
+      </div>
+    </nav>
+
+    <!-- Section 1 -->
+    <section class="section" id="s1">
+      <h2>🏆 优先级金字塔</h2>
+      <p class="lead">Browserbase 的工程优先级排序：Security → Reliability → Performance。这个排序解释了为什么 Ramp、Lovable、Stripe 等领先 AI 公司信任 Browserbase。</p>
+
+      <ol class="priority-list">
+        <li><span class="rank" style="color:var(--red)">1</span> Security — 安全第一，永远不妥协</li>
+        <li><span class="rank" style="color:var(--amber)">2</span> Reliability — 可靠性优先于速度</li>
+        <li><span class="rank" style="color:var(--green)">3</span> Performance — 在前两者保障下追求极致性能</li>
+      </ol>
+
+      <div class="block-q">
+        <p>"Performance work starts with humility: if you can't measure it, you're guessing."</p>
+      </div>
+
+      <p>Browserbase 在 ComputeSDK 的新浏览器基准测试中名列前茅，这得益于过去一年在 "无聊" 的基础设施部分持续投入：session 创建、CDP 连接、导航开销和资源回收。</p>
+    </section>
+
+    <!-- Section 2 -->
+    <section class="section" id="s2">
+      <h2>📊 可观测性是一切</h2>
+      <p class="lead">你不能改进你无法测量的东西。性能工作始于谦逊。</p>
+
+      <div class="flow">
+        <div class="flow-step orange">观察真实用户行为</div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step purple">构建反映真实负载的 Benchmark</div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step green">统计分析：真实影响 vs 噪声</div>
+      </div>
+
+      <div class="compare-grid">
+        <div class="compare-card old">
+          <h4>❌ 一次性测量</h4>
+          <p>测一次就停下 = 虚荣指标</p>
+          <p>无法区分真实改善和噪声</p>
+          <p>点到为止的营销快照</p>
+        </div>
+        <div class="compare-card new">
+          <h4>✅ 持续 Benchmark</h4>
+          <p>边开发边持续运行 = 真实指标</p>
+          <p>OpenTelemetry tracing 每个请求</p>
+          <p>自定义 CDP 流量分析工具</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h4>Instrumentation 投资</h4>
+        <p><strong>OpenTelemetry tracing</strong>：为每个请求添加分布式追踪，精确定位延迟来源。</p>
+        <p><strong>CDP 流量分析工具</strong>：定制工具分析 CDP 通信，这通常是 "神秘" 延迟隐藏的地方。</p>
+        <p>最重要的：benchmark 不是一次性练习。唯一重要的 benchmark 是你在持续发布时仍在运行的那些。</p>
+      </div>
+    </section>
+
+    <!-- Section 3 -->
+    <section class="section" id="s3">
+      <h2>🌐 RTT 是最重要的指标</h2>
+      <p class="lead">对于远程浏览器，Round-Trip Latency (RTT) 是所有指标之王。CDP 的 "话痨" 特性让 RTT 的影响被放大。</p>
+
+      <div class="card">
+        <h4>CDP 是一个 Chatty Protocol</h4>
+        <p>加载一个页面可能意味着<strong>数千次 CDP 请求</strong>。如果你的客户端执行 request/response 工作（如路由、拦截或 instrumentation），页面加载通常依赖于对客户端的多次往返。</p>
+      </div>
+
+      <div class="chart">
+        <div class="chart-row">
+          <div class="chart-label">RTT 影响：1000 条命令</div>
+          <div class="chart-bar-wrap">
+            <div class="chart-bar red" style="width:100%">150ms RTT = 150s 额外等待</div>
+          </div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-label">就近部署后</div>
+          <div class="chart-bar-wrap">
+            <div class="chart-bar green" style="width:3%">3ms RTT = 3s 额外等待</div>
+          </div>
+        </div>
+      </div>
+
+      <div class="block-q">
+        <p>"Putting a browser closer to your agent can matter as much as any micro-optimization inside Chromium."</p>
+      </div>
+    </section>
+
+    <!-- Section 4 -->
+    <section class="section" id="s4">
+      <h2>⏱️ CDP Connect Time 不说谎</h2>
+      <p class="lead">"赢" benchmark 最简单的方法是让 create 看起来很快 — 然后把真正的工作推迟到后面。如果你单独测量 connect time，这种手法会立刻暴露。</p>
+
+      <div class="agent-grid">
+        <div class="card">
+          <h4>延迟配置（看起来快）</h4>
+          <p>把配置推迟到 connect — 你看起来快了，直到第一个真实用户操作</p>
+          <p><span class="badge badge-red">不确定性行为</span></p>
+        </div>
+        <div class="card">
+          <h4>提前配置（Browserbase 方式）</h4>
+          <p>在 create 阶段完成所有配置 — 如果有问题，早期失败</p>
+          <p><span class="badge badge-green">确定性行为</span></p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h4>重试行为差异</h4>
+        <p><strong>HTTP 请求库</strong>通常会自动重试 create 阶段的短暂 500 错误。</p>
+        <p><strong>CDP 连接重试</strong>通常不内置在常见浏览器框架（如 Playwright）中。</p>
+        <p>Browserbase 的哲学：<strong>提前配置浏览器，如果有问题就提前失败</strong>，而不是在连接时才失败。</p>
+      </div>
+    </section>
+
+    <!-- Section 5 -->
+    <section class="section" id="s5">
+      <h2>🔗 更少的 Hop，更快的速度</h2>
+      <p class="lead">浏览器基础设施本质上是 "WebSockets as a Service"。每一层代理和负载均衡器都在增加延迟。</p>
+
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Load Balancers</div>
+          <div class="tl-desc">流量入口的负载均衡层</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Reverse Proxies</div>
+          <div class="tl-desc">反向代理层增加处理延迟</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Service Meshes</div>
+          <div class="tl-desc">服务网格的 sidecar 开销</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Application-Layer WebSocket Proxies</div>
+          <div class="tl-desc">应用层 WebSocket 代理 — 这是移除后收益最大的层</div>
+        </div>
+      </div>
+
+      <div class="block-q">
+        <p>"A major unlock for us was ruthlessly removing unnecessary hops — especially application-layer WebSocket proxies."</p>
+      </div>
+
+      <p>每一个 hop 增加的不仅仅是 "光速" RTT，还有真实的计算延迟。客户持有长连接并通过你的协议栈发送事件。随着系统成熟，团队很容易在遗留路径上堆叠越来越多的层。Browserbase 的关键突破是无情地移除不必要的 hop。</p>
+    </section>
+
+    <!-- Section 6 -->
+    <section class="section" id="s6">
+      <h2>⚡ Goroutines vs Event Loops</h2>
+      <p class="lead">CDP 流量天生是突发性的。当页面加载或动画播放时，短时间内会产生数千个事件。选择正确的并发模型至关重要。</p>
+
+      <div class="compare-grid">
+        <div class="compare-card new">
+          <h4>Go Goroutines</h4>
+          <p>在 burst 和 fan-out 场景下，Go 的并发模型（goroutines）简单地更适合热路径的 WebSocket 和 CDP 代理</p>
+          <p><span class="badge badge-green">适合热路径</span></p>
+        </div>
+        <div class="compare-card old">
+          <h4>单线程 Event Loop</h4>
+          <p>在 burst 场景下，单事件循环模型在尾部延迟方面表现不如 goroutine 模型</p>
+          <p><span class="badge badge-amber">通用场景仍可用</span></p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h4>关键洞察</h4>
+        <p>这不意味着 "Go 好，Node 差"。而是说：<strong>应该为承载最多数据包的路径选择正确的工具</strong>。CDP 流量的突发性和 fan-out 特性让 goroutine 模型在热路径上有天然优势。</p>
+      </div>
+
+      <div class="fail-grid">
+        <div class="card">
+          <div class="icon">🔄</div>
+          <h4>迭代式改进</h4>
+          <p>修复一个瓶颈通常会暴露下一个</p>
+        </div>
+        <div class="card">
+          <div class="icon">🎯</div>
+          <h4>追逐最慢的部分</h4>
+          <p>持续追逐系统中最慢的部分</p>
+        </div>
+        <div class="card">
+          <div class="icon">🏗️</div>
+          <h4>架构极限</h4>
+          <p>最终发现架构真正的能力和瓶颈</p>
+        </div>
+      </div>
+
+      <div class="block-q">
+        <p>"Performance work is iterative: fixing one bottleneck usually reveals the next one. There are rarely silver bullets. But that's also why it's fun."</p>
+      </div>
+    </section>
+  </div>
+
+  <footer class="footer">
+    <p><a href="../">返回 Hub</a> &middot; 原文：<a href="https://www.browserbase.com/blog/benchmarks-are-marathons" target="_blank">Benchmarks are marathons, here's how we 5x'd our browser performance</a></p>
+  </footer>
+</body>
+</html>

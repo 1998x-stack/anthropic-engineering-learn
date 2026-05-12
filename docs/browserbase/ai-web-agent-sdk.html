@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Stagehand — AI Web Agent SDK</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    :root{
+      --bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;
+      --border:#e2e8f0;--radius:14px;
+      --orange:#ea580c;--orange-light:#fb923c;--amber:#f59e0b;
+      --purple:#6366f1;--green:#10b981;--red:#ef4444;--blue:#3b82f6;--teal:#14b8a6;
+      --mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif;
+    }
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+    .nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;justify-content:space-between;align-items:center;font-size:14px}
+    .nav a{color:var(--text);text-decoration:none;font-weight:600}
+    .nav a:hover{color:var(--orange)}
+    .nav .back{color:var(--text-secondary);font-weight:400}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#7c2d12 50%,#ea580c 100%);color:#fff;padding:80px 24px 60px;text-align:center}
+    .hero h1{font-size:clamp(28px,4vw,44px);font-weight:800;margin-bottom:12px;line-height:1.2}
+    .hero .subtitle{font-size:18px;opacity:.85;max-width:720px;margin:0 auto 8px}
+    .hero .meta{font-size:14px;opacity:.6;margin-bottom:36px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;max-width:800px;margin:0 auto}
+    .stat{background:rgba(255,255,255,.1);border-radius:var(--radius);padding:20px;backdrop-filter:blur(6px)}
+    .stat .num{font-size:32px;font-weight:800;font-family:var(--mono)}
+    .stat .label{font-size:13px;opacity:.7;margin-top:4px}
+    .page{max-width:900px;margin:0 auto;padding:40px 24px 80px}
+    .toc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px;margin-bottom:48px}
+    .toc h3{font-size:15px;color:var(--text-secondary);margin-bottom:16px;text-transform:uppercase;letter-spacing:1px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .toc-grid a{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;background:var(--bg);transition:all .2s}
+    .toc-grid a:hover{background:#fff7ed;color:var(--orange)}
+    .toc-grid .num{font-family:var(--mono);font-size:12px;color:var(--orange);font-weight:700;min-width:22px}
+    .section{margin-bottom:56px}
+    .section h2{font-size:24px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+    .lead{color:var(--text-secondary);font-size:16px;margin-bottom:24px;line-height:1.6}
+    p{margin-bottom:16px}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+    .card h4{font-weight:700;margin-bottom:8px;font-size:16px}
+    .block-q{border-left:4px solid var(--orange);background:#fff7ed;padding:20px 24px;border-radius:0 var(--radius) var(--radius) 0;margin:20px 0;font-size:15px;font-style:italic}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}
+    .compare-card{border-radius:var(--radius);padding:24px;font-size:14px}
+    .compare-card.old{background:#fef2f2;border:2px solid #fecaca}
+    .compare-card.new{background:#f0fdf4;border:2px solid #bbf7d0}
+    .compare-card.neutral{background:#eff6ff;border:2px solid #bfdbfe}
+    .compare-card h4{margin-bottom:10px;font-size:15px}
+    .three-col{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:20px 0}
+    .three-col .card{text-align:center}
+    .flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:20px 0;justify-content:center}
+    .flow-step{background:var(--surface);border:2px solid var(--border);border-radius:12px;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;min-width:110px}
+    .flow-step.orange{border-color:var(--orange);background:#fff7ed;color:#7c2d12}
+    .flow-step.green{border-color:var(--green);background:#ecfdf5;color:#065f46}
+    .flow-step.purple{border-color:var(--purple);background:#eef2ff;color:#312e81}
+    .flow-step.blue{border-color:var(--blue);background:#eff6ff;color:#1e40af}
+    .flow-step.amber{border-color:var(--amber);background:#fffbeb;color:#92400e}
+    .flow-arrow{font-size:22px;color:var(--text-secondary);font-weight:700}
+    .chart{margin:20px 0}
+    .chart-row{display:flex;align-items:center;margin-bottom:10px;gap:12px}
+    .chart-label{min-width:160px;font-size:13px;font-weight:600;text-align:right}
+    .chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}
+    .chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;padding:0 12px;font-size:12px;font-weight:700;color:#fff;transition:width .6s}
+    .chart-bar.orange{background:linear-gradient(90deg,#ea580c,#fb923c)}
+    .chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}
+    .chart-bar.purple{background:linear-gradient(90deg,#6366f1,#818cf8)}
+    .chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .chart-bar.green{background:linear-gradient(90deg,#10b981,#34d399)}
+    .chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+    .chart-bar.teal{background:linear-gradient(90deg,#0d9488,#14b8a6)}
+    .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600}
+    .badge-green{background:#d1fae5;color:#065f46}
+    .badge-red{background:#fee2e2;color:#b91c1c}
+    .badge-orange{background:#ffedd5;color:#9a3412}
+    .badge-purple{background:#e0e7ff;color:#3730a3}
+    .badge-amber{background:#fef3c7;color:#92400e}
+    .badge-blue{background:#dbeafe;color:#1e40af}
+    .timeline{position:relative;padding-left:32px;margin:20px 0}
+    .timeline::before{content:'';position:absolute;left:11px;top:0;bottom:0;width:3px;background:linear-gradient(to bottom,var(--orange),var(--purple))}
+    .tl-item{margin-bottom:28px;position:relative}
+    .tl-dot{position:absolute;left:-28px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid var(--orange);background:#fff}
+    .tl-item:nth-child(2) .tl-dot{border-color:var(--purple)}
+    .tl-item:nth-child(3) .tl-dot{border-color:var(--amber)}
+    .tl-item:nth-child(4) .tl-dot{border-color:var(--green)}
+    .tl-phase{font-weight:700;font-size:15px;margin-bottom:4px}
+    .tl-desc{font-size:14px;color:var(--text-secondary)}
+    .fail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:20px 0}
+    .fail-grid .card{text-align:center;padding:20px}
+    .fail-grid .card .icon{font-size:28px;margin-bottom:8px}
+    .agent-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}
+    code{font-family:var(--mono);background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:13px}
+    .code-block{background:#1e293b;color:#e2e8f0;padding:20px 24px;border-radius:var(--radius);font-family:var(--mono);font-size:13px;line-height:1.6;overflow-x:auto;margin:20px 0;white-space:pre}
+    .code-block .kw{color:#c084fc}
+    .code-block .str{color:#86efac}
+    .code-block .cmt{color:#64748b}
+    .footer{text-align:center;padding:40px 24px;border-top:1px solid var(--border);color:var(--text-secondary);font-size:14px}
+    .footer a{color:var(--orange);text-decoration:none;font-weight:500}
+    .footer a:hover{text-decoration:underline}
+    @media(max-width:768px){
+      .compare-grid,.fail-grid,.agent-grid,.three-col{grid-template-columns:1fr}
+      .flow{flex-direction:column;gap:6px}
+      .flow-arrow{transform:rotate(90deg)}
+      .chart-label{min-width:100px;font-size:12px}
+      .toc-grid{grid-template-columns:1fr}
+      .stats{grid-template-columns:repeat(2,1fr)}
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a href="../">Browserbase Deep Dives</a>
+    <a href="../" class="back">&larr; Back to Hub</a>
+  </nav>
+
+  <header class="hero">
+    <h1>Stagehand：AI Web Agent SDK</h1>
+    <p class="subtitle">在脆弱的传统自动化和不可预测的全 Agent 方案之间，Stagehand 提供精确控制 + 动态灵活性的最佳平衡</p>
+    <p class="meta">Anirudh Kamath &middot; 2025-04-07</p>
+    <div class="stats">
+      <div class="stat"><div class="num">3</div><div class="label">核心原语 (Primitives)</div></div>
+      <div class="stat"><div class="num">MCP</div><div class="label">协议集成</div></div>
+      <div class="stat"><div class="num">A11y</div><div class="label">Chrome Accessibility Tree</div></div>
+      <div class="stat"><div class="num">OSS</div><div class="label">开源框架</div></div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc">
+      <h3>目录</h3>
+      <div class="toc-grid">
+        <a href="#s1"><span class="num">01</span> 设计哲学：控制 + 灵活性</a>
+        <a href="#s2"><span class="num">02</span> 核心原语 (Primitives)</a>
+        <a href="#s3"><span class="num">03</span> 三种自动化方案对比</a>
+        <a href="#s4"><span class="num">04</span> 构建中的关键发现</a>
+        <a href="#s5"><span class="num">05</span> MCP 集成</a>
+        <a href="#s6"><span class="num">06</span> 开源与未来</a>
+      </div>
+    </nav>
+
+    <!-- Section 1 -->
+    <section class="section" id="s1">
+      <h2>🎯 设计哲学：控制 + 灵活性</h2>
+      <p class="lead">传统自动化框架精确但脆弱；全 Agent 方案灵活但不可预测。Stagehand 提供两者的最佳组合。</p>
+
+      <div class="flow">
+        <div class="flow-step red" style="border-color:var(--red);background:#fef2f2;color:#991b1b">Playwright / Selenium<br><span style="font-weight:400;font-size:12px">精确但脆弱</span></div>
+        <div class="flow-arrow">&larr;</div>
+        <div class="flow-step orange">Stagehand<br><span style="font-weight:400;font-size:12px">精确 + 灵活</span></div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step amber">OpenAI Operator<br><span style="font-weight:400;font-size:12px">灵活但不可预测</span></div>
+      </div>
+
+      <div class="compare-grid">
+        <div class="compare-card old">
+          <h4>传统自动化的痛点</h4>
+          <p>Playwright、Puppeteer、Selenium 在执行显式命令时很棒</p>
+          <p>但 UI 稍有变化就可能导致整个脚本崩溃</p>
+          <p>一个小的 UI 调整 = 手忙脚乱地修复脆弱代码</p>
+        </div>
+        <div class="compare-card old" style="background:#fffbeb;border-color:#fde68a">
+          <h4>全 Agent 的痛点</h4>
+          <p>OpenAI Operator 等承诺从 prompt 完成全部自动化</p>
+          <p>但开发者失去了对交互细节的控制</p>
+          <p>不可预测的结果 = 不适合生产环境</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2 -->
+    <section class="section" id="s2">
+      <h2>🧩 核心原语 (Primitives)</h2>
+      <p class="lead">三个原子级原语 + 一个动态 Agent — 从构建块到高层编排的完整能力栈。</p>
+
+      <div class="fail-grid">
+        <div class="card">
+          <div class="icon">👆</div>
+          <h4>act()</h4>
+          <p>精确的一对一浏览器操作 — "点击这个按钮"、"输入这段文字"</p>
+          <p><span class="badge badge-orange">不再递归循环</span></p>
+        </div>
+        <div class="card">
+          <div class="icon">📤</div>
+          <h4>extract()</h4>
+          <p>结构化数据提取 — 配合 Zod schema 返回类型安全的数据</p>
+          <p><span class="badge badge-purple">Schema 驱动</span></p>
+        </div>
+        <div class="card">
+          <div class="icon">👁️</div>
+          <h4>observe()</h4>
+          <p>观察页面状态 — 返回可用操作列表，Gemini 在此表现最佳</p>
+          <p><span class="badge badge-blue">状态感知</span></p>
+        </div>
+      </div>
+
+      <div class="code-block"><span class="cmt">// 原子操作：精确控制</span>
+<span class="kw">await</span> page.act(<span class="str">"click on the contributors selection"</span>);
+
+<span class="kw">const</span> { title } = <span class="kw">await</span> page.extract({
+  instruction: <span class="str">"the top contributor's username"</span>,
+  schema: z.object({
+    title: z.string(),
+  }),
+});</div>
+
+      <div class="card">
+        <h4>agent() — 动态 Agent</h4>
+        <p>处理复杂的多步工作流，将高级指令分解为浏览器命令序列。<strong>agent() 缓存预览步骤</strong>以减少 LLM 调用并优化性能 — 仅在缓存的操作失败时才发起新调用。</p>
+      </div>
+
+      <div class="code-block"><span class="cmt">// 高级编排：动态 Agent</span>
+<span class="kw">const</span> { message, actions } = <span class="kw">await</span> stagehand.agent.execute(
+  <span class="str">"Extract the top contributor's username"</span>
+);</div>
+    </section>
+
+    <!-- Section 3 -->
+    <section class="section" id="s3">
+      <h2>⚖️ 三种自动化方案对比</h2>
+      <p class="lead">同一个任务（填写表单 + 提取 Lead 数据）在三种方案下的表现。</p>
+
+      <div class="chart">
+        <div class="chart-row">
+          <div class="chart-label">控制精度</div>
+          <div class="chart-bar-wrap"><div class="chart-bar red" style="width:95%">Playwright：显式代码控制每个元素</div></div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-label"></div>
+          <div class="chart-bar-wrap"><div class="chart-bar orange" style="width:85%">Stagehand：原语 + Agent 混合控制</div></div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-label"></div>
+          <div class="chart-bar-wrap"><div class="chart-bar amber" style="width:30%">Operator：自然语言，低控制</div></div>
+        </div>
+      </div>
+      <div class="chart">
+        <div class="chart-row">
+          <div class="chart-label">UI 变化韧性</div>
+          <div class="chart-bar-wrap"><div class="chart-bar red" style="width:20%">Playwright：任何变化都可能崩溃</div></div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-label"></div>
+          <div class="chart-bar-wrap"><div class="chart-bar green" style="width:90%">Stagehand：多维 Self-Healing</div></div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-label"></div>
+          <div class="chart-bar-wrap"><div class="chart-bar amber" style="width:70%">Operator：自适应但不可预测</div></div>
+        </div>
+      </div>
+
+      <div class="three-col">
+        <div class="card">
+          <h4>Playwright</h4>
+          <p>写显式代码导航到表单、识别每个字段、输入数据、提交</p>
+          <p><span class="badge badge-red">UI 变化 = 脚本崩溃</span></p>
+        </div>
+        <div class="card" style="border-color:var(--orange)">
+          <h4>Stagehand</h4>
+          <p>用 <code>act</code>、<code>extract</code>、<code>observe</code> 发出精确命令 + <code>agent()</code> 做高级编排</p>
+          <p><span class="badge badge-green">精确 + 韧性</span></p>
+        </div>
+        <div class="card">
+          <h4>OpenAI Operator</h4>
+          <p>自然语言指令："填写表单并提取 Lead 信息"</p>
+          <p><span class="badge badge-amber">可能有效但不可控</span></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 4 -->
+    <section class="section" id="s4">
+      <h2>🔬 构建中的关键发现</h2>
+      <p class="lead">从 Raw DOM 到 Accessibility Tree，从单一 LLM 到最佳选型 — Stagehand 团队在构建过程中的三大发现。</p>
+
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">从 Raw DOM 到 Chrome Accessibility Tree</div>
+          <div class="tl-desc">最初依赖解析原始 DOM，后来发现 Chrome Accessibility Tree 提供了更干净、更可靠的页面视图，过滤掉了不必要的噪声。从可选标志变成新版本的默认行为。</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">理解 LLM 行为差异</div>
+          <div class="tl-desc">Claude 擅长高级推理（适合动态决策）；GPT-4o 适合执行具体浏览器操作；Gemini 在结构化输出上挣扎但在 <code>observe()</code> 上表现出色。</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">多维 Self-Healing</div>
+          <div class="tl-desc">如果单个元素变化，可以重新检查页面找到替代。但如果按钮完全消失呢？Stagehand 的多维 Self-Healing 让完整 Agent 介入，重新评估整体目标并使用当前上下文决定如何完成任务。</div>
+        </div>
+      </div>
+
+      <div class="agent-grid">
+        <div class="card">
+          <h4>LLM 最佳选型</h4>
+          <div class="chart" style="margin:12px 0 0">
+            <div class="chart-row">
+              <div class="chart-label" style="min-width:80px">Claude</div>
+              <div class="chart-bar-wrap"><div class="chart-bar purple" style="width:90%">高级推理、动态决策</div></div>
+            </div>
+            <div class="chart-row">
+              <div class="chart-label" style="min-width:80px">GPT-4o</div>
+              <div class="chart-bar-wrap"><div class="chart-bar green" style="width:85%">浏览器操作执行</div></div>
+            </div>
+            <div class="chart-row">
+              <div class="chart-label" style="min-width:80px">Gemini</div>
+              <div class="chart-bar-wrap"><div class="chart-bar amber" style="width:70%">observe() 专长</div></div>
+            </div>
+          </div>
+        </div>
+        <div class="card">
+          <h4>Self-Healing 层级</h4>
+          <p><strong>Level 1</strong>：元素变化 → 重新检查页面找替代</p>
+          <p><strong>Level 2</strong>：按钮消失 → 没有明确替代</p>
+          <p><strong>Level 3</strong>：完整 Agent 介入 → 重新评估目标</p>
+          <p><span class="badge badge-green">最小化停机时间</span></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 5 -->
+    <section class="section" id="s5">
+      <h2>🔗 MCP 集成</h2>
+      <p class="lead">通过 Model Context Protocol (MCP) 将 Stagehand 的能力带给任何外部 LLM — 与 Claude 结合提供比 OpenAI Operator 更可控可靠的替代方案。</p>
+
+      <div class="flow">
+        <div class="flow-step purple">外部 LLM (Claude)</div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step orange">Stagehand MCP Server</div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step green">结构化浏览器操作序列</div>
+      </div>
+
+      <div class="card">
+        <h4>MCP 如何工作</h4>
+        <p>当你给一个有 Stagehand MCP 访问权限的 Agent 发出指令时，它将自然语言 prompt 翻译成<strong>结构化的、可复现的浏览器操作序列</strong>。这等同于一个更可控、更可靠的 OpenAI Operator 替代方案。</p>
+        <p>Browserbase 是开源 MCP 社区的先驱 — 2024 年 11 月首次发布 MCP server。</p>
+      </div>
+
+      <div class="compare-grid">
+        <div class="compare-card new">
+          <h4>Claude + Stagehand MCP</h4>
+          <p>自然语言 → 结构化操作序列</p>
+          <p>可复现、可调试、可控</p>
+          <p><span class="badge badge-green">生产级可靠性</span></p>
+        </div>
+        <div class="compare-card old" style="background:#fffbeb;border-color:#fde68a">
+          <h4>OpenAI Operator</h4>
+          <p>自然语言 → 不透明操作</p>
+          <p>黑盒行为、难以调试</p>
+          <p><span class="badge badge-amber">不可预测</span></p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 6 -->
+    <section class="section" id="s6">
+      <h2>🚀 开源与未来</h2>
+      <p class="lead">信任和透明度是创建新 AI 能力的关键 — 开源是实现这一目标的最佳方式。</p>
+
+      <div class="fail-grid">
+        <div class="card">
+          <div class="icon">🔓</div>
+          <h4>开源透明</h4>
+          <p>开发者可以理解自动化如何工作、按需定制、建议改进</p>
+        </div>
+        <div class="card">
+          <div class="icon">👥</div>
+          <h4>活跃社区</h4>
+          <p>持续贡献、完善、创新的开发者社区</p>
+        </div>
+        <div class="card">
+          <div class="icon">📚</div>
+          <h4>完善文档</h4>
+          <p>全面的文档、团队活跃支持、定期社区反馈</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h4>未来愿景：Mini-Agent 生态系统</h4>
+        <p>想象一个 mini-agent 生态系统 — 每个 agent 专精于自己的领域（表单填充、图像识别、数据提取等），但协同完成复杂任务。这种微服务式的方法随着 MCP 的势头正在成为现实。</p>
+        <p>或者，我们可能达到一个单一的高度 agentic AI 无需辅助就能执行所有操作的状态。无论未来如何，Stagehand 将随之进化。</p>
+      </div>
+
+      <div class="block-q">
+        <p>"Today, developers need both control over the workflow and relief from the tedious details, and that's the balance we wanted to strike with Stagehand 2.0."</p>
+      </div>
+    </section>
+  </div>
+
+  <footer class="footer">
+    <p><a href="../">返回 Hub</a> &middot; 原文：<a href="https://www.browserbase.com/blog/ai-web-agent-sdk" target="_blank">Stagehand gets even better - The AI Web Agent SDK</a></p>
+  </footer>
+</body>
+</html>

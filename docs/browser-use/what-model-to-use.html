@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Browser Use 该用什么 LLM？权威 Benchmark</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    :root{
+      --bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;
+      --border:#e2e8f0;--radius:14px;
+      --teal:#0d9488;--teal-light:#14b8a6;--purple:#6366f1;--amber:#f59e0b;
+      --green:#10b981;--red:#ef4444;--blue:#3b82f6;
+      --mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif;
+    }
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+    .nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;justify-content:space-between;align-items:center;font-size:14px}
+    .nav a{color:var(--text);text-decoration:none;font-weight:600}
+    .nav a:hover{color:var(--teal)}
+    .nav .back{color:var(--text-secondary);font-weight:400}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#134e4a 50%,#0d9488 100%);color:#fff;padding:80px 24px 60px;text-align:center}
+    .hero h1{font-size:clamp(28px,4vw,42px);font-weight:800;margin-bottom:12px;line-height:1.2}
+    .hero .subtitle{font-size:18px;opacity:.85;max-width:700px;margin:0 auto 8px}
+    .hero .meta{font-size:14px;opacity:.6;margin-bottom:36px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;max-width:800px;margin:0 auto}
+    .stat{background:rgba(255,255,255,.1);border-radius:var(--radius);padding:20px;backdrop-filter:blur(6px)}
+    .stat .num{font-size:32px;font-weight:800;font-family:var(--mono)}
+    .stat .label{font-size:13px;opacity:.7;margin-top:4px}
+    .page{max-width:900px;margin:0 auto;padding:40px 24px 80px}
+    .toc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px;margin-bottom:48px}
+    .toc h3{font-size:15px;color:var(--text-secondary);margin-bottom:16px;text-transform:uppercase;letter-spacing:1px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .toc-grid a{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;background:var(--bg);transition:all .2s}
+    .toc-grid a:hover{background:#f0fdfa;color:var(--teal)}
+    .toc-grid .num{font-family:var(--mono);font-size:12px;color:var(--teal);font-weight:700;min-width:22px}
+    .section{margin-bottom:56px}
+    .section h2{font-size:24px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+    .lead{color:var(--text-secondary);font-size:16px;margin-bottom:24px;line-height:1.6}
+    p{margin-bottom:16px}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+    .card h4{font-weight:700;margin-bottom:8px;font-size:16px}
+    .block-q{border-left:4px solid var(--teal);background:#f0fdfa;padding:20px 24px;border-radius:0 var(--radius) var(--radius) 0;margin:20px 0;font-size:15px;font-style:italic}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}
+    .compare-card{border-radius:var(--radius);padding:24px;font-size:14px}
+    .compare-card.old{background:#fef2f2;border:2px solid #fecaca}
+    .compare-card.new{background:#f0fdf4;border:2px solid #bbf7d0}
+    .compare-card h4{margin-bottom:10px;font-size:15px}
+    .flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:20px 0;justify-content:center}
+    .flow-step{background:var(--surface);border:2px solid var(--border);border-radius:12px;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;min-width:110px}
+    .flow-step.teal{border-color:var(--teal);background:#f0fdfa;color:#134e4a}
+    .flow-step.purple{border-color:var(--purple);background:#eef2ff;color:#312e81}
+    .flow-step.green{border-color:var(--green);background:#ecfdf5;color:#065f46}
+    .flow-step.amber{border-color:var(--amber);background:#fffbeb;color:#92400e}
+    .flow-arrow{font-size:22px;color:var(--text-secondary);font-weight:700}
+    .chart{margin:20px 0}
+    .chart-row{display:flex;align-items:center;margin-bottom:10px;gap:12px}
+    .chart-label{min-width:160px;font-size:13px;font-weight:600;text-align:right}
+    .chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}
+    .chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;padding:0 12px;font-size:12px;font-weight:700;color:#fff;transition:width .6s}
+    .chart-bar.teal{background:linear-gradient(90deg,#0d9488,#14b8a6)}
+    .chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+    .chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}
+    .chart-bar.purple{background:linear-gradient(90deg,#6366f1,#818cf8)}
+    .chart-bar.green{background:linear-gradient(90deg,#10b981,#34d399)}
+    .chart-bar.slate{background:linear-gradient(90deg,#475569,#64748b)}
+    .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600}
+    .badge-teal{background:#ccfbf1;color:#0f766e}
+    .badge-red{background:#fee2e2;color:#b91c1c}
+    .badge-green{background:#d1fae5;color:#065f46}
+    .badge-purple{background:#e0e7ff;color:#3730a3}
+    .badge-amber{background:#fef3c7;color:#92400e}
+    .badge-blue{background:#dbeafe;color:#1e40af}
+    .timeline{position:relative;padding-left:32px;margin:20px 0}
+    .timeline::before{content:'';position:absolute;left:11px;top:0;bottom:0;width:3px;background:linear-gradient(to bottom,var(--teal),var(--purple))}
+    .tl-item{margin-bottom:28px;position:relative}
+    .tl-dot{position:absolute;left:-28px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid var(--teal);background:#fff}
+    .tl-item:nth-child(2) .tl-dot{border-color:var(--purple)}
+    .tl-item:nth-child(3) .tl-dot{border-color:var(--amber)}
+    .tl-item:nth-child(4) .tl-dot{border-color:var(--green)}
+    .tl-item:nth-child(5) .tl-dot{border-color:var(--blue)}
+    .tl-phase{font-weight:700;font-size:15px;margin-bottom:4px}
+    .tl-desc{font-size:14px;color:var(--text-secondary)}
+    .fail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:20px 0}
+    .fail-grid .card{text-align:center;padding:18px}
+    .fail-grid .card .icon{font-size:28px;margin-bottom:8px}
+    .agent-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin:20px 0}
+    .tbl-wrap{overflow-x:auto;margin:20px 0}
+    table{width:100%;border-collapse:collapse;font-size:14px}
+    th,td{padding:12px 16px;text-align:left;border-bottom:1px solid var(--border)}
+    th{font-weight:700;background:var(--bg);font-size:13px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-secondary)}
+    tr:hover td{background:#f8fafc}
+    .highlight-row td{background:#f0fdfa;font-weight:600}
+    .model-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px;border-left:4px solid var(--border)}
+    .model-card h4{font-weight:700;margin-bottom:4px;font-size:18px;display:flex;align-items:center;gap:8px}
+    .model-card .score{font-family:var(--mono);font-size:28px;font-weight:800;margin:8px 0}
+    .model-card .verdict{background:var(--bg);padding:12px 16px;border-radius:10px;font-size:14px;margin-top:12px}
+    .model-card .verdict strong{color:var(--teal)}
+    code{font-family:var(--mono);background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:13px}
+    .footer{text-align:center;padding:40px 24px;border-top:1px solid var(--border);color:var(--text-secondary);font-size:14px}
+    .footer a{color:var(--teal);text-decoration:none;font-weight:500}
+    .footer a:hover{text-decoration:underline}
+    .rec-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin:20px 0}
+    .rec-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;font-size:14px}
+    .rec-card h4{font-size:14px;font-weight:700;margin-bottom:8px;color:var(--teal)}
+    @media(max-width:768px){
+      .compare-grid,.agent-grid,.rec-grid{grid-template-columns:1fr}
+      .fail-grid{grid-template-columns:repeat(2,1fr)}
+      .flow{flex-direction:column;gap:6px}
+      .flow-arrow{transform:rotate(90deg)}
+      .chart-label{min-width:110px;font-size:12px}
+      .toc-grid{grid-template-columns:1fr}
+      .stats{grid-template-columns:repeat(2,1fr)}
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a href="../">Browser Use Deep Dives</a>
+    <a href="../" class="back">&larr; Back to Hub</a>
+  </nav>
+
+  <header class="hero">
+    <h1>Browser Use 该用什么 LLM？</h1>
+    <p class="subtitle">统计严谨的 Benchmark——对比速度、成本和准确率，覆盖所有主流 Frontier 模型。</p>
+    <p class="meta">Alexander Yue &middot; 2026-02-19</p>
+    <div class="stats">
+      <div class="stat"><div class="num">78%</div><div class="label">bu-ultra 最高准确率</div></div>
+      <div class="stat"><div class="num">600K+</div><div class="label">评测系统运行任务数</div></div>
+      <div class="stat"><div class="num">100</div><div class="label">手选任务数</div></div>
+      <div class="stat"><div class="num">87%</div><div class="label">LLM Judge 与人类一致率</div></div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+        <a href="#s1"><span class="num">01</span>Benchmark 方法论</a>
+        <a href="#s2"><span class="num">02</span>总排名</a>
+        <a href="#s3"><span class="num">03</span>模型逐一分析</a>
+        <a href="#s4"><span class="num">04</span>选型建议</a>
+      </div>
+    </nav>
+
+    <!-- Section 1 -->
+    <section class="section" id="s1">
+      <h2>🧪 Benchmark 方法论</h2>
+      <p class="lead">一次测试在混乱的真实 Web 上毫无意义——多次运行 + 统计 Bootstrap 才能给出真正的 Error Bar。</p>
+
+      <div class="card">
+        <h4>评测设计</h4>
+        <p>100 个手选任务来自 5 个来源（Custom、WebBench、Mind2Web 2、GAIA、BrowseComp）。每个任务都很难但经过验证可完成。每个模型运行多次，使用统计 Bootstrap 聚合，得到真正的误差线。</p>
+      </div>
+
+      <div class="flow">
+        <div class="flow-step">5 个任务来源</div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step teal">100 个手选任务</div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step purple">多次运行</div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step green">Bootstrap 聚合</div>
+      </div>
+
+      <div class="agent-grid">
+        <div class="card">
+          <h4>三种运行模式</h4>
+          <p><span class="badge badge-teal">Cloud</span> 全托管 Browser Use Cloud Agent<br>
+          <span class="badge badge-purple">OSS + Cloud LLM</span> 开源库 + BU 模型<br>
+          <span class="badge badge-blue">Open Source</span> 开源库 + 第三方 LLM</p>
+        </div>
+        <div class="card">
+          <h4>LLM Judge</h4>
+          <p>评测系统已运行超过 60 万任务。LLM Judge 与人类标注的一致率达到 <strong>87%</strong>——接近人类之间的一致率。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2 -->
+    <section class="section" id="s2">
+      <h2>🏆 总排名</h2>
+      <p class="lead">Browser Use Cloud (bu-ultra) 以 78% 遥遥领先，比最佳 Frontier 模型高出 16 个百分点。</p>
+
+      <div class="chart">
+        <div class="chart-row"><div class="chart-label">bu-ultra (Cloud)</div><div class="chart-bar-wrap"><div class="chart-bar teal" style="width:78%">78.0%</div></div></div>
+        <div class="chart-row"><div class="chart-label">ChatBrowserUse-2</div><div class="chart-bar-wrap"><div class="chart-bar green" style="width:63.3%">63.3%</div></div></div>
+        <div class="chart-row"><div class="chart-label">claude-opus-4-6</div><div class="chart-bar-wrap"><div class="chart-bar purple" style="width:62%">62.0%</div></div></div>
+        <div class="chart-row"><div class="chart-label">gemini-3-1-pro</div><div class="chart-bar-wrap"><div class="chart-bar blue" style="width:59.3%">59.3%</div></div></div>
+        <div class="chart-row"><div class="chart-label">claude-sonnet-4-6</div><div class="chart-bar-wrap"><div class="chart-bar purple" style="width:59%">59.0%</div></div></div>
+        <div class="chart-row"><div class="chart-label">gpt-5</div><div class="chart-bar-wrap"><div class="chart-bar amber" style="width:52.4%">52.4%</div></div></div>
+        <div class="chart-row"><div class="chart-label">gpt-5-mini</div><div class="chart-bar-wrap"><div class="chart-bar red" style="width:37%">37.0%</div></div></div>
+        <div class="chart-row"><div class="chart-label">gemini-2.5-flash</div><div class="chart-bar-wrap"><div class="chart-bar slate" style="width:35.2%">35.2%</div></div></div>
+      </div>
+
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>模型</th><th>类型</th><th>准确率</th></tr></thead>
+          <tbody>
+            <tr class="highlight-row"><td>Browser Use Cloud (bu-ultra)</td><td><span class="badge badge-teal">Cloud</span></td><td>78.0%</td></tr>
+            <tr><td>ChatBrowserUse-2</td><td><span class="badge badge-green">OSS + Cloud LLM</span></td><td>63.3%</td></tr>
+            <tr><td>claude-opus-4-6</td><td><span class="badge badge-blue">Open Source</span></td><td>62.0%</td></tr>
+            <tr><td>gemini-3-1-pro</td><td><span class="badge badge-blue">Open Source</span></td><td>59.3%</td></tr>
+            <tr><td>claude-sonnet-4-6</td><td><span class="badge badge-blue">Open Source</span></td><td>59.0%</td></tr>
+            <tr><td>gpt-5</td><td><span class="badge badge-blue">Open Source</span></td><td>52.4%</td></tr>
+            <tr><td>gpt-5-mini</td><td><span class="badge badge-blue">Open Source</span></td><td>37.0%</td></tr>
+            <tr><td>gemini-2.5-flash</td><td><span class="badge badge-blue">Open Source</span></td><td>35.2%</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Section 3 -->
+    <section class="section" id="s3">
+      <h2>🔎 模型逐一分析</h2>
+      <p class="lead">从全托管 Cloud 到各家 Frontier LLM——每个模型的优劣和适用场景。</p>
+
+      <div class="model-card" style="border-left-color:var(--teal)">
+        <h4><span class="badge badge-teal">冠军</span> Browser Use Cloud (bu-ultra)</h4>
+        <div class="score" style="color:var(--teal)">78.0%</div>
+        <p>不仅准确率最高，而且速度最快——约 14 tasks/hour。每步虽然比原始 Frontier LLM 调用慢，但 bu-ultra 用更少的步数完成任务，所以总 Wall-Clock Time 更短。</p>
+        <p>这不只是一个更好的模型——而是一个目的构建的 Agent，集成了 Stealth 浏览器基础设施、CAPTCHA 解决、持久文件系统和优化的 Tool Orchestration。16 个百分点的领先来自全栈优化。</p>
+        <div class="verdict"><strong>Verdict:</strong> 最佳性能、最高吞吐量、零配置。直接用这个。</div>
+      </div>
+
+      <div class="model-card" style="border-left-color:var(--green)">
+        <h4>ChatBrowserUse-2 (OSS + Cloud LLM)</h4>
+        <div class="score" style="color:var(--green)">63.3%</div>
+        <p>专为浏览器自动化优化的 BU 自研模型，运行在开源库上。超越所有独立 Frontier 模型，同时更快、更便宜。</p>
+        <div class="verdict"><strong>Verdict:</strong> 需要自定义 Tool 或自托管时的最佳选择。</div>
+      </div>
+
+      <div class="model-card" style="border-left-color:var(--purple)">
+        <h4>Claude (Opus 62.0% / Sonnet 59.0%)</h4>
+        <div class="score" style="color:var(--purple)">62.0% / 59.0%</div>
+        <p>Anthropic 模型是最强的独立 Frontier 选项。Claude-opus-4-6 在所有非 BU 模型中排第一。当 Agent 需要执行自定义 JavaScript 或提取复杂结构化数据时，Claude 无可匹敌。Sonnet 以约一半的成本接近 Opus 水平。</p>
+        <div class="verdict"><strong>Verdict:</strong> 最强独立 Frontier 模型。工作流依赖自定义代码执行时首选。</div>
+      </div>
+
+      <div class="model-card" style="border-left-color:var(--blue)">
+        <h4>Gemini (3-1-pro 59.3% / 2.5-flash 35.2%)</h4>
+        <div class="score" style="color:var(--blue)">59.3% / 35.2%</div>
+        <p>Gemini-3-1-pro 与 Claude Sonnet 不相上下——强视觉、低延迟、超大上下文窗口可以无压力处理巨大 DOM。Flash 便宜但准确率严重下降。</p>
+        <div class="verdict"><strong>Verdict:</strong> Pro 是 Claude 的强力替代。Flash 仅适合低风险场景。</div>
+      </div>
+
+      <div class="model-card" style="border-left-color:var(--red)">
+        <h4>OpenAI (GPT-5 52.4% / GPT-5-mini 37.0%)</h4>
+        <div class="score" style="color:var(--red)">52.4% / 37.0%</div>
+        <p>GPT-5 是 Benchmark 上最慢的模型——约 6 tasks/hour。GPT-5-mini 的 37% 没能弥补速度差距。近期 OpenAI 模型在浏览器自动化任务上没有跟上 Claude 和 Gemini。</p>
+        <div class="verdict"><strong>Verdict:</strong> 落后于竞争对手。改用 Claude 或 Gemini。</div>
+      </div>
+    </section>
+
+    <!-- Section 4 -->
+    <section class="section" id="s4">
+      <h2>🎯 选型建议</h2>
+      <p class="lead">四种场景、四个推荐——根据需求直接选择。</p>
+
+      <div class="rec-grid">
+        <div class="rec-card" style="border-left:4px solid var(--teal)">
+          <h4>要最好的 Agent？</h4>
+          <p>用 <strong>Browser Use Cloud (bu-ultra)</strong>。78% 准确率、最快吞吐量、零配置。</p>
+        </div>
+        <div class="rec-card" style="border-left:4px solid var(--green)">
+          <h4>需要自定义 Tool 或自托管？</h4>
+          <p>用开源库 + <strong>ChatBrowserUse-2</strong>。63.3%，仍然超越所有 Frontier 模型。</p>
+        </div>
+        <div class="rec-card" style="border-left:4px solid var(--purple)">
+          <h4>想用独立 Frontier LLM？</h4>
+          <p>用 <strong>claude-opus-4-6</strong> (62%) 或 <strong>gemini-3-1-pro</strong> (59.3%)。</p>
+        </div>
+        <div class="rec-card" style="border-left:4px solid var(--amber)">
+          <h4>预算有限？</h4>
+          <p>用 <strong>claude-sonnet-4-6</strong> (59%)——接近 Opus 准确率，成本更低。</p>
+        </div>
+      </div>
+
+      <div class="block-q">
+        <p>"One question dominates every conversation we have with developers: 'Which model should I plug into Browser Use?'"</p>
+      </div>
+    </section>
+  </div>
+
+  <footer class="footer">
+    <a href="../">← 返回 Browser Use Hub</a> &middot;
+    <a href="https://browser-use.com/posts/what-model-to-use" target="_blank">原文链接</a>
+  </footer>
+</body>
+</html>

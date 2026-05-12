@@ -1,0 +1,312 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Agent 沙箱基础设施的两种模式</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    :root{
+      --bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;
+      --border:#e2e8f0;--radius:14px;
+      --teal:#0d9488;--teal-light:#14b8a6;--purple:#6366f1;--amber:#f59e0b;
+      --green:#10b981;--red:#ef4444;--blue:#3b82f6;
+      --mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif;
+    }
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+    .nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;justify-content:space-between;align-items:center;font-size:14px}
+    .nav a{color:var(--text);text-decoration:none;font-weight:600}
+    .nav a:hover{color:var(--teal)}
+    .nav .back{color:var(--text-secondary);font-weight:400}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#134e4a 50%,#0d9488 100%);color:#fff;padding:80px 24px 60px;text-align:center}
+    .hero h1{font-size:clamp(28px,4vw,42px);font-weight:800;margin-bottom:12px;line-height:1.2}
+    .hero .subtitle{font-size:18px;opacity:.85;max-width:700px;margin:0 auto 8px}
+    .hero .meta{font-size:14px;opacity:.6;margin-bottom:36px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;max-width:800px;margin:0 auto}
+    .stat{background:rgba(255,255,255,.1);border-radius:var(--radius);padding:20px;backdrop-filter:blur(6px)}
+    .stat .num{font-size:32px;font-weight:800;font-family:var(--mono)}
+    .stat .label{font-size:13px;opacity:.7;margin-top:4px}
+    .page{max-width:900px;margin:0 auto;padding:40px 24px 80px}
+    .toc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px;margin-bottom:48px}
+    .toc h3{font-size:15px;color:var(--text-secondary);margin-bottom:16px;text-transform:uppercase;letter-spacing:1px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .toc-grid a{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;background:var(--bg);transition:all .2s}
+    .toc-grid a:hover{background:#f0fdfa;color:var(--teal)}
+    .toc-grid .num{font-family:var(--mono);font-size:12px;color:var(--teal);font-weight:700;min-width:22px}
+    .section{margin-bottom:56px}
+    .section h2{font-size:24px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+    .lead{color:var(--text-secondary);font-size:16px;margin-bottom:24px;line-height:1.6}
+    p{margin-bottom:16px}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+    .card h4{font-weight:700;margin-bottom:8px;font-size:16px}
+    .block-q{border-left:4px solid var(--teal);background:#f0fdfa;padding:20px 24px;border-radius:0 var(--radius) var(--radius) 0;margin:20px 0;font-size:15px;font-style:italic}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}
+    .compare-card{border-radius:var(--radius);padding:24px;font-size:14px}
+    .compare-card.old{background:#fef2f2;border:2px solid #fecaca}
+    .compare-card.new{background:#f0fdf4;border:2px solid #bbf7d0}
+    .compare-card.neutral{background:#f8fafc;border:2px solid var(--border)}
+    .compare-card h4{margin-bottom:10px;font-size:15px}
+    .flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:20px 0;justify-content:center}
+    .flow-step{background:var(--surface);border:2px solid var(--border);border-radius:12px;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;min-width:110px}
+    .flow-step.teal{border-color:var(--teal);background:#f0fdfa;color:#134e4a}
+    .flow-step.purple{border-color:var(--purple);background:#eef2ff;color:#312e81}
+    .flow-step.green{border-color:var(--green);background:#ecfdf5;color:#065f46}
+    .flow-step.amber{border-color:var(--amber);background:#fffbeb;color:#92400e}
+    .flow-step.red{border-color:var(--red);background:#fef2f2;color:#991b1b}
+    .flow-arrow{font-size:22px;color:var(--text-secondary);font-weight:700}
+    .chart{margin:20px 0}
+    .chart-row{display:flex;align-items:center;margin-bottom:10px;gap:12px}
+    .chart-label{min-width:160px;font-size:13px;font-weight:600;text-align:right}
+    .chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}
+    .chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;padding:0 12px;font-size:12px;font-weight:700;color:#fff;transition:width .6s}
+    .chart-bar.teal{background:linear-gradient(90deg,#0d9488,#14b8a6)}
+    .chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+    .chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}
+    .chart-bar.purple{background:linear-gradient(90deg,#6366f1,#818cf8)}
+    .chart-bar.green{background:linear-gradient(90deg,#10b981,#34d399)}
+    .chart-bar.slate{background:linear-gradient(90deg,#475569,#64748b)}
+    .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600}
+    .badge-teal{background:#ccfbf1;color:#0f766e}
+    .badge-red{background:#fee2e2;color:#b91c1c}
+    .badge-green{background:#d1fae5;color:#065f46}
+    .badge-purple{background:#e0e7ff;color:#3730a3}
+    .badge-amber{background:#fef3c7;color:#92400e}
+    .timeline{position:relative;padding-left:32px;margin:20px 0}
+    .timeline::before{content:'';position:absolute;left:11px;top:0;bottom:0;width:3px;background:linear-gradient(to bottom,var(--teal),var(--purple))}
+    .tl-item{margin-bottom:28px;position:relative}
+    .tl-dot{position:absolute;left:-28px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid var(--teal);background:#fff}
+    .tl-item:nth-child(2) .tl-dot{border-color:var(--purple)}
+    .tl-item:nth-child(3) .tl-dot{border-color:var(--amber)}
+    .tl-item:nth-child(4) .tl-dot{border-color:var(--green)}
+    .tl-item:nth-child(5) .tl-dot{border-color:var(--blue)}
+    .tl-phase{font-weight:700;font-size:15px;margin-bottom:4px}
+    .tl-desc{font-size:14px;color:var(--text-secondary)}
+    .fail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:20px 0}
+    .fail-grid .card{text-align:center;padding:18px}
+    .fail-grid .card .icon{font-size:28px;margin-bottom:8px}
+    .agent-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin:20px 0}
+    code{font-family:var(--mono);background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:13px}
+    .code-block{background:#1e293b;color:#e2e8f0;padding:20px 24px;border-radius:var(--radius);font-family:var(--mono);font-size:13px;overflow-x:auto;margin:16px 0;line-height:1.8}
+    .code-block .comment{color:#64748b}
+    .code-block .keyword{color:#38bdf8}
+    .code-block .string{color:#34d399}
+    .footer{text-align:center;padding:40px 24px;border-top:1px solid var(--border);color:var(--text-secondary);font-size:14px}
+    .footer a{color:var(--teal);text-decoration:none;font-weight:500}
+    .footer a:hover{text-decoration:underline}
+    @media(max-width:768px){
+      .compare-grid,.agent-grid{grid-template-columns:1fr}
+      .fail-grid{grid-template-columns:repeat(2,1fr)}
+      .flow{flex-direction:column;gap:6px}
+      .flow-arrow{transform:rotate(90deg)}
+      .chart-label{min-width:110px;font-size:12px}
+      .toc-grid{grid-template-columns:1fr}
+      .stats{grid-template-columns:repeat(2,1fr)}
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a href="../">Browser Use Deep Dives</a>
+    <a href="../" class="back">&larr; Back to Hub</a>
+  </nav>
+
+  <header class="hero">
+    <h1>Agent 沙箱基础设施的两种模式</h1>
+    <p class="subtitle">从 AWS Lambda 到 Unikraft Micro-VM：如何构建安全、可扩展的 Agent 沙箱架构。</p>
+    <p class="meta">Larsen Cundric &middot; 2026-02-25</p>
+    <div class="stats">
+      <div class="stat"><div class="num">2</div><div class="label">沙箱隔离模式</div></div>
+      <div class="stat"><div class="num">&lt;1s</div><div class="label">Micro-VM 启动时间</div></div>
+      <div class="stat"><div class="num">3</div><div class="label">沙箱环境变量</div></div>
+      <div class="stat"><div class="num">0</div><div class="label">沙箱内可访问的 Secret</div></div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+        <a href="#s1"><span class="num">01</span>问题背景</a>
+        <a href="#s2"><span class="num">02</span>两种隔离模式</a>
+        <a href="#s3"><span class="num">03</span>沙箱实现</a>
+        <a href="#s4"><span class="num">04</span>安全加固</a>
+        <a href="#s5"><span class="num">05</span>Control Plane 架构</a>
+        <a href="#s6"><span class="num">06</span>扩展与总结</a>
+      </div>
+    </nav>
+
+    <!-- Section 1 -->
+    <section class="section" id="s1">
+      <h2>🔙 问题背景</h2>
+      <p class="lead">Browser Use 运行数百万 Web Agent。起初用 AWS Lambda 做浏览器隔离，后来加入了代码执行能力——问题开始了。</p>
+
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Phase 1：AWS Lambda</div>
+          <div class="tl-desc">每次调用天然隔离、即时伸缩、无 Secret 泄露风险。仅支持浏览器操作。</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Phase 2：加入代码执行</div>
+          <div class="tl-desc">Agent 可以写 Python、执行 Shell 命令、创建文件。代码运行在独立 Sandbox 中（作为 tool 调用），安全性无问题。</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Phase 3：问题暴露</div>
+          <div class="tl-desc">Agent 循环仍然跑在 REST API 同一个后端进程中。重部署？所有 Agent 死掉。内存大户？API 变慢。两个完全不同的 Workload 共享一个进程。</div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2 -->
+    <section class="section" id="s2">
+      <h2>🔀 两种隔离模式</h2>
+      <p class="lead">Agent 可以运行任意代码时，它能访问机器上的一切——环境变量、API Key、数据库凭证。必须隔离。</p>
+
+      <div class="compare-grid">
+        <div class="compare-card neutral" style="border-color:var(--purple);background:#eef2ff">
+          <h4>Pattern 1：隔离 Tool</h4>
+          <p>Agent 运行在你的基础设施上。危险操作（代码执行、终端访问）运行在独立 Sandbox 中。Agent 通过 HTTP 调用 Sandbox。</p>
+          <p style="margin-top:12px"><span class="badge badge-purple">起步阶段</span></p>
+        </div>
+        <div class="compare-card neutral" style="border-color:var(--teal);background:#f0fdfa">
+          <h4>Pattern 2：隔离 Agent</h4>
+          <p>整个 Agent 运行在零 Secret 的 Sandbox 中。通过 Control Plane 与外部世界通信——所有凭证由 Control Plane 持有。</p>
+          <p style="margin-top:12px"><span class="badge badge-teal">最终选择</span></p>
+        </div>
+      </div>
+
+      <div class="block-q">
+        <p>"The agent becomes disposable. No secrets to steal, no state to preserve, you can kill it, restart it, scale it independently. The control plane holds the truth."</p>
+      </div>
+
+      <div class="flow">
+        <div class="flow-step red">Pattern 1: 隔离 Tool</div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step amber">验证可行</div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step teal">Pattern 2: 隔离 Agent</div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step green">生产架构</div>
+      </div>
+    </section>
+
+    <!-- Section 3 -->
+    <section class="section" id="s3">
+      <h2>📦 沙箱实现</h2>
+      <p class="lead">同一个容器镜像，通过一个配置开关在 Unikraft Micro-VM（生产）和 Docker（开发/评测）之间切换。</p>
+
+      <div class="compare-grid">
+        <div class="compare-card new">
+          <h4>Unikraft 生产环境</h4>
+          <p>每个 Agent 获得独立的 Unikraft Micro-VM，启动时间不到 1 秒。通过 REST API 在 AWS 裸金属机器上按需创建。支持 Scale-to-Zero：空闲时 VM 挂起，有请求时自动恢复。</p>
+        </div>
+        <div class="compare-card neutral">
+          <h4>Docker 开发/评测</h4>
+          <p>同一个镜像、同一个入口点、同一个 Control Plane 协议。<code>sandbox_mode: 'docker' | 'ukc'</code> 一个开关切换。</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h4>沙箱接收的环境变量（仅 3 个）</h4>
+        <div class="code-block">
+<span class="keyword">SESSION_TOKEN</span>=&lt;临时会话令牌&gt;
+<span class="keyword">CONTROL_PLANE_URL</span>=&lt;Control Plane 地址&gt;
+<span class="keyword">SESSION_ID</span>=&lt;会话标识&gt;
+
+<span class="comment"># 无 AWS Key，无数据库凭证，无 API Token</span>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 4 -->
+    <section class="section" id="s4">
+      <h2>🛡️ 安全加固</h2>
+      <p class="lead">三层防护：字节码编译、权限降级、环境变量清除——在任何 Agent 代码运行之前。</p>
+
+      <div class="fail-grid">
+        <div class="card">
+          <div class="icon">🔒</div>
+          <h4>Bytecode-Only</h4>
+          <p>Docker 构建时编译所有 Python 为 <code>.pyc</code>，然后删除所有 <code>.py</code> 源文件</p>
+        </div>
+        <div class="card">
+          <div class="icon">👤</div>
+          <h4>Privilege Drop</h4>
+          <p>入口以 root 启动，立即通过 <code>setuid/setgid</code> 降级为 <code>sandbox</code> 用户</p>
+        </div>
+        <div class="card">
+          <div class="icon">🧹</div>
+          <h4>Env Stripping</h4>
+          <p>读取环境变量到 Python 变量后，从 <code>os.environ</code> 中删除</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 5 -->
+    <section class="section" id="s5">
+      <h2>🎛️ Control Plane 架构</h2>
+      <p class="lead">无状态 FastAPI 服务——Sandbox 没有直接外部访问权，所有请求通过 Control Plane 代理。</p>
+
+      <div class="flow">
+        <div class="flow-step amber">Sandbox Agent</div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step teal">Bearer Token</div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step purple">Control Plane</div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step green">LLM / S3 / DB</div>
+      </div>
+
+      <div class="agent-grid">
+        <div class="card">
+          <h4>LLM Proxying</h4>
+          <p>Sandbox 仅发送新消息，Control Plane 在数据库中维护完整对话历史，在每次调用时重建完整上下文，再转发给 LLM Provider。</p>
+        </div>
+        <div class="card">
+          <h4>File Sync via Presigned URLs</h4>
+          <p>Agent 在 <code>/workspace</code> 目录读写文件。File Sync Service 监控变更并定期同步到 S3——但 Sandbox 永远看不到 AWS 凭证。</p>
+        </div>
+        <div class="card">
+          <h4>Gateway Protocol</h4>
+          <p>生产环境：<code>ControlPlaneGateway</code> 发送 HTTP 请求。本地开发/评测：<code>DirectGateway</code> 直接调用 LLM，内存中保存历史。</p>
+        </div>
+        <div class="card">
+          <h4>Scaling</h4>
+          <p>Control Plane 无状态：验证 Token → 执行操作 → 返回结果。需要更多 Agent？启更多 Sandbox。需要更多吞吐？Load Balancer 后加 Control Plane 实例。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 6 -->
+    <section class="section" id="s6">
+      <h2>🎯 核心要点</h2>
+      <p class="lead">Agent 应该没有任何值得窃取的东西，也没有任何值得保留的状态。</p>
+
+      <div class="block-q">
+        <p>"Your agent should have nothing worth stealing and nothing worth preserving."</p>
+      </div>
+
+      <div class="compare-grid">
+        <div class="compare-card old">
+          <h4>Pattern 1：隔离 Tool</h4>
+          <p>Agent 在你的后端 → 代码执行在 Sandbox 中。安全但 Agent 仍然能访问基础设施。适合起步阶段。</p>
+        </div>
+        <div class="compare-card new">
+          <h4>Pattern 2：隔离 Agent</h4>
+          <p>整个 Agent 在 Sandbox 中 → 通过 Control Plane 对外通信。Agent 可丢弃、可杀死、可独立伸缩。最终形态。</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer class="footer">
+    <a href="../">← 返回 Browser Use Hub</a> &middot;
+    <a href="https://browser-use.com/posts/two-ways-to-sandbox-agents" target="_blank">原文链接</a>
+  </footer>
+</body>
+</html>

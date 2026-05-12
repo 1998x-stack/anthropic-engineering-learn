@@ -1,0 +1,299 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Browser Agent Benchmark 全面对比</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    :root{
+      --bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;
+      --border:#e2e8f0;--radius:14px;
+      --teal:#0d9488;--teal-light:#14b8a6;--purple:#6366f1;--amber:#f59e0b;
+      --green:#10b981;--red:#ef4444;--blue:#3b82f6;
+      --mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif;
+    }
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+    .nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;justify-content:space-between;align-items:center;font-size:14px}
+    .nav a{color:var(--text);text-decoration:none;font-weight:600}
+    .nav a:hover{color:var(--teal)}
+    .nav .back{color:var(--text-secondary);font-weight:400}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#134e4a 50%,#0d9488 100%);color:#fff;padding:80px 24px 60px;text-align:center}
+    .hero h1{font-size:clamp(28px,4vw,42px);font-weight:800;margin-bottom:12px;line-height:1.2}
+    .hero .subtitle{font-size:18px;opacity:.85;max-width:700px;margin:0 auto 8px}
+    .hero .meta{font-size:14px;opacity:.6;margin-bottom:36px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;max-width:800px;margin:0 auto}
+    .stat{background:rgba(255,255,255,.1);border-radius:var(--radius);padding:20px;backdrop-filter:blur(6px)}
+    .stat .num{font-size:32px;font-weight:800;font-family:var(--mono)}
+    .stat .label{font-size:13px;opacity:.7;margin-top:4px}
+    .page{max-width:900px;margin:0 auto;padding:40px 24px 80px}
+    .toc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px;margin-bottom:48px}
+    .toc h3{font-size:15px;color:var(--text-secondary);margin-bottom:16px;text-transform:uppercase;letter-spacing:1px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .toc-grid a{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;background:var(--bg);transition:all .2s}
+    .toc-grid a:hover{background:#f0fdfa;color:var(--teal)}
+    .toc-grid .num{font-family:var(--mono);font-size:12px;color:var(--teal);font-weight:700;min-width:22px}
+    .section{margin-bottom:56px}
+    .section h2{font-size:24px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+    .lead{color:var(--text-secondary);font-size:16px;margin-bottom:24px;line-height:1.6}
+    p{margin-bottom:16px}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+    .card h4{font-weight:700;margin-bottom:8px;font-size:16px}
+    .block-q{border-left:4px solid var(--teal);background:#f0fdfa;padding:20px 24px;border-radius:0 var(--radius) var(--radius) 0;margin:20px 0;font-size:15px;font-style:italic}
+    .chart{margin:20px 0}
+    .chart-row{display:flex;align-items:center;margin-bottom:10px;gap:12px}
+    .chart-label{min-width:180px;font-size:13px;font-weight:600;text-align:right}
+    .chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:36px;overflow:hidden}
+    .chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;padding:0 12px;font-size:12px;font-weight:700;color:#fff;transition:width .6s}
+    .chart-bar.teal{background:linear-gradient(90deg,#0d9488,#14b8a6)}
+    .chart-bar.green{background:linear-gradient(90deg,#10b981,#34d399)}
+    .chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+    .chart-bar.purple{background:linear-gradient(90deg,#6366f1,#818cf8)}
+    .chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}
+    .chart-bar.slate{background:linear-gradient(90deg,#475569,#64748b)}
+    .chart-bar.pink{background:linear-gradient(90deg,#ec4899,#f472b6)}
+    .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600}
+    .badge-teal{background:#ccfbf1;color:#0f766e}
+    .badge-green{background:#d1fae5;color:#065f46}
+    .badge-amber{background:#fef3c7;color:#92400e}
+    .badge-blue{background:#dbeafe;color:#1e40af}
+    .badge-red{background:#fee2e2;color:#b91c1c}
+    .badge-purple{background:#e0e7ff;color:#3730a3}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}
+    .compare-card{border-radius:var(--radius);padding:24px;font-size:14px}
+    .compare-card.old{background:#fef2f2;border:2px solid #fecaca}
+    .compare-card.new{background:#f0fdf4;border:2px solid #bbf7d0}
+    .compare-card h4{margin-bottom:10px;font-size:15px}
+    .fail-grid{display:grid;grid-template-columns:repeat(5,1fr);gap:12px;margin:20px 0}
+    .fail-grid .card{text-align:center;padding:16px 10px}
+    .fail-grid .card .icon{font-size:24px;margin-bottom:6px}
+    .fail-grid .card h4{font-size:13px}
+    .fail-grid .card p{font-size:12px;color:var(--text-secondary);margin:0}
+    .tbl-wrap{overflow-x:auto;margin:20px 0}
+    table{width:100%;border-collapse:collapse;font-size:14px}
+    th,td{padding:12px 16px;text-align:left;border-bottom:1px solid var(--border)}
+    th{background:var(--bg);font-weight:700;font-size:13px;color:var(--text-secondary);text-transform:uppercase;letter-spacing:.5px}
+    tr:hover{background:#f8fafc}
+    .flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:20px 0;justify-content:center}
+    .flow-step{background:var(--surface);border:2px solid var(--border);border-radius:12px;padding:14px 18px;font-size:14px;font-weight:600;text-align:center;min-width:100px}
+    .flow-step.teal{border-color:var(--teal);background:#f0fdfa;color:#134e4a}
+    .flow-step.purple{border-color:var(--purple);background:#eef2ff;color:#312e81}
+    .flow-arrow{font-size:22px;color:var(--text-secondary);font-weight:700}
+    .footer{text-align:center;padding:40px 24px;border-top:1px solid var(--border);color:var(--text-secondary);font-size:14px}
+    .footer a{color:var(--teal);text-decoration:none;font-weight:500}
+    .footer a:hover{text-decoration:underline}
+    code{font-family:var(--mono);background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:13px}
+    @media(max-width:768px){
+      .compare-grid{grid-template-columns:1fr}
+      .fail-grid{grid-template-columns:repeat(2,1fr)}
+      .chart-label{min-width:120px;font-size:12px}
+      .toc-grid{grid-template-columns:1fr}
+      .stats{grid-template-columns:repeat(2,1fr)}
+      .flow{flex-direction:column}
+      .flow-arrow{transform:rotate(90deg)}
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a href="../">Browser Use Deep Dives</a>
+    <a href="../" class="back">&larr; Back to Hub</a>
+  </nav>
+
+  <header class="hero">
+    <h1>Browser Agent Benchmark: LLM 模型全面对比</h1>
+    <p class="subtitle">100 个高难度 browser task，一个 leaderboard。Browser Use Cloud 78% 领先 16 个百分点。</p>
+    <p class="meta">Alexander Yue &middot; 2026-01-31</p>
+    <div class="stats">
+      <div class="stat"><div class="num">100</div><div class="label">Hard Tasks</div></div>
+      <div class="stat"><div class="num">78%</div><div class="label">BU Cloud 最高分</div></div>
+      <div class="stat"><div class="num">600K+</div><div class="label">Tasks Tested</div></div>
+      <div class="stat"><div class="num">87%</div><div class="label">Judge 准确率</div></div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc">
+      <h3>目录</h3>
+      <div class="toc-grid">
+        <a href="#s1"><span class="num">01</span>BU Bench V1 测试集</a>
+        <a href="#s2"><span class="num">02</span>LLM Judge 评判</a>
+        <a href="#s3"><span class="num">03</span>Benchmark 结果排行</a>
+        <a href="#s4"><span class="num">04</span>Cloud 为何领先</a>
+      </div>
+    </nav>
+
+    <section class="section" id="s1">
+      <h2>&#x1F4CA; BU Bench V1 测试集</h2>
+      <p class="lead">100 个手工筛选的高难度 task，来自五个成熟来源。加密存储防止 LLM 训练污染。</p>
+
+      <div class="fail-grid">
+        <div class="card">
+          <div class="icon">&#x1F3AF;</div>
+          <h4>Custom</h4>
+          <p>20 tasks &mdash; iframes, drag-and-drop, 复杂表单</p>
+        </div>
+        <div class="card">
+          <div class="icon">&#x1F310;</div>
+          <h4>WebBench</h4>
+          <p>20 tasks &mdash; Web browsing</p>
+        </div>
+        <div class="card">
+          <div class="icon">&#x1F9ED;</div>
+          <h4>Mind2Web 2</h4>
+          <p>20 tasks &mdash; 多步导航</p>
+        </div>
+        <div class="card">
+          <div class="icon">&#x1F916;</div>
+          <h4>GAIA</h4>
+          <p>20 tasks &mdash; 通用 AI 助手</p>
+        </div>
+        <div class="card">
+          <div class="icon">&#x1F4D6;</div>
+          <h4>BrowseComp</h4>
+          <p>20 tasks &mdash; 浏览理解</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h4>筛选流程</h4>
+        <div class="flow">
+          <div class="flow-step">多模型多次运行</div>
+          <div class="flow-arrow">&rarr;</div>
+          <div class="flow-step teal">移除太简单的</div>
+          <div class="flow-arrow">&rarr;</div>
+          <div class="flow-step purple">移除不可能的</div>
+          <div class="flow-arrow">&rarr;</div>
+          <div class="flow-step" style="border-color:var(--green);background:#ecfdf5;color:#065f46">100 Hard &amp; Verified</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="s2">
+      <h2>&#x2696;&#xFE0F; LLM Judge 评判</h2>
+      <p class="lead">真实网站无法确定性评判。使用 <code>gemini-2.5-flash</code> 作为 LLM Judge，二元判定比 rubric 评分更可靠。</p>
+
+      <div class="compare-grid">
+        <div class="compare-card old">
+          <h4>&#x274C; Rubric 评分</h4>
+          <p>听起来更好</p>
+          <p>实际：成功和失败都给中间分</p>
+          <p>不可靠的灰度判定</p>
+        </div>
+        <div class="compare-card new">
+          <h4>&#x2705; Binary Verdict</h4>
+          <p>简单 true/false</p>
+          <p>人类标注 200 traces 对齐</p>
+          <p><strong>87% 与人类判断一致</strong></p>
+        </div>
+      </div>
+
+      <div class="block-q">
+        <p>"Rubric-based scoring sounds better in theory, but in practice LLMs give middling scores to both successes and failures. Binary verdicts are more reliable."</p>
+      </div>
+    </section>
+
+    <section class="section" id="s3">
+      <h2>&#x1F3C6; Benchmark 结果排行</h2>
+      <p class="lead">Browser Use Cloud (bu-ultra) 以 78% 领先，同时也是速度最快的，每小时约 14 个 task。</p>
+
+      <div class="chart">
+        <h4 style="margin-bottom:14px;font-size:15px">模型得分 (Score %)</h4>
+        <div class="chart-row">
+          <div class="chart-label">BU Cloud (bu-ultra)</div>
+          <div class="chart-bar-wrap"><div class="chart-bar teal" style="width:78%">78.0%</div></div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-label">OSS + ChatBrowserUse-2</div>
+          <div class="chart-bar-wrap"><div class="chart-bar green" style="width:63.3%">63.3%</div></div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-label">claude-opus-4-6</div>
+          <div class="chart-bar-wrap"><div class="chart-bar purple" style="width:62%">62.0%</div></div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-label">gemini-3-1-pro</div>
+          <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:59.3%">59.3%</div></div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-label">claude-sonnet-4-6</div>
+          <div class="chart-bar-wrap"><div class="chart-bar purple" style="width:59%">59.0%</div></div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-label">gpt-5</div>
+          <div class="chart-bar-wrap"><div class="chart-bar amber" style="width:52.4%">52.4%</div></div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-label">gpt-5-mini</div>
+          <div class="chart-bar-wrap"><div class="chart-bar red" style="width:37%">37.0%</div></div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-label">gemini-2.5-flash</div>
+          <div class="chart-bar-wrap"><div class="chart-bar slate" style="width:35.2%">35.2%</div></div>
+        </div>
+      </div>
+
+      <div class="chart" style="margin-top:32px">
+        <h4 style="margin-bottom:14px;font-size:15px">吞吐量 (Tasks/Hour)</h4>
+        <div class="chart-row">
+          <div class="chart-label">BU Cloud (bu-ultra)</div>
+          <div class="chart-bar-wrap"><div class="chart-bar teal" style="width:100%">~14/hr</div></div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-label">gemini-2.5-flash</div>
+          <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:85%">~12/hr</div></div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-label">claude-sonnet-4-6</div>
+          <div class="chart-bar-wrap"><div class="chart-bar purple" style="width:71%">~10/hr</div></div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-label">gpt-5</div>
+          <div class="chart-bar-wrap"><div class="chart-bar amber" style="width:43%">~6/hr</div></div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="s4">
+      <h2>&#x1F680; Cloud 为何领先 16 个百分点</h2>
+      <p class="lead">不只是更好的模型。全栈优化：stealth proxies + CAPTCHA solving + persistent filesystem + 优化的 tool orchestration。</p>
+
+      <div class="card" style="border-left:4px solid var(--teal)">
+        <h4>Full-Stack Advantage</h4>
+        <div class="flow" style="margin:16px 0 0">
+          <div class="flow-step teal">Stealth Proxies</div>
+          <div class="flow-arrow">+</div>
+          <div class="flow-step teal">CAPTCHA Solving</div>
+          <div class="flow-arrow">+</div>
+          <div class="flow-step teal">Persistent FS</div>
+          <div class="flow-arrow">+</div>
+          <div class="flow-step teal">Tool Orchestration</div>
+        </div>
+      </div>
+
+      <div class="compare-grid">
+        <div class="compare-card new">
+          <h4>BU Cloud (78%)</h4>
+          <p>Purpose-built agent + 自有浏览器基础设施</p>
+          <p>最高准确率 + 最快速度</p>
+          <p><span class="badge badge-teal">推荐生产使用</span></p>
+        </div>
+        <div class="compare-card new" style="background:#eff6ff;border-color:#bfdbfe">
+          <h4>OSS + ChatBrowserUse-2 (63.3%)</h4>
+          <p>开源库 + 自定义 tools</p>
+          <p>仍优于所有独立开源模型</p>
+          <p><span class="badge badge-blue">自托管推荐</span></p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer class="footer">
+    <p><a href="../">&#x2190; Back to Hub</a></p>
+    <p style="margin-top:8px">Source: <a href="https://browser-use.com/posts/ai-browser-agent-benchmark" target="_blank">browser-use.com/posts/ai-browser-agent-benchmark</a></p>
+  </footer>
+</body>
+</html>

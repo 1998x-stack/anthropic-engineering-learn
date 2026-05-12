@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Stealth Benchmark — 云浏览器隐身能力评测</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    :root{
+      --bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;
+      --border:#e2e8f0;--radius:14px;
+      --teal:#0d9488;--teal-light:#14b8a6;--purple:#6366f1;--amber:#f59e0b;
+      --green:#10b981;--red:#ef4444;--blue:#3b82f6;
+      --mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif;
+    }
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+    .nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;justify-content:space-between;align-items:center;font-size:14px}
+    .nav a{color:var(--text);text-decoration:none;font-weight:600}
+    .nav a:hover{color:var(--teal)}
+    .nav .back{color:var(--text-secondary);font-weight:400}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#134e4a 50%,#0d9488 100%);color:#fff;padding:80px 24px 60px;text-align:center}
+    .hero h1{font-size:clamp(28px,4vw,42px);font-weight:800;margin-bottom:12px;line-height:1.2}
+    .hero .subtitle{font-size:18px;opacity:.85;max-width:700px;margin:0 auto 8px}
+    .hero .meta{font-size:14px;opacity:.6;margin-bottom:36px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;max-width:800px;margin:0 auto}
+    .stat{background:rgba(255,255,255,.1);border-radius:var(--radius);padding:20px;backdrop-filter:blur(6px)}
+    .stat .num{font-size:32px;font-weight:800;font-family:var(--mono)}
+    .stat .label{font-size:13px;opacity:.7;margin-top:4px}
+    .page{max-width:900px;margin:0 auto;padding:40px 24px 80px}
+    .toc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px;margin-bottom:48px}
+    .toc h3{font-size:15px;color:var(--text-secondary);margin-bottom:16px;text-transform:uppercase;letter-spacing:1px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .toc-grid a{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;background:var(--bg);transition:all .2s}
+    .toc-grid a:hover{background:#f0fdfa;color:var(--teal)}
+    .toc-grid .num{font-family:var(--mono);font-size:12px;color:var(--teal);font-weight:700;min-width:22px}
+    .section{margin-bottom:56px}
+    .section h2{font-size:24px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+    .lead{color:var(--text-secondary);font-size:16px;margin-bottom:24px;line-height:1.6}
+    p{margin-bottom:16px}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+    .card h4{font-weight:700;margin-bottom:8px;font-size:16px}
+    .block-q{border-left:4px solid var(--teal);background:#f0fdfa;padding:20px 24px;border-radius:0 var(--radius) var(--radius) 0;margin:20px 0;font-size:15px;font-style:italic}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}
+    .compare-card{border-radius:var(--radius);padding:24px;font-size:14px}
+    .compare-card.old{background:#fef2f2;border:2px solid #fecaca}
+    .compare-card.new{background:#f0fdf4;border:2px solid #bbf7d0}
+    .compare-card h4{margin-bottom:10px;font-size:15px}
+    .flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:20px 0;justify-content:center}
+    .flow-step{background:var(--surface);border:2px solid var(--border);border-radius:12px;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;min-width:110px}
+    .flow-step.teal{border-color:var(--teal);background:#f0fdfa;color:#134e4a}
+    .flow-step.purple{border-color:var(--purple);background:#eef2ff;color:#312e81}
+    .flow-step.green{border-color:var(--green);background:#ecfdf5;color:#065f46}
+    .flow-step.amber{border-color:var(--amber);background:#fffbeb;color:#92400e}
+    .flow-step.red{border-color:var(--red);background:#fef2f2;color:#991b1b}
+    .flow-arrow{font-size:22px;color:var(--text-secondary);font-weight:700}
+    .chart{margin:20px 0}
+    .chart-row{display:flex;align-items:center;margin-bottom:10px;gap:12px}
+    .chart-label{min-width:160px;font-size:13px;font-weight:600;text-align:right}
+    .chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}
+    .chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;padding:0 12px;font-size:12px;font-weight:700;color:#fff;transition:width .6s}
+    .chart-bar.teal{background:linear-gradient(90deg,#0d9488,#14b8a6)}
+    .chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+    .chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}
+    .chart-bar.purple{background:linear-gradient(90deg,#6366f1,#818cf8)}
+    .chart-bar.green{background:linear-gradient(90deg,#10b981,#34d399)}
+    .chart-bar.slate{background:linear-gradient(90deg,#475569,#64748b)}
+    .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600}
+    .badge-teal{background:#ccfbf1;color:#0f766e}
+    .badge-red{background:#fee2e2;color:#b91c1c}
+    .badge-green{background:#d1fae5;color:#065f46}
+    .badge-purple{background:#e0e7ff;color:#3730a3}
+    .badge-amber{background:#fef3c7;color:#92400e}
+    .badge-blue{background:#dbeafe;color:#1e40af}
+    .timeline{position:relative;padding-left:32px;margin:20px 0}
+    .timeline::before{content:'';position:absolute;left:11px;top:0;bottom:0;width:3px;background:linear-gradient(to bottom,var(--teal),var(--purple))}
+    .tl-item{margin-bottom:28px;position:relative}
+    .tl-dot{position:absolute;left:-28px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid var(--teal);background:#fff}
+    .tl-item:nth-child(2) .tl-dot{border-color:var(--purple)}
+    .tl-item:nth-child(3) .tl-dot{border-color:var(--amber)}
+    .tl-item:nth-child(4) .tl-dot{border-color:var(--green)}
+    .tl-item:nth-child(5) .tl-dot{border-color:var(--blue)}
+    .tl-phase{font-weight:700;font-size:15px;margin-bottom:4px}
+    .tl-desc{font-size:14px;color:var(--text-secondary)}
+    .fail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:20px 0}
+    .fail-grid .card{text-align:center;padding:18px}
+    .fail-grid .card .icon{font-size:28px;margin-bottom:8px}
+    .agent-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin:20px 0}
+    .tbl-wrap{overflow-x:auto;margin:20px 0}
+    table{width:100%;border-collapse:collapse;font-size:14px}
+    th,td{padding:12px 16px;text-align:left;border-bottom:1px solid var(--border)}
+    th{font-weight:700;background:var(--bg);font-size:13px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-secondary)}
+    tr:hover td{background:#f8fafc}
+    .highlight-row td{background:#f0fdfa;font-weight:600}
+    code{font-family:var(--mono);background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:13px}
+    .footer{text-align:center;padding:40px 24px;border-top:1px solid var(--border);color:var(--text-secondary);font-size:14px}
+    .footer a{color:var(--teal);text-decoration:none;font-weight:500}
+    .footer a:hover{text-decoration:underline}
+    @media(max-width:768px){
+      .compare-grid,.agent-grid{grid-template-columns:1fr}
+      .fail-grid{grid-template-columns:repeat(2,1fr)}
+      .flow{flex-direction:column;gap:6px}
+      .flow-arrow{transform:rotate(90deg)}
+      .chart-label{min-width:110px;font-size:12px}
+      .toc-grid{grid-template-columns:1fr}
+      .stats{grid-template-columns:repeat(2,1fr)}
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a href="../">Browser Use Deep Dives</a>
+    <a href="../" class="back">&larr; Back to Hub</a>
+  </nav>
+
+  <header class="hero">
+    <h1>Stealth Benchmark：云浏览器隐身能力大比拼</h1>
+    <p class="subtitle">从 30 万次安全检查事件中提取 71 个高安全网站，对每个主流云浏览器供应商进行隐身能力评测。</p>
+    <p class="meta">Aitor Mato &middot; 2026-03-21</p>
+    <div class="stats">
+      <div class="stat"><div class="num">300K</div><div class="label">生产环境安全检查事件</div></div>
+      <div class="stat"><div class="num">71</div><div class="label">测试网站数量</div></div>
+      <div class="stat"><div class="num">81%</div><div class="label">Browser Use Cloud 通过率</div></div>
+      <div class="stat"><div class="num">6</div><div class="label">测试的云浏览器供应商</div></div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+        <a href="#s1"><span class="num">01</span>为什么需要 Stealth 基准</a>
+        <a href="#s2"><span class="num">02</span>数据集分布</a>
+        <a href="#s3"><span class="num">03</span>控制实验</a>
+        <a href="#s4"><span class="num">04</span>核心结果</a>
+        <a href="#s5"><span class="num">05</span>BrowserBench 第三方验证</a>
+        <a href="#s6"><span class="num">06</span>行业现状批判</a>
+        <a href="#s7"><span class="num">07</span>Browser Use 的做法</a>
+      </div>
+    </nav>
+
+    <!-- Section 1 -->
+    <section class="section" id="s1">
+      <h2>🎯 为什么需要 Stealth 基准测试</h2>
+      <p class="lead">Agent 的瓶颈不是智能——而是被 CAPTCHA 和反爬系统拦截。Agent 智能和浏览器隐身是正交的两个维度。</p>
+
+      <div class="block-q">
+        <p>"The bottleneck for agents is not their intelligence. On most websites users care about, agents get blocked by a CAPTCHA or an antibot challenge."</p>
+      </div>
+
+      <div class="compare-grid">
+        <div class="compare-card old">
+          <h4>❌ 混合评测的问题</h4>
+          <p>传统 benchmark 将智能和隐身混为一谈——Agent 失败时无法区分是"不够聪明"还是"被拦截了"。</p>
+        </div>
+        <div class="compare-card new">
+          <h4>✅ 正交评测</h4>
+          <p>Stealth Benchmark 使用极简任务（每站仅 3 步），排除智能因素，专注测量浏览器的反检测能力。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2 -->
+    <section class="section" id="s2">
+      <h2>📋 数据集分布</h2>
+      <p class="lead">71 个网站按 Anti-bot 供应商分类，覆盖所有主流反爬系统。</p>
+
+      <div class="chart">
+        <div class="chart-row"><div class="chart-label">Cloudflare</div><div class="chart-bar-wrap"><div class="chart-bar teal" style="width:32.4%">23 站</div></div></div>
+        <div class="chart-row"><div class="chart-label">PerimeterX</div><div class="chart-bar-wrap"><div class="chart-bar purple" style="width:25.4%">18 站</div></div></div>
+        <div class="chart-row"><div class="chart-label">Datadome</div><div class="chart-bar-wrap"><div class="chart-bar blue" style="width:18.3%">13 站</div></div></div>
+        <div class="chart-row"><div class="chart-label">Akamai</div><div class="chart-bar-wrap"><div class="chart-bar amber" style="width:11.3%">8 站</div></div></div>
+        <div class="chart-row"><div class="chart-label">reCaptcha</div><div class="chart-bar-wrap"><div class="chart-bar green" style="width:8.5%">6 站</div></div></div>
+        <div class="chart-row"><div class="chart-label">Others</div><div class="chart-bar-wrap"><div class="chart-bar slate" style="width:4.2%">3 站</div></div></div>
+      </div>
+
+      <div class="card">
+        <h4>评判标准</h4>
+        <p>每个站点仅执行 3 步简单操作（搜索、访问页面、读取链接），不需要认证。使用 <code>gemini-2.5-flash</code> 作为 LLM Judge，仅评判 Agent 是否被拦截——而非是否正确完成任务。Page load failure 也计为被拦截。</p>
+      </div>
+    </section>
+
+    <!-- Section 3 -->
+    <section class="section" id="s3">
+      <h2>🔬 控制实验</h2>
+      <p class="lead">使用数据中心 IP 上的两种基线浏览器验证 Benchmark 的有效性。</p>
+
+      <div class="compare-grid">
+        <div class="compare-card old">
+          <h4>Headless Chromium：2%</h4>
+          <p>最可疑的浏览器配置——每轮运行不到 2 个任务通过。几乎所有 Anti-bot 系统都能轻松检测到 Headless 模式。</p>
+        </div>
+        <div class="compare-card new">
+          <h4>Headful Chromium：50%</h4>
+          <p>同一台机器，只是渲染了可见窗口。分数从 2% 跳到 50%，证明 Headless 检测是 Anti-bot 最简单的信号之一。</p>
+        </div>
+      </div>
+
+      <div class="block-q">
+        <p>"This validates that the task set consists of high-security sites and that score improvements reflect real stealth capability."</p>
+      </div>
+    </section>
+
+    <!-- Section 4 -->
+    <section class="section" id="s4">
+      <h2>🏆 核心结果</h2>
+      <p class="lead">Browser Use Cloud 以 81% 领先，比最后一名高出近一倍。</p>
+
+      <div class="chart">
+        <div class="chart-row"><div class="chart-label">Browser Use Cloud</div><div class="chart-bar-wrap"><div class="chart-bar teal" style="width:81%">81%</div></div></div>
+        <div class="chart-row"><div class="chart-label">Anchor</div><div class="chart-bar-wrap"><div class="chart-bar blue" style="width:77%">77%</div></div></div>
+        <div class="chart-row"><div class="chart-label">Onkernel</div><div class="chart-bar-wrap"><div class="chart-bar purple" style="width:67%">67%</div></div></div>
+        <div class="chart-row"><div class="chart-label">Steel</div><div class="chart-bar-wrap"><div class="chart-bar amber" style="width:47%">47%</div></div></div>
+        <div class="chart-row"><div class="chart-label">Browserbase</div><div class="chart-bar-wrap"><div class="chart-bar red" style="width:42%">42%</div></div></div>
+        <div class="chart-row"><div class="chart-label">Hyperbrowser</div><div class="chart-bar-wrap"><div class="chart-bar slate" style="width:40%">40%</div></div></div>
+      </div>
+
+      <div class="card">
+        <h4>各 Anti-bot 供应商通过率（Browser Use Cloud）</h4>
+        <div class="fail-grid">
+          <div class="card" style="border-color:var(--teal)">
+            <div class="icon">🛡️</div>
+            <h4>Cloudflare</h4>
+            <p style="font-size:28px;font-weight:800;font-family:var(--mono);color:var(--teal)">93%</p>
+          </div>
+          <div class="card" style="border-color:var(--blue)">
+            <div class="icon">🔒</div>
+            <h4>Akamai</h4>
+            <p style="font-size:28px;font-weight:800;font-family:var(--mono);color:var(--blue)">85%</p>
+          </div>
+          <div class="card" style="border-color:var(--purple)">
+            <div class="icon">🧱</div>
+            <h4>PerimeterX</h4>
+            <p style="font-size:28px;font-weight:800;font-family:var(--mono);color:var(--purple)">81%</p>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 5 -->
+    <section class="section" id="s5">
+      <h2>📊 BrowserBench 第三方验证</h2>
+      <p class="lead">Halluminate 的第三方基准测试（296 任务）进一步验证了排名。</p>
+
+      <div class="chart">
+        <div class="chart-row"><div class="chart-label">Browser Use Cloud</div><div class="chart-bar-wrap"><div class="chart-bar teal" style="width:84.8%">84.8%</div></div></div>
+        <div class="chart-row"><div class="chart-label">Hyperbrowser</div><div class="chart-bar-wrap"><div class="chart-bar blue" style="width:76.4%">76.4%</div></div></div>
+        <div class="chart-row"><div class="chart-label">Anchor</div><div class="chart-bar-wrap"><div class="chart-bar purple" style="width:76%">76.0%</div></div></div>
+        <div class="chart-row"><div class="chart-label">Steel</div><div class="chart-bar-wrap"><div class="chart-bar amber" style="width:73.3%">73.3%</div></div></div>
+        <div class="chart-row"><div class="chart-label">Browserbase</div><div class="chart-bar-wrap"><div class="chart-bar red" style="width:70.3%">70.3%</div></div></div>
+      </div>
+
+      <div class="card">
+        <h4>两个 Benchmark 对比</h4>
+        <p>BrowserBench 的任务集不完全聚焦高安全网站，因此整体分数更高、供应商间差距更小。但 Browser Use Cloud 在两个独立 Benchmark 中都排名第一——这不是噪声，而是实力的体现。</p>
+      </div>
+    </section>
+
+    <!-- Section 6 -->
+    <section class="section" id="s6">
+      <h2>🎭 行业现状批判</h2>
+      <p class="lead">大多数云浏览器供应商只是在标准 Chromium 上加了住宅代理和第三方验证码插件——然后标上"高级隐身"。</p>
+
+      <div class="block-q">
+        <p>"Most cloud browser providers slap a residential proxy and a third-party CAPTCHA solver extension on a stock Chromium, put 'Advanced Stealth' on the landing page, and call it a day."</p>
+      </div>
+
+      <div class="card">
+        <h4>普遍的指纹泄露</h4>
+        <p>大多数竞品暴露相同的指纹：<code>headful Linux Chromium</code>。当主流 Anti-bot 不再对这些明显泄露"网开一面"时，这些方案就会全面失效。如果你的供应商 User-Agent 以 <code>Mozilla/5.0 (X11; Linux x86_64)</code> 开头——赶紧换。</p>
+      </div>
+    </section>
+
+    <!-- Section 7 -->
+    <section class="section" id="s7">
+      <h2>🔧 Browser Use 的差异化</h2>
+      <p class="lead">自研 Chromium Fork、多 OS 指纹、内置验证码解决方案——Stealth 是第一优先级。</p>
+
+      <div class="fail-grid">
+        <div class="card">
+          <div class="icon">🖥️</div>
+          <h4>完全 Headless</h4>
+          <p>基于最新 Chromium 版本，唯一能做到完全 Headless 运行而不被检测的供应商</p>
+        </div>
+        <div class="card">
+          <div class="icon">🌐</div>
+          <h4>多 OS 指纹</h4>
+          <p>macOS / Windows / Linux 三平台，数万个真实指纹库</p>
+        </div>
+        <div class="card">
+          <div class="icon">🧩</div>
+          <h4>自研 CAPTCHA Solver</h4>
+          <p>内置验证码解决方案 + 监控工具，无需第三方插件</p>
+        </div>
+        <div class="card">
+          <div class="icon">🔀</div>
+          <h4>Chromium Fork</h4>
+          <p>自维护的 Chromium 分支，持续修补反检测漏洞</p>
+        </div>
+        <div class="card">
+          <div class="icon">🐱</div>
+          <h4>永无止境</h4>
+          <p>Anti-bot 不断进化，没有 100% 成功率——但没人比 BU 更努力</p>
+        </div>
+        <div class="card">
+          <div class="icon">📊</div>
+          <h4>持续验证</h4>
+          <p>不断扩展测试集、重新运行基准测试，跟踪隐身能力变化</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer class="footer">
+    <a href="../">← 返回 Browser Use Hub</a> &middot;
+    <a href="https://browser-use.com/posts/stealth-benchmark" target="_blank">原文链接</a>
+  </footer>
+</body>
+</html>

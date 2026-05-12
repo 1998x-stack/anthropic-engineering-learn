@@ -1,0 +1,263 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：BUX - 24/7 远程 Agent</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    :root{
+      --bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;
+      --border:#e2e8f0;--radius:14px;
+      --teal:#0d9488;--teal-light:#14b8a6;--purple:#6366f1;--amber:#f59e0b;
+      --green:#10b981;--red:#ef4444;--blue:#3b82f6;
+      --mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif;
+    }
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+    .nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;justify-content:space-between;align-items:center;font-size:14px}
+    .nav a{color:var(--text);text-decoration:none;font-weight:600}
+    .nav a:hover{color:var(--teal)}
+    .nav .back{color:var(--text-secondary);font-weight:400}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#134e4a 50%,#0d9488 100%);color:#fff;padding:80px 24px 60px;text-align:center}
+    .hero h1{font-size:clamp(28px,4vw,42px);font-weight:800;margin-bottom:12px;line-height:1.2}
+    .hero .subtitle{font-size:18px;opacity:.85;max-width:700px;margin:0 auto 8px}
+    .hero .meta{font-size:14px;opacity:.6;margin-bottom:36px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;max-width:800px;margin:0 auto}
+    .stat{background:rgba(255,255,255,.1);border-radius:var(--radius);padding:20px;backdrop-filter:blur(6px)}
+    .stat .num{font-size:32px;font-weight:800;font-family:var(--mono)}
+    .stat .label{font-size:13px;opacity:.7;margin-top:4px}
+    .page{max-width:900px;margin:0 auto;padding:40px 24px 80px}
+    .toc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px;margin-bottom:48px}
+    .toc h3{font-size:15px;color:var(--text-secondary);margin-bottom:16px;text-transform:uppercase;letter-spacing:1px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .toc-grid a{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;background:var(--bg);transition:all .2s}
+    .toc-grid a:hover{background:#f0fdfa;color:var(--teal)}
+    .toc-grid .num{font-family:var(--mono);font-size:12px;color:var(--teal);font-weight:700;min-width:22px}
+    .section{margin-bottom:56px}
+    .section h2{font-size:24px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+    .lead{color:var(--text-secondary);font-size:16px;margin-bottom:24px;line-height:1.6}
+    p{margin-bottom:16px}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+    .card h4{font-weight:700;margin-bottom:8px;font-size:16px}
+    .block-q{border-left:4px solid var(--teal);background:#f0fdfa;padding:20px 24px;border-radius:0 var(--radius) var(--radius) 0;margin:20px 0;font-size:15px;font-style:italic}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}
+    .compare-card{border-radius:var(--radius);padding:24px;font-size:14px}
+    .compare-card.old{background:#fef2f2;border:2px solid #fecaca}
+    .compare-card.new{background:#f0fdf4;border:2px solid #bbf7d0}
+    .compare-card h4{margin-bottom:10px;font-size:15px}
+    .flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:20px 0;justify-content:center}
+    .flow-step{background:var(--surface);border:2px solid var(--border);border-radius:12px;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;min-width:110px}
+    .flow-step.teal{border-color:var(--teal);background:#f0fdfa;color:#134e4a}
+    .flow-step.purple{border-color:var(--purple);background:#eef2ff;color:#312e81}
+    .flow-step.green{border-color:var(--green);background:#ecfdf5;color:#065f46}
+    .flow-arrow{font-size:22px;color:var(--text-secondary);font-weight:700}
+    .timeline{position:relative;padding-left:32px;margin:20px 0}
+    .timeline::before{content:'';position:absolute;left:11px;top:0;bottom:0;width:3px;background:linear-gradient(to bottom,var(--teal),var(--purple))}
+    .tl-item{margin-bottom:28px;position:relative}
+    .tl-dot{position:absolute;left:-28px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid var(--teal);background:#fff}
+    .tl-item:nth-child(2) .tl-dot{border-color:var(--purple)}
+    .tl-item:nth-child(3) .tl-dot{border-color:var(--amber)}
+    .tl-item:nth-child(4) .tl-dot{border-color:var(--green)}
+    .tl-phase{font-weight:700;font-size:15px;margin-bottom:4px}
+    .tl-desc{font-size:14px;color:var(--text-secondary)}
+    .fail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:20px 0}
+    .fail-grid .card{text-align:center;padding:20px}
+    .fail-grid .card .icon{font-size:28px;margin-bottom:8px}
+    .agent-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin:20px 0}
+    .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600}
+    .badge-teal{background:#ccfbf1;color:#0f766e}
+    .badge-green{background:#d1fae5;color:#065f46}
+    .badge-amber{background:#fef3c7;color:#92400e}
+    .badge-purple{background:#e0e7ff;color:#3730a3}
+    code{font-family:var(--mono);background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:13px}
+    .task-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:18px 22px;margin-bottom:12px;display:flex;gap:14px;align-items:flex-start}
+    .task-card .task-icon{font-size:24px;flex-shrink:0}
+    .task-card .task-text{font-size:14px;color:var(--text)}
+    .task-card .task-text em{color:var(--teal);font-style:normal;font-weight:600}
+    .footer{text-align:center;padding:40px 24px;border-top:1px solid var(--border);color:var(--text-secondary);font-size:14px}
+    .footer a{color:var(--teal);text-decoration:none;font-weight:500}
+    .footer a:hover{text-decoration:underline}
+    @media(max-width:768px){
+      .compare-grid,.agent-grid{grid-template-columns:1fr}
+      .fail-grid{grid-template-columns:repeat(2,1fr)}
+      .flow{flex-direction:column;gap:6px}
+      .flow-arrow{transform:rotate(90deg)}
+      .toc-grid{grid-template-columns:1fr}
+      .stats{grid-template-columns:repeat(2,1fr)}
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a href="../">Browser Use Deep Dives</a>
+    <a href="../" class="back">&larr; Back to Hub</a>
+  </nav>
+
+  <header class="hero">
+    <h1>BUX: Your 24/7 Remote Agent</h1>
+    <p class="subtitle">Browser Use Box &mdash; 预装 Claude Code + Browser Harness 的 24/7 远程 VM，通过 Telegram / Web / SSH 控制</p>
+    <p class="meta">Johannes Dittrich &middot; 2026-04-25</p>
+    <div class="stats">
+      <div class="stat"><div class="num">24/7</div><div class="label">Always-On Agent</div></div>
+      <div class="stat"><div class="num">30-60s</div><div class="label">Spin-up 时间</div></div>
+      <div class="stat"><div class="num">240min</div><div class="label">Browser Session 轮换</div></div>
+      <div class="stat"><div class="num">3</div><div class="label">控制方式</div></div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc">
+      <h3>目录</h3>
+      <div class="toc-grid">
+        <a href="#s1"><span class="num">01</span>什么是 BUX</a>
+        <a href="#s2"><span class="num">02</span>使用场景</a>
+        <a href="#s3"><span class="num">03</span>工作原理</a>
+        <a href="#s4"><span class="num">04</span>Setup 流程</a>
+        <a href="#s5"><span class="num">05</span>账户访问</a>
+      </div>
+    </nav>
+
+    <section class="section" id="s1">
+      <h2>&#x1F4E6; 什么是 BUX</h2>
+      <p class="lead">Browser Use Box = 预装 Claude Code + Browser Harness 的远程 VM。从手机上随时随地控制你的 agent。</p>
+
+      <div class="fail-grid">
+        <div class="card">
+          <div class="icon">&#x1F4AC;</div>
+          <h4>Telegram</h4>
+          <p style="font-size:13px;margin:0">随时发消息，agent 立即执行</p>
+        </div>
+        <div class="card">
+          <div class="icon">&#x1F310;</div>
+          <h4>Web Terminal</h4>
+          <p style="font-size:13px;margin:0">浏览器直接访问 VM</p>
+        </div>
+        <div class="card">
+          <div class="icon">&#x1F4BB;</div>
+          <h4>SSH</h4>
+          <p style="font-size:13px;margin:0">本地 SSH 完整访问</p>
+        </div>
+      </div>
+
+      <div class="compare-grid">
+        <div class="compare-card old">
+          <h4>&#x274C; 之前</h4>
+          <p>需要坐在电脑前</p>
+          <p>手动启动 Claude Code</p>
+          <p>手动配置浏览器</p>
+          <p>复杂 dashboard 任务困难</p>
+        </div>
+        <div class="compare-card new">
+          <h4>&#x2705; BUX</h4>
+          <p>在健身房、Uber、走路时发消息</p>
+          <p>24/7 预装 Claude Code</p>
+          <p>Browser Harness 即插即用</p>
+          <p>Azure / Google Workspace 轻松搞定</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="s2">
+      <h2>&#x1F3AF; 使用场景</h2>
+      <p class="lead">从部署 PR 到订机票到在 Amazon 下单 &mdash; 目前还没找到 BUX 做不了的工作/日常 web 任务。</p>
+
+      <div class="task-card">
+        <div class="task-icon">&#x1F680;</div>
+        <div class="task-text"><em>"deploy PR #235 to staging and test the new flow"</em> &mdash; DevOps 自动化</div>
+      </div>
+      <div class="task-card">
+        <div class="task-icon">&#x2708;&#xFE0F;</div>
+        <div class="task-text"><em>"book the earliest flight Zurich to SF next Wednesday"</em> &mdash; 旅行预订</div>
+      </div>
+      <div class="task-card">
+        <div class="task-icon">&#x1F4F7;</div>
+        <div class="task-text"><em>"take a picture of our granola, order this on Amazon"</em> &mdash; 日常购物</div>
+      </div>
+
+      <div class="block-q">
+        <p>"We are yet to find a work-related or everyday-web task that BUX can't do."</p>
+      </div>
+    </section>
+
+    <section class="section" id="s3">
+      <h2>&#x2699;&#xFE0F; 工作原理</h2>
+      <p class="lead">Pre-baked AMI，30-60 秒启动。locked-down IAM role，零 AWS 权限。Context 跨消息持久化。</p>
+
+      <div class="flow">
+        <div class="flow-step">Pre-baked AMI</div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step teal">30-60s Spin-up</div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step purple">Claude Code Session</div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step green">Telegram Bot</div>
+      </div>
+
+      <div class="agent-grid">
+        <div class="card">
+          <h4>&#x1F512; 安全</h4>
+          <p style="font-size:14px;margin-bottom:0">VM 运行在 locked-down IAM role 下，<strong>零 AWS 权限</strong>。无法触及你的基础设施或 Browser Use 的。</p>
+        </div>
+        <div class="card">
+          <h4>&#x1F4BE; 持久化</h4>
+          <p style="font-size:14px;margin-bottom:0">Telegram 连接一个 resumed Claude Code session，context 跨消息持久。Browser sessions 每 240 分钟轮换。</p>
+        </div>
+      </div>
+
+      <div class="card" style="border-left:4px solid var(--teal)">
+        <h4>开源架构</h4>
+        <p style="margin-bottom:0">完整架构开源，可自托管。Web terminal 直接浏览器访问，SSH 本地访问。</p>
+      </div>
+    </section>
+
+    <section class="section" id="s4">
+      <h2>&#x1F6E0;&#xFE0F; Setup：5 分钟内完成</h2>
+      <p class="lead">三步完成：启动 VM、登录 Claude Code、创建 Telegram Bot。</p>
+
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Step 1: 启动 VM</div>
+          <div class="tl-desc">访问 cloud.browser-use.com/bux，启动你的 VM</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Step 2: 登录 Claude Code</div>
+          <div class="tl-desc">在 web terminal 中登录 Claude Code</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Step 3: Telegram Bot</div>
+          <div class="tl-desc">通过 @BotFather 创建 bot，粘贴 token。Token 保存在你的 box 中。</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="s5">
+      <h2>&#x1F511; 给 BUX 访问权限</h2>
+      <p class="lead">BUX 的能力取决于它能访问的账户。使用 Browser Use Profiles 同步 cookies 或手动构建。</p>
+
+      <div class="card">
+        <h4>智能登录流程</h4>
+        <div class="flow" style="margin:12px 0 0">
+          <div class="flow-step">Agent 遇到登录墙</div>
+          <div class="flow-arrow">&rarr;</div>
+          <div class="flow-step teal">发送 live URL</div>
+          <div class="flow-arrow">&rarr;</div>
+          <div class="flow-step purple">你登录</div>
+          <div class="flow-arrow">&rarr;</div>
+          <div class="flow-step green">保存 cookies</div>
+        </div>
+        <p style="text-align:center;color:var(--text-secondary);font-size:14px;margin-top:12px">下次不再需要登录 &mdash; cookies 自动保存</p>
+      </div>
+    </section>
+  </div>
+
+  <footer class="footer">
+    <p><a href="../">&#x2190; Back to Hub</a></p>
+    <p style="margin-top:8px">Source: <a href="https://browser-use.com/posts/bux-launch-blog" target="_blank">browser-use.com/posts/bux-launch-blog</a></p>
+  </footer>
+</body>
+</html>

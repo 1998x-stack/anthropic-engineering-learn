@@ -1,0 +1,314 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Browser Use = State of the Art Web Agent</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    :root{
+      --bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;
+      --border:#e2e8f0;--radius:14px;
+      --teal:#0d9488;--teal-light:#14b8a6;--purple:#6366f1;--amber:#f59e0b;
+      --green:#10b981;--red:#ef4444;--blue:#3b82f6;
+      --mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif;
+    }
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+    .nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;justify-content:space-between;align-items:center;font-size:14px}
+    .nav a{color:var(--text);text-decoration:none;font-weight:600}
+    .nav a:hover{color:var(--teal)}
+    .nav .back{color:var(--text-secondary);font-weight:400}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#134e4a 50%,#0d9488 100%);color:#fff;padding:80px 24px 60px;text-align:center}
+    .hero h1{font-size:clamp(28px,4vw,42px);font-weight:800;margin-bottom:12px;line-height:1.2}
+    .hero .subtitle{font-size:18px;opacity:.85;max-width:700px;margin:0 auto 8px}
+    .hero .meta{font-size:14px;opacity:.6;margin-bottom:36px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;max-width:800px;margin:0 auto}
+    .stat{background:rgba(255,255,255,.1);border-radius:var(--radius);padding:20px;backdrop-filter:blur(6px)}
+    .stat .num{font-size:32px;font-weight:800;font-family:var(--mono)}
+    .stat .label{font-size:13px;opacity:.7;margin-top:4px}
+    .page{max-width:900px;margin:0 auto;padding:40px 24px 80px}
+    .toc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px;margin-bottom:48px}
+    .toc h3{font-size:15px;color:var(--text-secondary);margin-bottom:16px;text-transform:uppercase;letter-spacing:1px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .toc-grid a{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;background:var(--bg);transition:all .2s}
+    .toc-grid a:hover{background:#f0fdfa;color:var(--teal)}
+    .toc-grid .num{font-family:var(--mono);font-size:12px;color:var(--teal);font-weight:700;min-width:22px}
+    .section{margin-bottom:56px}
+    .section h2{font-size:24px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+    .lead{color:var(--text-secondary);font-size:16px;margin-bottom:24px;line-height:1.6}
+    p{margin-bottom:16px}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+    .card h4{font-weight:700;margin-bottom:8px;font-size:16px}
+    .block-q{border-left:4px solid var(--teal);background:#f0fdfa;padding:20px 24px;border-radius:0 var(--radius) var(--radius) 0;margin:20px 0;font-size:15px;font-style:italic}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}
+    .compare-card{border-radius:var(--radius);padding:24px;font-size:14px}
+    .compare-card.old{background:#fef2f2;border:2px solid #fecaca}
+    .compare-card.new{background:#f0fdf4;border:2px solid #bbf7d0}
+    .compare-card h4{margin-bottom:10px;font-size:15px}
+    .flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:20px 0;justify-content:center}
+    .flow-step{background:var(--surface);border:2px solid var(--border);border-radius:12px;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;min-width:110px}
+    .flow-step.teal{border-color:var(--teal);background:#f0fdfa;color:#134e4a}
+    .flow-step.purple{border-color:var(--purple);background:#eef2ff;color:#312e81}
+    .flow-step.green{border-color:var(--green);background:#ecfdf5;color:#065f46}
+    .flow-step.amber{border-color:var(--amber);background:#fffbeb;color:#92400e}
+    .flow-arrow{font-size:22px;color:var(--text-secondary);font-weight:700}
+    .chart{margin:20px 0}
+    .chart-row{display:flex;align-items:center;margin-bottom:10px;gap:12px}
+    .chart-label{min-width:160px;font-size:13px;font-weight:600;text-align:right}
+    .chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}
+    .chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;padding:0 12px;font-size:12px;font-weight:700;color:#fff;transition:width .6s}
+    .chart-bar.teal{background:linear-gradient(90deg,#0d9488,#14b8a6)}
+    .chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+    .chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}
+    .chart-bar.purple{background:linear-gradient(90deg,#6366f1,#818cf8)}
+    .chart-bar.green{background:linear-gradient(90deg,#10b981,#34d399)}
+    .chart-bar.slate{background:linear-gradient(90deg,#475569,#64748b)}
+    .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600}
+    .badge-teal{background:#ccfbf1;color:#0f766e}
+    .badge-red{background:#fee2e2;color:#b91c1c}
+    .badge-green{background:#d1fae5;color:#065f46}
+    .badge-purple{background:#e0e7ff;color:#3730a3}
+    .badge-amber{background:#fef3c7;color:#92400e}
+    .timeline{position:relative;padding-left:32px;margin:20px 0}
+    .timeline::before{content:'';position:absolute;left:11px;top:0;bottom:0;width:3px;background:linear-gradient(to bottom,var(--teal),var(--purple))}
+    .tl-item{margin-bottom:28px;position:relative}
+    .tl-dot{position:absolute;left:-28px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid var(--teal);background:#fff}
+    .tl-item:nth-child(2) .tl-dot{border-color:var(--purple)}
+    .tl-item:nth-child(3) .tl-dot{border-color:var(--amber)}
+    .tl-item:nth-child(4) .tl-dot{border-color:var(--green)}
+    .tl-item:nth-child(5) .tl-dot{border-color:var(--blue)}
+    .tl-phase{font-weight:700;font-size:15px;margin-bottom:4px}
+    .tl-desc{font-size:14px;color:var(--text-secondary)}
+    .fail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:20px 0}
+    .fail-grid .card{text-align:center;padding:18px}
+    .fail-grid .card .icon{font-size:28px;margin-bottom:8px}
+    .agent-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin:20px 0}
+    .tbl-wrap{overflow-x:auto;margin:20px 0}
+    table{width:100%;border-collapse:collapse;font-size:14px}
+    th,td{padding:12px 16px;text-align:left;border-bottom:1px solid var(--border)}
+    th{font-weight:700;background:var(--bg);font-size:13px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-secondary)}
+    tr:hover td{background:#f8fafc}
+    code{font-family:var(--mono);background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:13px}
+    .footer{text-align:center;padding:40px 24px;border-top:1px solid var(--border);color:var(--text-secondary);font-size:14px}
+    .footer a{color:var(--teal);text-decoration:none;font-weight:500}
+    .footer a:hover{text-decoration:underline}
+    .highlight-row td{background:#f0fdfa;font-weight:600}
+    @media(max-width:768px){
+      .compare-grid,.agent-grid{grid-template-columns:1fr}
+      .fail-grid{grid-template-columns:repeat(2,1fr)}
+      .flow{flex-direction:column;gap:6px}
+      .flow-arrow{transform:rotate(90deg)}
+      .chart-label{min-width:110px;font-size:12px}
+      .toc-grid{grid-template-columns:1fr}
+      .stats{grid-template-columns:repeat(2,1fr)}
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a href="../">Browser Use Deep Dives</a>
+    <a href="../" class="back">&larr; Back to Hub</a>
+  </nav>
+
+  <header class="hero">
+    <h1>Browser Use = State of the Art Web Agent</h1>
+    <p class="subtitle">在 WebVoyager 基准测试中，Browser Use 以 89.1% 成功率达到 SOTA，完全开源。</p>
+    <p class="meta">Gregor Zunic &middot; 2024-12-15</p>
+    <div class="stats">
+      <div class="stat"><div class="num">89.1%</div><div class="label">WebVoyager 成功率</div></div>
+      <div class="stat"><div class="num">586</div><div class="label">测试任务数</div></div>
+      <div class="stat"><div class="num">15</div><div class="label">测试网站领域</div></div>
+      <div class="stat"><div class="num">100%</div><div class="label">开源</div></div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+        <a href="#s1"><span class="num">01</span>评测方法</a>
+        <a href="#s2"><span class="num">02</span>各域成功率</a>
+        <a href="#s3"><span class="num">03</span>结果分析</a>
+        <a href="#s4"><span class="num">04</span>注意事项</a>
+        <a href="#s5"><span class="num">05</span>未来规划</a>
+      </div>
+    </nav>
+
+    <!-- Section 1 -->
+    <section class="section" id="s1">
+      <h2>🔬 评测方法</h2>
+      <p class="lead">基于 WebVoyager 基准测试框架进行改造，使用 GPT-4o 驱动的 Browser Use Agent 运行真实 Web 任务。</p>
+
+      <div class="flow">
+        <div class="flow-step teal">WebVoyager Codebase</div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step purple">Prompt 调整</div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step amber">迁移到 Langchain</div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step green">GPT-4o 运行</div>
+      </div>
+
+      <div class="card">
+        <h4>关键调整</h4>
+        <p>团队对原始 WebVoyager 代码库做了几项针对性修改：Prompt 微调以适配 Browser Use 的 Action Space，将纯 OpenAI SDK 迁移到 Langchain，并移除了 55 个因过期数据（航班日期、酒店预订等）而无法完成的任务。</p>
+      </div>
+
+      <div class="compare-grid">
+        <div class="compare-card old">
+          <h4>❌ 被移除的任务类型</h4>
+          <p>Apple 上无法显示价格的产品查询、过时的日期（2023 年航班/酒店）、不存在的食谱搜索结果等 55 个不可能完成的任务。</p>
+        </div>
+        <div class="compare-card new">
+          <h4>✅ 保留的任务特征</h4>
+          <p>跨 15 个真实网站的 586 个多样化 Web 任务，涵盖搜索、导航、信息提取、表单填写等多种交互模式。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2 -->
+    <section class="section" id="s2">
+      <h2>📊 各域成功率排名</h2>
+      <p class="lead">从 HuggingFace 的完美 100% 到 Booking 的 80%，全部 15 个网站均表现优异。</p>
+
+      <div class="chart">
+        <div class="chart-row"><div class="chart-label">HuggingFace</div><div class="chart-bar-wrap"><div class="chart-bar teal" style="width:100%">100%</div></div></div>
+        <div class="chart-row"><div class="chart-label">Google Flights</div><div class="chart-bar-wrap"><div class="chart-bar teal" style="width:95%">95%</div></div></div>
+        <div class="chart-row"><div class="chart-label">Amazon</div><div class="chart-bar-wrap"><div class="chart-bar green" style="width:92%">92%</div></div></div>
+        <div class="chart-row"><div class="chart-label">GitHub</div><div class="chart-bar-wrap"><div class="chart-bar green" style="width:92%">92%</div></div></div>
+        <div class="chart-row"><div class="chart-label">Apple</div><div class="chart-bar-wrap"><div class="chart-bar blue" style="width:91%">91%</div></div></div>
+        <div class="chart-row"><div class="chart-label">BBC News</div><div class="chart-bar-wrap"><div class="chart-bar blue" style="width:91%">91%</div></div></div>
+        <div class="chart-row"><div class="chart-label">Cambridge Dict.</div><div class="chart-bar-wrap"><div class="chart-bar blue" style="width:91%">91%</div></div></div>
+        <div class="chart-row"><div class="chart-label">Allrecipes</div><div class="chart-bar-wrap"><div class="chart-bar purple" style="width:90%">90%</div></div></div>
+        <div class="chart-row"><div class="chart-label">Coursera</div><div class="chart-bar-wrap"><div class="chart-bar purple" style="width:90%">90%</div></div></div>
+        <div class="chart-row"><div class="chart-label">Google Search</div><div class="chart-bar-wrap"><div class="chart-bar purple" style="width:90%">90%</div></div></div>
+        <div class="chart-row"><div class="chart-label">Google Map</div><div class="chart-bar-wrap"><div class="chart-bar amber" style="width:86%">86%</div></div></div>
+        <div class="chart-row"><div class="chart-label">ESPN</div><div class="chart-bar-wrap"><div class="chart-bar amber" style="width:85%">85%</div></div></div>
+        <div class="chart-row"><div class="chart-label">ArXiv</div><div class="chart-bar-wrap"><div class="chart-bar slate" style="width:83%">83%</div></div></div>
+        <div class="chart-row"><div class="chart-label">Wolfram Alpha</div><div class="chart-bar-wrap"><div class="chart-bar slate" style="width:83%">83%</div></div></div>
+        <div class="chart-row"><div class="chart-label">Booking</div><div class="chart-bar-wrap"><div class="chart-bar red" style="width:80%">80%</div></div></div>
+      </div>
+
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>网站</th><th>成功率</th><th>平均步数</th><th>复杂度评估</th></tr></thead>
+          <tbody>
+            <tr class="highlight-row"><td>HuggingFace</td><td>100%</td><td>9.7</td><td><span class="badge badge-green">低</span></td></tr>
+            <tr><td>Google Flights</td><td>95%</td><td>36.2</td><td><span class="badge badge-red">高</span></td></tr>
+            <tr><td>Amazon</td><td>92%</td><td>14.7</td><td><span class="badge badge-amber">中</span></td></tr>
+            <tr><td>GitHub</td><td>92%</td><td>15.9</td><td><span class="badge badge-amber">中</span></td></tr>
+            <tr><td>Apple</td><td>91%</td><td>12.5</td><td><span class="badge badge-amber">中</span></td></tr>
+            <tr><td>Coursera</td><td>90%</td><td>8.5</td><td><span class="badge badge-green">低</span></td></tr>
+            <tr><td>Booking</td><td>80%</td><td>32.7</td><td><span class="badge badge-red">高</span></td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+
+    <!-- Section 3 -->
+    <section class="section" id="s3">
+      <h2>🔍 结果分析</h2>
+      <p class="lead">步数与成功率的关系揭示了 Agent 在不同网站上的行为模式。</p>
+
+      <div class="agent-grid">
+        <div class="card">
+          <h4>高成功率 + 低步数</h4>
+          <p>HuggingFace（100%, 9.7 步）和 Coursera（90%, 8.5 步）代表"简单"网站——页面结构清晰、导航直观，Agent 可以高效完成任务。</p>
+        </div>
+        <div class="card">
+          <h4>高成功率 + 高步数</h4>
+          <p>Google Flights（95%, 36.2 步）是特殊案例——成功率极高但步数也极多。说明该网站交互复杂（多步表单、日期选择器等），但 Agent 可以可靠地完成。</p>
+        </div>
+        <div class="card">
+          <h4>低成功率 + 高步数</h4>
+          <p>Booking（80%, 32.7 步）结合了复杂交互与较低成功率，可能存在 Cloudflare 防护和动态价格加载等障碍。</p>
+        </div>
+        <div class="card">
+          <h4>整体分布</h4>
+          <p>即使"最差"的 Booking.com 也达到了 80% 成功率。所有 15 个域的平均成功率为 89.1%，展示了 Browser Use 的全面能力。</p>
+        </div>
+      </div>
+
+      <div class="block-q">
+        <p>"Even our 'worst' performing domain (Booking.com) still achieved an 80% success rate. Not too shabby!"</p>
+      </div>
+    </section>
+
+    <!-- Section 4 -->
+    <section class="section" id="s4">
+      <h2>⚠️ 注意事项与透明度</h2>
+      <p class="lead">团队对评测中的局限性和人工干预进行了公开说明。</p>
+
+      <div class="fail-grid">
+        <div class="card">
+          <div class="icon">📅</div>
+          <h4>过期数据</h4>
+          <p>部分任务的日期已过期（航班、酒店），需要从 2023→2024 或 2024→2025 调整</p>
+        </div>
+        <div class="card">
+          <div class="icon">🛡️</div>
+          <h4>Cloudflare 拦截</h4>
+          <p>部分网站触发了 Cloudflare 反爬保护，导致 Agent 被阻断</p>
+        </div>
+        <div class="card">
+          <div class="icon">🤖</div>
+          <h4>Eval 模型不佳</h4>
+          <p>默认 WebVoyager Evaluator 判断不准确，增加了 "unknown" 状态并人工复核</p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h4>人工修正流程</h4>
+        <p>对于评测模型判定为 "unknown" 或 "failed" 的任务，团队进行了人工复核和修正。虽然这可能引入偏差，但团队认为这比使用不可靠的自动评估更诚实。未来计划会让人工标注更加透明。</p>
+      </div>
+
+      <div class="flow">
+        <div class="flow-step">自动评测</div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step amber">标记 Unknown</div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step purple">人工复核</div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step green">修正结果</div>
+      </div>
+    </section>
+
+    <!-- Section 5 -->
+    <section class="section" id="s5">
+      <h2>🚀 未来规划</h2>
+      <p class="lead">SOTA 只是起点——团队正在推进多模型支持、代理旋转和更透明的标注体系。</p>
+
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">标注透明化</div>
+          <div class="tl-desc">公开所有人工标注的 item，让评测结果可复现、可审计</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Proxy 轮换</div>
+          <div class="tl-desc">引入代理旋转机制，解决 Cloudflare 等反爬拦截问题</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">多模型测试</div>
+          <div class="tl-desc">在 Claude、GPT-4o、Llama 3 等多种 LLM 上运行评测对比</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">多配置实验</div>
+          <div class="tl-desc">测试单图 vs 多图、单任务 vs 多任务等不同配置的影响</div>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer class="footer">
+    <a href="../">← 返回 Browser Use Hub</a> &middot;
+    <a href="https://browser-use.com/posts/sota-technical-report" target="_blank">原文链接</a>
+  </footer>
+</body>
+</html>

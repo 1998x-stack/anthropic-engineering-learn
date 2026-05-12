@@ -1,0 +1,240 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Frigade 如何用 Browser Use 构建 Onboarding Agent</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    :root{
+      --bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;
+      --border:#e2e8f0;--radius:14px;
+      --teal:#0d9488;--teal-light:#14b8a6;--purple:#6366f1;--amber:#f59e0b;
+      --green:#10b981;--red:#ef4444;--blue:#3b82f6;
+      --mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif;
+    }
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+    .nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;justify-content:space-between;align-items:center;font-size:14px}
+    .nav a{color:var(--text);text-decoration:none;font-weight:600}
+    .nav a:hover{color:var(--teal)}
+    .nav .back{color:var(--text-secondary);font-weight:400}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#134e4a 50%,#0d9488 100%);color:#fff;padding:80px 24px 60px;text-align:center}
+    .hero h1{font-size:clamp(28px,4vw,42px);font-weight:800;margin-bottom:12px;line-height:1.2}
+    .hero .subtitle{font-size:18px;opacity:.85;max-width:700px;margin:0 auto 8px}
+    .hero .meta{font-size:14px;opacity:.6;margin-bottom:36px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;max-width:800px;margin:0 auto}
+    .stat{background:rgba(255,255,255,.1);border-radius:var(--radius);padding:20px;backdrop-filter:blur(6px)}
+    .stat .num{font-size:32px;font-weight:800;font-family:var(--mono)}
+    .stat .label{font-size:13px;opacity:.7;margin-top:4px}
+    .page{max-width:900px;margin:0 auto;padding:40px 24px 80px}
+    .toc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px;margin-bottom:48px}
+    .toc h3{font-size:15px;color:var(--text-secondary);margin-bottom:16px;text-transform:uppercase;letter-spacing:1px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .toc-grid a{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;background:var(--bg);transition:all .2s}
+    .toc-grid a:hover{background:#f0fdfa;color:var(--teal)}
+    .toc-grid .num{font-family:var(--mono);font-size:12px;color:var(--teal);font-weight:700;min-width:22px}
+    .section{margin-bottom:56px}
+    .section h2{font-size:24px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+    .lead{color:var(--text-secondary);font-size:16px;margin-bottom:24px;line-height:1.6}
+    p{margin-bottom:16px}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+    .card h4{font-weight:700;margin-bottom:8px;font-size:16px}
+    .block-q{border-left:4px solid var(--teal);background:#f0fdfa;padding:20px 24px;border-radius:0 var(--radius) var(--radius) 0;margin:20px 0;font-size:15px;font-style:italic}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}
+    .compare-card{border-radius:var(--radius);padding:24px;font-size:14px}
+    .compare-card.old{background:#fef2f2;border:2px solid #fecaca}
+    .compare-card.new{background:#f0fdf4;border:2px solid #bbf7d0}
+    .compare-card h4{margin-bottom:10px;font-size:15px}
+    .flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:20px 0;justify-content:center}
+    .flow-step{background:var(--surface);border:2px solid var(--border);border-radius:12px;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;min-width:110px}
+    .flow-step.teal{border-color:var(--teal);background:#f0fdfa;color:#134e4a}
+    .flow-step.purple{border-color:var(--purple);background:#eef2ff;color:#312e81}
+    .flow-step.green{border-color:var(--green);background:#ecfdf5;color:#065f46}
+    .flow-arrow{font-size:22px;color:var(--text-secondary);font-weight:700}
+    .timeline{position:relative;padding-left:32px;margin:20px 0}
+    .timeline::before{content:'';position:absolute;left:11px;top:0;bottom:0;width:3px;background:linear-gradient(to bottom,var(--teal),var(--purple))}
+    .tl-item{margin-bottom:28px;position:relative}
+    .tl-dot{position:absolute;left:-28px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid var(--teal);background:#fff}
+    .tl-item:nth-child(2) .tl-dot{border-color:var(--purple)}
+    .tl-item:nth-child(3) .tl-dot{border-color:var(--amber)}
+    .tl-phase{font-weight:700;font-size:15px;margin-bottom:4px}
+    .tl-desc{font-size:14px;color:var(--text-secondary)}
+    .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600}
+    .badge-teal{background:#ccfbf1;color:#0f766e}
+    .badge-green{background:#d1fae5;color:#065f46}
+    .badge-purple{background:#e0e7ff;color:#3730a3}
+    .fail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:20px 0}
+    .fail-grid .card{text-align:center;padding:20px}
+    .fail-grid .card .icon{font-size:28px;margin-bottom:8px}
+    .agent-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin:20px 0}
+    code{font-family:var(--mono);background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:13px}
+    .footer{text-align:center;padding:40px 24px;border-top:1px solid var(--border);color:var(--text-secondary);font-size:14px}
+    .footer a{color:var(--teal);text-decoration:none;font-weight:500}
+    .footer a:hover{text-decoration:underline}
+    @media(max-width:768px){
+      .compare-grid,.agent-grid{grid-template-columns:1fr}
+      .fail-grid{grid-template-columns:repeat(2,1fr)}
+      .flow{flex-direction:column;gap:6px}
+      .flow-arrow{transform:rotate(90deg)}
+      .toc-grid{grid-template-columns:1fr}
+      .stats{grid-template-columns:repeat(2,1fr)}
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a href="../">Browser Use Deep Dives</a>
+    <a href="../" class="back">&larr; Back to Hub</a>
+  </nav>
+
+  <header class="hero">
+    <h1>Frigade: 用 Browser Use 构建 Onboarding Agent</h1>
+    <p class="subtitle">Frigade (YC W23) 如何使用 browser agents 自动理解任何产品，替代手写 knowledge base</p>
+    <p class="meta">Reagan Hsu &middot; 2026-02-06</p>
+    <div class="stats">
+      <div class="stat"><div class="num">YC W23</div><div class="label">Frigade 批次</div></div>
+      <div class="stat"><div class="num">0</div><div class="label">需要手写的文档</div></div>
+      <div class="stat"><div class="num">100%</div><div class="label">自动产品理解</div></div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc">
+      <h3>目录</h3>
+      <div class="toc-grid">
+        <a href="#s1"><span class="num">01</span>问题：盲目的 AI 支持</a>
+        <a href="#s2"><span class="num">02</span>Frigade 的解决方案</a>
+        <a href="#s3"><span class="num">03</span>Browser Use 的角色</a>
+        <a href="#s4"><span class="num">04</span>未来：从 Google Maps 到 Waymo</a>
+      </div>
+    </nav>
+
+    <section class="section" id="s1">
+      <h2>&#x1F441;&#xFE0F; 问题：盲目的 AI 支持</h2>
+      <p class="lead">大多数应用内 AI 支持是盲目的 &mdash; chatbot 照搬通用帮助文档，不理解用户具体 context，给支持团队带来巨大负担。</p>
+
+      <div class="compare-grid">
+        <div class="compare-card old">
+          <h4>&#x274C; 传统 AI 支持</h4>
+          <p>照搬通用帮助中心文章</p>
+          <p>不理解用户看到的内容</p>
+          <p>支持团队需要不断写和维护文档</p>
+          <p><span class="badge" style="background:#fee2e2;color:#b91c1c">高维护成本</span></p>
+        </div>
+        <div class="compare-card new">
+          <h4>&#x2705; Frigade 方案</h4>
+          <p>Browser agent 自动理解产品</p>
+          <p>结合用户实际看到的内容</p>
+          <p>无需客户手写 knowledge base</p>
+          <p><span class="badge badge-green">零维护成本</span></p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="s2">
+      <h2>&#x1F9E0; Frigade 的解决方案</h2>
+      <p class="lead">不要求客户自己写文档，而是用 browser agents 从零开始理解任何产品。</p>
+
+      <div class="flow">
+        <div class="flow-step">Browser Agent 浏览产品</div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step teal">自动理解产品功能</div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step purple">结合用户 Context</div>
+        <div class="flow-arrow">&rarr;</div>
+        <div class="flow-step green">应用内直接帮助</div>
+      </div>
+
+      <div class="fail-grid">
+        <div class="card">
+          <div class="icon">&#x1F4CA;</div>
+          <h4>"这个项目表现如何?"</h4>
+          <p style="font-size:13px;margin:0">Agent 理解产品上下文后可直接回答</p>
+        </div>
+        <div class="card">
+          <div class="icon">&#x1F512;</div>
+          <h4>"帮我配置隐私设置"</h4>
+          <p style="font-size:13px;margin:0">Agent 知道设置在哪、如何操作</p>
+        </div>
+        <div class="card">
+          <div class="icon">&#x1F4DD;</div>
+          <h4>零文档维护</h4>
+          <p style="font-size:13px;margin:0">无需客户写或维护 knowledge base</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="s3">
+      <h2>&#x1F527; Browser Use 的关键作用</h2>
+      <p class="lead">从零 context 出发理解产品，需要一个能处理歧义和状态变化的强大 browser agent。</p>
+
+      <div class="agent-grid">
+        <div class="card" style="border-left:4px solid var(--teal)">
+          <h4>vs Playwright Scripts</h4>
+          <p style="font-size:14px">确定性的 Playwright 脚本需要预先知道 context。Browser Use agents 不需要 &mdash; 它们轻松导航 DOM 并适应动态变化如 popups。</p>
+        </div>
+        <div class="card" style="border-left:4px solid var(--teal)">
+          <h4>Authentication Pain Point</h4>
+          <p style="font-size:14px">其他 provider 的"stealth mode"根本不 work。Browser Use Cloud <strong>即插即用</strong>，立刻解决了 CAPTCHA 和认证问题。</p>
+        </div>
+      </div>
+
+      <div class="block-q">
+        <p>"Using other providers, we ran into a lot of CAPTCHA issues. Other companies claim to have stealth mode, but we never got it working. Browser-Use cloud worked instantly and out of the box."<br>&mdash; Christian, Co-founder, CTO @ Frigade</p>
+      </div>
+
+      <div class="card">
+        <h4>核心优势</h4>
+        <div class="timeline">
+          <div class="tl-item">
+            <div class="tl-dot"></div>
+            <div class="tl-phase">无需预设 Context</div>
+            <div class="tl-desc">Agent 自己浏览和理解，不需要事先告诉它产品长什么样</div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-dot"></div>
+            <div class="tl-phase">适应动态状态</div>
+            <div class="tl-desc">Popups、状态变化、nondeterministic 界面 &mdash; 全部自动处理</div>
+          </div>
+          <div class="tl-item">
+            <div class="tl-dot"></div>
+            <div class="tl-phase">Stealth 即插即用</div>
+            <div class="tl-desc">无 CAPTCHA 问题，无认证障碍，开箱即用</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="s4">
+      <h2>&#x1F680; 未来：从 Google Maps 到 Waymo</h2>
+      <p class="lead">从"教你怎么做"到"替你做" &mdash; 从导航变成自动驾驶。</p>
+
+      <div class="compare-grid">
+        <div class="compare-card new" style="background:#eff6ff;border-color:#bfdbfe">
+          <h4>现在：Google Maps</h4>
+          <p>Agent 教用户如何从 A 到 B</p>
+          <p>"这里是步骤，这里是按钮"</p>
+          <p><span class="badge badge-purple">指导模式</span></p>
+        </div>
+        <div class="compare-card new">
+          <h4>未来：Waymo</h4>
+          <p>Agent 直接替用户完成操作</p>
+          <p>"Instead of showing me how, just do it for me"</p>
+          <p><span class="badge badge-green">自主模式</span></p>
+        </div>
+      </div>
+
+      <div class="block-q">
+        <p>"What we're working on now is like, okay, how do we go from Google Maps to Waymo, where we do all the driving... instead of showing me how, just do it for me."<br>&mdash; Christian, Co-founder, CTO @ Frigade</p>
+      </div>
+    </section>
+  </div>
+
+  <footer class="footer">
+    <p><a href="../">&#x2190; Back to Hub</a></p>
+    <p style="margin-top:8px">Source: <a href="https://browser-use.com/posts/frigade" target="_blank">browser-use.com/posts/frigade</a></p>
+  </footer>
+</body>
+</html>

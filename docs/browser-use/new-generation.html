@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：New Generation x Browser Use — Agent 就绪评估</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;
+      --border:#e2e8f0;--radius:14px;
+      --purple:#6366f1;--amber:#f59e0b;--green:#10b981;--red:#ef4444;--blue:#3b82f6;--pink:#ec4899;--teal:#14b8a6;
+      --mono:'JetBrains Mono','SF Mono',monospace;
+      --sans:'Noto Sans SC','Inter',system-ui,sans-serif;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7;-webkit-font-smoothing:antialiased}
+    a{color:inherit;text-decoration:none}
+    code{font-family:var(--mono);font-size:13px;background:#f1f5f9;padding:2px 6px;border-radius:4px}
+
+    .nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.88);backdrop-filter:blur(14px);border-bottom:1px solid var(--border)}
+    .nav-inner{max-width:1200px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:52px}
+    .nav-brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px}
+    .nav-back{font-size:13px;color:var(--text-secondary);transition:color .15s}
+    .nav-back:hover{color:var(--teal)}
+
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#134e4a 40%,#0d9488 100%);color:#fff;padding:80px 24px 64px;text-align:center;position:relative;overflow:hidden}
+    .hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 20% 75%,rgba(13,148,136,.3) 0%,transparent 55%),radial-gradient(ellipse at 80% 20%,rgba(20,184,166,.15) 0%,transparent 50%)}
+    .hero-inner{position:relative;max-width:800px;margin:0 auto}
+    .hero-tag{display:inline-block;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:5px 16px;font-size:12px;letter-spacing:.5px;text-transform:uppercase;margin-bottom:20px}
+    .hero h1{font-size:clamp(22px,4.5vw,38px);font-weight:800;line-height:1.2;margin-bottom:12px;letter-spacing:-.02em}
+    .hero .sub{font-size:15px;opacity:.65;margin-bottom:28px}
+    .hero-stats{display:flex;gap:20px;justify-content:center;flex-wrap:wrap}
+    .hero-stat{text-align:center;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:16px 20px;min-width:120px}
+    .hero-stat .v{font-size:26px;font-weight:800;background:linear-gradient(135deg,#5eead4,#2dd4bf);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .hero-stat .l{font-size:12px;opacity:.6;margin-top:4px}
+
+    .page{max-width:900px;margin:0 auto;padding:0 24px}
+
+    .toc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px 28px;margin:32px 0}
+    .toc h3{font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-secondary);margin-bottom:12px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
+    .toc a{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;font-size:14px;color:var(--text);transition:background .15s}
+    .toc a:hover{background:#f1f5f9}
+    .toc .num{background:#0d9488;color:#fff;width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+
+    .section{margin:48px 0}
+    .section h2{font-size:24px;font-weight:700;margin-bottom:8px;padding-bottom:10px;border-bottom:2px solid var(--border);display:flex;align-items:center;gap:10px}
+    .section .lead{font-size:16px;color:var(--text-secondary);line-height:1.8;margin-bottom:24px}
+
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+    .card h3{font-size:17px;font-weight:700;margin-bottom:10px}
+    .card p,.card li{font-size:14px;color:var(--text-secondary);line-height:1.7}
+    .card ul{padding-left:20px;margin-top:8px}
+    .card li{margin-bottom:4px}
+
+    .chart{margin:24px 0}
+    .chart-title{font-size:15px;font-weight:700;margin-bottom:16px;text-align:center}
+    .chart-row{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+    .chart-label{width:200px;font-size:13px;color:var(--text-secondary);text-align:right;flex-shrink:0;line-height:1.3}
+    .chart-bar-wrap{flex:1;height:36px;background:#f1f5f9;border-radius:6px;overflow:hidden}
+    .chart-bar{height:100%;border-radius:6px;display:flex;align-items:center;padding-left:10px;font-size:12px;font-weight:600;color:#fff;transition:width .8s ease}
+    .chart-bar.teal{background:linear-gradient(90deg,#0d9488,#2dd4bf)}
+    .chart-bar.green{background:linear-gradient(90deg,#10b981,#34d399)}
+    .chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .chart-bar.purple{background:linear-gradient(90deg,#7c3aed,#a78bfa)}
+    .chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+    .chart-bar.slate{background:linear-gradient(90deg,#64748b,#94a3b8)}
+
+    .diagram{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px;margin:24px 0;text-align:center}
+    .diagram h4{font-size:15px;font-weight:700;margin-bottom:16px}
+    .flow{display:flex;align-items:center;justify-content:center;gap:0;flex-wrap:wrap}
+    .flow-step{background:linear-gradient(135deg,#0d9488,#14b8a6);color:#fff;padding:10px 14px;border-radius:10px;font-size:12px;font-weight:600;text-align:center;max-width:150px}
+    .flow-step.teal{background:linear-gradient(135deg,#0d9488,#2dd4bf)}
+    .flow-step.green{background:linear-gradient(135deg,#10b981,#34d399)}
+    .flow-step.amber{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#78350f}
+    .flow-step.purple{background:linear-gradient(135deg,#7c3aed,#a78bfa)}
+    .flow-step.blue{background:linear-gradient(135deg,#3b82f6,#60a5fa)}
+    .flow-step.dark{background:linear-gradient(135deg,#0f172a,#1e293b)}
+    .flow-arrow{font-size:18px;color:#0d9488;padding:0 6px}
+
+    .stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:24px 0}
+    .stat-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;text-align:center}
+    .stat-box .num{font-size:32px;font-weight:800;background:linear-gradient(135deg,#0d9488,#14b8a6);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .stat-box .label{font-size:12px;color:var(--text-secondary);margin-top:4px}
+
+    .use-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin:20px 0}
+    .use-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;transition:box-shadow .2s}
+    .use-card:hover{box-shadow:0 4px 20px rgba(0,0,0,.06)}
+    .use-card .icon{font-size:28px;margin-bottom:10px}
+    .use-card h4{font-size:15px;font-weight:700;margin-bottom:8px}
+    .use-card p{font-size:13px;color:var(--text-secondary);line-height:1.6}
+
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:24px 0}
+    .compare-card{border-radius:var(--radius);padding:24px;border:1px solid}
+    .compare-card h4{font-size:15px;font-weight:700;margin-bottom:10px}
+    .compare-card p{font-size:14px;line-height:1.7;color:var(--text-secondary)}
+    .compare-card ul{padding-left:18px;margin-top:8px}
+    .compare-card li{font-size:13px;color:var(--text-secondary);line-height:1.6;margin-bottom:4px}
+
+    .block-q{background:#ccfbf1;border-left:4px solid #0d9488;border-radius:0 12px 12px 0;padding:20px 24px;margin:28px 0}
+    .block-q p{font-size:15px;line-height:1.8;color:#134e4a;font-style:italic}
+
+    .footer{text-align:center;padding:40px 24px 48px;border-top:1px solid var(--border);margin-top:60px;font-size:13px;color:var(--text-secondary)}
+    .footer a{color:#0d9488}
+
+    @media(max-width:768px){
+      .hero-stats{gap:12px}
+      .hero-stat{min-width:100px;padding:12px 14px}
+      .compare-grid{grid-template-columns:1fr}
+      .stat-row{grid-template-columns:1fr}
+      .use-grid{grid-template-columns:1fr}
+      .flow{flex-direction:column;gap:8px}
+      .flow-arrow{transform:rotate(90deg)}
+      .toc-grid{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../" class="nav-brand"><span>&#127760;</span><span>Engineering Notes</span></a>
+    <a href="../" class="nav-back">&larr; Back to Hub</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="hero-inner">
+    <div class="hero-tag">&#128722; Browser Use &middot; Agent Commerce &middot; 深度解析</div>
+    <h1>New Generation x Browser Use：让电商为 Agent 做好准备</h1>
+    <div class="sub">Kepler 平台如何使用 Browser Use 评估电商网站的 Agent 就绪度 &middot; 2026-03-17</div>
+    <div class="hero-stats">
+      <div class="hero-stat"><div class="v">120K+</div><div class="l">BU 任务执行量</div></div>
+      <div class="hero-stat"><div class="v">136+</div><div class="l">真实品牌网站</div></div>
+      <div class="hero-stat"><div class="v">100s</div><div class="l">并发浏览器会话</div></div>
+    </div>
+  </div>
+</header>
+
+<div class="page">
+
+<nav class="toc">
+  <h3>&#128209; 本文导航</h3>
+  <div class="toc-grid">
+    <a href="#s1"><span class="num">1</span>Agent 电商时代</a>
+    <a href="#s2"><span class="num">2</span>Kepler 平台</a>
+    <a href="#s3"><span class="num">3</span>Agent Score 评估</a>
+    <a href="#s4"><span class="num">4</span>Browser Use 赋能</a>
+  </div>
+</nav>
+
+<!-- 1 -->
+<section class="section" id="s1">
+  <h2><span>&#127758;</span> Agent 电商时代</h2>
+  <p class="lead">AI agent 已经在大规模地浏览网页 —— 搜索、比较产品、代替用户做购买决策。New Generation 正在构建工具帮助品牌为这个趋势做好准备。</p>
+
+  <div class="diagram">
+    <h4>Agent 购物流程</h4>
+    <div class="flow">
+      <div class="flow-step dark">&#129302; 用户下达购物指令</div>
+      <div class="flow-arrow">&#8594;</div>
+      <div class="flow-step teal">&#128270; Agent 搜索产品</div>
+      <div class="flow-arrow">&#8594;</div>
+      <div class="flow-step green">&#128202; 比较价格/评价</div>
+      <div class="flow-arrow">&#8594;</div>
+      <div class="flow-step blue">&#128722; 完成购买</div>
+    </div>
+  </div>
+
+  <div class="block-q">
+    <p>"AI agents are already browsing the web at scale -- searching, comparing products, and making purchase decisions on behalf of users." — Luka Secilmis</p>
+  </div>
+</section>
+
+<!-- 2 -->
+<section class="section" id="s2">
+  <h2><span>&#128301;</span> Kepler 平台</h2>
+  <p class="lead">Kepler 是 New Generation 的 agentic commerce 平台，帮助品牌理解 AI agent 如何体验它们的网站，以及哪些环节会出问题。</p>
+
+  <div class="use-grid">
+    <div class="use-card">
+      <div class="icon">&#128270;</div>
+      <h4>Agent 体验审计</h4>
+      <p>模拟 AI agent 访问品牌网站，发现 agent 无法完成的操作和断裂的用户旅程。</p>
+    </div>
+    <div class="use-card">
+      <div class="icon">&#127919;</div>
+      <h4>Agent Score</h4>
+      <p>量化评估网站对 AI agent 的友好程度：导航能力、信息提取、推理支持。</p>
+    </div>
+    <div class="use-card">
+      <div class="icon">&#128202;</div>
+      <h4>实际购物任务</h4>
+      <p>使用真实电商 workflow 测试：搜索、筛选、加购、结账等完整流程。</p>
+    </div>
+  </div>
+</section>
+
+<!-- 3 -->
+<section class="section" id="s3">
+  <h2><span>&#128200;</span> Agent Score 评估维度</h2>
+  <p class="lead">Agent Score 从三个核心维度评估网站的 agent 就绪度，帮助品牌识别优化方向。</p>
+
+  <div class="chart">
+    <div class="chart-title">Agent Score 评估维度权重</div>
+    <div class="chart-row">
+      <div class="chart-label">Access &mdash; 信息可访问性</div>
+      <div class="chart-bar-wrap"><div class="chart-bar teal" style="width:90%">Agent 能否访问产品信息</div></div>
+    </div>
+    <div class="chart-row">
+      <div class="chart-label">Navigate &mdash; 导航能力</div>
+      <div class="chart-bar-wrap"><div class="chart-bar green" style="width:85%">Agent 能否完成购物流程</div></div>
+    </div>
+    <div class="chart-row">
+      <div class="chart-label">Reason &mdash; 推理支持</div>
+      <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:75%">信息是否支持 Agent 推理决策</div></div>
+    </div>
+  </div>
+
+  <div class="compare-grid">
+    <div class="compare-card" style="border-color:#dcfce7;background:#f0fdf4">
+      <h4>&#9989; Agent-Ready 网站</h4>
+      <ul>
+        <li>结构化产品数据</li>
+        <li>清晰的 DOM 层级</li>
+        <li>可预测的导航流程</li>
+        <li>无过度依赖 JS 渲染</li>
+      </ul>
+    </div>
+    <div class="compare-card" style="border-color:#fee2e2;background:#fef2f2">
+      <h4>&#10060; Agent-Hostile 网站</h4>
+      <ul>
+        <li>动态加载无语义标记</li>
+        <li>复杂 anti-bot 机制</li>
+        <li>需登录才能查看基本信息</li>
+        <li>过度使用 iframe / shadow DOM</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- 4 -->
+<section class="section" id="s4">
+  <h2><span>&#9889;</span> Browser Use 赋能</h2>
+  <p class="lead">New Generation 使用 Browser Use 启动数百个并发浏览器会话，对真实品牌网站进行 agent 就绪度测试。自 2 月以来已执行超过 12 万个 BU 任务。</p>
+
+  <div class="stat-row">
+    <div class="stat-box"><div class="num">120K+</div><div class="label">BU 任务执行量</div></div>
+    <div class="stat-box"><div class="num">100s</div><div class="label">并发浏览器会话</div></div>
+    <div class="stat-box"><div class="num">&#8593;</div><div class="label">仍在快速增长</div></div>
+  </div>
+
+  <div class="diagram">
+    <h4>技术架构</h4>
+    <div class="flow">
+      <div class="flow-step dark">&#127919; 品牌网站列表</div>
+      <div class="flow-arrow">&#8594;</div>
+      <div class="flow-step teal">&#128300; Browser Use 并发会话</div>
+      <div class="flow-arrow">&#8594;</div>
+      <div class="flow-step green">&#128202; Agent Score 计算</div>
+      <div class="flow-arrow">&#8594;</div>
+      <div class="flow-step purple">&#128203; 优化报告</div>
+    </div>
+  </div>
+</section>
+
+</div>
+
+<footer class="footer">
+  <p><a href="../">&#127760; 返回 Hub</a> &nbsp;|&nbsp; <a href="https://browser-use.com/posts/new-generation" target="_blank">&#128279; 原文链接</a></p>
+  <p style="margin-top:8px">Browser Use Engineering &middot; 深度解析系列</p>
+</footer>
+
+</body>
+</html>

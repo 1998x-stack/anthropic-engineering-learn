@@ -1,0 +1,352 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Web Scraping 终极指南 (2026)</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    :root{
+      --bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;
+      --border:#e2e8f0;--radius:14px;
+      --teal:#0d9488;--teal-light:#14b8a6;--purple:#6366f1;--amber:#f59e0b;
+      --green:#10b981;--red:#ef4444;--blue:#3b82f6;
+      --mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif;
+    }
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+    .nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;justify-content:space-between;align-items:center;font-size:14px}
+    .nav a{color:var(--text);text-decoration:none;font-weight:600}
+    .nav a:hover{color:var(--teal)}
+    .nav .back{color:var(--text-secondary);font-weight:400}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#134e4a 50%,#0d9488 100%);color:#fff;padding:80px 24px 60px;text-align:center}
+    .hero h1{font-size:clamp(28px,4vw,42px);font-weight:800;margin-bottom:12px;line-height:1.2}
+    .hero .subtitle{font-size:18px;opacity:.85;max-width:700px;margin:0 auto 8px}
+    .hero .meta{font-size:14px;opacity:.6;margin-bottom:36px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;max-width:800px;margin:0 auto}
+    .stat{background:rgba(255,255,255,.1);border-radius:var(--radius);padding:20px;backdrop-filter:blur(6px)}
+    .stat .num{font-size:32px;font-weight:800;font-family:var(--mono)}
+    .stat .label{font-size:13px;opacity:.7;margin-top:4px}
+    .page{max-width:900px;margin:0 auto;padding:40px 24px 80px}
+    .toc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px;margin-bottom:48px}
+    .toc h3{font-size:15px;color:var(--text-secondary);margin-bottom:16px;text-transform:uppercase;letter-spacing:1px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .toc-grid a{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;background:var(--bg);transition:all .2s}
+    .toc-grid a:hover{background:#f0fdfa;color:var(--teal)}
+    .toc-grid .num{font-family:var(--mono);font-size:12px;color:var(--teal);font-weight:700;min-width:22px}
+    .section{margin-bottom:56px}
+    .section h2{font-size:24px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+    .lead{color:var(--text-secondary);font-size:16px;margin-bottom:24px;line-height:1.6}
+    p{margin-bottom:16px}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+    .card h4{font-weight:700;margin-bottom:8px;font-size:16px}
+    .block-q{border-left:4px solid var(--teal);background:#f0fdfa;padding:20px 24px;border-radius:0 var(--radius) var(--radius) 0;margin:20px 0;font-size:15px;font-style:italic}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}
+    .compare-card{border-radius:var(--radius);padding:24px;font-size:14px}
+    .compare-card.old{background:#fef2f2;border:2px solid #fecaca}
+    .compare-card.new{background:#f0fdf4;border:2px solid #bbf7d0}
+    .compare-card h4{margin-bottom:10px;font-size:15px}
+    .flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:20px 0;justify-content:center}
+    .flow-step{background:var(--surface);border:2px solid var(--border);border-radius:12px;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;min-width:110px}
+    .flow-step.teal{border-color:var(--teal);background:#f0fdfa;color:#134e4a}
+    .flow-step.purple{border-color:var(--purple);background:#eef2ff;color:#312e81}
+    .flow-step.green{border-color:var(--green);background:#ecfdf5;color:#065f46}
+    .flow-step.amber{border-color:var(--amber);background:#fffbeb;color:#92400e}
+    .flow-arrow{font-size:22px;color:var(--text-secondary);font-weight:700}
+    .chart{margin:20px 0}
+    .chart-row{display:flex;align-items:center;margin-bottom:10px;gap:12px}
+    .chart-label{min-width:160px;font-size:13px;font-weight:600;text-align:right}
+    .chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}
+    .chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;padding:0 12px;font-size:12px;font-weight:700;color:#fff;transition:width .6s}
+    .chart-bar.teal{background:linear-gradient(90deg,#0d9488,#14b8a6)}
+    .chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+    .chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}
+    .chart-bar.purple{background:linear-gradient(90deg,#6366f1,#818cf8)}
+    .chart-bar.green{background:linear-gradient(90deg,#10b981,#34d399)}
+    .chart-bar.slate{background:linear-gradient(90deg,#475569,#64748b)}
+    .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600}
+    .badge-teal{background:#ccfbf1;color:#0f766e}
+    .badge-red{background:#fee2e2;color:#b91c1c}
+    .badge-green{background:#d1fae5;color:#065f46}
+    .badge-purple{background:#e0e7ff;color:#3730a3}
+    .badge-amber{background:#fef3c7;color:#92400e}
+    .badge-blue{background:#dbeafe;color:#1e40af}
+    .fail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:14px;margin:20px 0}
+    .fail-grid .card{text-align:center;padding:18px}
+    .fail-grid .card .icon{font-size:28px;margin-bottom:8px}
+    .agent-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin:20px 0}
+    .tbl-wrap{overflow-x:auto;margin:20px 0}
+    table{width:100%;border-collapse:collapse;font-size:14px}
+    th,td{padding:12px 16px;text-align:left;border-bottom:1px solid var(--border)}
+    th{font-weight:700;background:var(--bg);font-size:13px;text-transform:uppercase;letter-spacing:.5px;color:var(--text-secondary)}
+    tr:hover td{background:#f8fafc}
+    .highlight-row td{background:#f0fdfa;font-weight:600}
+    .tool-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+    .tool-card h4{font-weight:700;margin-bottom:8px;font-size:18px;display:flex;align-items:center;gap:8px}
+    .tool-card .pros-cons{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-top:16px}
+    .tool-card .pros h5,.tool-card .cons h5{font-size:13px;text-transform:uppercase;letter-spacing:.5px;margin-bottom:8px}
+    .tool-card .pros h5{color:var(--green)}
+    .tool-card .cons h5{color:var(--red)}
+    .tool-card .pros li,.tool-card .cons li{font-size:13px;margin-bottom:6px;list-style:none;padding-left:16px;position:relative}
+    .tool-card .pros li::before{content:'✓';position:absolute;left:0;color:var(--green);font-weight:700}
+    .tool-card .cons li::before{content:'×';position:absolute;left:0;color:var(--red);font-weight:700}
+    .tool-card .cost{font-family:var(--mono);font-size:14px;color:var(--teal);font-weight:600;margin-top:12px}
+    code{font-family:var(--mono);background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:13px}
+    .footer{text-align:center;padding:40px 24px;border-top:1px solid var(--border);color:var(--text-secondary);font-size:14px}
+    .footer a{color:var(--teal);text-decoration:none;font-weight:500}
+    .footer a:hover{text-decoration:underline}
+    @media(max-width:768px){
+      .compare-grid,.agent-grid{grid-template-columns:1fr}
+      .fail-grid{grid-template-columns:repeat(2,1fr)}
+      .flow{flex-direction:column;gap:6px}
+      .flow-arrow{transform:rotate(90deg)}
+      .chart-label{min-width:110px;font-size:12px}
+      .toc-grid{grid-template-columns:1fr}
+      .stats{grid-template-columns:repeat(2,1fr)}
+      .tool-card .pros-cons{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a href="../">Browser Use Deep Dives</a>
+    <a href="../" class="back">&larr; Back to Hub</a>
+  </nav>
+
+  <header class="hero">
+    <h1>Web Scraping 终极指南 (2026)</h1>
+    <p class="subtitle">AI 改变了 Web Scraping 的规则。实测五大主流工具——帮你选对方案。</p>
+    <p class="meta">Reagan Hsu &middot; 2026-03-26</p>
+    <div class="stats">
+      <div class="stat"><div class="num">5</div><div class="label">横评工具数量</div></div>
+      <div class="stat"><div class="num">83K+</div><div class="label">Browser Use GitHub Stars</div></div>
+      <div class="stat"><div class="num">97%</div><div class="label">BU Mind2Web 准确率</div></div>
+      <div class="stat"><div class="num">81%</div><div class="label">BU Stealth 通过率</div></div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+        <a href="#s1"><span class="num">01</span>传统 vs AI 爬虫</a>
+        <a href="#s2"><span class="num">02</span>Basic vs Interactive</a>
+        <a href="#s3"><span class="num">03</span>Stealth 问题</a>
+        <a href="#s4"><span class="num">04</span>Basic 工具横评</a>
+        <a href="#s5"><span class="num">05</span>Interactive 工具横评</a>
+        <a href="#s6"><span class="num">06</span>Benchmark 对比</a>
+      </div>
+    </nav>
+
+    <!-- Section 1 -->
+    <section class="section" id="s1">
+      <h2>🔄 Web Scraping 的进化</h2>
+      <p class="lead">从 BeautifulSoup 手写解析到 AI 自然语言驱动——2026 年的 Web Scraping 完全不同了。</p>
+
+      <div class="compare-grid">
+        <div class="compare-card old">
+          <h4>❌ 传统方式</h4>
+          <p>每个页面写一个定制脚本。检查 HTML 结构、编写特定的解析逻辑。脆弱——网站改版就要重写。需要交互？每一步都要硬编码。</p>
+        </div>
+        <div class="compare-card new">
+          <h4>✅ AI 驱动方式</h4>
+          <p>自动将内容解析为干净的结构化数据（Markdown、JSON、自定义 Schema）。新一代工具还能自主交互——用自然语言描述任务即可。</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 2 -->
+    <section class="section" id="s2">
+      <h2>📋 Basic vs Interactive Scraping</h2>
+      <p class="lead">静态抓取 vs 动态交互——有价值的数据越来越多地藏在登录墙和搜索界面后面。</p>
+
+      <div class="compare-grid">
+        <div class="compare-card old" style="background:#f8fafc;border-color:var(--border)">
+          <h4>Basic Scraping</h4>
+          <p>仅以 URL 为输入——数据已在页面中，只需抓取和解析。</p>
+          <p style="margin-top:12px;font-size:13px"><strong>典型场景：</strong>内容索引、站点爬取、公开数据抓取</p>
+        </div>
+        <div class="compare-card new">
+          <h4>Interactive Scraping</h4>
+          <p>可以在页面上执行操作——浏览器自动化驱动。不需要特定 URL 即可开始。</p>
+          <p style="margin-top:12px;font-size:13px"><strong>典型场景：</strong>登录墙后数据、搜索筛选、多页工作流、动态内容</p>
+        </div>
+      </div>
+
+      <div class="fail-grid">
+        <div class="card">
+          <div class="icon">🔓</div>
+          <h4>Private Data</h4>
+          <p>登录墙后的内部工具、付费数据库、社交媒体</p>
+        </div>
+        <div class="card">
+          <div class="icon">🔍</div>
+          <h4>搜索筛选</h4>
+          <p>搜索查询、筛选条件、日期范围、产品变体</p>
+        </div>
+        <div class="card">
+          <div class="icon">📄</div>
+          <h4>多页工作流</h4>
+          <p>分页、"加载更多"、多步表单</p>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 3 -->
+    <section class="section" id="s3">
+      <h2>🛡️ Stealth 问题</h2>
+      <p class="lead">所有爬虫共同的瓶颈：被反爬系统拦截。Browser Use 在两个 Benchmark 上都领先。</p>
+
+      <p style="font-weight:600;margin-bottom:12px">Stealth Benchmark（71 站）</p>
+      <div class="chart">
+        <div class="chart-row"><div class="chart-label">Browser Use Cloud</div><div class="chart-bar-wrap"><div class="chart-bar teal" style="width:81%">81%</div></div></div>
+        <div class="chart-row"><div class="chart-label">Anchor</div><div class="chart-bar-wrap"><div class="chart-bar blue" style="width:77%">77%</div></div></div>
+        <div class="chart-row"><div class="chart-label">Onkernel</div><div class="chart-bar-wrap"><div class="chart-bar purple" style="width:67%">67%</div></div></div>
+        <div class="chart-row"><div class="chart-label">Steel</div><div class="chart-bar-wrap"><div class="chart-bar amber" style="width:47%">47%</div></div></div>
+        <div class="chart-row"><div class="chart-label">Browserbase</div><div class="chart-bar-wrap"><div class="chart-bar red" style="width:42%">42%</div></div></div>
+        <div class="chart-row"><div class="chart-label">Hyperbrowser</div><div class="chart-bar-wrap"><div class="chart-bar slate" style="width:40%">40%</div></div></div>
+      </div>
+
+      <p style="font-weight:600;margin-bottom:12px;margin-top:28px">BrowserBench by Halluminate（296 任务）</p>
+      <div class="chart">
+        <div class="chart-row"><div class="chart-label">Browser Use Cloud</div><div class="chart-bar-wrap"><div class="chart-bar teal" style="width:84.8%">84.8%</div></div></div>
+        <div class="chart-row"><div class="chart-label">Hyperbrowser</div><div class="chart-bar-wrap"><div class="chart-bar blue" style="width:76.4%">76.4%</div></div></div>
+        <div class="chart-row"><div class="chart-label">Anchor</div><div class="chart-bar-wrap"><div class="chart-bar purple" style="width:76%">76.0%</div></div></div>
+        <div class="chart-row"><div class="chart-label">Steel</div><div class="chart-bar-wrap"><div class="chart-bar amber" style="width:73.3%">73.3%</div></div></div>
+        <div class="chart-row"><div class="chart-label">Browserbase</div><div class="chart-bar-wrap"><div class="chart-bar red" style="width:70.3%">70.3%</div></div></div>
+      </div>
+    </section>
+
+    <!-- Section 4 -->
+    <section class="section" id="s4">
+      <h2>🔧 Basic Scraping 工具横评</h2>
+      <p class="lead">Firecrawl、Cloudflare Browser Rendering、Bright Data——三种不同定位的静态爬虫。</p>
+
+      <div class="tool-card">
+        <h4><span class="badge badge-teal">推荐</span> Firecrawl</h4>
+        <p>为 LLM 内容摄入设计的 Web Scraping API。Markdown 输出干净且 Token 高效。</p>
+        <div class="pros-cons">
+          <div class="pros"><h5>优点</h5><ul>
+            <li>干净的 Markdown 输出，适合 LLM 摄入</li>
+            <li>易用 API，良好的开发体验</li>
+            <li>内置爬取和站点映射</li>
+            <li>开源社区</li>
+          </ul></div>
+          <div class="cons"><h5>缺点</h5><ul>
+            <li>被反爬系统拦截（主要零售商等）</li>
+            <li>无验证码解决能力</li>
+            <li>Interactive Scraping 效果不佳</li>
+          </ul></div>
+        </div>
+        <div class="cost">~$0.001 / 次 Basic Scrape</div>
+      </div>
+
+      <div class="tool-card">
+        <h4>Cloudflare Browser Rendering</h4>
+        <p>最便宜的选项——但故意零隐身，明确标识为 Bot 流量。被任何有反爬保护的网站拦截。</p>
+        <div class="pros-cons">
+          <div class="pros"><h5>优点</h5><ul>
+            <li>价格最低</li>
+            <li>Cloudflare 基础设施支撑</li>
+            <li>丰富的端点（Markdown、JSON、Crawl）</li>
+          </ul></div>
+          <div class="cons"><h5>缺点</h5><ul>
+            <li>零隐身——任何反爬都能拦截</li>
+            <li>无验证码解决能力</li>
+            <li>无 Interactive Scraping</li>
+          </ul></div>
+        </div>
+        <div class="cost">~$0.0005 / 次 | 免费层 10 分钟/天</div>
+      </div>
+
+      <div class="tool-card">
+        <h4>Bright Data</h4>
+        <p>以 Stealth 为特色——高质量代理和验证码解决能力。但价格贵且配置复杂。</p>
+        <div class="pros-cons">
+          <div class="pros"><h5>优点</h5><ul>
+            <li>高隐身性（优质代理）</li>
+            <li>内置验证码解决</li>
+            <li>预构建平台爬虫（Amazon、LinkedIn 等）</li>
+          </ul></div>
+          <div class="cons"><h5>缺点</h5><ul>
+            <li>价格贵且速度慢</li>
+            <li>配置复杂</li>
+          </ul></div>
+        </div>
+        <div class="cost">~$0.003 / 次 Basic Scrape</div>
+      </div>
+    </section>
+
+    <!-- Section 5 -->
+    <section class="section" id="s5">
+      <h2>🤖 Interactive Scraping 工具横评</h2>
+      <p class="lead">Browser Use vs Browserbase Stagehand——自然语言驱动的新一代爬虫。</p>
+
+      <div class="tool-card" style="border-color:var(--teal)">
+        <h4><span class="badge badge-teal">最佳整体</span> Browser Use</h4>
+        <p>自然语言描述任务即可：导航、点击、输入、提取数据。v3 API 只有一个端点 <code>/sessions</code>。</p>
+        <div class="pros-cons">
+          <div class="pros"><h5>优点</h5><ul>
+            <li>最高 Stealth 成功率</li>
+            <li>免费 CAPTCHA 解决</li>
+            <li>Mind2Web 97% 准确率</li>
+            <li>950+ 集成</li>
+            <li>SOC-2 合规</li>
+            <li>开源社区</li>
+          </ul></div>
+          <div class="cons"><h5>缺点</h5><ul>
+            <li>简单页面抓取比 Basic 爬虫贵</li>
+            <li>每任务步数不固定</li>
+          </ul></div>
+        </div>
+      </div>
+
+      <div class="tool-card">
+        <h4>Browserbase (Stagehand)</h4>
+        <p>三个核心原语：observe（查找元素）、act（自然语言操作）、extract（结构化提取）。</p>
+        <div class="pros-cons">
+          <div class="pros"><h5>优点</h5><ul>
+            <li>更细粒度的步骤控制</li>
+            <li>开源社区</li>
+          </ul></div>
+          <div class="cons"><h5>缺点</h5><ul>
+            <li>Stealth 较弱——被更多网站拦截</li>
+            <li>高级隐身需企业级方案</li>
+          </ul></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- Section 6 -->
+    <section class="section" id="s6">
+      <h2>📊 Benchmark 对比</h2>
+      <p class="lead">Online Mind2Web 评测：Browser Use 97% vs Stagehand 65%。</p>
+
+      <div class="chart">
+        <div class="chart-row"><div class="chart-label">Browser Use</div><div class="chart-bar-wrap"><div class="chart-bar teal" style="width:97%">97%</div></div></div>
+        <div class="chart-row"><div class="chart-label">Stagehand</div><div class="chart-bar-wrap"><div class="chart-bar slate" style="width:65%">65%</div></div></div>
+      </div>
+
+      <div class="tbl-wrap">
+        <table>
+          <thead><tr><th>维度</th><th>Firecrawl</th><th>Cloudflare</th><th>Bright Data</th><th>Browser Use</th><th>Stagehand</th></tr></thead>
+          <tbody>
+            <tr><td>类型</td><td><span class="badge badge-blue">Basic</span></td><td><span class="badge badge-blue">Basic</span></td><td><span class="badge badge-blue">Basic</span></td><td><span class="badge badge-teal">Interactive</span></td><td><span class="badge badge-purple">Interactive</span></td></tr>
+            <tr><td>Stealth</td><td><span class="badge badge-red">弱</span></td><td><span class="badge badge-red">零</span></td><td><span class="badge badge-green">强</span></td><td><span class="badge badge-green">最强</span></td><td><span class="badge badge-amber">中</span></td></tr>
+            <tr><td>CAPTCHA</td><td>-</td><td>-</td><td>内置</td><td>免费内置</td><td>企业级</td></tr>
+            <tr class="highlight-row"><td>Mind2Web</td><td>N/A</td><td>N/A</td><td>N/A</td><td>97%</td><td>65%</td></tr>
+            <tr><td>开源</td><td>是</td><td>否</td><td>否</td><td>是</td><td>是</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </section>
+  </div>
+
+  <footer class="footer">
+    <a href="../">← 返回 Browser Use Hub</a> &middot;
+    <a href="https://browser-use.com/posts/web-scraping-guide-2026" target="_blank">原文链接</a>
+  </footer>
+</body>
+</html>

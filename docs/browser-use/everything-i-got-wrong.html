@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：4000 次 Commit 中的所有错误</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    :root{
+      --bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;
+      --border:#e2e8f0;--radius:14px;
+      --teal:#0d9488;--teal-light:#14b8a6;--purple:#6366f1;--amber:#f59e0b;
+      --green:#10b981;--red:#ef4444;--blue:#3b82f6;
+      --mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif;
+    }
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+    .nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;justify-content:space-between;align-items:center;font-size:14px}
+    .nav a{color:var(--text);text-decoration:none;font-weight:600}
+    .nav a:hover{color:var(--teal)}
+    .nav .back{color:var(--text-secondary);font-weight:400}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#134e4a 50%,#0d9488 100%);color:#fff;padding:80px 24px 60px;text-align:center}
+    .hero h1{font-size:clamp(28px,4vw,42px);font-weight:800;margin-bottom:12px;line-height:1.2}
+    .hero .subtitle{font-size:18px;opacity:.85;max-width:700px;margin:0 auto 8px}
+    .hero .meta{font-size:14px;opacity:.6;margin-bottom:36px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;max-width:800px;margin:0 auto}
+    .stat{background:rgba(255,255,255,.1);border-radius:var(--radius);padding:20px;backdrop-filter:blur(6px)}
+    .stat .num{font-size:32px;font-weight:800;font-family:var(--mono)}
+    .stat .label{font-size:13px;opacity:.7;margin-top:4px}
+    .page{max-width:900px;margin:0 auto;padding:40px 24px 80px}
+    .toc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px;margin-bottom:48px}
+    .toc h3{font-size:15px;color:var(--text-secondary);margin-bottom:16px;text-transform:uppercase;letter-spacing:1px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:10px}
+    .toc-grid a{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;background:var(--bg);transition:all .2s}
+    .toc-grid a:hover{background:#f0fdfa;color:var(--teal)}
+    .toc-grid .num{font-family:var(--mono);font-size:12px;color:var(--teal);font-weight:700;min-width:22px}
+    .section{margin-bottom:56px}
+    .section h2{font-size:24px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+    .lead{color:var(--text-secondary);font-size:16px;margin-bottom:24px;line-height:1.6;font-style:italic}
+    p{margin-bottom:16px}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+    .card h4{font-weight:700;margin-bottom:8px;font-size:16px}
+    .block-q{border-left:4px solid var(--teal);background:#f0fdfa;padding:20px 24px;border-radius:0 var(--radius) var(--radius) 0;margin:20px 0;font-size:15px;font-style:italic}
+    .bug-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;margin-bottom:14px;border-left:4px solid var(--red)}
+    .bug-card h4{font-weight:700;font-size:15px;margin-bottom:6px;color:var(--red)}
+    .bug-card .fix{color:var(--green);font-weight:600;font-size:13px;margin-top:8px}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}
+    .compare-card{border-radius:var(--radius);padding:24px;font-size:14px}
+    .compare-card.old{background:#fef2f2;border:2px solid #fecaca}
+    .compare-card.new{background:#f0fdf4;border:2px solid #bbf7d0}
+    .compare-card h4{margin-bottom:10px;font-size:15px}
+    .timeline{position:relative;padding-left:32px;margin:20px 0}
+    .timeline::before{content:'';position:absolute;left:11px;top:0;bottom:0;width:3px;background:linear-gradient(to bottom,var(--red),var(--amber),var(--green))}
+    .tl-item{margin-bottom:28px;position:relative}
+    .tl-dot{position:absolute;left:-28px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid var(--red);background:#fff}
+    .tl-item:nth-child(2) .tl-dot{border-color:var(--amber)}
+    .tl-item:nth-child(3) .tl-dot{border-color:var(--purple)}
+    .tl-item:nth-child(4) .tl-dot{border-color:var(--blue)}
+    .tl-item:nth-child(5) .tl-dot{border-color:var(--green)}
+    .tl-item:nth-child(6) .tl-dot{border-color:var(--teal)}
+    .tl-item:nth-child(7) .tl-dot{border-color:var(--red)}
+    .tl-item:nth-child(8) .tl-dot{border-color:var(--amber)}
+    .tl-phase{font-weight:700;font-size:15px;margin-bottom:4px}
+    .tl-token{font-family:var(--mono);font-size:12px;color:var(--text-secondary)}
+    .tl-desc{font-size:14px;color:var(--text-secondary)}
+    .chart{margin:20px 0}
+    .chart-row{display:flex;align-items:center;margin-bottom:10px;gap:12px}
+    .chart-label{min-width:180px;font-size:13px;font-weight:600;text-align:right}
+    .chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}
+    .chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;padding:0 12px;font-size:12px;font-weight:700;color:#fff}
+    .chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}
+    .chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .chart-bar.purple{background:linear-gradient(90deg,#6366f1,#818cf8)}
+    .chart-bar.teal{background:linear-gradient(90deg,#0d9488,#14b8a6)}
+    .chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+    .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600}
+    .badge-red{background:#fee2e2;color:#b91c1c}
+    .badge-amber{background:#fef3c7;color:#92400e}
+    .badge-green{background:#d1fae5;color:#065f46}
+    .badge-purple{background:#e0e7ff;color:#3730a3}
+    .fail-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(200px,1fr));gap:14px;margin:20px 0}
+    .fail-grid .card{padding:20px;text-align:center}
+    .fail-grid .card .icon{font-size:28px;margin-bottom:8px}
+    code{font-family:var(--mono);background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:13px}
+    .footer{text-align:center;padding:40px 24px;border-top:1px solid var(--border);color:var(--text-secondary);font-size:14px}
+    .footer a{color:var(--teal);text-decoration:none;font-weight:500}
+    .footer a:hover{text-decoration:underline}
+    @media(max-width:768px){
+      .compare-grid{grid-template-columns:1fr}
+      .fail-grid{grid-template-columns:1fr}
+      .chart-label{min-width:120px;font-size:12px}
+      .toc-grid{grid-template-columns:1fr}
+      .stats{grid-template-columns:repeat(2,1fr)}
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a href="../">Browser Use Deep Dives</a>
+    <a href="../" class="back">&larr; Back to Hub</a>
+  </nav>
+
+  <header class="hero">
+    <h1>Everything I Got Wrong in 4,000 Commits</h1>
+    <p class="subtitle">Browser Use 第一位工程师一年的错误全记录，按时间排序</p>
+    <p class="meta">Larsen Cundric &middot; 2026-05-05</p>
+    <div class="stats">
+      <div class="stat"><div class="num">4000+</div><div class="label">Commits</div></div>
+      <div class="stat"><div class="num">12</div><div class="label">月时间</div></div>
+      <div class="stat"><div class="num">602</div><div class="label">行无用代码被删除</div></div>
+      <div class="stat"><div class="num">5</div><div class="label">错误模式</div></div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc">
+      <h3>目录</h3>
+      <div class="toc-grid">
+        <a href="#s1"><span class="num">01</span>时间线</a>
+        <a href="#s2"><span class="num">02</span>早期部署 (Apr-Jun)</a>
+        <a href="#s3"><span class="num">03</span>Billing 灾难 (Jul-Aug)</a>
+        <a href="#s4"><span class="num">04</span>一天三个同样的 Bug</a>
+        <a href="#s5"><span class="num">05</span>没人要的功能</a>
+        <a href="#s6"><span class="num">06</span>Memory Leak 马拉松</a>
+        <a href="#s7"><span class="num">07</span>规模化问题</a>
+        <a href="#s8"><span class="num">08</span>五大教训</a>
+      </div>
+    </nav>
+
+    <section class="section" id="s1">
+      <h2>&#x1F4C5; 错误时间线</h2>
+      <p class="lead">从第一次部署到规模化生产，每个阶段都有独特的失败模式。</p>
+
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Apr-Jun 2025: 早期部署</div>
+          <div class="tl-token">错误的 AWS region, 不需要的 Chromium</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Jul-Aug 2025: Billing 灾难</div>
+          <div class="tl-token">免费 credits 被刷, round() 让 LLM calls 免费</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Aug 19: 一天三个同样的 Bug</div>
+          <div class="tl-token">UnboundLocalError x3, datetime naive vs aware</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Aug-Oct 2025: 没人要的功能</div>
+          <div class="tl-token">GIF generator (602行), 独立 billing service</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Nov-Dec 2025: 重构灾难</div>
+          <div class="tl-token">移动一个文件, 12+ fix commits, 午夜调试</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Jan 2026: 配置地狱</div>
+          <div class="tl-token">一个 config 变更击溃三个服务</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Feb 2026: Memory Leak 马拉松</div>
+          <div class="tl-token">一天 7 commits 追踪连接泄漏</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Mar 2026: 规模化问题</div>
+          <div class="tl-token">Load test 击溃生产, 262 gateway timeouts in 4min</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="s2">
+      <h2>&#x1F423; 早期部署 (Apr-Jun 2025)</h2>
+      <p class="lead">First deploys that didn't deploy, wrong AWS regions, and installing a browser I didn't need.</p>
+
+      <div class="bug-card">
+        <h4>第一次部署即失败</h4>
+        <p style="font-size:14px">Lambda 在 private subnet 没有 NAT gateway + database security group 未包含 Lambda。两个不相关的问题，一次部署。</p>
+        <div class="fix">Fix: 没有 staging 环境来捕获它 &mdash; 因为 staging 还没建</div>
+      </div>
+
+      <div class="bug-card">
+        <h4>硬编码 us-west-1</h4>
+        <p style="font-size:14px">Lambda log ARNs, SNS policies, ALB certificates 全部硬编码了错误 region。实际运行在 <code>us-east-2</code>。逐字符对比 ARN 才发现。</p>
+        <div class="fix">Fix: 3 commits 修复 &mdash; 几个月后在 SSM ARNs 上重蹈覆辙</div>
+      </div>
+
+      <div class="bug-card">
+        <h4>在 Lambda 中安装 Chromium</h4>
+        <p style="font-size:14px">3 小时 + 6 commits 在 Lambda container 中安装 Chromium。最后才意识到：我们通过 CDP 连接远程浏览器，根本不需要本地浏览器。</p>
+        <div class="fix">Fix: 删除所有安装代码</div>
+      </div>
+    </section>
+
+    <section class="section" id="s3">
+      <h2>&#x1F4B0; Billing 灾难 (Jul-Aug 2025)</h2>
+      <p class="lead">Users getting free money, payments going through before anyone paid, and rounding errors that made LLM calls free.</p>
+
+      <div class="fail-grid">
+        <div class="card" style="border-left:4px solid var(--red)">
+          <h4>免费 Credits 被刷</h4>
+          <p style="font-size:13px"><code>free_credits_claimed</code> boolean 存在但从未检查。一个 <code>if</code> 修复。</p>
+        </div>
+        <div class="card" style="border-left:4px solid var(--red)">
+          <h4>round(0.4) = 0</h4>
+          <p style="font-size:13px">任何 &lt; 0.5 credit 的 LLM call 都免费。<code>round()</code> 用于 billing。</p>
+        </div>
+        <div class="card" style="border-left:4px solid var(--red)">
+          <h4>预付费 Credits</h4>
+          <p style="font-size:13px">Stripe webhook 在 <code>subscription.created</code> 时发 credits &mdash; 支付前。</p>
+        </div>
+        <div class="card" style="border-left:4px solid var(--red)">
+          <h4>asyncio.Lock 跨 Pod</h4>
+          <p style="font-size:13px">内存锁在单进程有效，跨 pod 无效 &mdash; 可 double-spend。</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="s4">
+      <h2>&#x1F504; 一天三个同样的 Bug (Aug 19)</h2>
+      <p class="lead">One day, three files, the same mistake every time.</p>
+
+      <div class="card" style="border-left:4px solid var(--amber)">
+        <h4>UnboundLocalError x 3</h4>
+        <p style="font-size:14px">同一天修复了三个 <code>UnboundLocalError</code>。全部是同一模式：变量在 <code>try</code> 块内定义，在 <code>except</code> 块中引用。如果 <code>try</code> 在赋值前失败，变量不存在。</p>
+      </div>
+
+      <div class="compare-grid">
+        <div class="compare-card old">
+          <h4>&#x274C; Naive Datetime</h4>
+          <p>数据库存 naive timestamps</p>
+          <p>代码用 <code>datetime.now(timezone.utc)</code></p>
+          <p>Python 拒绝比较 &rarr; 崩溃</p>
+          <p>Hack: <code>.replace(tzinfo=None)</code></p>
+        </div>
+        <div class="compare-card new">
+          <h4>&#x2705; 真正的修复</h4>
+          <p>62 文件 refactor</p>
+          <p>一个月后完成</p>
+          <p>这类 bug 在修根因前出现了 3 次</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="s5">
+      <h2>&#x1F6AE; 没人要的功能 (Aug-Oct)</h2>
+      <p class="lead">A GIF generator nobody wanted, a billing service that lasted six weeks, and an animated hamster.</p>
+
+      <div class="chart">
+        <h4 style="margin-bottom:14px;font-size:15px">浪费的工程时间</h4>
+        <div class="chart-row">
+          <div class="chart-label">GIF Generator</div>
+          <div class="chart-bar-wrap"><div class="chart-bar red" style="width:80%">602 行 &mdash; 一周后删除</div></div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-label">Billing Service</div>
+          <div class="chart-bar-wrap"><div class="chart-bar amber" style="width:60%">6 周后被 Autumn 替换</div></div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-label">Animated Hamster</div>
+          <div class="chart-bar-wrap"><div class="chart-bar purple" style="width:20%">"Remove the fucking hamster"</div></div>
+        </div>
+      </div>
+
+      <div class="block-q">
+        <p>"Nobody needed GIF generation and nobody noticed when it was gone."</p>
+      </div>
+    </section>
+
+    <section class="section" id="s6">
+      <h2>&#x1F4A7; Memory Leak 马拉松 (Feb 2026)</h2>
+      <p class="lead">Seven commits in one day chasing connection leaks, dead TCP sockets that looked alive.</p>
+
+      <div class="bug-card">
+        <h4>每次 LLM Call 创建新 httpx Client</h4>
+        <p style="font-size:14px">每个 httpx client 分配一个永不关闭的 connection pool。加上 <code>ssl.create_default_context()</code> 耗时 ~1.8s CPU。</p>
+        <div class="fix">Fix: 整整一天学到 HTTP clients 应该是 singletons</div>
+      </div>
+
+      <div class="bug-card">
+        <h4>Micro-VM 的死 TCP 连接</h4>
+        <p style="font-size:14px">VM suspend 后所有 TCP socket 死掉，但 HTTP client 不知道。monotonic clock 在 suspend 期间冻结，timer 以为过了 0 秒。</p>
+        <div class="fix">Fix: 尝试了 3 种方案后，brute force 赢了 &mdash; 每次 query 销毁重建 client</div>
+      </div>
+    </section>
+
+    <section class="section" id="s7">
+      <h2>&#x1F4A5; 规模化问题 (Mar 2026)</h2>
+      <p class="lead">I killed our own production machines with a load test. Then a third-party SDK froze the platform for 4 minutes.</p>
+
+      <div class="compare-grid">
+        <div class="compare-card old">
+          <h4>&#x274C; Load Test 击溃生产</h4>
+          <p>将 load test 指向生产裸金属机器</p>
+          <p><strong>45 分钟</strong>停机</p>
+          <p>运行 agent sandbox 的机器全部宕机</p>
+        </div>
+        <div class="compare-card old">
+          <h4>&#x274C; Sync SDK 冻结 Event Loop</h4>
+          <p>第三方 SDK 内部同步 HTTP 调用</p>
+          <p>API 变慢 &rarr; event loop 冻结</p>
+          <p><strong>262 gateway timeouts in 4 minutes</strong></p>
+        </div>
+      </div>
+
+      <div class="card">
+        <h4>最讽刺的部分</h4>
+        <p style="margin-bottom:0">21 个调用点中的 1 个已经有了 fix。注释写着 <em>"offload sync SDK call to thread to avoid blocking event loop"</em>。<strong>只是从来没有应用到其他地方。</strong></p>
+      </div>
+    </section>
+
+    <section class="section" id="s8">
+      <h2>&#x1F4A1; 五大教训</h2>
+      <p class="lead">Most of my mistakes fall into a few patterns.</p>
+
+      <div class="fail-grid">
+        <div class="card" style="border-left:4px solid var(--red)">
+          <div class="icon">&#x1F914;</div>
+          <h4>假设而非检查</h4>
+          <p style="font-size:13px">假设 SDK 是 async，假设 keepalive 能存活 VM suspend，假设 <code>round()</code> 适合 billing。</p>
+        </div>
+        <div class="card" style="border-left:4px solid var(--amber)">
+          <div class="icon">&#x1F6AB;</div>
+          <h4>没测完整路径</h4>
+          <p style="font-size:13px">脑中 work 了但 deploy 崩了。然后 live 在 production 上 commit by commit 修。</p>
+        </div>
+        <div class="card" style="border-left:4px solid var(--purple)">
+          <div class="icon">&#x1F9E0;</div>
+          <h4>选聪明方案而非简单方案</h4>
+          <p style="font-size:13px">Keepalive timers vs client recreation。聪明方案总是需要更多修复。</p>
+        </div>
+        <div class="card" style="border-left:4px solid var(--blue)">
+          <div class="icon">&#x23F3;</div>
+          <h4>没完成开始的事</h4>
+          <p style="font-size:13px">Sync-to-async 在 21 个调用点中只修了 1 个。每个 partial fix 给了虚假信心。</p>
+        </div>
+        <div class="card" style="border-left:4px solid var(--teal)">
+          <div class="icon">&#x1F3D7;&#xFE0F;</div>
+          <h4>构建没人要的东西</h4>
+          <p style="font-size:13px">GIF 生成，独立 billing service。602 行没人用也没人想念。</p>
+        </div>
+      </div>
+
+      <div class="block-q">
+        <p>"The gap between 'works in a demo' and 'works at scale' is about 4,000 commits. This is what most of them looked like."</p>
+      </div>
+    </section>
+  </div>
+
+  <footer class="footer">
+    <p><a href="../">&#x2190; Back to Hub</a></p>
+    <p style="margin-top:8px">Source: <a href="https://browser-use.com/posts/everything-i-got-wrong" target="_blank">browser-use.com/posts/everything-i-got-wrong</a></p>
+  </footer>
+</body>
+</html>

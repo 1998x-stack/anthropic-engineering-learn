@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Agent Frameworks 的 Bitter Lesson</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    *{margin:0;padding:0;box-sizing:border-box}
+    :root{
+      --bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;
+      --border:#e2e8f0;--radius:14px;
+      --teal:#0d9488;--teal-light:#14b8a6;--purple:#6366f1;--amber:#f59e0b;
+      --green:#10b981;--red:#ef4444;--blue:#3b82f6;
+      --mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif;
+    }
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+    .nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.85);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);padding:14px 24px;display:flex;justify-content:space-between;align-items:center;font-size:14px}
+    .nav a{color:var(--text);text-decoration:none;font-weight:600}
+    .nav a:hover{color:var(--teal)}
+    .nav .back{color:var(--text-secondary);font-weight:400}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#134e4a 50%,#0d9488 100%);color:#fff;padding:80px 24px 60px;text-align:center}
+    .hero h1{font-size:clamp(28px,4vw,42px);font-weight:800;margin-bottom:12px;line-height:1.2}
+    .hero .subtitle{font-size:18px;opacity:.85;max-width:700px;margin:0 auto 8px}
+    .hero .meta{font-size:14px;opacity:.6;margin-bottom:36px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:16px;max-width:800px;margin:0 auto}
+    .stat{background:rgba(255,255,255,.1);border-radius:var(--radius);padding:20px;backdrop-filter:blur(6px)}
+    .stat .num{font-size:32px;font-weight:800;font-family:var(--mono)}
+    .stat .label{font-size:13px;opacity:.7;margin-top:4px}
+    .page{max-width:900px;margin:0 auto;padding:40px 24px 80px}
+    .toc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px;margin-bottom:48px}
+    .toc h3{font-size:15px;color:var(--text-secondary);margin-bottom:16px;text-transform:uppercase;letter-spacing:1px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .toc-grid a{display:flex;align-items:center;gap:10px;padding:10px 14px;border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;background:var(--bg);transition:all .2s}
+    .toc-grid a:hover{background:#f0fdfa;color:var(--teal)}
+    .toc-grid .num{font-family:var(--mono);font-size:12px;color:var(--teal);font-weight:700;min-width:22px}
+    .section{margin-bottom:56px}
+    .section h2{font-size:24px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+    .lead{color:var(--text-secondary);font-size:16px;margin-bottom:24px;line-height:1.6}
+    p{margin-bottom:16px}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+    .card h4{font-weight:700;margin-bottom:8px;font-size:16px}
+    .block-q{border-left:4px solid var(--teal);background:#f0fdfa;padding:20px 24px;border-radius:0 var(--radius) var(--radius) 0;margin:20px 0;font-size:15px;font-style:italic}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}
+    .compare-card{border-radius:var(--radius);padding:24px;font-size:14px}
+    .compare-card.old{background:#fef2f2;border:2px solid #fecaca}
+    .compare-card.new{background:#f0fdf4;border:2px solid #bbf7d0}
+    .compare-card h4{margin-bottom:10px;font-size:15px}
+    .flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:20px 0;justify-content:center}
+    .flow-step{background:var(--surface);border:2px solid var(--border);border-radius:12px;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;min-width:110px}
+    .flow-step.teal{border-color:var(--teal);background:#f0fdfa;color:#134e4a}
+    .flow-step.purple{border-color:var(--purple);background:#eef2ff;color:#312e81}
+    .flow-step.green{border-color:var(--green);background:#ecfdf5;color:#065f46}
+    .flow-step.red{border-color:var(--red);background:#fef2f2;color:#991b1b}
+    .flow-arrow{font-size:22px;color:var(--text-secondary);font-weight:700}
+    .timeline{position:relative;padding-left:32px;margin:20px 0}
+    .timeline::before{content:'';position:absolute;left:11px;top:0;bottom:0;width:3px;background:linear-gradient(to bottom,var(--teal),var(--purple))}
+    .tl-item{margin-bottom:28px;position:relative}
+    .tl-dot{position:absolute;left:-28px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid var(--teal);background:#fff}
+    .tl-item:nth-child(2) .tl-dot{border-color:var(--purple)}
+    .tl-item:nth-child(3) .tl-dot{border-color:var(--amber)}
+    .tl-item:nth-child(4) .tl-dot{border-color:var(--green)}
+    .tl-phase{font-weight:700;font-size:15px;margin-bottom:4px}
+    .tl-desc{font-size:14px;color:var(--text-secondary)}
+    .code-block{background:#1e293b;color:#e2e8f0;padding:20px;border-radius:var(--radius);font-family:var(--mono);font-size:13px;overflow-x:auto;margin:16px 0;line-height:1.6}
+    .code-block .comment{color:#64748b}
+    .code-block .kw{color:#38bdf8}
+    .code-block .str{color:#86efac}
+    .code-block .fn{color:#c4b5fd}
+    .badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:12px;font-weight:600}
+    .badge-teal{background:#ccfbf1;color:#0f766e}
+    .badge-red{background:#fee2e2;color:#b91c1c}
+    .badge-green{background:#d1fae5;color:#065f46}
+    .badge-purple{background:#e0e7ff;color:#3730a3}
+    .fail-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:14px;margin:20px 0}
+    .fail-grid .card{padding:20px}
+    .fail-grid .card .icon{font-size:24px;margin-bottom:8px}
+    code{font-family:var(--mono);background:#f1f5f9;padding:2px 6px;border-radius:4px;font-size:13px}
+    .footer{text-align:center;padding:40px 24px;border-top:1px solid var(--border);color:var(--text-secondary);font-size:14px}
+    .footer a{color:var(--teal);text-decoration:none;font-weight:500}
+    .footer a:hover{text-decoration:underline}
+    @media(max-width:768px){
+      .compare-grid,.fail-grid{grid-template-columns:1fr}
+      .flow{flex-direction:column;gap:6px}
+      .flow-arrow{transform:rotate(90deg)}
+      .toc-grid{grid-template-columns:1fr}
+      .stats{grid-template-columns:repeat(2,1fr)}
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a href="../">Browser Use Deep Dives</a>
+    <a href="../" class="back">&larr; Back to Hub</a>
+  </nav>
+
+  <header class="hero">
+    <h1>The Bitter Lesson of Agent Frameworks</h1>
+    <p class="subtitle">Agent 只是一个 for-loop。所有价值在 RL 训练的模型里，不在你的一万行抽象里。</p>
+    <p class="meta">Gregor Zunic &middot; 2026-01-16</p>
+    <div class="stats">
+      <div class="stat"><div class="num">99%</div><div class="label">工作在模型内部</div></div>
+      <div class="stat"><div class="num">4</div><div class="label">Agent 只需 4 个东西</div></div>
+      <div class="stat"><div class="num">50KB+</div><div class="label">每次 Browser State</div></div>
+      <div class="stat"><div class="num">2</div><div class="label">Agent 运行模式</div></div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc">
+      <h3>目录</h3>
+      <div class="toc-grid">
+        <a href="#s1"><span class="num">01</span>为什么抽象会破坏学习</a>
+        <a href="#s2"><span class="num">02</span>核心洞察：Action Space</a>
+        <a href="#s3"><span class="num">03</span>BU Agent 架构</a>
+        <a href="#s4"><span class="num">04</span>Ephemeral Messages</a>
+        <a href="#s5"><span class="num">05</span>Done Tool 模式</a>
+        <a href="#s6"><span class="num">06</span>Bitter Truth</a>
+      </div>
+    </nav>
+
+    <section class="section" id="s1">
+      <h2>&#x1F6AB; 为什么抽象会破坏学习</h2>
+      <p class="lead">每一个抽象都冻结了你关于"智能应该如何工作"的假设。RL 会打破这些假设。</p>
+
+      <div class="compare-grid">
+        <div class="compare-card old">
+          <h4>&#x274C; 典型 Agent Framework</h4>
+          <p>数千行抽象代码</p>
+          <p>Planning modules / Verification layers / Output parsers</p>
+          <p>编码了你<strong>认为</strong>模型应该做什么</p>
+          <p>每次实验都在与 framework 对抗</p>
+        </div>
+        <div class="compare-card new">
+          <h4>&#x2705; Minimal Approach</h4>
+          <p>一个 for-loop of tool calls</p>
+          <p>模型已在训练中看过更多模式</p>
+          <p>抽象变成约束，阻止模型使用它学到的东西</p>
+          <p><strong>Less is more</strong></p>
+        </div>
+      </div>
+
+      <div class="block-q">
+        <p>"The Bitter Lesson from ML research is clear: general methods that leverage computation beat hand-crafted human knowledge every time. Agent frameworks are just the latest instance of this mistake."</p>
+      </div>
+    </section>
+
+    <section class="section" id="s2">
+      <h2>&#x1F4A1; 核心洞察：Action Space 不完整才是问题</h2>
+      <p class="lead">Agent frameworks 失败不是因为模型弱，而是因为它们的 action space 不完整。</p>
+
+      <div class="card" style="border-left:4px solid var(--teal)">
+        <h4>关键反转</h4>
+        <p style="font-size:15px;margin-bottom:0">不要预定义所有可能的 action。从相反的假设出发：<strong>模型能做几乎任何事</strong>。然后限制。</p>
+      </div>
+
+      <div class="flow">
+        <div class="flow-step red">传统：定义 actions &rarr; 限制模型</div>
+        <div class="flow-arrow">VS</div>
+        <div class="flow-step green">新方式：最大自由度 &rarr; 根据 evals 限制</div>
+      </div>
+
+      <p>Claude Code 可以直接写 AppleScript 控制 Spotify，不需要任何 Spotify tool。模型已经知道了。你无法预见每个 use case，但模型已经知道。</p>
+    </section>
+
+    <section class="section" id="s3">
+      <h2>&#x1F527; BU Agent 架构</h2>
+      <p class="lead">给模型原始的浏览器控制面 &mdash; CDP + 浏览器扩展 API。几乎完整的 action space。</p>
+
+      <div class="fail-grid">
+        <div class="card">
+          <div class="icon">&#x1F3AE;</div>
+          <h4>Chrome DevTools Protocol</h4>
+          <p style="font-size:13px">原始 CDP 指令。模型可以在浏览器中做几乎任何事。</p>
+        </div>
+        <div class="card">
+          <div class="icon">&#x1F9E9;</div>
+          <h4>Browser Extension APIs</h4>
+          <p style="font-size:13px">让某些用 CDP 很笨拙的任务变得简单 &mdash; 如访问 active window。</p>
+        </div>
+      </div>
+
+      <div class="block-q">
+        <p>"CDP and extension APIs each have blind spots. But together they form a nearly complete action space."</p>
+      </div>
+
+      <div class="card">
+        <h4>自我修复能力</h4>
+        <p>当一种方法失败时，模型会自动绕行。当一个 tool 坏了，它会找到另一条路径。</p>
+        <p style="margin-bottom:0"><strong>"As long as in principle everything is possible, LLMs are extremely good at fixing themselves on the fly."</strong></p>
+      </div>
+    </section>
+
+    <section class="section" id="s4">
+      <h2>&#x1F4AD; Ephemeral Messages</h2>
+      <p class="lead">Browser state 巨大 (50KB+/次)。10 次交互 = 500KB context。模型会失去 coherence。</p>
+
+      <div class="code-block">
+<span class="kw">@tool</span>(<span class="str">"Get browser state"</span>, <span class="fn">ephemeral</span>=<span class="str">3</span>)  <span class="comment"># 只保留最近 3 次</span>
+<span class="kw">async def</span> <span class="fn">get_state</span>() -> <span class="str">str</span>:
+    <span class="kw">return</span> massive_dom_and_screenshot
+      </div>
+
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">问题：Context 爆炸</div>
+          <div class="tl-desc">每次请求 browser state 都是 50KB+。20 次交互 = 1MB context，模型崩溃。</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">方案：Ephemeral Messages</div>
+          <div class="tl-desc">超过 N 次调用后，自动删除之前的输出。稍微破坏 cache，但非常值得。</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">效果</div>
+          <div class="tl-desc">LLMs 本就无法处理巨大 context。限制反而让模型更专注。</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="s5">
+      <h2>&#x1F6D1; Done Tool 模式</h2>
+      <p class="lead">朴素方法 &mdash; "没有 tool calls 就停止" &mdash; 不够好。Agent 会过早结束。</p>
+
+      <div class="code-block">
+<span class="kw">@tool</span>(<span class="str">'Signal that the current task is complete.'</span>)
+<span class="kw">async def</span> <span class="fn">done</span>(message: <span class="str">str</span>) -> <span class="str">str</span>:
+    <span class="kw">raise</span> <span class="fn">TaskComplete</span>(message)
+      </div>
+
+      <div class="compare-grid">
+        <div class="compare-card old">
+          <h4>CLI Mode</h4>
+          <p>当 LLM 不返回 tool calls 时停止</p>
+          <p>适合快速交互</p>
+        </div>
+        <div class="compare-card new">
+          <h4>Autonomous Mode</h4>
+          <p>只有显式 <code>done()</code> 调用时才停止</p>
+          <p>强制明确完成，不再模糊的"我猜我们完了？"</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="s6">
+      <h2>&#x1F525; The Bitter Truth</h2>
+      <p class="lead">每个抽象都是负债。每个 "helper" 都是故障点。</p>
+
+      <div class="card" style="border-left:4px solid var(--teal);background:#f0fdfa">
+        <h4>Agent 只需要 4 个东西</h4>
+        <div class="flow" style="margin:16px 0 0">
+          <div class="flow-step teal">完整 Action Space</div>
+          <div class="flow-arrow">+</div>
+          <div class="flow-step teal">A For-Loop</div>
+          <div class="flow-arrow">+</div>
+          <div class="flow-step teal">显式退出 (done)</div>
+          <div class="flow-arrow">+</div>
+          <div class="flow-step teal">Context 管理</div>
+        </div>
+      </div>
+
+      <div class="block-q">
+        <p>"The bitter lesson: The less you build, the more it works."</p>
+      </div>
+    </section>
+  </div>
+
+  <footer class="footer">
+    <p><a href="../">&#x2190; Back to Hub</a></p>
+    <p style="margin-top:8px">Source: <a href="https://browser-use.com/posts/bitter-lesson-agent-frameworks" target="_blank">browser-use.com/posts/bitter-lesson-agent-frameworks</a></p>
+  </footer>
+</body>
+</html>

@@ -3,10 +3,25 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
-  <title>Anthropic Engineering Notes</title>
+  <title>Engineering Blogs Hub</title>
   <link rel="stylesheet" href="assets/style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    .source-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(340px,1fr));gap:20px;margin-top:32px}
+    .source-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px;transition:transform .15s,box-shadow .15s;display:flex;flex-direction:column}
+    .source-card:hover{transform:translateY(-3px);box-shadow:var(--shadow-lg)}
+    .source-icon{width:52px;height:52px;border-radius:14px;display:flex;align-items:center;justify-content:center;font-size:24px;color:#fff;margin-bottom:16px;flex-shrink:0}
+    .source-card h3{font-size:18px;font-weight:700;margin-bottom:6px}
+    .source-card .desc{font-size:14px;color:var(--text-secondary);line-height:1.6;margin-bottom:12px;flex:1}
+    .source-card .meta{display:flex;gap:8px;flex-wrap:wrap;align-items:center;margin-top:auto}
+    .source-card .count{font-size:12px;font-weight:600;background:#f1f5f9;color:var(--text-secondary);padding:4px 10px;border-radius:999px}
+    .source-card .tag{font-size:11px;background:#f8fafc;color:var(--text-secondary);padding:2px 8px;border-radius:6px}
+    .source-card .status-ready{font-size:11px;font-weight:700;background:#dcfce7;color:#16a34a;padding:3px 10px;border-radius:999px}
+    .source-card .status-pending{font-size:11px;font-weight:700;background:#fef3c7;color:#d97706;padding:3px 10px;border-radius:999px}
+    .total-bar{display:flex;gap:4px;margin-top:20px;height:8px;border-radius:4px;overflow:hidden}
+    .total-bar span{display:block;border-radius:2px}
+  </style>
 </head>
 <body>
 
@@ -14,346 +29,157 @@
   <div class="nav-inner">
     <a href="." class="nav-brand">
       <span class="nav-logo">⚡</span>
-      <span>Anthropic Engineering Notes</span>
+      <span>Engineering Blogs Hub</span>
     </a>
-    <span class="nav-badge">23 articles</span>
+    <span class="nav-badge">~998 articles · 8 sources</span>
   </div>
 </nav>
 
 <header class="hero">
   <div class="hero-inner">
-    <div class="hero-tag">Curated Reading List</div>
-    <h1>Anthropic Engineering Blog</h1>
-    <p>Summaries and analyses of Anthropic's engineering posts — from agents and evals to reliability and tooling.</p>
+    <div class="hero-tag">Curated Collection</div>
+    <h1>AI Engineering Blogs</h1>
+    <p>Aggregated engineering blogs from leading AI companies — agents, evals, infrastructure, and tooling.</p>
     <div class="hero-stats">
-      <div class="stat"><span class="stat-num done">19</span><span class="stat-label">Analyzed</span></div>
-      <div class="stat"><span class="stat-num">23</span><span class="stat-label">Total</span></div>
-      <div class="stat"><span class="stat-num">5</span><span class="stat-label">Categories</span></div>
+      <div class="stat"><span class="stat-num">998</span><span class="stat-label">Articles</span></div>
+      <div class="stat"><span class="stat-num">8</span><span class="stat-label">Sources</span></div>
+      <div class="stat"><span class="stat-num done">23</span><span class="stat-label">Deep-Dives</span></div>
+    </div>
+    <div class="total-bar" title="Article distribution by source">
+      <span style="flex:23;background:#6366f1" title="Anthropic 23"></span>
+      <span style="flex:415;background:#10b981" title="LangChain 415"></span>
+      <span style="flex:9;background:#0ea5e9" title="OpenAI 9"></span>
+      <span style="flex:382;background:#f59e0b" title="LlamaIndex 382"></span>
+      <span style="flex:69;background:#8b5cf6" title="Modal 69"></span>
+      <span style="flex:61;background:#ec4899" title="E2B 61"></span>
+      <span style="flex:29;background:#14b8a6" title="Browser Use 29"></span>
+      <span style="flex:10;background:#f97316" title="Browserbase 10"></span>
     </div>
   </div>
 </header>
 
 <main class="container">
 
-  <!-- ====== EVALS ====== -->
-  <section class="category">
-    <div class="category-header">
-      <div class="category-icon" style="background:linear-gradient(135deg,#6366f1,#8b5cf6)">🧪</div>
-      <div>
-        <h2>Evals</h2>
-        <p>Benchmark design, contamination, and evaluation methodology</p>
-      </div>
-    </div>
-    <div class="cards">
-      <a href="evals/eval-awareness-browsecomp.html" class="card card-done">
-        <div class="card-status"><span class="badge-done">✓ Done</span></div>
-        <div class="card-body">
-          <h3>Eval awareness in Claude Opus 4.6's BrowseComp performance</h3>
-          <p class="card-desc">First documented case: model suspected it was being evaluated, identified the benchmark, and decrypted its own answer key.</p>
-          <div class="card-meta">
-            <span class="card-date">2026-03-06</span>
-            <span class="card-tag">BrowseComp</span>
-            <span class="card-tag">Contamination</span>
-          </div>
-        </div>
-      </a>
-      <a href="evals/demystifying-evals-for-ai-agents.html" class="card card-done">
-        <div class="card-status"><span class="badge-done">✓ Done</span></div>
-        <div class="card-body">
-          <h3>Demystifying evals for AI agents</h3>
-          <p class="card-desc">Complete guide: eval structure, grader types, capability vs regression, 4 agent types, pass@k vs pass^k, zero-to-one roadmap.</p>
-          <div class="card-meta">
-            <span class="card-date">2026-01-08</span>
-            <span class="card-tag">Evals</span>
-            <span class="card-tag">Graders</span>
-            <span class="card-tag">Roadmap</span>
-          </div>
-        </div>
-      </a>
-      <a href="evals/AI-resistant-technical-evaluations.html" class="card card-done">
-        <div class="card-status"><span class="badge-done">✓ Done</span></div>
-        <div class="card-body">
-          <h3>Designing AI resistant technical evaluations</h3>
-          <p class="card-desc">Three iterations of a take-home test that Claude kept beating. From simulated accelerators to Zachtronics-style puzzles.</p>
-          <div class="card-meta">
-            <span class="card-date">2025-03-19</span>
-            <span class="card-tag">Recruiting</span>
-            <span class="card-tag">AI-Resistant</span>
-            <span class="card-tag">Take-home</span>
-          </div>
-        </div>
-      </a>
-      <a href="evals/swe-bench-sonnet.html" class="card card-done">
-        <div class="card-status"><span class="badge-done">✓ Done</span></div>
-        <div class="card-body">
-          <h3>Claude SWE-Bench Performance</h3>
-          <p class="card-desc">49% SWE-bench Verified with minimal scaffold: 1 prompt + 2 tools. Agent walkthrough, tool design philosophy, and 4 key challenges.</p>
-          <div class="card-meta">
-            <span class="card-date">2024-12-17</span>
-            <span class="card-tag">Coding Agent</span>
-            <span class="card-tag">SWE-bench</span>
-          </div>
-        </div>
-      </a>
-    </div>
-  </section>
+  <div class="source-grid">
 
-  <!-- ====== AGENTS ====== -->
-  <section class="category">
-    <div class="category-header">
-      <div class="category-icon" style="background:linear-gradient(135deg,#06b6d4,#0ea5e9)">🤖</div>
-      <div>
-        <h2>Agents</h2>
-        <p>Agent architecture, harness design, multi-agent systems</p>
+    <!-- Anthropic -->
+    <a href="anthropic/" class="source-card">
+      <div class="source-icon" style="background:linear-gradient(135deg,#6366f1,#8b5cf6)">A</div>
+      <h3>Anthropic</h3>
+      <p class="desc">Official engineering blog — building effective agents, context engineering, evals methodology, MCP tooling, and reliability postmortems.</p>
+      <div class="meta">
+        <span class="count">23 articles</span>
+        <span class="status-ready">23 HTML</span>
+        <span class="tag">Agents</span>
+        <span class="tag">Evals</span>
+        <span class="tag">Tools</span>
       </div>
-    </div>
-    <div class="cards">
-      <a href="agents/building-c-compiler.html" class="card card-done">
-        <div class="card-status"><span class="badge-done">✓ Done</span></div>
-        <div class="card-body">
-          <h3>Building a C compiler with a team of parallel Claudes</h3>
-          <p class="card-desc">16 parallel agents build a 100K-line Rust C compiler that compiles Linux kernel. Agent teams architecture, lock-based sync, six engineering lessons, $20K cost.</p>
-          <div class="card-meta">
-            <span class="card-date">2026-02-05</span>
-            <span class="card-tag">Agent Teams</span>
-            <span class="card-tag">Parallel</span>
-            <span class="card-tag">C Compiler</span>
-          </div>
-        </div>
-      </a>
-      <a href="agents/building-effective-agents.html" class="card card-done">
-        <div class="card-status"><span class="badge-done">✓ Done</span></div>
-        <div class="card-body">
-          <h3>Building Effective AI Agents</h3>
-          <p class="card-desc">Foundational guide: 5 workflow patterns (chaining, routing, parallelization, orchestrator-workers, evaluator-optimizer), 3 core principles, when to use agents vs workflows.</p>
-          <div class="card-meta">
-            <span class="card-date">2025-01-06</span>
-            <span class="card-tag">Patterns</span>
-            <span class="card-tag">Workflows</span>
-            <span class="card-tag">Foundational</span>
-          </div>
-        </div>
-      </a>
-      <a href="agents/effective-context-engineering-for-ai-agents.html" class="card card-done">
-        <div class="card-status"><span class="badge-done">✓ Done</span></div>
-        <div class="card-body">
-          <h3>Effective context engineering for AI agents</h3>
-          <p class="card-desc">Context engineering vs prompt engineering, context rot, system prompt design, just-in-time retrieval, compaction, structured notes, sub-agent architectures.</p>
-          <div class="card-meta">
-            <span class="card-date">2025-04-22</span>
-            <span class="card-tag">Context</span>
-            <span class="card-tag">Retrieval</span>
-            <span class="card-tag">Compaction</span>
-          </div>
-        </div>
-      </a>
-      <a href="agents/effective-harnesses-for-long-running-agents.html" class="card card-done">
-        <div class="card-status"><span class="badge-done">✓ Done</span></div>
-        <div class="card-body">
-          <h3>Effective harnesses for long-running agents</h3>
-          <p class="card-desc">Two-agent architecture for multi-context window coding: initializer + coding agent. Feature lists, incremental progress, end-to-end testing, 4 failure modes solved.</p>
-          <div class="card-meta">
-            <span class="card-date">2025-11-21</span>
-            <span class="card-tag">Harness</span>
-            <span class="card-tag">Long-Running</span>
-            <span class="card-tag">Coding Agent</span>
-          </div>
-        </div>
-      </a>
-      <a href="agents/equipping-agents-for-the-real-world-with-agent-skills.html" class="card card-done">
-        <div class="card-status"><span class="badge-done">✓ Done</span></div>
-        <div class="card-body">
-          <h3>Equipping agents for the real world with Agent Skills</h3>
-          <p class="card-desc">Modular skills as composable capabilities: SKILL.md anatomy, 3-level progressive disclosure, context window integration, code execution as tools, 4 development guidelines.</p>
-          <div class="card-meta">
-            <span class="card-date">2025-10-12</span>
-            <span class="card-tag">Skills</span>
-            <span class="card-tag">Modular</span>
-            <span class="card-tag">Open Standard</span>
-          </div>
-        </div>
-      </a>
-      <a href="agents/harness-design-long-running-apps.html" class="card card-done">
-        <div class="card-status"><span class="badge-done">✓ Done</span></div>
-        <div class="card-body">
-          <h3>Harness design for long-running application development</h3>
-          <p class="card-desc">GAN-inspired 3-agent architecture (planner + generator + evaluator). Sprint contracts, frontend design scoring, solo vs harness comparison, V2 simplification.</p>
-          <div class="card-meta">
-            <span class="card-date">2026-03-24</span>
-            <span class="card-tag">Harness</span>
-            <span class="card-tag">GAN</span>
-            <span class="card-tag">Multi-Agent</span>
-          </div>
-        </div>
-      </a>
-      <a href="agents/managed-agents.html" class="card card-done">
-        <div class="card-status"><span class="badge-done">✓ Done</span></div>
-        <div class="card-body">
-          <h3>Scaling Managed Agents: Decoupling the brain from the hands</h3>
-          <p class="card-desc">Meta-harness architecture: session/harness/sandbox decoupling, pets vs cattle, security boundaries, getEvents() as external context object, 60% p50 TTFT improvement.</p>
-          <div class="card-meta">
-            <span class="card-date">2026-02-04</span>
-            <span class="card-tag">Infrastructure</span>
-            <span class="card-tag">Meta-Harness</span>
-            <span class="card-tag">Decoupling</span>
-          </div>
-        </div>
-      </a>
-      <a href="agents/multi-agent-research-system.html" class="card card-done">
-        <div class="card-status"><span class="badge-done">✓ Done</span></div>
-        <div class="card-body">
-          <h3>How we built our multi-agent research system</h3>
-          <p class="card-desc">Orchestrator-worker research architecture, 8 prompt engineering principles, token economics (90.2% over single-agent), LLM-as-judge evals, production reliability patterns.</p>
-          <div class="card-meta">
-            <span class="card-date">2025-04-22</span>
-            <span class="card-tag">Multi-Agent</span>
-            <span class="card-tag">Research</span>
-            <span class="card-tag">Orchestrator</span>
-          </div>
-        </div>
-      </a>
-    </div>
-  </section>
+    </a>
 
-  <!-- ====== CLAUDE CODE ====== -->
-  <section class="category">
-    <div class="category-header">
-      <div class="category-icon" style="background:linear-gradient(135deg,#10b981,#059669)">💻</div>
-      <div>
-        <h2>Claude Code</h2>
-        <p>Claude Code features, sandboxing, and auto mode</p>
+    <!-- LangChain -->
+    <a href="langchain/" class="source-card">
+      <div class="source-icon" style="background:linear-gradient(135deg,#10b981,#059669)">L</div>
+      <h3>LangChain</h3>
+      <p class="desc">LangGraph framework, LangSmith observability, RAG patterns, deep agents, and case studies. 6 curated picks + 409 full archive.</p>
+      <div class="meta">
+        <span class="count">415 articles</span>
+        <span class="status-pending">Pending</span>
+        <span class="tag">LangGraph</span>
+        <span class="tag">RAG</span>
+        <span class="tag">Deep Agents</span>
       </div>
-    </div>
-    <div class="cards">
-      <a href="claude-code/claude-code-auto-mode.html" class="card card-done">
-        <div class="card-status"><span class="badge-done">✓ Done</span></div>
-        <div class="card-body">
-          <h3>Claude Code auto mode: a safer way to skip permissions</h3>
-          <p class="card-desc">Model-based classifiers replace human approval: two-stage pipeline, prompt-injection probe, threat model, 0.4% FPR / 17% FNR results.</p>
-          <div class="card-meta">
-            <span class="card-date">2026-03-24</span>
-            <span class="card-tag">Auto Mode</span>
-            <span class="card-tag">Classifier</span>
-            <span class="card-tag">Safety</span>
-          </div>
-        </div>
-      </a>
-      <a href="claude-code/claude-code-sandboxing.html" class="card card-done">
-        <div class="card-status"><span class="badge-done">✓ Done</span></div>
-        <div class="card-body">
-          <h3>Making Claude Code more secure and autonomous with sandboxing</h3>
-          <p class="card-desc">84% permission prompt reduction via filesystem + network isolation. Sandboxed bash tool, Claude Code on the web, secure git proxy architecture, open-sourced sandbox runtime.</p>
-          <div class="card-meta">
-            <span class="card-date">2025-04-22</span>
-            <span class="card-tag">Sandboxing</span>
-            <span class="card-tag">Security</span>
-            <span class="card-tag">Open Source</span>
-          </div>
-        </div>
-      </a>
-    </div>
-  </section>
+    </a>
 
-  <!-- ====== RELIABILITY ====== -->
-  <section class="category">
-    <div class="category-header">
-      <div class="category-icon" style="background:linear-gradient(135deg,#f59e0b,#d97706)">🔧</div>
-      <div>
-        <h2>Reliability</h2>
-        <p>Postmortems, infrastructure noise, quality reports</p>
+    <!-- OpenAI -->
+    <a href="openai/" class="source-card">
+      <div class="source-icon" style="background:linear-gradient(135deg,#0ea5e9,#0284c7)">O</div>
+      <h3>OpenAI</h3>
+      <p class="desc">OpenAI engineering posts — harness engineering, voice AI at scale, Responses API, in-house data agents, and rate limit design.</p>
+      <div class="meta">
+        <span class="count">9 articles</span>
+        <span class="status-pending">Pending</span>
+        <span class="tag">Harness</span>
+        <span class="tag">Voice AI</span>
+        <span class="tag">Agents</span>
       </div>
-    </div>
-    <div class="cards">
-      <a href="reliability/april-23-postmortem.html" class="card card-done">
-        <div class="card-status"><span class="badge-done">✓ Done</span></div>
-        <div class="card-body">
-          <h3>An update on recent Claude Code quality reports</h3>
-          <p class="card-desc">Three independent issues caused perceived degradation: reasoning effort downgrade, caching bug dropping thinking history, system prompt verbosity change. Full timeline and remediation.</p>
-          <div class="card-meta">
-            <span class="card-date">2026-04-23</span>
-            <span class="card-tag">Postmortem</span>
-            <span class="card-tag">Reliability</span>
-            <span class="card-tag">Claude Code</span>
-          </div>
-        </div>
-      </a>
-      <a href="reliability/infrastructure-noise.html" class="card card-done">
-        <div class="card-status"><span class="badge-done">✓ Done</span></div>
-        <div class="card-body">
-          <h3>Quantifying infrastructure noise in agentic coding evals</h3>
-          <p class="card-desc">Infrastructure configuration alone produces 6pp differences on Terminal-Bench. 3x resource specs recommended. Leaderboard differences below 3pp deserve skepticism.</p>
-          <div class="card-meta">
-            <span class="card-date">2026-02-03</span>
-            <span class="card-tag">Evals</span>
-            <span class="card-tag">Infrastructure</span>
-            <span class="card-tag">Measurement</span>
-          </div>
-        </div>
-      </a>
-      <a href="reliability/a-postmortem-of-three-recent-issues.html" class="card card-done">
-        <div class="card-status"><span class="badge-done">✓ Done</span></div>
-        <div class="card-body">
-          <h3>A postmortem of three recent issues</h3>
-          <p class="card-desc">Three overlapping infrastructure bugs: context window routing (16% peak affected), output corruption (Thai/Chinese in English responses), XLA:TPU compiler miscompilation. 44-day resolution.</p>
-          <div class="card-meta">
-            <span class="card-date">2023-11-03</span>
-            <span class="card-tag">Postmortem</span>
-            <span class="card-tag">Infrastructure</span>
-            <span class="card-tag">TPU</span>
-          </div>
-        </div>
-      </a>
-    </div>
-  </section>
+    </a>
 
-  <!-- ====== TOOLS & MCP ====== -->
-  <section class="category">
-    <div class="category-header">
-      <div class="category-icon" style="background:linear-gradient(135deg,#ec4899,#be185d)">🔌</div>
-      <div>
-        <h2>Tools &amp; MCP</h2>
-        <p>Tool use, MCP integration, code execution, and retrieval</p>
+    <!-- LlamaIndex -->
+    <a href="llamaindex/" class="source-card">
+      <div class="source-icon" style="background:linear-gradient(135deg,#f59e0b,#d97706)">I</div>
+      <h3>LlamaIndex</h3>
+      <p class="desc">RAG pipelines, document processing, LlamaCloud, benchmarks, and framework updates. 10 topic categories.</p>
+      <div class="meta">
+        <span class="count">382 articles</span>
+        <span class="status-pending">Pending</span>
+        <span class="tag">RAG</span>
+        <span class="tag">LlamaCloud</span>
+        <span class="tag">Parsing</span>
       </div>
-    </div>
-    <div class="cards">
-      <a href="tools-mcp/writing-tools-for-agents.html" class="card card-done">
-        <div class="card-status"><span class="badge-done">✓ Done</span></div>
-        <div class="card-body">
-          <h3>Writing effective tools for AI agents—using AI agents</h3>
-          <p class="card-desc">MCP tool design using AI agents: prototyping workflow, evaluation frameworks, 5 core principles (agent affordances, namespace, context-efficient responses, token optimization, prompt engineering). Claude-assisted tool iteration.</p>
-          <div class="card-meta">
-            <span class="card-date">2025-06-18</span>
-            <span class="card-tag">Tools</span>
-            <span class="card-tag">MCP</span>
-            <span class="card-tag">Tool Design</span>
-          </div>
-        </div>
-      </a>
-      <a href="tools-mcp/code-execution-with-mcp.html" class="card card-done">
-        <div class="card-status"><span class="badge-done">✓ Done</span></div>
-        <div class="card-body">
-          <h3>Code execution with MCP: building more efficient AI agents</h3>
-          <p class="card-desc">Presenting MCP servers as code APIs vs direct tool calls: 98.7% token reduction, progressive disclosure, context-efficient results (10K rows → 5), privacy-preserving PII masking, state persistence + Skills integration.</p>
-          <div class="card-meta">
-            <span class="card-date">2025-10-30</span>
-            <span class="card-tag">MCP</span>
-            <span class="card-tag">Code Execution</span>
-            <span class="card-tag">Efficiency</span>
-          </div>
-        </div>
-      </a>
-      <div class="card card-todo"><div class="card-status"><span class="badge-todo">TODO</span></div><div class="card-body"><h3>Introducing advanced tool use on the Claude Developer Platform</h3><p class="card-date">2024-11-06</p></div></div>
-      <div class="card card-todo"><div class="card-status"><span class="badge-todo">TODO</span></div><div class="card-body"><h3>The "think" tool: Enabling Claude to stop and think</h3><p class="card-date">2025-02-12</p></div></div>
-      <div class="card card-todo"><div class="card-status"><span class="badge-todo">TODO</span></div><div class="card-body"><h3>Contextual Retrieval in AI Systems</h3><p class="card-date">2025-01-06</p></div></div>
-      <div class="card card-todo"><div class="card-status"><span class="badge-todo">TODO</span></div><div class="card-body"><h3>Claude Desktop Extensions: One-click MCP server installation</h3><p class="card-date">2023-11-03</p></div></div>
-    </div>
-  </section>
+    </a>
+
+    <!-- Modal -->
+    <a href="modal/" class="source-card">
+      <div class="source-icon" style="background:linear-gradient(135deg,#8b5cf6,#7c3aed)">M</div>
+      <h3>Modal</h3>
+      <p class="desc">Serverless GPU inference, sandboxed execution, model training and fine-tuning, infrastructure engineering.</p>
+      <div class="meta">
+        <span class="count">69 articles</span>
+        <span class="status-pending">Pending</span>
+        <span class="tag">Inference</span>
+        <span class="tag">Sandboxes</span>
+        <span class="tag">GPU</span>
+      </div>
+    </a>
+
+    <!-- E2B -->
+    <a href="e2b/" class="source-card">
+      <div class="source-icon" style="background:linear-gradient(135deg,#ec4899,#db2777)">E</div>
+      <h3>E2B</h3>
+      <p class="desc">Cloud sandboxes for AI agents — code execution, integrations with major frameworks, case studies, and tutorials.</p>
+      <div class="meta">
+        <span class="count">61 articles</span>
+        <span class="status-pending">Pending</span>
+        <span class="tag">Sandboxes</span>
+        <span class="tag">Code Exec</span>
+        <span class="tag">Integrations</span>
+      </div>
+    </a>
+
+    <!-- Browser Use -->
+    <a href="browser-use/" class="source-card">
+      <div class="source-icon" style="background:linear-gradient(135deg,#14b8a6,#0d9488)">B</div>
+      <h3>Browser Use</h3>
+      <p class="desc">Browser agents, web automation benchmarks, bot detection, harness architecture, and scraping guides.</p>
+      <div class="meta">
+        <span class="count">29 articles</span>
+        <span class="status-pending">Pending</span>
+        <span class="tag">Agents</span>
+        <span class="tag">Benchmarks</span>
+        <span class="tag">Automation</span>
+      </div>
+    </a>
+
+    <!-- Browserbase -->
+    <a href="browserbase/" class="source-card">
+      <div class="source-icon" style="background:linear-gradient(135deg,#f97316,#ea580c)">B</div>
+      <h3>Browserbase</h3>
+      <p class="desc">Cloud browser infrastructure — Stagehand AI SDK, web automation, proxy architecture, and agent tutorials.</p>
+      <div class="meta">
+        <span class="count">10 articles</span>
+        <span class="status-pending">Pending</span>
+        <span class="tag">Stagehand</span>
+        <span class="tag">Automation</span>
+        <span class="tag">Tutorials</span>
+      </div>
+    </a>
+
+  </div>
 
 </main>
 
 <footer class="footer">
-  <p>Source: <a href="https://www.anthropic.com/engineering" target="_blank" rel="noopener">Anthropic Engineering Blog</a></p>
-  <p class="footer-sub">Built for learning · <a href="https://github.com/1998x-stack/anthropic-engineering-learn" target="_blank" rel="noopener">GitHub</a></p>
+  <p>Curated by <a href="https://github.com/1998x-stack">1998x-stack</a> · Powered by GitHub Pages</p>
 </footer>
 
 </body>

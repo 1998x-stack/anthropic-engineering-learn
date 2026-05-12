@@ -1,0 +1,396 @@
+---
+title: "LlamaIndex GraphQL and Graph Databases Guide | LlamaIndex"
+author: "Unknown"
+date: "Unknown"
+url: "https://www.llamaindex.ai/blog/enriching-llamaindex-models-from-graphql-and-graph-databases-bcaecec262d7"
+category: "llamaindex-core"
+---
+
+Follow us on
+
+
+ -  [
+
+
+](https://github.com/run-llama/)
+ -  [
+
+](https://discord.com/invite/eN6D2HQ4aX)
+ -  [
+
+
+](https://twitter.com/llama_index)
+ -  [
+
+
+](https://www.linkedin.com/company/91154103/)
+ -  [
+
+
+](https://www.youtube.com/@LlamaIndex)
+
+
+
+
+
+
+
+In this article I wanted to share the process of adding new data loaders to LlamaIndex. First we’ll look at what LlamaIndex is and try a simple example of providing additional context to an LLM query using a simple CSV loader. Then we look at how easy it is to add a new loader for graph databases to LlamaIndex. And lastly we try that new loader and another loader for GraphQL APIs that I added in practice and see how their extra context can help an LLM answer questions better.
+
+
+
+##  Ready to get started with LlamaParse?
+
+
+
+ Explore our free and paid plans today.
+
+
+ -  [ Learn more ](/pricing)
+
+
+
+# Background/Context
+
+I was listening to the ["This Week in ML" (twiml) Podcast](https://medium.com/llamaindex-blog/llamaindex-on-twiml-ai-a-distilled-summary-using-llamaindex-de2a88551595) where [Jerry Liu](https://medium.com/u/e76da1c45ef7?source=post_page-----bcaecec262d7--------------------------------) from LlamaIndex (previously GPT-Index) explained the ideas behind the library to enrich query contexts to LLMs with data from any number of sources.
+
+[LlamaIndex](https://gpt-index.readthedocs.io/en/latest/index.html) is a toolkit to augment LLMs with your own (private) data using in-context learning. It takes care of selecting the right context to retrieve from large knowledge bases. To achieve that it utilizes a number of connectors or loaders (from [LlamaHub](https://llamahub.ai/)) and data structures (indices) to efficiently provide the pre-processed data as `Documents`.
+
+Each type of index stores documents in different ways, e.g via embeddings for vector search, as a simple list or graph or tree structure. Those indices are used as query interface to the LLM, transparently embedding the relevant context.
+
+Besides the higher quality response from the LLM, you get also the documents returned that have been used to construct the answer. LlamaIndex also allows chain of thought reasoning, compare/contrast queries, and natural language querying of databases.
+
+See also this presentation from Jerry:
+
+All the code for the blog post is available in this [Colab Notebook](https://colab.research.google.com/drive/1NUrIoiOh692LaQkBHEmnD-5IuLBpBqGJ#scrollTo=JN4gqQF-NRwj).
+
+# Using a Basic CSV Loader
+
+Here is an example of using a basic CSV loader to provide documents for LlamaIndex.
+
+In our Notebook we download the `countries.csv` via the [Countries List Project](https://annexare.github.io/Countries/) (MIT) ([raw source](https://raw.githubusercontent.com/annexare/Countries/master/dist/countries.csv)).
+
+Our dependencies are `llama-index` and `python-dotenv`.
+
+!pip install llama-index==0.6.19 python-dotenvWe need to provide our OpenAI-api key, to avoid accidentally leaking it in the notebook, I uploaded an `openai.env` file and use the `dotenv` library to load the contents as environment variables.
+
+In the next step we load the env file and prepare the OpenAI `ChatGPTLLMPredictor` (using `gpt-3.5-turbo` by default) and add it to the `ServiceContext` .
+
+import os
+from pathlib import Path
+from llama_index import GPTVectorStoreIndex, SimpleDirectoryReader, ServiceContext, GPTListIndex
+from llama_index.llm_predictor.chatgpt import ChatGPTLLMPredictor
+from dotenv import load_dotenv
+from llama_index import download_loader
+
+load_dotenv("openai.env")
+
+llm_predictor = ChatGPTLLMPredictor()
+service_context = ServiceContext.from_defaults(llm_predictor=llm_predictor)Now we can use the loader to load the CSV and turn it into documents, create an an GPT Index (`VectorStoreIndex` in this case), which LlamaIndex can then use to retrieve the relevant information to pass along in the context to the LLM.
+
+Initializing CSV Loader and GPTVectorStoreIndex
+
+SimpleCSVReader = download_loader("SimpleCSVReader")
+loader = SimpleCSVReader(concat_rows=False)
+documents = loader.load_data(file=Path('./countries.csv'))
+
+print(documents)
+index = GPTVectorStoreIndex.from_documents(documents, service_context=service_context)Documents from the CSV Loader
+
+[Document(text='country, capital, type', doc_id='67c30c68-7d9f-4906-945b-9affc96f95d2', embedding=None, doc_hash='3a506ebea9c04655b51406d79fdf5e3a87c3d8ff5b5387aace3e5a79711a21b8', extra_info=None),
+Document(text='Abkhazia, Sukhumi, countryCapital', doc_id='6e6be4b5-051f-48e0-8774-6d48e0444785', embedding=None, doc_hash='ea387d0eab94cc6c59f98c473ac1f0ee64093901673b43e1c0d163bbc203026e', extra_info=None),
+...]The CSV loader didn’t create one Document per CSV row by default, but only one for the whole document, but you could configure it so that it turned the CSV into one document per row.
+
+LlamaIndex supports much more involved setups of different kinds of indexes, allows to chain them and even conditionally select one or the other. Here we just do the bare minimum to demonstrate our loaders.
+
+After setting up the indices with the appropriate loaders, and connected indexes, we now can use the index as an LLM query engine and execute our user query.
+
+To demonstrate that the LLM still is able to use its world knowledge, we can ask in a mix of English (System), German (Question) and French (requested Answer).
+
+queryEngine = index.as_query_engine()
+
+queryEngine.query("""
+Provide the answer in French.
+Question: Was ist die Hauptstadt von Albanien?
+""")As you can see in the response below it doesn’t just answer our question correctly in French `La capitale de l’Albanie est Tirana.`, but also provides which documents it used to generate the answer.
+
+Response(response="La capitale de l'Albanie est Tirana.",
+source_nodes=[NodeWithScore(node=Node(text='              &amp;lt;td&amp;gt;Albania&amp;lt;/td&amp;gt;', doc_id='3decbee1-98cc-4650-a071-ed25cd3e00d5', embedding=None, doc_hash='7d9d85082095471a9663690742d2d49fc37b2ec37cc5acf4e99e006a68a17742', extra_info=None,
+node_info={'start': 0, 'end': 30, '_node_type': &amp;lt;NodeType.TEXT: '1'&amp;gt;},
+relationships={&amp;lt;DocumentRelationship.SOURCE: '1'&amp;gt;: '7b6c861f-2c2f-4905-a047-edfc25f7df19'}), score=0.7926356007369129),
+NodeWithScore(node=Node(text='              &amp;lt;td&amp;gt;Algiers&amp;lt;/td&amp;gt;', doc_id='8111b737-9f45-4855-8cd8-f958d4eb0ccd', embedding=None, doc_hash='8570a02a057a6ebbd0aff6d3f63c9f29a0ee858a81d913298d31b025101d1e44',
+extra_info=None, node_info={'start': 0, 'end': 30, '_node_type': &amp;lt;NodeType.TEXT: '1'&amp;gt;}, relationships={&amp;lt;DocumentRelationship.SOURCE: '1'&amp;gt;: '22e11ac6-8375-4d0c-91c6-4750fc63a375'}), score=0.7877589022795918)], extra_info={'3decbee1-98cc-4650-a071-ed25cd3e00d5': None, '8111b737-9f45-4855-8cd8-f958d4eb0ccd': None})
+
+# LlamaIndex Loaders
+
+The number of existing data sources in [LlamaHub](https://llamahub.ai/) is impressive, I counted 100+ integrations in [the repository](https://github.com/emptycrown/llama-hub). You can find anything from Google docs, to GitHub, to relational databases.
+
+LlamaHub, screenshot by Author![](/blog/images/1*CiMuFLSaFdMTdMoAcoBJog.png)
+
+But I was missing two of my favorite technologies: GraphQL - the API query language open sourced by Facebook and Graph databases like Neo4j, the best way to store and manage large amounts of connected data, for example in Knowledge Graphs.
+
+>
+
+So I thought: "How hard can it be to add them :)"
+
+# Adding the new loaders
+
+Adding new loaders is really straightforward. There is a script in the llama-hub repository to help with adding a new loader. Running `./add-loader.sh &lt;folder&gt;` added the skeleton files.
+
+To get familiar with the existing implementations I looked at the [Databases (relational)](https://github.com/emptycrown/llama-hub/tree/main/llama_hub/database) and [MongoDB integrations](https://github.com/emptycrown/llama-hub/tree/main/llama_hub/mongo), the former for the Graph Database and the latter for the GraphQL.
+
+It was easy enough, we only needed the requirements for our loader, implement the `base.py` with an straightforward API and a `README.md`` with an explanation and a code example.
+
+The main difference my loaders have from the existing ones, is that they don’t use hard-coded field names for extracting the relevant value from the query result, but instead turn the result into YAML.
+
+I picked YAML not because I like it, but because it was closest to a textual representation of a nested tree of key-value pairs that a user would write as nested bullet lists.
+
+Below is the example code for the Graph Database implementation (the GraphQL one is similar).
+
+# Adding the Graph Database Loader
+
+I added the requirements for the `neo4j` dependency, a Cypher query language over Bolt protocol python driver, that also works with Memgraph and AWS Neptune.
+
+Then I added the code for `*__init__*` to take in a database server URI, database name and credentials to connect and create a driver instance.
+
+The `load_data` method takes in the query to run and optional parameters. It’s implemented by calling the driver’s `execute_query` method.
+
+Each row of results is mapped into a LlamaIndex `Document` with the `text` being the YAML representation of the results.
+
+"""Graph Database Cypher Reader."""
+
+from typing import Dict, List, Optional
+
+from llama_index.readers.base import BaseReader
+from llama_index.readers.schema.base import Document
+
+import yaml
+
+class GraphDBCypherReader(BaseReader):
+    """Graph database Cypher reader.
+
+    Combines all Cypher query results into the Document type used by LlamaIndex.
+
+    Args:
+        uri (str): Graph Database URI
+        username (str): Username
+        password (str): Password
+
+    """
+
+    def __init__(
+        self,
+        uri: str,
+        username: str,
+        password: str,
+        database: str
+    ) -&amp;gt; None:
+        """Initialize with parameters."""
+        try:
+            from neo4j import GraphDatabase, basic_auth
+
+        except ImportError:
+            raise ImportError(
+                "`neo4j` package not found, please run `pip install neo4j`"
+            )
+        if uri:
+            if uri is None:
+                raise ValueError("`uri` must be provided.")
+            self.client = GraphDatabase.driver(uri=uri, auth=basic_auth(username, password))
+            self.database = database
+
+    def load_data(
+        self, query: str, parameters: Optional[Dict] = None
+    ) -&amp;gt; List[Document]:
+        """Run the Cypher with optional parameters and turn results into documents
+
+        Args:
+            query (str): Graph Cypher query string.
+            parameters (Optional[Dict]): optional query parameters.
+
+        Returns:
+            List[Document]: A list of documents.
+
+        """
+        if parameters is None:
+            parameters = {}
+
+        records, summary, keys = self.client.execute_query(query, parameters, database_ = self.database)
+
+        documents = [Document(yaml.dump(entry.data())) for entry in records]
+
+        return documentsYou’re now ready to start using the data loader. If you want to start using this in your code, simply import `GraphDBCypherReader` from the relevant file and follow the steps below.
+
+If you wish to submit the loader on LlamaHub, the process is fairly straightforward. After adding an example to the readme which uses an always-on demo server with StackOverflow data, I was ready to create a [pull request](https://github.com/emptycrown/llama-hub/pull/266). After a short discussion the PR was quickly merged.
+
+Thanks a lot Jerry for the smooth experience.
+
+Now let’s see how to use our two loaders.
+
+# Using the Graph Database Loader
+
+The GraphDB Cypher loader, connects to graph databases, which are specialized databases that store data not in tables but in entities (*Nodes*) and their *Relationships*. Because they are schema free, you can store real-world knowledge without compromising on richness.
+
+Image for “Network Graph” generated by Midjourney by Author![](/blog/images/1*rrH_pwyIEriXFtc_6yjTDA.png)
+
+Relationships can also hold attributes, which can represent time, weights, costs or whatever defines the concrete relationship. Any node can have as many or as few attributes or relationships as needed.
+
+>
+
+To query a graph database you can use the `*Cypher*` query language, a pattern based language that expresses those relationships in visual ascii-art patterns. You encircle nodes in parentheses `*()*` and draw relationships as arrows `*--&gt;*` with additional constraints put in square brackets. Otherwise Cypher provides many features known from SQL and also supports many graph operations as well as handling data structures like nested documents, of lists and dicts.
+
+Let’s use a movie graph database and ask the LLM a question about ***common action movie plots***.
+
+Setting up the `ServiceContext` and the `ChatGPTLLMPredictor` is the same as before.
+
+Then we get the `GraphDBCypherReader` and connect it to our database (with an small example movie graph from [TheMovieDB](https://themoviedb.org) with permission).
+
+GraphDBCypherReader = download_loader('GraphDBCypherReader')
+
+reader = GraphDBCypherReader(uri = "neo4j+s://demo.neo4jlabs.com", \
+    username = "recommendations", password = "recommendations", database = "recommendations")Then we define our query to the graph database with a parameter of year that allows us to pick more recent movies. When loading the data, each row of results should turn into one `Document` where the `text` property of the document is the YAML representation of the row.
+
+query = """
+    MATCH (m:Movie)-[rel:ACTED_IN|DIRECTED|IN_GENRE]-(other)
+    WHERE $year &amp;lt; m.year and m.imdbRating &amp;gt; $rating
+    WITH m, type(rel) as relation, collect(other.name) as names
+    RETURN m.title as title, m.year as year, m.plot as plot, relation, names
+    ORDER BY m.year ASC
+"""
+
+documents = reader.load_data(query, parameters = {"year":1990,"rating":8})
+index = GPTVectorStoreIndex.from_documents(documents, service_context=service_context)
+
+print(len(documents))
+print(documents[0:5])The output will look similar to the following:
+
+829
+[Document(text='names:\n- Saifei He\n- Li Gong\n- Jingwu Ma\n- Cuifen Cao\nplot: A young woman becomes the fourth wife of a wealthy lord, and must learn to live\n  with the strict rules and tensions within the household.\nrelation: ACTED_IN\ntitle: Raise the Red Lantern (Da hong deng long gao gao gua)\nyear: 1991\n', doc_id='782d9a63-251b-4bb8-aa3d-5d8f6d1fb5d2', embedding=None, doc_hash='f9fd966bc5f2234e94d09efebd3be008db8c891f8666c1a364abf7812f5d7a1c', extra_info=None), Document(text='names:\n- Yimou Zhang\nplot: A young woman becomes the fourth wife of a wealthy lord, and must learn to live\n  with the strict rules and tensions within the household.\nrelation: DIRECTED\ntitle: Raise the Red Lantern (Da hong deng long gao gao gua)\nyear: 1991\n', doc_id='2e13caf6-b9cf-4263-a264-7121bc77d1ee', embedding=None, doc_hash='e1f340ed1fac2f1b8d6076cfc2c9e9cb0109d5d11e5dcdbf3a467332f5995cb1', extra_info=None), ...]Now we can use our `index` to run a LLM query to answer the questions we wanted to pose.
+
+queryEngine= index.as_query_engine()
+
+queryEngine.query("""
+What are the most common plots in action movies?
+""")The answer shows that the LLM can utilize the inputs, understands the genre "action movies" and can summarize their plots. Here is its answer.
+
+>
+
+Based on the given context information, it appears that the most common plots in action movies are heists and battles against controlling forces. However, it is important to note that this conclusion is based on a limited sample size and may not be representative of all action movies.
+
+Response(response='Based on the given context information, it appears that the most common plots in action movies are heists and battles against controlling forces. However, it is important to note that this conclusion is based on a limited sample size and may not be representative of all action movies.',
+
+source_nodes=[NodeWithScore(node=Node(text='names:\n- Action\n- Crime\n- Thriller\nplot: A group of professional bank robbers start to feel the heat from police when\n  they unknowingly leave a clue at their latest heist.\nrelation: IN_GENRE\ntitle: Heat\nyear: 1995\n', doc_id='bb117618-1cce-4cec-bd9b-8645ab0b50a3', embedding=None, doc_hash='4d493a9f33eb7a1c071756f61e1975ae5c313ecd42243f81a8827919a618468b', extra_info=None, node_info={'start': 0, 'end': 215, '_node_type': &amp;lt;NodeType.TEXT: '1'&amp;gt;}, relationships={&amp;lt;DocumentRelationship.SOURCE: '1'&amp;gt;: 'dbfffdae-d88c-49e2-9d6b-83dad427a3f3'}), score=0.8247381316731472), NodeWithScore(node=Node(text='names:\n- Thriller\n- Sci-Fi\n- Action\nplot: A computer hacker learns from mysterious rebels about the true nature of his\n  reality and his role in the war against its controllers.\nrelation: IN_GENRE\ntitle: Matrix, The\nyear: 1999\n', doc_id='c4893c61-32ee-4d05-b559-1f65a5197e5e', embedding=None, doc_hash='0b6a080bf712548099c5c8c1b033884a38742c73dc23d420ac2e677e7ece82f4', extra_info=None, node_info={'start': 0, 'end': 227, '_node_type': &amp;lt;NodeType.TEXT: '1'&amp;gt;}, relationships={&amp;lt;DocumentRelationship.SOURCE: '1'&amp;gt;: '6c8dea11-1371-4f5a-a1a1-7f517f027008'}), score=0.8220633045996049)], extra_info={'bb117618-1cce-4cec-bd9b-8645ab0b50a3': None, 'c4893c61-32ee-4d05-b559-1f65a5197e5e': None})
+
+# Using the GraphQL Loader
+
+The GraphQL loader is similarly easy to use.
+
+[GraphQL](https://graphql.org) is not a database query language, but an API query language that is based on strict schema expressed in "type definitions". There you express your entities, their attributes (fields) both for scalar datatypes as well as object datatypes pointing to other entities.
+
+What is GraphQL from GraphQL.org, Screenshot by Author![](/blog/images/1*JBLtKqmxBZjxiLxgmgct4w.png)
+
+GraphQL itself is a tree based query language, that expresses a nested structure of data that you want to fetch starting from a root query. The fields of every entity returned from that query can be selected and for object fields you can further select fields from the referred entity and so on, almost ad-infinitum (API-Limits apply).
+
+There are a number of GraphQL libraries, most notably the JavaScript reference implementation, but also `gql` for python, and also integrations with databases like Hasura, Prisma or the [Neo4j-GraphQL-Library](https://neo4j.com/product/graphql-library/). Several larger projects now provide GraphQL APIs including GitHub, Spotify, Twitter.
+
+The demo is similar to our first one. We use a public GraphQL endpoint ([https://countries.trevorblades.com/](https://countries.trevorblades.com/)), that provides a structure of continent→country→capital. ([Licensed under MIT](https://github.com/trevorblades/countries))
+
+A subset of the type-definition is here.
+
+type Query {
+    continent(code: ID!): Continent
+    continents(filter: ContinentFilterInput = {}): [Continent!]!
+    countries(filter: CountryFilterInput = {}): [Country!]!
+    country(code: ID!): Country
+    language(code: ID!): Language
+    languages(filter: LanguageFilterInput = {}): [Language!]!
+}
+
+type Continent {
+    code: ID!
+    countries: [Country!]!
+    name: String!
+}
+
+type Country {
+    awsRegion: String!
+    capital: String
+    code: ID!
+    continent: Continent!
+    currencies: [String!]!
+    currency: String
+    emoji: String!
+    emojiU: String!
+    languages: [Language!]!
+    name(lang: String): String!
+    native: String!
+    phone: String!
+    phones: [String!]!
+    states: [State!]!
+    subdivisions: [Subdivision!]!
+}
+...In our demo, we again define the `ServiceContext` with the `ChatGPTLLMPredictor` as before. Then we get the `GraphQLReader` loader and point it to the URL of the endpoint. You can also provide additional HTTP-Headers, e.g. for authentication.
+
+GraphQLReader = download_loader('GraphQLReader')
+reader = GraphQLReader(uri = "https://countries.trevorblades.com/", headers = {})query = """
+query getContinents {
+  continents {
+    name
+    countries {
+      name
+      capital
+    }
+  }
+}
+"""
+documents = reader.load_data(query, variables = {})
+print(len(documents))
+print(documents)We see that it finds 7 continents with countries and capitals, each of the root results (continent) is turned into a document
+
+7
+[Document(text='countries:\n- capital: Luanda\n  name: Angola\n- capital: Ouagadougou\n  name: Burkina Faso\n- capital: Bujumbura\n  name: Burundi\n- capital: Porto-Novo\n  name: Benin\n- capital: Gaborone\n  name: Botswana\n- capital: Kinshasa\n  name: Democratic Republic of the Congo\n- capital: Bangui\n  name: Central African Republic\n....',doc_id='b82fec36-5e82-4246-b7ab-f590bf6741ab', embedding=None, doc_hash='a4caa760423d6ca861b9332f386add3c449f1683168391ae10f7f73a691a2240', extra_info=None)]Again we stress the LLM only a little bit by asking it in German, "Which capitals are in North America".
+
+index = GPTVectorStoreIndex.from_documents(documents, service_context=service_context)
+queryEngine= index.as_query_engine()
+
+response = queryEngine.query("""
+Question: Welche Hauptstädte liegen in Nordamerika?
+Answer:
+""")
+
+response.responseI was surprised, as I had only expected a hand-full of countries and cities. But we get 27 countries that are in North America. This shows how our perception is skewed by the western worldview.
+
+Die Hauptstädte, die in Nordamerika liegen, sind Ottawa, San Jos\xE9, Havana, Willemstad, Roseau, Santo Domingo, St. George's, Nuuk, Guatemala City, Tegucigalpa, Port-au-Prince, Kingston, Basseterre, George Town, Castries, Marigot, Fort-de-France, Plymouth, Mexico City, Managua, Panama City, Saint-Pierre, San Juan, San Salvador, Philipsburg, Cockburn Town, Port of Spain, Washington D.C., Kingstown und Road Town.We could also flip the GraphQL query around and then get 250 countries with their respective capitals and continents.
+
+query = """
+query getCountries {
+  countries {
+    name
+    capital
+    continent {
+        name
+    }
+  }
+}
+"""
+documents = reader.load_data(query, variables = {})
+print(len(documents))
+print(documents)Both document lists should work equally well, but let’s see.
+
+This time the answer from the LLM was much more limited. I’m not sure if that was because the index fed the LLM fewer documents to pick from.
+
+index = GPTVectorStoreIndex.from_documents(documents, service_context=service_context)
+queryEngine= index.as_query_engine()
+
+response = queryEngine.query("""
+Question: Which capitals are in North America?
+Answer:
+""")
+
+response.responseWashington D.C. and Mexico City are in North America.
+
+# Conclusion
+
+It was really smooth to add new data loaders to LlamaHub, thanks a lot to [Jerry Liu](https://medium.com/u/e76da1c45ef7?source=post_page-----bcaecec262d7--------------------------------) for making it so easy. Please let me know what you’re doing with these loaders and if you have any feedback.
+
+If I find time in the next weeks I also want to look into the `KnowledgeGraphIndex` and see if my graph database loader can nicely populate that one.

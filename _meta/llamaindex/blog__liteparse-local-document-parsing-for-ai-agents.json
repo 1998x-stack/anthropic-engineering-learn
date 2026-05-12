@@ -1,0 +1,2 @@
+{"title":"LiteParse: Local Document Parsing for AI Agents","author":"Unknown","date":"Unknown","url":"https://www.llamaindex.ai/blog/liteparse-local-document-parsing-for-ai-agents","category":"document-processing","description":"The core processing engine behind LlamaParse is now open source. LiteParse runs entirely locally, has zero Python dependencies, and is built around how agents actually iterate on documents: parse text fast, fall back to screenshots when you need visual reasoning. 
+"}

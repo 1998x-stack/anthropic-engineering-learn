@@ -1,0 +1,695 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Claude "Think" Tool — 让 Claude 停下来思考</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;
+      --border:#e2e8f0;--radius:14px;
+      --purple:#6366f1;--amber:#f59e0b;--green:#10b981;--red:#ef4444;--blue:#3b82f6;--pink:#ec4899;--teal:#14b8a6;
+      --indigo:#4f46e5;--sky:#0ea5e9;
+      --mono:'JetBrains Mono','SF Mono',monospace;
+      --sans:'Noto Sans SC','Inter',system-ui,sans-serif;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7;-webkit-font-smoothing:antialiased}
+    a{color:inherit;text-decoration:none}
+    img{max-width:100%;display:block}
+    code{font-family:var(--mono);font-size:13px;background:#f1f5f9;padding:2px 6px;border-radius:4px}
+
+    /* Nav */
+    .nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.88);backdrop-filter:blur(14px);border-bottom:1px solid var(--border)}
+    .nav-inner{max-width:1200px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:52px}
+    .nav-brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px}
+    .nav-back{font-size:13px;color:var(--text-secondary);transition:color .15s}
+    .nav-back:hover{color:var(--indigo)}
+
+    /* Hero — blue-indigo theme */
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#1e1b4b 30%,#3730a3 55%,#4f46e5 75%,#1e3a5f 100%);color:#fff;padding:80px 24px 64px;text-align:center;position:relative;overflow:hidden}
+    .hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 25% 70%,rgba(79,70,229,.2) 0%,transparent 55%),radial-gradient(ellipse at 75% 25%,rgba(14,165,233,.12) 0%,transparent 50%)}
+    .hero-inner{position:relative;max-width:800px;margin:0 auto}
+    .hero-tag{display:inline-block;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:5px 16px;font-size:12px;letter-spacing:.5px;text-transform:uppercase;margin-bottom:20px}
+    .hero h1{font-size:clamp(22px,4.5vw,38px);font-weight:800;line-height:1.2;margin-bottom:12px;letter-spacing:-.02em}
+    .hero .sub{font-size:15px;opacity:.65;margin-bottom:28px}
+    .hero-stats{display:flex;gap:20px;justify-content:center;flex-wrap:wrap}
+    .hero-stat{text-align:center;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:16px 20px;min-width:120px}
+    .hero-stat .v{font-size:26px;font-weight:800;background:linear-gradient(135deg,#93c5fd,#a5b4fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .hero-stat .l{font-size:12px;opacity:.6;margin-top:4px}
+
+    .page{max-width:900px;margin:0 auto;padding:0 24px}
+
+    /* Update banner */
+    .update-banner{background:#fffbeb;border:1px solid #fde68a;border-left:4px solid var(--amber);border-radius:0 var(--radius) var(--radius) 0;padding:20px 24px;margin:32px 0}
+    .update-banner h4{font-size:14px;font-weight:700;color:#92400e;margin-bottom:6px}
+    .update-banner p{font-size:14px;color:#78350f;line-height:1.7}
+    .update-banner a{color:var(--indigo);text-decoration:underline}
+
+    /* TOC */
+    .toc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px 28px;margin:32px 0}
+    .toc h3{font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-secondary);margin-bottom:12px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
+    .toc a{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;font-size:14px;color:var(--text);transition:background .15s}
+    .toc a:hover{background:#f1f5f9}
+    .toc .num{background:var(--indigo);color:#fff;width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+
+    /* Section */
+    .section{margin:48px 0}
+    .section h2{font-size:24px;font-weight:700;margin-bottom:8px;padding-bottom:10px;border-bottom:2px solid var(--border);display:flex;align-items:center;gap:10px}
+    .section .lead{font-size:16px;color:var(--text-secondary);line-height:1.8;margin-bottom:24px}
+
+    /* Cards */
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+    .card h3{font-size:17px;font-weight:700;margin-bottom:10px}
+    .card p,.card li{font-size:14px;color:var(--text-secondary);line-height:1.7}
+    .card ul{padding-left:20px;margin-top:8px}
+    .card li{margin-bottom:4px}
+
+    /* Charts */
+    .chart{margin:24px 0}
+    .chart-title{font-size:15px;font-weight:700;margin-bottom:16px;text-align:center}
+    .chart-row{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+    .chart-label{width:200px;font-size:13px;color:var(--text-secondary);text-align:right;flex-shrink:0;line-height:1.3}
+    .chart-bar-wrap{flex:1;height:36px;background:#f1f5f9;border-radius:6px;overflow:hidden;position:relative}
+    .chart-bar{height:100%;border-radius:6px;display:flex;align-items:center;padding-left:10px;font-size:12px;font-weight:600;color:#fff;transition:width .8s ease}
+    .chart-bar.indigo{background:linear-gradient(90deg,#4f46e5,#6366f1)}
+    .chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+    .chart-bar.purple{background:linear-gradient(90deg,#7c3aed,#a78bfa)}
+    .chart-bar.slate{background:linear-gradient(90deg,#64748b,#94a3b8)}
+    .chart-bar.green{background:linear-gradient(90deg,#10b981,#34d399)}
+    .chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .chart-bar.teal{background:linear-gradient(90deg,#14b8a6,#5eead4)}
+
+    /* Compare grid */
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:24px 0}
+    .compare-card{border-radius:var(--radius);padding:24px;border:1px solid}
+    .compare-card h4{font-size:15px;font-weight:700;margin-bottom:10px}
+    .compare-card p{font-size:14px;line-height:1.7;color:var(--text-secondary)}
+    .compare-card ul{padding-left:18px;margin-top:8px}
+    .compare-card li{font-size:13px;color:var(--text-secondary);line-height:1.6;margin-bottom:4px}
+
+    /* Flow diagram */
+    .diagram{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px;margin:24px 0;text-align:center}
+    .diagram h4{font-size:15px;font-weight:700;margin-bottom:16px}
+    .flow{display:flex;align-items:center;justify-content:center;gap:0;flex-wrap:wrap}
+    .flow-step{background:linear-gradient(135deg,#4f46e5,#6366f1);color:#fff;padding:10px 14px;border-radius:10px;font-size:12px;font-weight:600;text-align:center;max-width:150px}
+    .flow-step.blue{background:linear-gradient(135deg,#3b82f6,#60a5fa)}
+    .flow-step.purple{background:linear-gradient(135deg,#7c3aed,#a78bfa)}
+    .flow-step.green{background:linear-gradient(135deg,#10b981,#34d399)}
+    .flow-step.amber{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#78350f}
+    .flow-step.pink{background:linear-gradient(135deg,#ec4899,#f472b6)}
+    .flow-step.sky{background:linear-gradient(135deg,#0ea5e9,#38bdf8)}
+    .flow-arrow{font-size:18px;color:var(--indigo);padding:0 6px}
+
+    /* Loop flow */
+    .loop-flow{display:flex;flex-direction:column;align-items:center;gap:0;margin:16px auto;max-width:420px}
+    .loop-row{display:flex;align-items:center;gap:0;width:100%}
+    .loop-step{flex:1;background:linear-gradient(135deg,#4f46e5,#6366f1);color:#fff;padding:12px 14px;border-radius:10px;font-size:12px;font-weight:600;text-align:center}
+    .loop-step.blue{background:linear-gradient(135deg,#3b82f6,#60a5fa)}
+    .loop-step.purple{background:linear-gradient(135deg,#7c3aed,#a78bfa)}
+    .loop-step.green{background:linear-gradient(135deg,#10b981,#34d399)}
+    .loop-step.amber{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#78350f}
+    .loop-arrow-down{font-size:18px;color:var(--indigo);padding:6px 0;text-align:center}
+    .loop-arrow-right{font-size:18px;color:var(--indigo);padding:0 8px}
+    .loop-bracket{border:2px dashed var(--indigo);border-left:none;border-radius:0 12px 12px 0;padding:8px 10px;margin-left:-4px;font-size:11px;color:var(--indigo);font-weight:600;writing-mode:vertical-rl;text-orientation:mixed;display:flex;align-items:center;justify-content:center}
+
+    /* Use case grid */
+    .use-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin:20px 0}
+    .use-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px;transition:box-shadow .2s}
+    .use-card:hover{box-shadow:0 4px 20px rgba(0,0,0,.06)}
+    .use-card .icon{font-size:28px;margin-bottom:10px}
+    .use-card h4{font-size:15px;font-weight:700;margin-bottom:8px}
+    .use-card p{font-size:13px;color:var(--text-secondary);line-height:1.6}
+
+    /* Badge */
+    .badge{display:inline-block;font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;letter-spacing:.3px}
+    .badge-indigo{background:#e0e7ff;color:#3730a3}
+    .badge-blue{background:#dbeafe;color:#1d4ed8}
+    .badge-green{background:#dcfce7;color:#16a34a}
+    .badge-amber{background:#fef3c7;color:#b45309}
+    .badge-red{background:#fee2e2;color:#dc2626}
+
+    /* Table */
+    .tbl-wrap{overflow-x:auto;margin:20px 0}
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    th{background:#f8fafc;font-weight:600;text-align:left;padding:10px 14px;border-bottom:2px solid var(--border)}
+    td{padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+    tr:last-child td{border-bottom:none}
+    tr.highlight{background:#eef2ff}
+
+    /* Code block */
+    .code-block{background:#1e293b;color:#e2e8f0;border-radius:12px;padding:20px 24px;font-family:var(--mono);font-size:13px;line-height:1.6;overflow-x:auto;margin:16px 0}
+    .code-block .key{color:#93c5fd}
+    .code-block .str{color:#86efac}
+    .code-block .comment{color:#64748b;font-style:italic}
+
+    /* Blockquote */
+    .block-q{background:#eef2ff;border-left:4px solid var(--indigo);border-radius:0 12px 12px 0;padding:20px 24px;margin:28px 0}
+    .block-q p{font-size:15px;line-height:1.8;color:#312e81;font-style:italic}
+
+    /* Stat highlight row */
+    .stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:24px 0}
+    .stat-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px;text-align:center}
+    .stat-box .num{font-size:32px;font-weight:800;background:linear-gradient(135deg,var(--indigo),var(--sky));-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .stat-box .label{font-size:12px;color:var(--text-secondary);margin-top:4px}
+
+    /* Footer */
+    .footer{text-align:center;padding:40px 24px 48px;border-top:1px solid var(--border);margin-top:60px;font-size:13px;color:var(--text-secondary)}
+    .footer a{color:var(--indigo)}
+
+    @media(max-width:768px){
+      .hero-stats{gap:12px}
+      .hero-stat{min-width:100px;padding:12px 14px}
+      .compare-grid{grid-template-columns:1fr}
+      .use-grid{grid-template-columns:1fr}
+      .stat-row{grid-template-columns:1fr}
+      .chart-label{width:130px;font-size:12px}
+      .flow{flex-direction:column;gap:8px}
+      .flow-arrow{transform:rotate(90deg)}
+      .toc-grid{grid-template-columns:1fr}
+      .loop-flow{max-width:100%}
+    }
+  </style>
+</head>
+<body>
+
+<!-- Nav -->
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../" class="nav-brand"><span>&#9889;</span><span>Anthropic Engineering Notes</span></a>
+    <a href="../" class="nav-back">&larr; 返回 Anthropic</a>
+  </div>
+</nav>
+
+<!-- Hero -->
+<header class="hero">
+  <div class="hero-inner">
+    <div class="hero-tag">&#129520; Tools &middot; MCP &middot; 深度解析</div>
+    <h1>"Think" Tool：让 Claude 停下来思考</h1>
+    <div class="sub">The "think" tool: Enabling Claude to stop and think &middot; Published 2025-02-12</div>
+    <div class="hero-stats">
+      <div class="hero-stat"><div class="v">+54%</div><div class="l">Airline 域提升</div></div>
+      <div class="hero-stat"><div class="v">0.623</div><div class="l">SWE-bench SOTA</div></div>
+      <div class="hero-stat"><div class="v">3</div><div class="l">最佳使用场景</div></div>
+      <div class="hero-stat"><div class="v">0</div><div class="l">额外代码量</div></div>
+    </div>
+  </div>
+</header>
+
+<div class="page">
+
+<!-- Update Banner -->
+<div class="update-banner">
+  <h4>&#9888;&#65039; Extended Thinking 更新（2025-12-15）</h4>
+  <p>Extended thinking 能力已大幅改进，Anthropic 现在推荐在大多数场景使用 extended thinking 而非专用的 think tool。Extended thinking 提供类似的好处 — 给 Claude 空间推理复杂问题 — 同时集成度和性能更好。详见 <a href="https://platform.claude.com/docs/en/build-with-claude/extended-thinking" target="_blank">extended thinking 文档</a>。</p>
+</div>
+
+<!-- TOC -->
+<nav class="toc">
+  <h3>&#128209; 本文导航</h3>
+  <div class="toc-grid">
+    <a href="#s1"><span class="num">1</span>什么是 Think Tool</a>
+    <a href="#s2"><span class="num">2</span>Think vs Extended Thinking</a>
+    <a href="#s3"><span class="num">3</span>&tau;-Bench 性能评估</a>
+    <a href="#s4"><span class="num">4</span>SWE-bench 性能</a>
+    <a href="#s5"><span class="num">5</span>最佳使用场景</a>
+    <a href="#s6"><span class="num">6</span>实现最佳实践</a>
+    <a href="#s7"><span class="num">7</span>快速上手指南</a>
+  </div>
+</nav>
+
+<!-- ====== 1. 什么是 Think Tool ====== -->
+<section class="section" id="s1">
+  <h2><span>&#129504;</span> 什么是 Think Tool</h2>
+  <p class="lead">Think tool 是一个简单而强大的技术：给 Claude 一个专门的工具，让它在生成回复过程中<strong>停下来、思考是否拥有足够信息</strong>，然后再继续行动。这在复杂的多步骤工具调用链中尤为有效。</p>
+
+  <div class="card" style="border-left:4px solid var(--indigo)">
+    <h3>&#128161; 核心概念</h3>
+    <p>Think tool 不会获取新信息或改变数据库，它只是在日志中追加一条"思考"。但这个简单的动作创建了一个<strong>结构化的推理空间</strong>，让 Claude 可以：</p>
+    <ul>
+      <li>列出适用于当前请求的具体规则</li>
+      <li>检查是否已收集所有必需信息</li>
+      <li>验证计划的操作是否符合所有策略</li>
+      <li>对工具结果进行正确性迭代检查</li>
+    </ul>
+  </div>
+
+  <div class="diagram">
+    <h4>Think Tool 工作原理</h4>
+    <div class="flow">
+      <div class="flow-step sky">用户请求</div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-step">调用工具 A</div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-step amber">&#129504; Think<br>分析结果</div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-step purple">调用工具 B</div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-step amber">&#129504; Think<br>验证合规</div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-step green">最终回复</div>
+    </div>
+  </div>
+
+  <div class="code-block">
+<span class="comment">// Think tool 定义（来自 &tau;-Bench）</span>
+{
+  <span class="key">"name"</span>: <span class="str">"think"</span>,
+  <span class="key">"description"</span>: <span class="str">"Use the tool to think about something.
+    It will not obtain new information or change the
+    database, but just append the thought to the log.
+    Use it when complex reasoning or some cache memory
+    is needed."</span>,
+  <span class="key">"input_schema"</span>: {
+    <span class="key">"type"</span>: <span class="str">"object"</span>,
+    <span class="key">"properties"</span>: {
+      <span class="key">"thought"</span>: {
+        <span class="key">"type"</span>: <span class="str">"string"</span>,
+        <span class="key">"description"</span>: <span class="str">"A thought to think about."</span>
+      }
+    },
+    <span class="key">"required"</span>: [<span class="str">"thought"</span>]
+  }
+}
+  </div>
+</section>
+
+<!-- ====== 2. Think vs Extended Thinking ====== -->
+<section class="section" id="s2">
+  <h2><span>&#9878;&#65039;</span> Think Tool vs Extended Thinking</h2>
+  <p class="lead">虽然名字相似，但 think tool 和 extended thinking 是<strong>完全不同的概念</strong>，适用于不同的场景。理解两者的区别是正确使用的关键。</p>
+
+  <div class="compare-grid">
+    <div class="compare-card" style="background:#eef2ff;border-color:#c7d2fe">
+      <h4 style="color:#4f46e5">&#129504; Think Tool</h4>
+      <p><strong>回复生成过程中</strong>插入的思考步骤</p>
+      <ul>
+        <li>在工具调用链中随时触发</li>
+        <li>处理<strong>新发现的外部信息</strong></li>
+        <li>聚焦于验证和合规检查</li>
+        <li>推理深度较浅，但针对性强</li>
+        <li>适合长链工具调用场景</li>
+      </ul>
+    </div>
+    <div class="compare-card" style="background:#f5f3ff;border-color:#c4b5fd">
+      <h4 style="color:#7c3aed">&#128171; Extended Thinking</h4>
+      <p><strong>回复生成之前</strong>的深度思考</p>
+      <ul>
+        <li>在开始生成回复前进行</li>
+        <li>对计划进行<strong>深度迭代</strong></li>
+        <li>更全面、更综合的推理</li>
+        <li>适合编程、数学、物理等</li>
+        <li>适合简单/非顺序工具调用</li>
+      </ul>
+    </div>
+  </div>
+
+  <div class="diagram">
+    <h4>时机对比：何时发生推理</h4>
+    <div style="display:flex;gap:0;margin-top:16px">
+      <div style="flex:1;padding:16px;background:#ede9fe;text-align:center;font-size:13px;font-weight:600;color:#7c3aed;border-radius:12px 0 0 12px;border:2px solid #c4b5fd">
+        Extended Thinking<br><span style="font-weight:400;font-size:12px">回复生成前 &middot; 深度推理</span>
+      </div>
+      <div style="flex:1;padding:16px;background:#eef2ff;text-align:center;font-size:13px;font-weight:600;color:#4f46e5;border:2px solid #c7d2fe;border-left:none">
+        开始生成回复<br><span style="font-weight:400;font-size:12px">&#8594; 工具调用链开始</span>
+      </div>
+      <div style="flex:1.5;padding:16px;background:#e0e7ff;text-align:center;font-size:13px;font-weight:600;color:#3730a3;border-radius:0 12px 12px 0;border:2px solid #a5b4fc;border-left:none">
+        Think Tool &#129504; &#8594; Tool &#8594; Think &#129504; &#8594; Tool<br><span style="font-weight:400;font-size:12px">回复过程中 &middot; 随时插入思考</span>
+      </div>
+    </div>
+  </div>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>维度</th>
+          <th>Think Tool</th>
+          <th>Extended Thinking</th>
+        </tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>触发时机</strong></td>
+          <td>回复生成过程中（工具链内）</td>
+          <td>回复生成之前</td>
+        </tr>
+        <tr>
+          <td><strong>推理深度</strong></td>
+          <td>聚焦、针对性强</td>
+          <td>全面、深度迭代</td>
+        </tr>
+        <tr>
+          <td><strong>信息来源</strong></td>
+          <td>处理工具返回的新信息</td>
+          <td>基于用户查询规划</td>
+        </tr>
+        <tr>
+          <td><strong>最佳场景</strong></td>
+          <td>复杂工具链、策略合规、顺序决策</td>
+          <td>编程、数学、简单工具调用</td>
+        </tr>
+        <tr>
+          <td><strong>实现方式</strong></td>
+          <td>标准 tool 定义</td>
+          <td>API 参数配置</td>
+        </tr>
+        <tr>
+          <td><strong>额外成本</strong></td>
+          <td>增加输出 token</td>
+          <td>增加思考 token</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+</section>
+
+<!-- ====== 3. τ-Bench 性能评估 ====== -->
+<section class="section" id="s3">
+  <h2><span>&#128202;</span> &tau;-Bench 性能评估</h2>
+  <p class="lead">&tau;-Bench 是一个全面的基准测试，评估模型在真实客户服务场景中使用工具的能力。核心指标 pass^k 衡量所有 k 次独立试验全部成功的概率 — 测试的是<strong>一致性和可靠性</strong>，而非单次成功率。</p>
+
+  <!-- Airline domain chart -->
+  <div class="card">
+    <h3>&#9992;&#65039; Airline 域性能（pass^1）</h3>
+    <p style="margin-bottom:16px">Think tool + 优化提示在航空领域实现了 <strong>54% 的相对提升</strong>，从基线的 0.370 提升到 0.570。</p>
+    <div class="chart">
+      <div class="chart-row">
+        <div class="chart-label"><span class="badge badge-indigo">Think + Prompt</span></div>
+        <div class="chart-bar-wrap"><div class="chart-bar indigo" style="width:97%">0.584</div></div>
+      </div>
+      <div class="chart-row">
+        <div class="chart-label"><span class="badge badge-blue">Extended Thinking</span></div>
+        <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:69%">0.412</div></div>
+      </div>
+      <div class="chart-row">
+        <div class="chart-label"><span class="badge badge-green">Think (no prompt)</span></div>
+        <div class="chart-bar-wrap"><div class="chart-bar green" style="width:68%">0.404</div></div>
+      </div>
+      <div class="chart-row">
+        <div class="chart-label"><span class="badge badge-amber">Baseline</span></div>
+        <div class="chart-bar-wrap"><div class="chart-bar slate" style="width:56%">0.332</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Retail domain chart -->
+  <div class="card">
+    <h3>&#128722; Retail 域性能（pass^1）</h3>
+    <p style="margin-bottom:16px">在相对简单的零售域中，Claude 仅依靠 think tool（无额外提示）就实现了最佳得分。</p>
+    <div class="chart">
+      <div class="chart-row">
+        <div class="chart-label"><span class="badge badge-green">Think (no prompt)</span></div>
+        <div class="chart-bar-wrap"><div class="chart-bar green" style="width:100%">0.812</div></div>
+      </div>
+      <div class="chart-row">
+        <div class="chart-label"><span class="badge badge-amber">Baseline</span></div>
+        <div class="chart-bar-wrap"><div class="chart-bar slate" style="width:96%">0.783</div></div>
+      </div>
+      <div class="chart-row">
+        <div class="chart-label"><span class="badge badge-blue">Extended Thinking</span></div>
+        <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:95%">0.770</div></div>
+      </div>
+    </div>
+  </div>
+
+  <!-- Detailed data tables -->
+  <div class="card">
+    <h3>&#128200; Airline 域详细数据（pass^k）</h3>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr><th>配置</th><th>k=1</th><th>k=2</th><th>k=3</th><th>k=4</th><th>k=5</th></tr>
+        </thead>
+        <tbody>
+          <tr class="highlight"><td><strong>Think + Prompt</strong></td><td><strong>0.584</strong></td><td><strong>0.444</strong></td><td><strong>0.384</strong></td><td><strong>0.356</strong></td><td><strong>0.340</strong></td></tr>
+          <tr><td>Think (no prompt)</td><td>0.404</td><td>0.254</td><td>0.186</td><td>0.140</td><td>0.100</td></tr>
+          <tr><td>Extended Thinking</td><td>0.412</td><td>0.290</td><td>0.232</td><td>0.192</td><td>0.160</td></tr>
+          <tr><td>Baseline</td><td>0.332</td><td>0.206</td><td>0.148</td><td>0.116</td><td>0.100</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>&#128200; Retail 域详细数据（pass^k）</h3>
+    <div class="tbl-wrap">
+      <table>
+        <thead>
+          <tr><th>配置</th><th>k=1</th><th>k=2</th><th>k=3</th><th>k=4</th><th>k=5</th></tr>
+        </thead>
+        <tbody>
+          <tr class="highlight"><td><strong>Think (no prompt)</strong></td><td><strong>0.812</strong></td><td><strong>0.735</strong></td><td><strong>0.685</strong></td><td><strong>0.650</strong></td><td><strong>0.626</strong></td></tr>
+          <tr><td>Extended Thinking</td><td>0.770</td><td>0.681</td><td>0.623</td><td>0.581</td><td>0.548</td></tr>
+          <tr><td>Baseline</td><td>0.783</td><td>0.695</td><td>0.643</td><td>0.607</td><td>0.583</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+
+  <!-- Key insights -->
+  <div class="stat-row">
+    <div class="stat-box">
+      <div class="num">+54%</div>
+      <div class="label">Airline 相对提升<br>(Think+Prompt vs Baseline)</div>
+    </div>
+    <div class="stat-box">
+      <div class="num">3.4x</div>
+      <div class="label">k=5 一致性提升<br>(Airline Think+Prompt)</div>
+    </div>
+    <div class="stat-box">
+      <div class="num">0.812</div>
+      <div class="label">Retail 最佳 pass^1<br>(仅 Think，无需提示)</div>
+    </div>
+  </div>
+
+  <div class="block-q">
+    <p>"在困难领域，提示工程至关重要。简单地提供 think tool 可能有所改善，但搭配优化提示会产生<strong>显著更好的结果</strong>。然而在简单领域，仅靠 think tool 本身就足够了。"</p>
+  </div>
+</section>
+
+<!-- ====== 4. SWE-bench 性能 ====== -->
+<section class="section" id="s4">
+  <h2><span>&#128187;</span> SWE-bench 性能</h2>
+  <p class="lead">在 SWE-bench 软件工程基准测试中，类似的 think tool 帮助 Claude 3.7 Sonnet 达到了当时的 SOTA 分数 0.623。实验显示平均 +1.6% 的隔离效果提升。</p>
+
+  <div class="compare-grid">
+    <div class="compare-card" style="background:#eef2ff;border-color:#c7d2fe">
+      <h4 style="color:#4f46e5">&#128202; 统计显著性</h4>
+      <p style="font-family:var(--mono);font-size:13px;margin-top:8px">
+        n=30 (with think) vs n=144 (without)<br>
+        Welch's t-test: t(38.89) = 6.71<br>
+        p &lt; .001, d = 1.47<br><br>
+        <span class="badge badge-green">统计显著 &middot; 大效应量</span>
+      </p>
+    </div>
+    <div class="compare-card" style="background:#f0fdf4;border-color:#bbf7d0">
+      <h4 style="color:#16a34a">&#128736;&#65039; SWE-bench 适配</h4>
+      <p>针对代码场景调整了 description：强调用于<strong>头脑风暴修复方案</strong>和<strong>评估哪些修改最简单有效</strong>，而非客服策略检查。</p>
+      <p style="margin-top:8px"><span class="badge badge-indigo">SOTA 0.623</span></p>
+    </div>
+  </div>
+
+  <div class="code-block">
+<span class="comment">// SWE-bench 适配版 Think Tool</span>
+{
+  <span class="key">"name"</span>: <span class="str">"think"</span>,
+  <span class="key">"description"</span>: <span class="str">"Use the tool to think about something.
+    It will not obtain new information or make any changes
+    to the repository, but just log the thought. Use it
+    when complex reasoning or brainstorming is needed.
+    For example, if you explore the repo and discover the
+    source of a bug, call this tool to brainstorm several
+    unique ways of fixing the bug, and assess which
+    change(s) are likely to be simplest and most effective."</span>,
+  <span class="key">"input_schema"</span>: { ... }
+}
+  </div>
+</section>
+
+<!-- ====== 5. 最佳使用场景 ====== -->
+<section class="section" id="s5">
+  <h2><span>&#127919;</span> 最佳使用场景</h2>
+  <p class="lead">Think tool 不是万能工具。基于评估结果，以下是它最能发挥价值的场景，以及不推荐使用的场景。</p>
+
+  <div class="use-grid">
+    <div class="use-card" style="border-left:4px solid var(--green)">
+      <div class="icon">&#128270;</div>
+      <h4>工具输出分析</h4>
+      <p>当 Claude 需要仔细处理之前工具调用的输出，并可能需要<strong>回溯调整方案</strong>时。Think tool 提供了分析和决策的空间。</p>
+    </div>
+    <div class="use-card" style="border-left:4px solid var(--indigo)">
+      <div class="icon">&#128220;</div>
+      <h4>策略密集环境</h4>
+      <p>当 Claude 需要遵循<strong>详细的操作指南</strong>并验证合规性时。如航空客服中的退改签规则、金融产品的合规检查。</p>
+    </div>
+    <div class="use-card" style="border-left:4px solid var(--purple)">
+      <div class="icon">&#128279;</div>
+      <h4>顺序决策链</h4>
+      <p>当每个行动都<strong>建立在前一步之上</strong>，错误代价高昂时。常见于多步骤交互域，如订单处理、账户管理。</p>
+    </div>
+  </div>
+
+  <div class="compare-grid">
+    <div class="compare-card" style="background:#f0fdf4;border-color:#bbf7d0">
+      <h4 style="color:#16a34a">&#9989; 推荐使用</h4>
+      <ul>
+        <li>复杂工具链中的中间分析</li>
+        <li>策略合规性验证</li>
+        <li>多步骤顺序决策</li>
+        <li>发现 bug 后头脑风暴修复方案</li>
+        <li>处理边缘情况和异常场景</li>
+      </ul>
+    </div>
+    <div class="compare-card" style="background:#fef2f2;border-color:#fecaca">
+      <h4 style="color:#dc2626">&#10060; 不推荐使用</h4>
+      <ul>
+        <li>非顺序工具调用（单次或并行）</li>
+        <li>简单的指令跟随（约束条件少）</li>
+        <li>不涉及工具使用的纯推理任务（用 Extended Thinking）</li>
+        <li>Claude 默认行为已足够好的场景</li>
+      </ul>
+    </div>
+  </div>
+</section>
+
+<!-- ====== 6. 实现最佳实践 ====== -->
+<section class="section" id="s6">
+  <h2><span>&#128736;&#65039;</span> 实现最佳实践</h2>
+  <p class="lead">基于 &tau;-bench 实验结果，以下实践可以最大化 think tool 的效果。</p>
+
+  <!-- Practice 1 -->
+  <div class="card" style="border-left:4px solid var(--indigo)">
+    <h3>1. 战略性提示 + 领域特定示例</h3>
+    <p>最有效的方式是提供<strong>清晰的使用指导</strong>和<strong>领域定制的思考示例</strong>。示例应覆盖：</p>
+    <ul>
+      <li>推理过程的预期<strong>详细程度</strong></li>
+      <li>如何将复杂指令<strong>拆解为可执行步骤</strong></li>
+      <li>常见场景的<strong>决策树</strong></li>
+      <li>如何检查是否收集了所有<strong>必需信息</strong></li>
+    </ul>
+  </div>
+
+  <!-- Optimized prompt example -->
+  <div class="diagram">
+    <h4>&#128161; 优化提示示例（Airline 域）</h4>
+    <div style="text-align:left;margin-top:12px">
+      <div class="code-block" style="font-size:12px">
+<span class="comment">## Using the think tool</span>
+
+Before taking any action or responding to the user
+after receiving tool results, use the think tool
+as a scratchpad to:
+- List the specific rules that apply
+- Check if all required information is collected
+- Verify the planned action complies with all policies
+- Iterate over tool results for correctness
+
+<span class="comment">&lt;think_tool_example_1&gt;</span>
+User wants to cancel flight ABC123
+- Need to verify: user ID, reservation ID, reason
+- Check cancellation rules:
+  * Is it within 24h of booking?
+  * If not, check ticket class and insurance
+- Verify no segments flown or are in the past
+- Plan: collect missing info, verify rules, confirm
+<span class="comment">&lt;/think_tool_example_1&gt;</span>
+
+<span class="comment">&lt;think_tool_example_2&gt;</span>
+User wants to book 3 tickets to NYC with 2 checked bags
+- Need user ID to check membership tier
+- Baggage calculation:
+  * Economy class x 3 passengers
+  * If regular: 1 free bag each -> 3 extra = $150
+  * If silver: 2 free bags each -> 0 extra = $0
+  * If gold: 3 free bags each -> 0 extra = $0
+- Payment rules to verify: max 1 travel cert,
+  1 credit card, 3 gift cards
+<span class="comment">&lt;/think_tool_example_2&gt;</span>
+      </div>
+    </div>
+  </div>
+
+  <!-- Practice 2 -->
+  <div class="card" style="border-left:4px solid var(--blue)">
+    <h3>2. 将复杂指导放入 System Prompt</h3>
+    <p>当指导内容较长或复杂时，将其放在 <strong>system prompt</strong> 中比放在 tool description 中更有效。这提供了更广泛的上下文，帮助模型更好地将思考过程整合到整体行为中。</p>
+  </div>
+
+  <!-- Implementation flow -->
+  <div class="diagram">
+    <h4>实现决策流程</h4>
+    <div class="flow" style="margin-top:16px">
+      <div class="flow-step sky">评估场景复杂度</div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-step amber">域策略是否复杂?</div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-step green">简单:仅添加 Tool</div>
+    </div>
+    <div style="margin-top:8px;font-size:14px;color:var(--text-secondary)">&darr; 是</div>
+    <div class="flow" style="margin-top:8px">
+      <div class="flow-step purple">编写领域示例</div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-step">放入 System Prompt</div>
+      <div class="flow-arrow">&rarr;</div>
+      <div class="flow-step green">监控 + 迭代</div>
+    </div>
+  </div>
+</section>
+
+<!-- ====== 7. 快速上手指南 ====== -->
+<section class="section" id="s7">
+  <h2><span>&#128640;</span> 快速上手指南</h2>
+  <p class="lead">添加 think tool 的最大优势在于<strong>极低的实现门槛</strong>和<strong>最小的副作用风险</strong>。它不会改变外部行为，除非 Claude 主动决定使用它。</p>
+
+  <div class="diagram">
+    <h4>三步上手</h4>
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:16px">
+      <div style="padding:24px;background:#eef2ff;border-radius:12px;border:2px solid #c7d2fe;text-align:center">
+        <div style="font-size:32px;margin-bottom:10px">&#129514;</div>
+        <div style="font-size:14px;font-weight:700;color:var(--indigo)">Step 1: 测试场景</div>
+        <div style="font-size:12px;color:var(--text-secondary);margin-top:8px">从最具挑战性的 agentic 用例开始 — Claude 当前在策略合规或长链推理上表现不佳的场景</div>
+      </div>
+      <div style="padding:24px;background:#f0fdf4;border-radius:12px;border:2px solid #bbf7d0;text-align:center">
+        <div style="font-size:32px;margin-bottom:10px">&#128295;</div>
+        <div style="font-size:14px;font-weight:700;color:var(--green)">Step 2: 添加工具</div>
+        <div style="font-size:12px;color:var(--text-secondary);margin-top:8px">实现领域定制的 think tool 定义。考虑在 system prompt 中加入使用指导和示例</div>
+      </div>
+      <div style="padding:24px;background:#fffbeb;border-radius:12px;border:2px solid #fde68a;text-align:center">
+        <div style="font-size:32px;margin-bottom:10px">&#128200;</div>
+        <div style="font-size:14px;font-weight:700;color:#b45309">Step 3: 监控迭代</div>
+        <div style="font-size:12px;color:var(--text-secondary);margin-top:8px">观察 Claude 如何使用 think tool，根据实际表现调整提示以引导更有效的思考模式</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="block-q">
+    <p>"添加 think tool 几乎没有负面影响。它不改变外部行为，除非 Claude 决定使用它，也不会干扰你现有的工具或工作流。我们的研究证明，它能显著增强 Claude 在需要策略遵循和长链工具调用推理的复杂任务上的表现。"</p>
+  </div>
+
+  <div class="card" style="border-left:4px solid var(--amber)">
+    <h3>&#9888;&#65039; 注意：Token 成本</h3>
+    <p>Think tool 会增加 prompt 长度和输出 token 数量。在不需要的场景中添加它虽然不会降低性能结果，但会增加不必要的延迟和成本。请根据实际场景选择是否启用。</p>
+  </div>
+
+  <div class="card">
+    <h3>&#128218; 适用模型</h3>
+    <p>虽然文中的 &tau;-Bench 结果聚焦于 Claude 3.7 Sonnet，但实验显示 <strong>Claude 3.5 Sonnet (New)</strong> 也能在相同配置下获得性能提升，表明此改进<strong>可推广到其他 Claude 模型</strong>。</p>
+  </div>
+</section>
+
+</div><!-- /.page -->
+
+<!-- Footer -->
+<footer class="footer">
+  <p><a href="../">&#8592; 返回 Anthropic 文章列表</a></p>
+  <p style="margin-top:8px">原文来源：<a href="https://www.anthropic.com/engineering/claude-think-tool" target="_blank">The "think" tool: Enabling Claude to stop and think</a></p>
+  <p style="margin-top:8px">Published 2025-02-12 &middot; Anthropic Engineering</p>
+</footer>
+
+</body>
+</html>

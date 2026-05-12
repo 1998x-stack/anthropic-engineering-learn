@@ -1,0 +1,854 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LangChain — Engineering Blogs</title>
+  <link rel="stylesheet" href="../assets/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href=".." class="nav-brand">
+      <span class="nav-logo">⚡</span>
+      <span>Engineering Blogs Hub</span>
+    </a>
+    <a href=".." style="font-size:13px;color:var(--text-secondary)">← Back to Hub</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="hero-inner">
+    <div class="hero-tag">https://www.langchain.com/blog</div>
+    <h1>LangChain</h1>
+    <p>LangGraph framework, LangSmith, RAG patterns, and deep agents.</p>
+    <div class="hero-stats">
+      <div class="stat"><span class="stat-num">415</span><span class="stat-label">Articles</span></div>
+      <div class="stat"><span class="stat-num">11</span><span class="stat-label">Categories</span></div>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+
+  <section class="category">
+    <div class="category-header">
+      <div class="category-icon" style="background:linear-gradient(135deg,#f59e0b,#d97706)">⭐</div>
+      <div>
+        <h2>Curated Picks</h2>
+        <p>6 hand-selected articles</p>
+      </div>
+    </div>
+    <div class="cards">
+      <div class="card card-done">
+        <div class="card-status"><span class="badge-done">★ Curated</span></div>
+        <div class="card-body">
+          <h3><a  target="_blank" rel="noopener">01 The Anatomy Of An Agent Harness</a></h3>
+          <div class="card-meta"><span class="card-date">Unknown</span></div>
+        </div>
+      </div>
+      <div class="card card-done">
+        <div class="card-status"><span class="badge-done">★ Curated</span></div>
+        <div class="card-body">
+          <h3><a  target="_blank" rel="noopener">02 Running Subagents In The Background</a></h3>
+          <div class="card-meta"><span class="card-date">Unknown</span></div>
+        </div>
+      </div>
+      <div class="card card-done">
+        <div class="card-status"><span class="badge-done">★ Curated</span></div>
+        <div class="card-body">
+          <h3><a  target="_blank" rel="noopener">03 Agent Observability Needs Feedback</a></h3>
+          <div class="card-meta"><span class="card-date">Unknown</span></div>
+        </div>
+      </div>
+      <div class="card card-done">
+        <div class="card-status"><span class="badge-done">★ Curated</span></div>
+        <div class="card-body">
+          <h3><a  target="_blank" rel="noopener">04 How We Built Langchains Gtm Agent</a></h3>
+          <div class="card-meta"><span class="card-date">Unknown</span></div>
+        </div>
+      </div>
+      <div class="card card-done">
+        <div class="card-status"><span class="badge-done">★ Curated</span></div>
+        <div class="card-body">
+          <h3><a  target="_blank" rel="noopener">05 Human Judgment In The Agent Improvement Loop</a></h3>
+          <div class="card-meta"><span class="card-date">Unknown</span></div>
+        </div>
+      </div>
+      <div class="card card-done">
+        <div class="card-status"><span class="badge-done">★ Curated</span></div>
+        <div class="card-body">
+          <h3><a  target="_blank" rel="noopener">06 Your Harness Your Memory</a></h3>
+          <div class="card-meta"><span class="card-date">Unknown</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <section class="category">
+    <div class="category-header">
+      <div class="category-icon" style="background:linear-gradient(135deg,#10b981,#059669)">📄</div>
+      <div>
+        <h2>Tools Integrations</h2>
+        <p>83 articles</p>
+      </div>
+    </div>
+    <div class="cards">
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/secure-agents-cisco-ai-defense" target="_blank" rel="noopener">A Developer’s First 10 Minutes: Secure LangChain Agents with Cisco AI Defense</a></h3>
+          <div class="card-meta"><span class="card-date">2026-04-16</span><span class="card-tag">Tools Integrations</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/open-models-have-crossed-a-threshold" target="_blank" rel="noopener">Open Models have crossed a threshold</a></h3>
+          <div class="card-meta"><span class="card-date">2026-04-02</span><span class="card-tag">Tools Integrations</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/open-swe-an-open-source-framework-for-internal-coding-agents" target="_blank" rel="noopener">Open SWE: An Open-Source Framework for Internal Coding Agents</a></h3>
+          <div class="card-meta"><span class="card-date">2026-03-17</span><span class="card-tag">Tools Integrations</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/nvidia-enterprise" target="_blank" rel="noopener">LangChain Announces Enterprise Agentic AI Platform Built with NVIDIA</a></h3>
+          <div class="card-meta"><span class="card-date">2026-03-16</span><span class="card-tag">Tools Integrations</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/how-coding-agents-are-reshaping-engineering-product-and-design" target="_blank" rel="noopener">How Coding Agents Are Reshaping Engineering, Product and Design</a></h3>
+          <div class="card-meta"><span class="card-date">2026-03-10</span><span class="card-tag">Tools Integrations</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/choosing-the-right-multi-agent-architecture" target="_blank" rel="noopener">Choosing the Right Multi-Agent Architecture</a></h3>
+          <div class="card-meta"><span class="card-date">2026-01-14</span><span class="card-tag">Tools Integrations</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/exa" target="_blank" rel="noopener">How Exa built a Web Research Multi-Agent System with LangGraph and LangSmith</a></h3>
+          <div class="card-meta"><span class="card-date">2025-07-01</span><span class="card-tag">Tools Integrations</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/captide" target="_blank" rel="noopener">How Captide agents running on LangGraph Platform compress investment research fr</a></h3>
+          <div class="card-meta"><span class="card-date">2025-06-24</span><span class="card-tag">Tools Integrations</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/the-hidden-metric-that-determines-ai-product-success" target="_blank" rel="noopener">The Hidden Metric That Determines AI Product Success</a></h3>
+          <div class="card-meta"><span class="card-date">2025-06-12</span><span class="card-tag">Tools Integrations</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/cisco-outshift" target="_blank" rel="noopener">How Outshift by Cisco achieved a 10x productivity boost with their Agentic AI Pl</a></h3>
+          <div class="card-meta"><span class="card-date">2025-05-04</span><span class="card-tag">Tools Integrations</span></div>
+        </div>
+      </div>
+      <div class="card" style="display:flex;align-items:center;justify-content:center;color:var(--text-secondary);font-size:14px">+ 73 more articles</div>
+    </div>
+  </section>
+  <section class="category">
+    <div class="category-header">
+      <div class="category-icon" style="background:linear-gradient(135deg,#10b981,#059669)">📄</div>
+      <div>
+        <h2>Case Studies</h2>
+        <p>53 articles</p>
+      </div>
+    </div>
+    <div class="cards">
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/customers-madrigal" target="_blank" rel="noopener">How Madrigal Built a Flexible and Scalable Multi-Agent Research and Intelligence</a></h3>
+          <div class="card-meta"><span class="card-date">2026-04-29</span><span class="card-tag">Case Studies</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/credit-genie-insights-agent-financial-assistant" target="_blank" rel="noopener">How Credit Genie used Insights Agent to improve their AI financial assistant</a></h3>
+          <div class="card-meta"><span class="card-date">2026-04-20</span><span class="card-tag">Case Studies</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/how-my-agents-self-heal-in-production" target="_blank" rel="noopener">How My Agents Self-Heal in Production</a></h3>
+          <div class="card-meta"><span class="card-date">2026-04-03</span><span class="card-tag">Case Studies</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/customers-kensho" target="_blank" rel="noopener">How Kensho built a multi-agent framework with LangGraph to solve trusted financi</a></h3>
+          <div class="card-meta"><span class="card-date">2026-03-26</span><span class="card-tag">Case Studies</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/how-moda-builds-production-grade-ai-design-agents-with-deep-agents" target="_blank" rel="noopener">How Moda Builds Production-Grade AI Design Agents with Deep Agents</a></h3>
+          <div class="card-meta"><span class="card-date">2026-03-24</span><span class="card-tag">Case Studies</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/customers-monday" target="_blank" rel="noopener">monday Service + LangSmith: Building a Code-First Evaluation Strategy from Day 1</a></h3>
+          <div class="card-meta"><span class="card-date">2026-02-18</span><span class="card-tag">Case Studies</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/customers-remote" target="_blank" rel="noopener">How Remote uses LangChain and LangGraph to onboard thousands of customers with A</a></h3>
+          <div class="card-meta"><span class="card-date">2026-01-19</span><span class="card-tag">Case Studies</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/customers-vodafone-italy" target="_blank" rel="noopener">Fastweb + Vodafone: Transforming Customer Experience with AI Agents using LangGr</a></h3>
+          <div class="card-meta"><span class="card-date">2025-12-16</span><span class="card-tag">Case Studies</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/customers-jimdo" target="_blank" rel="noopener">How Jimdo empower solopreneurs with AI-powered business assistance</a></h3>
+          <div class="card-meta"><span class="card-date">2025-11-20</span><span class="card-tag">Case Studies</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/customers-servicenow" target="_blank" rel="noopener">How ServiceNow uses LangSmith to get visibility into its customer success agents</a></h3>
+          <div class="card-meta"><span class="card-date">2025-11-17</span><span class="card-tag">Case Studies</span></div>
+        </div>
+      </div>
+      <div class="card" style="display:flex;align-items:center;justify-content:center;color:var(--text-secondary);font-size:14px">+ 43 more articles</div>
+    </div>
+  </section>
+  <section class="category">
+    <div class="category-header">
+      <div class="category-icon" style="background:linear-gradient(135deg,#10b981,#059669)">📄</div>
+      <div>
+        <h2>Announcements</h2>
+        <p>50 articles</p>
+      </div>
+    </div>
+    <div class="cards">
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/interrupt-preview-meet-the-mc" target="_blank" rel="noopener">Interrupt Preview: Meet the MC</a></h3>
+          <div class="card-meta"><span class="card-date">2026-04-28</span><span class="card-tag">Announcements</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/previewing-interrupt-2026-agents-at-enterprise-scale" target="_blank" rel="noopener">Previewing Interrupt 2026: Agents at Enterprise Scale</a></h3>
+          <div class="card-meta"><span class="card-date">2026-04-09</span><span class="card-tag">Announcements</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/announcing-the-langchain-mongodb-partnership-the-ai-agent-stack-that-runs-on-the-database-you-already-trust" target="_blank" rel="noopener">Announcing the LangChain + MongoDB Partnership: The AI Agent Stack That Runs On </a></h3>
+          <div class="card-meta"><span class="card-date">2026-03-31</span><span class="card-tag">Announcements</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/join-langchain-at-google-cloud-next-2026" target="_blank" rel="noopener">Join LangChain at Google Cloud Next 2026</a></h3>
+          <div class="card-meta"><span class="card-date">2026-03-23</span><span class="card-tag">Announcements</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/introducing-langsmith-fleet" target="_blank" rel="noopener">Introducing LangSmith Fleet</a></h3>
+          <div class="card-meta"><span class="card-date">2026-03-19</span><span class="card-tag">Announcements</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/introducing-langsmith-sandboxes-secure-code-execution-for-agents" target="_blank" rel="noopener">Introducing LangSmith Sandboxes: Secure Code Execution for Agents</a></h3>
+          <div class="card-meta"><span class="card-date">2026-03-17</span><span class="card-tag">Announcements</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/langchain-skills" target="_blank" rel="noopener">LangChain Skills</a></h3>
+          <div class="card-meta"><span class="card-date">2026-03-04</span><span class="card-tag">Announcements</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/join-us-for-interrupt-the-agent-conference" target="_blank" rel="noopener">Join us for Interrupt: The Agent Conference</a></h3>
+          <div class="card-meta"><span class="card-date">2026-02-12</span><span class="card-tag">Announcements</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/introducing-agent-builder-template-library" target="_blank" rel="noopener">Deploy agents instantly with Agent Builder templates</a></h3>
+          <div class="card-meta"><span class="card-date">2026-01-21</span><span class="card-tag">Announcements</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/introducing-langsmith-fetch" target="_blank" rel="noopener">Introducing LangSmith Fetch: Debug agents from your terminal</a></h3>
+          <div class="card-meta"><span class="card-date">2025-12-10</span><span class="card-tag">Announcements</span></div>
+        </div>
+      </div>
+      <div class="card" style="display:flex;align-items:center;justify-content:center;color:var(--text-secondary);font-size:14px">+ 40 more articles</div>
+    </div>
+  </section>
+  <section class="category">
+    <div class="category-header">
+      <div class="category-icon" style="background:linear-gradient(135deg,#10b981,#059669)">📄</div>
+      <div>
+        <h2>Langsmith Observability</h2>
+        <p>48 articles</p>
+      </div>
+    </div>
+    <div class="cards">
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/agent-observability-needs-feedback-to-power-learning" target="_blank" rel="noopener">agent-observability-needs-feedback-to-power-learning</a></h3>
+          <div class="card-meta"><span class="card-date">2026-05-05</span><span class="card-tag">Langsmith Observability</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/reusable-langsmith-evaluator-templates" target="_blank" rel="noopener">Reusable Evaluators and Evaluator Templates in LangSmith</a></h3>
+          <div class="card-meta"><span class="card-date">2026-04-16</span><span class="card-tag">Langsmith Observability</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/human-judgment-in-the-agent-improvement-loop" target="_blank" rel="noopener">Human judgment in the agent improvement loop</a></h3>
+          <div class="card-meta"><span class="card-date">2026-04-09</span><span class="card-tag">Langsmith Observability</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/traces-start-agent-improvement-loop" target="_blank" rel="noopener">The Agent Improvement Loop Starts with a Trace</a></h3>
+          <div class="card-meta"><span class="card-date">2026-03-31</span><span class="card-tag">Langsmith Observability</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/agent-evaluation-readiness-checklist" target="_blank" rel="noopener">Agent Evaluation Readiness Checklist</a></h3>
+          <div class="card-meta"><span class="card-date">2026-03-27</span><span class="card-tag">Langsmith Observability</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/how-we-build-evals-for-deep-agents" target="_blank" rel="noopener">How we build evals for Deep Agents</a></h3>
+          <div class="card-meta"><span class="card-date">2026-03-26</span><span class="card-tag">Langsmith Observability</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/evaluating-skills" target="_blank" rel="noopener">Evaluating Skills</a></h3>
+          <div class="card-meta"><span class="card-date">2026-03-05</span><span class="card-tag">Langsmith Observability</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/production-monitoring" target="_blank" rel="noopener">Agent Observability: How to Monitor and Evaluate LLM Agents in Production</a></h3>
+          <div class="card-meta"><span class="card-date">2026-02-26</span><span class="card-tag">Langsmith Observability</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/on-agent-frameworks-and-agent-observability" target="_blank" rel="noopener">On Agent Frameworks and Agent Observability</a></h3>
+          <div class="card-meta"><span class="card-date">2026-02-13</span><span class="card-tag">Langsmith Observability</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/agent-observability-powers-agent-evaluation" target="_blank" rel="noopener">How to Debug &amp; Evaluate AI Agents with Observability — LangChain Guide</a></h3>
+          <div class="card-meta"><span class="card-date">2026-01-28</span><span class="card-tag">Langsmith Observability</span></div>
+        </div>
+      </div>
+      <div class="card" style="display:flex;align-items:center;justify-content:center;color:var(--text-secondary);font-size:14px">+ 38 more articles</div>
+    </div>
+  </section>
+  <section class="category">
+    <div class="category-header">
+      <div class="category-icon" style="background:linear-gradient(135deg,#10b981,#059669)">📄</div>
+      <div>
+        <h2>Langgraph Core</h2>
+        <p>45 articles</p>
+      </div>
+    </div>
+    <div class="cards">
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/agentic-engineering-redefining-software-engineering" target="_blank" rel="noopener">Agentic Engineering: How Swarms of AI Agents Are Redefining Software Engineering</a></h3>
+          <div class="card-meta"><span class="card-date">2026-04-17</span><span class="card-tag">Langgraph Core</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/our-docs-test-themselves" target="_blank" rel="noopener">How We Made Our Docs Test Themselves</a></h3>
+          <div class="card-meta"><span class="card-date">2026-04-15</span><span class="card-tag">Langgraph Core</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/your-harness-your-memory" target="_blank" rel="noopener">Your harness, your memory</a></h3>
+          <div class="card-meta"><span class="card-date">2026-04-11</span><span class="card-tag">Langgraph Core</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/better-harness-a-recipe-for-harness-hill-climbing-with-evals" target="_blank" rel="noopener">Better Harness: A Recipe for Harness Hill-Climbing with Evals</a></h3>
+          <div class="card-meta"><span class="card-date">2026-04-08</span><span class="card-tag">Langgraph Core</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/how-middleware-lets-you-customize-your-agent-harness" target="_blank" rel="noopener">How Middleware Lets You Customize Your Agent Harness</a></h3>
+          <div class="card-meta"><span class="card-date">2026-03-26</span><span class="card-tag">Langgraph Core</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/two-different-types-of-agent-authorization" target="_blank" rel="noopener">Two different types of agent authorization</a></h3>
+          <div class="card-meta"><span class="card-date">2026-03-23</span><span class="card-tag">Langgraph Core</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/the-anatomy-of-an-agent-harness" target="_blank" rel="noopener">The Anatomy of an Agent Harness</a></h3>
+          <div class="card-meta"><span class="card-date">2026-03-11</span><span class="card-tag">Langgraph Core</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/how-we-built-langchains-gtm-agent" target="_blank" rel="noopener">How we built LangChain’s GTM Agent</a></h3>
+          <div class="card-meta"><span class="card-date">2026-03-09</span><span class="card-tag">Langgraph Core</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/agent-engineering-a-new-discipline" target="_blank" rel="noopener">Agent Engineering: A New Discipline</a></h3>
+          <div class="card-meta"><span class="card-date">2025-12-09</span><span class="card-tag">Langgraph Core</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/agent-frameworks-runtimes-and-harnesses-oh-my" target="_blank" rel="noopener">Agent Frameworks, Runtimes, and Harnesses- oh my!</a></h3>
+          <div class="card-meta"><span class="card-date">2025-10-25</span><span class="card-tag">Langgraph Core</span></div>
+        </div>
+      </div>
+      <div class="card" style="display:flex;align-items:center;justify-content:center;color:var(--text-secondary);font-size:14px">+ 35 more articles</div>
+    </div>
+  </section>
+  <section class="category">
+    <div class="category-header">
+      <div class="category-icon" style="background:linear-gradient(135deg,#10b981,#059669)">📄</div>
+      <div>
+        <h2>Rag Knowledge</h2>
+        <p>38 articles</p>
+      </div>
+    </div>
+    <div class="cards">
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/autonomous-context-compression" target="_blank" rel="noopener">Autonomous context compression</a></h3>
+          <div class="card-meta"><span class="card-date">2026-03-11</span><span class="card-tag">Rag Knowledge</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/rebuilding-chat-langchain" target="_blank" rel="noopener">Why We Rebuilt LangChain’s Chatbot and What We Learned</a></h3>
+          <div class="card-meta"><span class="card-date">2025-11-05</span><span class="card-tag">Rag Knowledge</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/graph-based-metadata-filtering-for-improving-vector-search-in-rag-applications" target="_blank" rel="noopener">Graph-based metadata filtering for improving vector search in RAG applications</a></h3>
+          <div class="card-meta"><span class="card-date">2024-04-25</span><span class="card-tag">Rag Knowledge</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/enhancing-rag-based-applications-accuracy-by-constructing-and-leveraging-knowledge-graphs" target="_blank" rel="noopener">Enhancing RAG-based application accuracy by constructing and leveraging knowledg</a></h3>
+          <div class="card-meta"><span class="card-date">2024-03-15</span><span class="card-tag">Rag Knowledge</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/multi-needle-in-a-haystack" target="_blank" rel="noopener">Multi Needle in a Haystack</a></h3>
+          <div class="card-meta"><span class="card-date">2024-03-13</span><span class="card-tag">Rag Knowledge</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/pinecone-serverless" target="_blank" rel="noopener">Build and deploy a RAG app with Pinecone Serverless</a></h3>
+          <div class="card-meta"><span class="card-date">2024-01-16</span><span class="card-tag">Rag Knowledge</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/multi-modal-rag-template" target="_blank" rel="noopener">Multi-modal RAG on slide decks</a></h3>
+          <div class="card-meta"><span class="card-date">2023-12-06</span><span class="card-tag">Rag Knowledge</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/deconstructing-rag" target="_blank" rel="noopener">Deconstructing RAG</a></h3>
+          <div class="card-meta"><span class="card-date">2023-11-30</span><span class="card-tag">Rag Knowledge</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/applying-openai-rag" target="_blank" rel="noopener">Applying OpenAI&#x27;s RAG Strategies</a></h3>
+          <div class="card-meta"><span class="card-date">2023-11-17</span><span class="card-tag">Rag Knowledge</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/query-construction" target="_blank" rel="noopener">Query Construction</a></h3>
+          <div class="card-meta"><span class="card-date">2023-11-14</span><span class="card-tag">Rag Knowledge</span></div>
+        </div>
+      </div>
+      <div class="card" style="display:flex;align-items:center;justify-content:center;color:var(--text-secondary);font-size:14px">+ 28 more articles</div>
+    </div>
+  </section>
+  <section class="category">
+    <div class="category-header">
+      <div class="category-icon" style="background:linear-gradient(135deg,#10b981,#059669)">📄</div>
+      <div>
+        <h2>Langsmith Deployment</h2>
+        <p>28 articles</p>
+      </div>
+    </div>
+    <div class="cards">
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/langsmith-langchain-oss-eu-ai-act" target="_blank" rel="noopener">How LangSmith and LangChain OSS Help You Meet EU AI Act Requirements</a></h3>
+          <div class="card-meta"><span class="card-date">2026-04-27</span><span class="card-tag">Langsmith Deployment</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/arcade-dev-tools-now-in-langsmith-fleet" target="_blank" rel="noopener">Arcade.dev tools now in LangSmith Fleet</a></h3>
+          <div class="card-meta"><span class="card-date">2026-04-07</span><span class="card-tag">Langsmith Deployment</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/polly-langsmith-ga" target="_blank" rel="noopener">Polly is generally available everywhere you work in LangSmith</a></h3>
+          <div class="card-meta"><span class="card-date">2026-03-18</span><span class="card-tag">Langsmith Deployment</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/introducing-deploy-cli" target="_blank" rel="noopener">Introducing deploy cli</a></h3>
+          <div class="card-meta"><span class="card-date">2026-03-16</span><span class="card-tag">Langsmith Deployment</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/langsmith-cli-skills" target="_blank" rel="noopener">LangSmith CLI &amp; Skills</a></h3>
+          <div class="card-meta"><span class="card-date">2026-03-04</span><span class="card-tag">Langsmith Deployment</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/langsmith-is-now-available-in-google-cloud-marketplace" target="_blank" rel="noopener">LangSmith is Now Available in Google Cloud Marketplace</a></h3>
+          <div class="card-meta"><span class="card-date">2026-02-10</span><span class="card-tag">Langsmith Deployment</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/langsmith-agent-builder-generally-available" target="_blank" rel="noopener">Now GA: LangSmith Agent Builder</a></h3>
+          <div class="card-meta"><span class="card-date">2026-01-13</span><span class="card-tag">Langsmith Deployment</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/langsmith-agent-builder-now-in-public-beta" target="_blank" rel="noopener">LangSmith Agent Builder now in Public Beta</a></h3>
+          <div class="card-meta"><span class="card-date">2025-12-02</span><span class="card-tag">Langsmith Deployment</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/langsmith-agent-builder" target="_blank" rel="noopener">Introducing LangSmith’s No Code Agent Builder</a></h3>
+          <div class="card-meta"><span class="card-date">2025-10-29</span><span class="card-tag">Langsmith Deployment</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/why-agent-infrastructure" target="_blank" rel="noopener">Why agent infrastructure matters</a></h3>
+          <div class="card-meta"><span class="card-date">2025-07-28</span><span class="card-tag">Langsmith Deployment</span></div>
+        </div>
+      </div>
+      <div class="card" style="display:flex;align-items:center;justify-content:center;color:var(--text-secondary);font-size:14px">+ 18 more articles</div>
+    </div>
+  </section>
+  <section class="category">
+    <div class="category-header">
+      <div class="category-icon" style="background:linear-gradient(135deg,#10b981,#059669)">📄</div>
+      <div>
+        <h2>Tutorials Guides</h2>
+        <p>28 articles</p>
+      </div>
+    </div>
+    <div class="cards">
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/how-to-turn-claude-code-into-a-domain-specific-coding-agent" target="_blank" rel="noopener">How to turn Claude Code into a domain specific coding agent</a></h3>
+          <div class="card-meta"><span class="card-date">2025-09-11</span><span class="card-tag">Tutorials Guides</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/how-and-when-to-build-multi-agent-systems" target="_blank" rel="noopener">How and when to build multi-agent systems</a></h3>
+          <div class="card-meta"><span class="card-date">2025-06-16</span><span class="card-tag">Tutorials Guides</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/how-to-think-about-agent-frameworks" target="_blank" rel="noopener">How to think about agent frameworks</a></h3>
+          <div class="card-meta"><span class="card-date">2025-04-20</span><span class="card-tag">Tutorials Guides</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/how-do-i-speed-up-my-agent" target="_blank" rel="noopener">AI Agent Latency 101: How do I speed up my AI agent?</a></h3>
+          <div class="card-meta"><span class="card-date">2025-03-15</span><span class="card-tag">Tutorials Guides</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/exploring-prompt-optimization" target="_blank" rel="noopener">Exploring Prompt Optimization</a></h3>
+          <div class="card-meta"><span class="card-date">2025-01-28</span><span class="card-tag">Tutorials Guides</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/structured-report-generation-blueprint" target="_blank" rel="noopener">Structured Report Generation Blueprint with NVIDIA AI</a></h3>
+          <div class="card-meta"><span class="card-date">2025-01-06</span><span class="card-tag">Tutorials Guides</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/planning-for-agents" target="_blank" rel="noopener">Planning for Agents</a></h3>
+          <div class="card-meta"><span class="card-date">2024-07-20</span><span class="card-tag">Tutorials Guides</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/improving-core-tool-interfaces-and-docs-in-langchain" target="_blank" rel="noopener">Improving core tool interfaces and docs in LangChain</a></h3>
+          <div class="card-meta"><span class="card-date">2024-07-18</span><span class="card-tag">Tutorials Guides</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/week-of-7-8-langchain-release-notes" target="_blank" rel="noopener">[Week of 7/8] LangChain Release Notes</a></h3>
+          <div class="card-meta"><span class="card-date">2024-07-12</span><span class="card-tag">Tutorials Guides</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/how-to-build-the-ultimate-ai-automation-with-multi-agent-collaboration" target="_blank" rel="noopener">How to Build the Ultimate AI Automation with Multi-Agent Collaboration</a></h3>
+          <div class="card-meta"><span class="card-date">2024-05-09</span><span class="card-tag">Tutorials Guides</span></div>
+        </div>
+      </div>
+      <div class="card" style="display:flex;align-items:center;justify-content:center;color:var(--text-secondary);font-size:14px">+ 18 more articles</div>
+    </div>
+  </section>
+  <section class="category">
+    <div class="category-header">
+      <div class="category-icon" style="background:linear-gradient(135deg,#10b981,#059669)">📄</div>
+      <div>
+        <h2>Deep Agents</h2>
+        <p>25 articles</p>
+      </div>
+    </div>
+    <div class="cards">
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/building-a-company-due-diligence-agent-with-deep-agents-langsmith-and-parallel" target="_blank" rel="noopener">building-a-company-due-diligence-agent-with-deep-agents-langsmith-and-parallel</a></h3>
+          <div class="card-meta"><span class="card-date">2026-05-08</span><span class="card-tag">Deep Agents</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/tuning-deep-agents-different-models" target="_blank" rel="noopener">Tuning Deep Agents to Work Well with Different Models</a></h3>
+          <div class="card-meta"><span class="card-date">2026-04-29</span><span class="card-tag">Deep Agents</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/runtime-behind-production-deep-agents" target="_blank" rel="noopener">The Runtime Behind Production Deep Agents</a></h3>
+          <div class="card-meta"><span class="card-date">2026-04-20</span><span class="card-tag">Deep Agents</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/running-subagents-in-the-background" target="_blank" rel="noopener">Running Subagents in the Background</a></h3>
+          <div class="card-meta"><span class="card-date">2026-04-16</span><span class="card-tag">Deep Agents</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/deep-agents-deploy-an-open-alternative-to-claude-managed-agents" target="_blank" rel="noopener">Deep Agents Deploy: an open alternative to Claude Managed Agents</a></h3>
+          <div class="card-meta"><span class="card-date">2026-04-09</span><span class="card-tag">Deep Agents</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/deep-agents-v0-5" target="_blank" rel="noopener">Deep Agents v0.5</a></h3>
+          <div class="card-meta"><span class="card-date">2026-04-07</span><span class="card-tag">Deep Agents</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/continual-learning-for-ai-agents" target="_blank" rel="noopener">Continual learning for AI agents</a></h3>
+          <div class="card-meta"><span class="card-date">2026-04-05</span><span class="card-tag">Deep Agents</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/how-we-built-agent-builders-memory-system" target="_blank" rel="noopener">How we built Agent Builder’s memory system</a></h3>
+          <div class="card-meta"><span class="card-date">2026-02-22</span><span class="card-tag">Deep Agents</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/how-to-use-memory-in-agent-builder" target="_blank" rel="noopener">How to Use Memory in Agent Builder</a></h3>
+          <div class="card-meta"><span class="card-date">2026-02-19</span><span class="card-tag">Deep Agents</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/new-in-agent-builder-all-new-agent-chat-file-uploads-tool-registry" target="_blank" rel="noopener">New in Agent Builder: all new agent chat, file uploads + tool registry</a></h3>
+          <div class="card-meta"><span class="card-date">2026-02-18</span><span class="card-tag">Deep Agents</span></div>
+        </div>
+      </div>
+      <div class="card" style="display:flex;align-items:center;justify-content:center;color:var(--text-secondary);font-size:14px">+ 15 more articles</div>
+    </div>
+  </section>
+  <section class="category">
+    <div class="category-header">
+      <div class="category-icon" style="background:linear-gradient(135deg,#10b981,#059669)">📄</div>
+      <div>
+        <h2>General</h2>
+        <p>13 articles</p>
+      </div>
+    </div>
+    <div class="cards">
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/beyond-text-making-genai-applications-accessible-to-all" target="_blank" rel="noopener">Beyond Text: Making GenAI Applications Accessible to All</a></h3>
+          <div class="card-meta"><span class="card-date">2023-10-23</span><span class="card-tag">General</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/langchain-docugami-webinar-lessons-from-deploying-llms-with-langsmith" target="_blank" rel="noopener">LangChain + Docugami Webinar: Lessons from Deploying LLMs with LangSmith</a></h3>
+          <div class="card-meta"><span class="card-date">2023-09-20</span><span class="card-tag">General</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/langchain-predibase-the-easiest-way-to-fine-tune-and-productionize-oss-llms" target="_blank" rel="noopener">Langchain x Predibase: The easiest way to fine-tune and productionize OSS LLMs</a></h3>
+          <div class="card-meta"><span class="card-date">2023-08-17</span><span class="card-tag">General</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/langchain-x-context-building-better-chat-products-with-user-analytics" target="_blank" rel="noopener">LangChain x Context: Building Better Chat Products With User Analytics</a></h3>
+          <div class="card-meta"><span class="card-date">2023-07-13</span><span class="card-tag">General</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/ai-powered-medical-knowledge" target="_blank" rel="noopener">AI-Powered Medical Knowledge: Revolutionizing Care for Rare Conditions</a></h3>
+          <div class="card-meta"><span class="card-date">2023-04-17</span><span class="card-tag">General</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/using-chatgpt-api-to-evaluate-chatgpt" target="_blank" rel="noopener">Using the ChatGPT API to evaluate the ChatGPT API</a></h3>
+          <div class="card-meta"><span class="card-date">2023-03-02</span><span class="card-tag">General</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/langchain-chat" target="_blank" rel="noopener">LangChain Chat</a></h3>
+          <div class="card-meta"><span class="card-date">2023-01-16</span><span class="card-tag">General</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a  target="_blank" rel="noopener">01 The Anatomy Of An Agent Harness</a></h3>
+          <div class="card-meta"><span class="card-tag">General</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a  target="_blank" rel="noopener">02 Running Subagents In The Background</a></h3>
+          <div class="card-meta"><span class="card-tag">General</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a  target="_blank" rel="noopener">03 Agent Observability Needs Feedback</a></h3>
+          <div class="card-meta"><span class="card-tag">General</span></div>
+        </div>
+      </div>
+      <div class="card" style="display:flex;align-items:center;justify-content:center;color:var(--text-secondary);font-size:14px">+ 3 more articles</div>
+    </div>
+  </section>
+  <section class="category">
+    <div class="category-header">
+      <div class="category-icon" style="background:linear-gradient(135deg,#10b981,#059669)">📄</div>
+      <div>
+        <h2>Newsletters</h2>
+        <p>4 articles</p>
+      </div>
+    </div>
+    <div class="cards">
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/april-2026-langchain-newsletter" target="_blank" rel="noopener">April 2026: LangChain Newsletter</a></h3>
+          <div class="card-meta"><span class="card-date">2026-04-27</span><span class="card-tag">Newsletters</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/march-2026-langchain-newsletter" target="_blank" rel="noopener">March 2026: LangChain Newsletter</a></h3>
+          <div class="card-meta"><span class="card-date">2026-04-01</span><span class="card-tag">Newsletters</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/febraury-2026-langchain-newsletter" target="_blank" rel="noopener">February 2026: LangChain Newsletter</a></h3>
+          <div class="card-meta"><span class="card-date">2026-03-04</span><span class="card-tag">Newsletters</span></div>
+        </div>
+      </div>
+      <div class="card card-todo">
+        <div class="card-body">
+          <h3><a href="https://www.langchain.com/blog/january-2026-langchain-newsletter" target="_blank" rel="noopener">January 2026: LangChain Newsletter</a></h3>
+          <div class="card-meta"><span class="card-date">2026-01-30</span><span class="card-tag">Newsletters</span></div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <p>Source: <a href="https://www.langchain.com/blog" target="_blank">https://www.langchain.com/blog</a> · <a href="..">← Back to Hub</a></p>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,508 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：How We Built Our Multi-Agent Research System</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;
+      --border:#e2e8f0;--radius:14px;
+      --purple:#6366f1;--amber:#f59e0b;--green:#10b981;--red:#ef4444;--blue:#3b82f6;--pink:#ec4899;--teal:#14b8a6;--indigo:#6366f1;
+      --mono:'JetBrains Mono','SF Mono',monospace;
+      --sans:'Noto Sans SC','Inter',system-ui,sans-serif;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7;-webkit-font-smoothing:antialiased}
+    a{color:inherit;text-decoration:none}
+    img{max-width:100%;display:block}
+
+    .nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.88);backdrop-filter:blur(14px);border-bottom:1px solid var(--border)}
+    .nav-inner{max-width:1200px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:52px}
+    .nav-brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px}
+    .nav-back{font-size:13px;color:var(--text-secondary);transition:color .15s}
+    .nav-back:hover{color:var(--purple)}
+
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#1e3a5f 40%,#1d4ed8 70%,#0f172a 100%);color:#fff;padding:80px 24px 64px;text-align:center;position:relative;overflow:hidden}
+    .hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 30% 60%,rgba(29,78,216,.15) 0%,transparent 55%),radial-gradient(ellipse at 70% 30%,rgba(99,102,241,.08) 0%,transparent 55%)}
+    .hero-inner{position:relative;max-width:800px;margin:0 auto}
+    .hero-tag{display:inline-block;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:5px 16px;font-size:12px;letter-spacing:.5px;text-transform:uppercase;margin-bottom:20px}
+    .hero h1{font-size:clamp(22px,4.5vw,38px);font-weight:800;line-height:1.2;margin-bottom:12px;letter-spacing:-.02em}
+    .hero .sub{font-size:15px;opacity:.65;margin-bottom:28px}
+    .hero-stats{display:flex;gap:20px;justify-content:center;flex-wrap:wrap}
+    .hero-stat{text-align:center;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:16px 20px;min-width:120px}
+    .hero-stat .v{font-size:26px;font-weight:800;background:linear-gradient(135deg,#93c5fd,#a5b4fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .hero-stat .l{font-size:12px;opacity:.6;margin-top:4px}
+
+    .page{max-width:900px;margin:0 auto;padding:0 24px}
+
+    .toc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px 28px;margin:32px 0}
+    .toc h3{font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-secondary);margin-bottom:12px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:8px}
+    .toc a{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;font-size:14px;color:var(--text);transition:background .15s}
+    .toc a:hover{background:#f1f5f9}
+    .toc .num{background:var(--blue);color:#fff;width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+
+    .section{margin:48px 0}
+    .section h2{font-size:24px;font-weight:700;margin-bottom:8px;padding-bottom:10px;border-bottom:2px solid var(--border);display:flex;align-items:center;gap:10px}
+    .section .lead{font-size:16px;color:var(--text-secondary);line-height:1.8;margin-bottom:24px}
+
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+    .card h3{font-size:17px;font-weight:700;margin-bottom:10px}
+    .card p{font-size:14px;color:var(--text-secondary);line-height:1.7}
+
+    .chart{margin:24px 0}
+    .chart-row{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+    .chart-label{width:200px;font-size:13px;color:var(--text-secondary);text-align:right;flex-shrink:0;line-height:1.3}
+    .chart-bar-wrap{flex:1;height:32px;background:#f1f5f9;border-radius:6px;overflow:hidden;position:relative}
+    .chart-bar{height:100%;border-radius:6px;display:flex;align-items:center;padding-left:10px;font-size:12px;font-weight:600;color:#fff;transition:width .8s ease}
+    .chart-bar.purple{background:linear-gradient(90deg,#6366f1,#8b5cf6)}
+    .chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .chart-bar.green{background:linear-gradient(90deg,#10b981,#34d399)}
+    .chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}
+    .chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+    .chart-bar.teal{background:linear-gradient(90deg,#14b8a6,#5eead4)}
+    .chart-bar.pink{background:linear-gradient(90deg,#ec4899,#f472b6)}
+
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:24px 0}
+    .compare-card{border-radius:var(--radius);padding:24px;border:1px solid}
+    .compare-card h4{font-size:15px;font-weight:700;margin-bottom:10px}
+    .compare-card p{font-size:14px;line-height:1.7;color:var(--text-secondary)}
+
+    .timeline{position:relative;padding-left:32px;margin:24px 0}
+    .timeline::before{content:'';position:absolute;left:14px;top:8px;bottom:8px;width:3px;background:linear-gradient(to bottom,#1d4ed8,#6366f1,#a855f7);border-radius:2px}
+    .tl-item{position:relative;margin-bottom:28px}
+    .tl-item:last-child{margin-bottom:0}
+    .tl-dot{position:absolute;left:-25px;top:4px;width:16px;height:16px;border-radius:50%;border:3px solid #fff}
+    .tl-item:nth-child(1) .tl-dot{background:#1d4ed8;box-shadow:0 0 0 2px #1d4ed8}
+    .tl-item:nth-child(2) .tl-dot{background:#3b82f6;box-shadow:0 0 0 2px #3b82f6}
+    .tl-item:nth-child(3) .tl-dot{background:#6366f1;box-shadow:0 0 0 2px #6366f1}
+    .tl-item:nth-child(4) .tl-dot{background:#8b5cf6;box-shadow:0 0 0 2px #8b5cf6}
+    .tl-item:nth-child(5) .tl-dot{background:#a855f7;box-shadow:0 0 0 2px #a85cf6}
+    .tl-item:nth-child(6) .tl-dot{background:#c084fc;box-shadow:0 0 0 2px #c084fc}
+    .tl-item:nth-child(7) .tl-dot{background:#e879f9;box-shadow:0 0 0 2px #e879f9}
+    .tl-item:nth-child(8) .tl-dot{background:#f472b6;box-shadow:0 0 0 2px #f472b6}
+    .tl-phase{font-size:14px;font-weight:700;margin-bottom:4px}
+    .tl-item:nth-child(1) .tl-phase{color:#1d4ed8}
+    .tl-item:nth-child(2) .tl-phase{color:#3b82f6}
+    .tl-item:nth-child(3) .tl-phase{color:#6366f1}
+    .tl-item:nth-child(4) .tl-phase{color:#8b5cf6}
+    .tl-item:nth-child(5) .tl-phase{color:#a855f7}
+    .tl-item:nth-child(6) .tl-phase{color:#c084fc}
+    .tl-item:nth-child(7) .tl-phase{color:#e879f9}
+    .tl-item:nth-child(8) .tl-phase{color:#f472b6}
+    .tl-desc{font-size:14px;color:var(--text-secondary);line-height:1.7}
+
+    .tbl-wrap{overflow-x:auto;margin:20px 0}
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    th{background:#f8fafc;font-weight:600;text-align:left;padding:10px 14px;border-bottom:2px solid var(--border)}
+    td{padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+    tr:last-child td{border-bottom:none}
+
+    .badge{display:inline-block;font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;letter-spacing:.3px}
+    .badge-purple{background:#ede9fe;color:#6d28d9}
+    .badge-amber{background:#fef3c7;color:#b45309}
+    .badge-red{background:#fee2e2;color:#dc2626}
+    .badge-green{background:#dcfce7;color:#16a34a}
+    .badge-blue{background:#dbeafe;color:#1d4ed8}
+    .badge-teal{background:#ccfbf1;color:#0d9488}
+    .badge-pink{background:#fce7f3;color:#be185d}
+
+    .diagram{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px;margin:24px 0;text-align:center}
+    .diagram h4{font-size:15px;font-weight:700;margin-bottom:16px}
+    .flow{display:flex;align-items:center;justify-content:center;gap:0;flex-wrap:wrap}
+    .flow-step{background:linear-gradient(135deg,#1d4ed8,#3b82f6);color:#fff;padding:10px 14px;border-radius:10px;font-size:12px;font-weight:600;text-align:center;max-width:150px}
+    .flow-step.purple{background:linear-gradient(135deg,#6366f1,#8b5cf6)}
+    .flow-step.green{background:linear-gradient(135deg,#10b981,#34d399)}
+    .flow-step.amber{background:linear-gradient(135deg,#f59e0b,#fbbf24)}
+    .flow-step.pink{background:linear-gradient(135deg,#ec4899,#f472b6)}
+    .flow-arrow{font-size:18px;color:var(--blue);padding:0 6px}
+
+    .agent-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin:20px 0}
+    .agent-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px}
+    .agent-card h4{font-size:15px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+    .agent-card p{font-size:13px;color:var(--text-secondary);line-height:1.6}
+
+    .block-q{background:#f5f3ff;border-left:4px solid #8b5cf6;border-radius:0 12px 12px 0;padding:20px 24px;margin:28px 0}
+    .block-q p{font-size:15px;line-height:1.8;color:#4c1d95;font-style:italic}
+
+    .fail-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:12px;margin:20px 0}
+    .fail-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px}
+    .fail-card h4{font-size:14px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:6px}
+    .fail-card p{font-size:13px;color:var(--text-secondary);line-height:1.5}
+
+    .footer{text-align:center;padding:40px 24px 48px;border-top:1px solid var(--border);margin-top:60px;font-size:13px;color:var(--text-secondary)}
+    .footer a{color:var(--purple)}
+
+    @media(max-width:768px){
+      .hero-stats{gap:12px}
+      .compare-grid,.agent-grid,.fail-grid{grid-template-columns:1fr}
+      .chart-label{width:120px;font-size:12px}
+      .flow{flex-direction:column;gap:8px}
+      .flow-arrow{transform:rotate(90deg)}
+      .toc-grid{grid-template-columns:1fr}
+    }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../../" class="nav-brand"><span class="nav-logo">⚡</span><span>Anthropic Engineering Notes</span></a>
+    <a href="../" class="nav-back">← 返回 Anthropic</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="hero-inner">
+    <div class="hero-tag">🔬 Multi-Agent · Research System · 深度解析</div>
+    <h1>构建 Claude 多 Agent 研究系统</h1>
+    <div class="sub">How We Built Our Multi-Agent Research System · Published 2025-04-22 · Jeremy Hadfield, Barry Zhang, Kenneth Lien, Florian Scholz, Jeremy Fox, Daniel Ford</div>
+    <div class="hero-stats">
+      <div class="hero-stat"><div class="v">90.2%</div><div class="l">超越单 Agent 性能</div></div>
+      <div class="hero-stat"><div class="v">15×</div><div class="l">对比聊天 Token 消耗</div></div>
+      <div class="hero-stat"><div class="v">90%</div><div class="l">研究时间缩减</div></div>
+      <div class="hero-stat"><div class="v">40%</div><div class="l">工具描述优化提效</div></div>
+    </div>
+  </div>
+</header>
+
+<div class="page">
+
+<nav class="toc">
+  <h3>📑 本文导航</h3>
+  <div class="toc-grid">
+    <a href="#s1"><span class="num">1</span>为什么用多 Agent</a>
+    <a href="#s2"><span class="num">2</span>Token 经济学</a>
+    <a href="#s3"><span class="num">3</span>架构概览</a>
+    <a href="#s4"><span class="num">4</span>8 大提示工程原则</a>
+    <a href="#s5"><span class="num">5</span>评估策略</a>
+    <a href="#s6"><span class="num">6</span>生产可靠性</a>
+    <a href="#s7"><span class="num">7</span>附录技巧</a>
+    <a href="#s8"><span class="num">8</span>结论</a>
+  </div>
+</nav>
+
+<!-- ====== 1. Why Multi-Agent ====== -->
+<section class="section" id="s1">
+  <h2><span class="emoji">🤔</span> 为什么用多 Agent</h2>
+  <p class="lead">研究涉及开放性问题，很难提前预测所需步骤。多 Agent 系统特别适合研究任务，因为研究需要<strong>灵活性</strong>来根据发现动态调整方向。</p>
+
+  <div class="card">
+    <h3>🧠 子 Agent 的核心价值</h3>
+    <ul style="padding-left:20px;font-size:14px;line-height:1.8">
+      <li><strong>压缩</strong>：从大量语料中提炼洞察。子 Agent 在并行中各自拥有独立上下文窗口，探索问题的不同方面</li>
+      <li><strong>关注点分离</strong>：不同的工具、提示和探索轨迹，减少路径依赖</li>
+      <li><strong>并行推理</strong>：扩展单 Agent 无法处理的任务容量</li>
+    </ul>
+  </div>
+
+  <div class="card" style="border-left:4px solid var(--green)">
+    <h3>📊 内部评估结果</h3>
+    <p><strong>Claude Opus 4（Lead Agent）+ Claude Sonnet 4（Subagents）</strong> 在内部研究评估上<strong>超越单 Agent Claude Opus 4 达 90.2%</strong>。</p>
+    <p style="margin-top:8px">案例：识别 S&P 500 信息技术板块所有公司董事会成员。多 Agent 系统通过分解任务给子 Agent 找到正确答案，单 Agent 系统因缓慢的顺序搜索而失败。</p>
+  </div>
+
+  <div class="compare-grid">
+    <div class="compare-card" style="background:#eff6ff;border-color:#bfdbfe">
+      <h4 style="color:#2563eb">🔍 传统 RAG（静态检索）</h4>
+      <p>获取与输入查询最相似的 chunks，用这些 chunks 生成响应。固定的、一次性检索。</p>
+    </div>
+    <div class="compare-card" style="background:#f5f3ff;border-color:#c4b5fd">
+      <h4 style="color:#6d28d9">🧠 多 Agent 研究（动态搜索）</h4>
+      <p>多步搜索，动态找到相关信息，适应新发现，分析结果生成高质量答案。类似人类研究过程。</p>
+    </div>
+  </div>
+</section>
+
+<!-- ====== 2. Token Economics ====== -->
+<section class="section" id="s2">
+  <h2><span class="emoji">💰</span> Token 经济学</h2>
+  <p class="lead">多 Agent 系统主要因为能<strong>花费足够的 token 来解决问题</strong>而有效。但这也意味着成本高。</p>
+
+  <div class="card">
+    <h3>BrowseComp 评估中的性能方差分析</h3>
+    <p>三个因素解释了 <strong>95% 的性能方差</strong>：</p>
+    <div class="chart" style="margin-top:16px">
+      <div class="chart-row">
+        <div class="chart-label">Token 使用量</div>
+        <div class="chart-bar-wrap"><div class="chart-bar purple" style="width:80%"><span>解释 80% 方差</span></div></div>
+      </div>
+      <div class="chart-row">
+        <div class="chart-label">工具调用次数</div>
+        <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:10%"><span>第二大因素</span></div></div>
+      </div>
+      <div class="chart-row">
+        <div class="chart-label">模型选择</div>
+        <div class="chart-bar-wrap"><div class="chart-bar amber" style="width:5%"><span>第三大因素</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>📈 Token 消耗对比</h3>
+    <div class="chart">
+      <div class="chart-row">
+        <div class="chart-label">普通聊天</div>
+        <div class="chart-bar-wrap"><div class="chart-bar green" style="width:7%"><span>1×</span></div></div>
+      </div>
+      <div class="chart-row">
+        <div class="chart-label">单 Agent</div>
+        <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:27%"><span>~4×</span></div></div>
+      </div>
+      <div class="chart-row">
+        <div class="chart-label">多 Agent 系统</div>
+        <div class="chart-bar-wrap"><div class="chart-bar purple" style="width:100%"><span>~15×</span></div></div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="border-left:4px solid var(--amber)">
+    <h3>💡 模型升级 > Token 预算加倍</h3>
+    <p>升级到 Claude Sonnet 4 的性能提升<strong>大于在 Claude Sonnet 3.7 上加倍 token 预算</strong>。最新 Claude 模型是 token 使用效率的大幅乘数。</p>
+  </div>
+
+  <div class="card" style="border-left:4px solid var(--red)">
+    <h3>⚠️ 适用场景限制</h3>
+    <p>多 Agent 系统适合：<strong>高价值任务 + 大量并行化 + 信息超出单上下文窗口 + 需要多个复杂工具</strong>。不适合需要所有 Agent 共享同一上下文或 Agent 间有大量依赖的任务（如大多数编码任务）。</p>
+  </div>
+</section>
+
+<!-- ====== 3. Architecture ====== -->
+<section class="section" id="s3">
+  <h2><span class="emoji">🏗️</span> 架构概览</h2>
+  <p class="lead">Research 系统使用 <strong>Orchestrator-Worker 模式</strong>：Lead Agent 协调流程，同时委派给并行操作的专用 Subagent。</p>
+
+  <div class="diagram">
+    <h4>完整研究流程</h4>
+    <div class="flow">
+      <div class="flow-step">用户查询</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step purple">Lead Agent<br>分析 + 规划</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">保存计划<br>到 Memory</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step green">并行 Subagents<br>搜索 + 评估</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step purple">Lead Agent<br>综合结果</div>
+    </div>
+    <div class="flow" style="margin-top:8px">
+      <div style="width:400px"></div>
+      <div class="flow-arrow" style="color:var(--blue)">↓</div>
+      <div class="flow-step pink">Citation Agent<br>生成引用</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step green">返回用户</div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>🔄 Lead Agent 迭代流程</h3>
+    <div class="timeline">
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-phase">Step 1: 思考方法</div>
+        <div class="tl-desc">使用 Extended Thinking 规划方法，评估工具适用性，确定查询复杂度和子 Agent 数量。</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-phase">Step 2: 保存计划到 Memory</div>
+        <div class="tl-desc">持久化上下文，因为如果上下文窗口超过 200K token 会被截断，保留计划很重要。</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-phase">Step 3: 创建专用 Subagents</div>
+        <div class="tl-desc">每个 Subagent 有特定研究任务，独立执行网页搜索、评估工具结果、返回发现。</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-phase">Step 4: 综合 + 决策</div>
+        <div class="tl-desc">Lead Agent 综合结果，决定是否需要更多研究——可以创建额外子 Agent 或优化策略。</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-phase">Step 5: Citation Agent</div>
+        <div class="tl-desc">收集足够信息后，退出研究循环，将发现传递给 Citation Agent 处理文档和识别引用位置。</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ====== 4. Prompt Engineering ====== -->
+<section class="section" id="s4">
+  <h2><span class="emoji">📝</span> 8 大提示工程原则</h2>
+  <p class="lead">多 Agent 系统的协调复杂度快速增长。提示工程是改善这些行为的主要杠杆。</p>
+
+  <div class="agent-grid">
+    <div class="agent-card">
+      <h4><span style="font-size:20px">🧠</span> 1. 像你的 Agent 一样思考</h4>
+      <p>用与系统完全相同的提示和工具构建模拟，观察 Agent 逐步工作。立即揭示失败模式：结果足够时继续、搜索查询过长、选择错误工具等。</p>
+    </div>
+    <div class="agent-card">
+      <h4><span style="font-size:20px">📋</span> 2. 教协调者如何委派</h4>
+      <p>每个子 Agent 需要：目标、输出格式、工具和来源指南、清晰的任务边界。模糊指令导致重复工作、遗漏或找不到必要信息。</p>
+    </div>
+    <div class="agent-card">
+      <h4><span style="font-size:20px">⚖️</span> 3. 按查询复杂度缩放</h4>
+      <p>简单事实查找：1 Agent，3-10 次工具调用。直接比较：2-4 Subagents，各 10-15 次。复杂研究：10+ Subagents，明确分工。</p>
+    </div>
+    <div class="agent-card">
+      <h4><span style="font-size:20px">🔧</span> 4. 工具设计和选择至关重要</h4>
+      <p>Agent-工具接口与人类-计算机接口同样关键。给 Agent 明确启发式：先检查所有可用工具，匹配工具与用户意图，偏好专用工具。</p>
+    </div>
+    <div class="agent-card">
+      <h4><span style="font-size:20px">🔄</span> 5. 让 Agent 自我改进</h4>
+      <p>Claude 4 模型是出色的提示工程师。给定提示和失败模式，能诊断失败原因并建议改进。创建工具测试 Agent 使任务完成时间下降 <strong>40%</strong>。</p>
+    </div>
+    <div class="agent-card">
+      <h4><span style="font-size:20px">🔍</span> 6. 先广后窄</h4>
+      <p>搜索策略应镜像人类专家研究：先探索全景，再深入细节。Agent 倾向于过长、过具体的查询，提示它们从短而广的查询开始。</p>
+    </div>
+    <div class="agent-card">
+      <h4><span style="font-size:20px">💭</span> 7. 引导思考过程</h4>
+      <p>Extended Thinking 模式作为可控草稿板。Lead Agent 用它规划，Subagents 用 Interleaved Thinking 在工具结果后评估质量和识别差距。</p>
+    </div>
+    <div class="agent-card">
+      <h4><span style="font-size:20px">⚡</span> 8. 并行工具调用</h4>
+      <p>两种并行：(1) Lead Agent 并行启动 3-5 Subagents；(2) Subagents 并行使用 3+ 工具。复杂查询研究时间缩减高达 <strong>90%</strong>。</p>
+    </div>
+  </div>
+
+  <div class="block-q">
+    <p>"Our prompting strategy focuses on instilling good heuristics rather than rigid rules. We studied how skilled humans approach research tasks and encoded these strategies in our prompts."</p>
+  </div>
+</section>
+
+<!-- ====== 5. Evaluation ====== -->
+<section class="section" id="s5">
+  <h2><span class="emoji">📊</span> 评估策略</h2>
+  <p class="lead">评估多 Agent 系统有独特挑战。即使起点相同，Agent 可能采取完全不同但有效的路径到达目标。</p>
+
+  <div class="card">
+    <h3>🎯 三大评估原则</h3>
+    <div class="timeline">
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-phase">原则 1: 立即用小样本开始评估</div>
+        <div class="tl-desc">早期开发中，少量测试（约 20 个查询）就能清晰看到变更影响。不要等到构建大规模评估才开始测试——效果大的变更用几个案例就能发现。</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-phase">原则 2: LLM-as-Judge 可扩展评估</div>
+        <div class="tl-desc">用 LLM 法官评估：事实准确性、引用准确性、完整性、来源质量、工具效率。单次 LLM 调用输出 0.0-1.0 分数和 pass-fail 最一致且与人类判断最对齐。</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-phase">原则 3: 人工评估捕获自动化遗漏</div>
+        <div class="tl-desc">人类测试者发现早期 Agent 一致选择 SEO 优化内容农场而非权威来源（如学术 PDF 或个人博客）。在提示中添加来源质量启发式解决了这个问题。</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card" style="border-left:4px solid var(--amber)">
+    <h3>⚡ 涌现行为</h3>
+    <p>多 Agent 系统有<strong>涌现行为</strong>——Lead Agent 的微小变更会不可预测地改变 Subagent 行为。成功需要理解交互模式，而不仅是单个 Agent 行为。最佳提示不是严格指令，而是<strong>协作框架</strong>：定义分工、解决问题方法和努力预算。</p>
+  </div>
+</section>
+
+<!-- ====== 6. Production Reliability ====== -->
+<section class="section" id="s6">
+  <h2><span class="emoji">🔧</span> 生产可靠性</h2>
+  <p class="lead">在传统软件中，bug 可能破坏功能。在 Agent 系统中，<strong>微小变更会级联成大的行为变化</strong>。</p>
+
+  <div class="fail-grid">
+    <div class="fail-card">
+      <h4><span class="badge badge-red">Agent 有状态且错误累积</span></h4>
+      <p>Agent 长时间运行，跨多工具调用维护状态。需要持久执行代码和处理错误。小失败对 Agent 可能是灾难性的。</p>
+    </div>
+    <div class="fail-card">
+      <h4><span class="badge badge-blue">调试需要新方法</span></h4>
+      <p>Agent 做动态决策，运行间非确定性。添加全生产追踪来诊断失败原因。监控 Agent 决策模式和交互结构。</p>
+    </div>
+    <div class="fail-card">
+      <h4><span class="badge badge-purple">部署需要协调</span></h4>
+      <p>Agent 系统是有状态的 prompts、工具和执行逻辑网络。使用 <strong>Rainbow Deployments</strong> 逐步迁移流量，避免中断运行中的 Agent。</p>
+    </div>
+    <div class="fail-card">
+      <h4><span class="badge badge-amber">同步执行创建瓶颈</span></h4>
+      <p>Lead Agent 同步执行 Subagents，等待每组完成才继续。简化协调但创建信息流瓶颈。异步执行将带来额外并行化。</p>
+    </div>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h3>🔄 错误恢复策略</h3>
+    <ul style="padding-left:20px;font-size:14px;line-height:1.8">
+      <li>不能从头重启：重启昂贵且让用户沮丧</li>
+      <li>构建系统从 Agent 出错时所在位置恢复</li>
+      <li>利用模型智能优雅处理问题：告诉 Agent 工具失败并让它适应</li>
+      <li>结合 AI Agent 的适应性与确定性保障（重试逻辑、定期检查点）</li>
+    </ul>
+  </div>
+</section>
+
+<!-- ====== 7. Appendix Tips ====== -->
+<section class="section" id="s7">
+  <h2><span class="emoji">📎</span> 附录：额外技巧</h2>
+
+  <div class="card">
+    <h3>🏁 多轮状态变更的终态评估</h3>
+    <p>评估修改持久状态的 Agent 时，关注<strong>终态评估</strong>而非逐轮分析。评估是否达到正确最终状态，而非是否遵循特定过程。对复杂流程，分解为离散检查点。</p>
+  </div>
+
+  <div class="card">
+    <h3>💬 长程对话管理</h3>
+    <p>生产 Agent 经常进行数百轮的对话。实施模式：Agent 总结已完成工作阶段，存储关键信息到外部内存。接近上下文限制时，生成具有干净上下文的新 Subagent，同时通过仔细交接保持连续性。</p>
+  </div>
+
+  <div class="card">
+    <h3>📁 Subagent 输出到文件系统</h3>
+    <p>Subagent 输出可以直接绕过主协调者，写入外部系统，然后传回轻量引用给协调者。这防止多阶段处理中的信息丢失，减少通过对话历史复制大输出的 token 开销。特别适合结构化输出（代码、报告、数据可视化）。</p>
+  </div>
+</section>
+
+<!-- ====== 8. Conclusion ====== -->
+<section class="section" id="s8">
+  <h2><span class="emoji">📌</span> 结论</h2>
+  <p class="lead">构建 AI Agent 时，<strong>最后一英里通常成为大部分旅程</strong>。在开发者机器上工作的代码库需要大量工程才能成为可靠的生产系统。</p>
+
+  <div class="card" style="border-left:4px solid var(--green)">
+    <h3>🎯 成功要素</h3>
+    <ul style="padding-left:20px;font-size:14px;line-height:1.8">
+      <li>精心工程（Careful engineering）</li>
+      <li>全面测试（Comprehensive testing）</li>
+      <li>注重细节的提示和工具设计（Detail-oriented prompt and tool design）</li>
+      <li>稳健的运营实践（Robust operational practices）</li>
+      <li>研究、产品和工程团队之间的紧密协作（Tight collaboration）</li>
+      <li>对当前 Agent 能力的深入理解（Strong understanding of capabilities）</li>
+    </ul>
+  </div>
+
+  <div class="card" style="margin-top:16px">
+    <h3>📈 用户反馈</h3>
+    <p>用户表示 Claude 帮助他们：</p>
+    <ul style="margin-top:8px;padding-left:20px;font-size:14px;color:var(--text-secondary)">
+      <li>发现未曾考虑过的商业机会</li>
+      <li>导航复杂的医疗选择</li>
+      <li>解决棘手的技术 bug</li>
+      <li>节省高达数天的工作，发现独自无法找到的研究联系</li>
+    </ul>
+  </div>
+
+  <div class="block-q">
+    <p>"The compound nature of errors in agentic systems means that minor issues for traditional software can derail agents entirely. One step failing can cause agents to explore entirely different trajectories, leading to unpredictable outcomes."</p>
+  </div>
+
+  <p style="font-size:14px;color:var(--text-secondary);margin-top:32px">Written by Jeremy Hadfield, Barry Zhang, Kenneth Lien, Florian Scholz, Jeremy Fox, and Daniel Ford · Source: <a href="https://www.anthropic.com/engineering/multi-agent-research-system" target="_blank" rel="noopener" style="color:var(--purple)">anthropic.com/engineering</a></p>
+</section>
+
+</div>
+
+<footer class="footer">
+  <p><a href="../">← Anthropic Engineering Notes</a></p>
+  <p class="footer-sub" style="margin-top:8px">Source: <a href="https://www.anthropic.com/engineering" target="_blank" rel="noopener">Anthropic Engineering Blog</a></p>
+</footer>
+
+</body>
+</html>

@@ -1,0 +1,392 @@
+---
+title: "No-Code RAG Pipeline Builder: One-Click Code | LlamaIndex"
+author: "Unknown"
+date: "Unknown"
+url: "https://www.llamaindex.ai/blog/ragarch-building-a-no-code-rag-pipeline-configuration-one-click-rag-code-generation-tool-powered-b6e8eeb70089"
+category: "rag"
+---
+
+Follow us on
+
+
+ -  [
+
+
+](https://github.com/run-llama/)
+ -  [
+
+](https://discord.com/invite/eN6D2HQ4aX)
+ -  [
+
+
+](https://twitter.com/llama_index)
+ -  [
+
+
+](https://www.linkedin.com/company/91154103/)
+ -  [
+
+
+](https://www.youtube.com/@LlamaIndex)
+
+
+
+   17
+
+
+
+Unlocking the power of AI should be as intuitive as using your favorite apps. That’s the philosophy behind RAGArch, my latest creation designed to demystify and streamline the process of setting up Retrieval-Augmented Generation (RAG) pipelines. This tool is born from a simple vision: to provide a straightforward, no-code platform that empowers both seasoned developers and curious explorers in the world of AI to craft, test, and implement RAG pipelines with confidence and ease.
+
+
+
+##  Ready to get started with LlamaParse?
+
+
+
+ Explore our free and paid plans today.
+
+
+ -  [ Learn more ](/pricing)
+
+
+
+# Features
+
+RAGArch leverages LlamaIndex’s powerful LLM orchestration capabilities, to provide a seamless experience and granular control over your RAG pipeline.
+
+- **Intuitive Interface:** RAGArch’s user-friendly interface, built with Streamlit, allows you to test different RAG pipeline components interactively.
+- **Custom Configuration**: The app provides a wide range of options to configure Language Models, Embedding Models, Node Parsers, Response Synthesis Methods, and Vector Stores to suit your project’s needs.
+- **Live Testing:** Instantly test your RAG pipeline with your own data and see how different configurations affect the outcome.
+- **One-Click Code Generation**: Once you’re satisfied with the configuration, the app can generate the Python code for your custom RAG pipeline, ready to be integrated into your application.
+
+# Tools and Technologies
+
+The creation of RAGArch was made possible by integrating a variety of powerful tools and technologies:
+
+- **UI: **Streamlit
+- **Hosting:** Hugging Face Spaces
+- **LLMs: **OpenAI GPT 3.5 and 4, Cohere API, Gemini Pro
+- **LLM Orchestration: **Llamaindex
+- **Embedding Models:** “BAAI/bge-small-en-v1.5”, “WhereIsAI/UAE-Large-V1”, “BAAI/bge-large-en-v1.5”, “khoa-klaytn/bge-small-en-v1.5-angle”, “BAAI/bge-base-en-v1.5”, “llmrails/ember-v1”, “jamesgpt1/sf_model_e5”, “thenlper/gte-large”, “infgrad/stella-base-en-v2” and “thenlper/gte-base”
+- **Vector Stores:** Simple (Llamaindex default), Pinecone and Qdrant
+
+# Deep Dive into the Code
+
+The `app.py` script is the backbone of RAGArch, integrating various components to provide a cohesive experience. The following are the key functions of app.py
+
+## `**upload_file**`
+
+This function manages file uploads and uses Llamaindex's `SimpleDirectoryReader` to load documents into the system. It supports a wide array of document types, including PDFs, text files, HTML, JSON files, and more, making it versatile for processing diverse data sources.
+
+![](/blog/images/1*hrekcMeqyyEIQbiO1GB8NQ.png)
+
+def upload_file():
+    file = st.file_uploader("Upload a file", on_change=reset_pipeline_generated)
+    if file is not None:
+        file_path = save_uploaded_file(file)
+
+        if file_path:
+            loaded_file = SimpleDirectoryReader(input_files=[file_path]).load_data()
+            print(f"Total documents: {len(loaded_file)}")
+
+            st.success(f"File uploaded successfully. Total documents loaded: {len(loaded_file)}")
+        return loaded_file
+    return None
+
+## save_uploaded_file
+
+This utility function saves the uploaded file to a temporary location on the server, making it accessible for further processing. It’s a crucial part of the file handling process, ensuring data integrity and availability.
+
+def save_uploaded_file(uploaded_file):
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(uploaded_file.name)[1]) as tmp_file:
+            tmp_file.write(uploaded_file.getvalue())
+            return tmp_file.name
+    except Exception as e:
+        st.error(f"Error saving file: {e}")
+        return None
+
+## `**select_llm**`
+
+Allows users to select a Large Language Model and initializes it for use. You can choose from Google’s Gemini Pro, Cohere, OpenAI’s GPT 3.5 and GPT 4.
+
+![](/blog/images/1*O2HndW3Ow_OgBHOABLOCLA.png)
+
+def select_llm():
+    st.header("Choose LLM")
+    llm_choice = st.selectbox("Select LLM", ["Gemini", "Cohere", "GPT-3.5", "GPT-4"], on_change=reset_pipeline_generated)
+
+    if llm_choice == "GPT-3.5":
+        llm = OpenAI(temperature=0.1, model="gpt-3.5-turbo-1106")
+        st.write(f"{llm_choice} selected")
+    elif llm_choice == "GPT-4":
+        llm = OpenAI(temperature=0.1, model="gpt-4-1106-preview")
+        st.write(f"{llm_choice} selected")
+    elif llm_choice == "Gemini":
+        llm = Gemini(model="models/gemini-pro")
+        st.write(f"{llm_choice} selected")
+    elif llm_choice == "Cohere":
+        llm = Cohere(model="command", api_key=os.environ['COHERE_API_TOKEN'])
+        st.write(f"{llm_choice} selected")
+    return llm, llm_choice
+
+## `select_embedding_model`
+
+Offers a dropdown for users to select the embedding model of their choice from a predefined list. I have included some of the top embedding models from Hugging Face’s MTEB leaderboard. Near the dropdown I have also included a handy link to the leaderboard where users can get more information about the embedding models.
+
+![](/blog/images/1*1HZdInelOskY3EWY1SmWkw.png)
+
+def select_embedding_model():
+    st.header("Choose Embedding Model")
+    col1, col2 = st.columns([2,1])
+    with col2:
+        st.markdown("""
+                    [Embedding Models Leaderboard](https://huggingface.co/spaces/mteb/leaderboard)
+                    """)
+    model_names = [
+        "BAAI/bge-small-en-v1.5",
+        "WhereIsAI/UAE-Large-V1",
+        "BAAI/bge-large-en-v1.5",
+        "khoa-klaytn/bge-small-en-v1.5-angle",
+        "BAAI/bge-base-en-v1.5",
+        "llmrails/ember-v1",
+        "jamesgpt1/sf_model_e5",
+        "thenlper/gte-large",
+        "infgrad/stella-base-en-v2",
+        "thenlper/gte-base"
+    ]
+    selected_model = st.selectbox("Select Embedding Model", model_names,  on_change=reset_pipeline_generated)
+    with st.spinner("Please wait") as status:
+        embed_model = HuggingFaceEmbedding(model_name=selected_model)
+        st.session_state['embed_model'] = embed_model
+        st.markdown(F"Embedding Model: {embed_model.model_name}")
+        st.markdown(F"Embed Batch Size: {embed_model.embed_batch_size}")
+        st.markdown(F"Embed Batch Size: {embed_model.max_length}")
+
+    return embed_model, selected_model
+
+## select_node_parser Function
+
+This function allows users to choose a node parser, which is instrumental in breaking down documents into manageable chunks or nodes, facilitating better handling and processing. I have included some of the most commonly used node parsers supported by Llamaindex, which include SentenceSplitter, CodeSplitter, SemanticSplitterNodeParser, TokenTextSplitter, HTMLNodeParser, JSONNodeParser and MarkdownNodeParser.
+
+![](/blog/images/1*DR2jdaguScUtE6Kaxiw56A.png)
+
+def select_node_parser():
+    st.header("Choose Node Parser")
+    col1, col2 = st.columns([4,1])
+    with col2:
+        st.markdown("""
+                    [More Information](https://docs.llamaindex.ai/en/stable/module_guides/loading/node_parsers/root.html)
+                    """)
+    parser_types = ["SentenceSplitter", "CodeSplitter", "SemanticSplitterNodeParser",
+                    "TokenTextSplitter", "HTMLNodeParser", "JSONNodeParser", "MarkdownNodeParser"]
+    parser_type = st.selectbox("Select Node Parser", parser_types, on_change=reset_pipeline_generated)
+
+    parser_params = {}
+    if parser_type == "HTMLNodeParser":
+        tags = st.text_input("Enter tags separated by commas", "p, h1")
+        tag_list = tags.split(',')
+        parser = HTMLNodeParser(tags=tag_list)
+        parser_params = {'tags': tag_list}
+
+    elif parser_type == "JSONNodeParser":
+        parser = JSONNodeParser()
+
+    elif parser_type == "MarkdownNodeParser":
+        parser = MarkdownNodeParser()
+
+    elif parser_type == "CodeSplitter":
+        language = st.text_input("Language", "python")
+        chunk_lines = st.number_input("Chunk Lines", min_value=1, value=40)
+        chunk_lines_overlap = st.number_input("Chunk Lines Overlap", min_value=0, value=15)
+        max_chars = st.number_input("Max Chars", min_value=1, value=1500)
+        parser = CodeSplitter(language=language, chunk_lines=chunk_lines, chunk_lines_overlap=chunk_lines_overlap, max_chars=max_chars)
+        parser_params = {'language': language, 'chunk_lines': chunk_lines, 'chunk_lines_overlap': chunk_lines_overlap, 'max_chars': max_chars}
+
+    elif parser_type == "SentenceSplitter":
+        chunk_size = st.number_input("Chunk Size", min_value=1, value=1024)
+        chunk_overlap = st.number_input("Chunk Overlap", min_value=0, value=20)
+        parser = SentenceSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+        parser_params = {'chunk_size': chunk_size, 'chunk_overlap': chunk_overlap}
+
+    elif parser_type == "SemanticSplitterNodeParser":
+        if 'embed_model' not in st.session_state:
+            st.warning("Please select an embedding model first.")
+            return None, None
+
+        embed_model = st.session_state['embed_model']
+        buffer_size = st.number_input("Buffer Size", min_value=1, value=1)
+        breakpoint_percentile_threshold = st.number_input("Breakpoint Percentile Threshold", min_value=0, max_value=100, value=95)
+        parser = SemanticSplitterNodeParser(buffer_size=buffer_size, breakpoint_percentile_threshold=breakpoint_percentile_threshold, embed_model=embed_model)
+        parser_params = {'buffer_size': buffer_size, 'breakpoint_percentile_threshold': breakpoint_percentile_threshold}
+
+    elif parser_type == "TokenTextSplitter":
+        chunk_size = st.number_input("Chunk Size", min_value=1, value=1024)
+        chunk_overlap = st.number_input("Chunk Overlap", min_value=0, value=20)
+        parser = TokenTextSplitter(chunk_size=chunk_size, chunk_overlap=chunk_overlap)
+        parser_params = {'chunk_size': chunk_size, 'chunk_overlap': chunk_overlap}
+
+    # Save the parser type and parameters to the session state
+    st.session_state['node_parser_type'] = parser_type
+    st.session_state['node_parser_params'] = parser_params
+
+    return parser, parser_typeBelow the node parser selection, I have also included a preview of the first node of the text after splitting/parsing, just to give the users an idea of how the chunking is actually happening based the selected node parser and the relevant parameters.
+
+## `select_response_synthesis_method`
+
+This function allows users to choose how the RAG pipeline synthesizes responses. I have included varioud response synthesis methods supported by Llamaindex including *refine*, *tree_summarize*, *compact*, *simple_summarize*, *accumulate *and* compact_accumulate.*
+
+Users can click on the more information link to get more details about response synthesis and the different types.
+
+![](/blog/images/1*5OhOU25529Z08s_fart_DA.png)
+
+def select_response_synthesis_method():
+    st.header("Choose Response Synthesis Method")
+    col1, col2 = st.columns([4,1])
+    with col2:
+        st.markdown("""
+                    [More Information](https://docs.llamaindex.ai/en/stable/module_guides/querying/response_synthesizers/response_synthesizers.html)
+                    """)
+    response_modes = [
+        "refine",
+        "tree_summarize",
+        "compact",
+        "simple_summarize",
+        "accumulate",
+        "compact_accumulate"
+    ]
+    selected_mode = st.selectbox("Select Response Mode", response_modes, on_change=reset_pipeline_generated)
+    response_mode = selected_mode
+    return response_mode, selected_mode
+
+## `select_vector_store`
+
+Enables users to choose a vector store, which is a critical component for storing and retrieving embeddings in the RAG pipeline. This function supports the selection from multiple vector store options including Simple (Llamaindex default), Pinecone and Qdrant.
+
+![](/blog/images/1*bDOo67R7yzPKFQX_TMR56w.png)
+
+def select_vector_store():
+    st.header("Choose Vector Store")
+    vector_stores = ["Simple", "Pinecone", "Qdrant"]
+    selected_store = st.selectbox("Select Vector Store", vector_stores, on_change=reset_pipeline_generated)
+
+    vector_store = None
+    if selected_store == "Pinecone":
+        pc = Pinecone(api_key=os.environ['PINECONE_API_KEY'])
+        index = pc.Index("test")
+        vector_store = PineconeVectorStore(pinecone_index=index)
+    elif selected_store == "Qdrant":
+        client = qdrant_client.QdrantClient(location=":memory:")
+        vector_store = QdrantVectorStore(client=client, collection_name="sampledata")
+    st.write(selected_store)
+    return vector_store, selected_store
+
+## generate_rag_pipeline Function
+
+This core function ties together the selected components to generate a RAG pipeline. It initializes the pipeline with the chosen LLM, embedding model, node parser, response synthesis method, and vector store. It is triggered by pressing the ‘Generate RAG Pipeline’ button.
+
+def generate_rag_pipeline(file, llm, embed_model, node_parser, response_mode, vector_store):
+    if vector_store is not None:
+        # Set storage context if vector_store is not None
+        storage_context = StorageContext.from_defaults(vector_store=vector_store)
+    else:
+        storage_context = None
+
+    # Create the service context
+    service_context = ServiceContext.from_defaults(llm=llm, embed_model=embed_model, node_parser=node_parser)
+
+    # Create the vector index
+    vector_index = VectorStoreIndex.from_documents(documents=file, storage_context=storage_context, service_context=service_context, show_progress=True)
+    if storage_context:
+        vector_index.storage_context.persist(persist_dir="persist_dir")
+
+    # Create the query engine
+    query_engine = vector_index.as_query_engine(
+        response_mode=response_mode,
+        verbose=True,
+    )
+
+    return query_engine
+
+## generate_code_snippet Function
+
+This function is the culmination of the user’s selections, generating the Python code necessary to implement the configured RAG pipeline. It dynamically constructs the code snippet based on the chosen LLM, embedding model, node parser, response synthesis method, and vector store, including the parameters set for the node parser.
+
+def generate_code_snippet(llm_choice, embed_model_choice, node_parser_choice, response_mode, vector_store_choice):
+    node_parser_params = st.session_state.get('node_parser_params', {})
+    print(node_parser_params)
+    code_snippet = "from llama_index.llms import OpenAI, Gemini, Cohere\n"
+    code_snippet += "from llama_index.embeddings import HuggingFaceEmbedding\n"
+    code_snippet += "from llama_index import ServiceContext, VectorStoreIndex, StorageContext\n"
+    code_snippet += "from llama_index.node_parser import SentenceSplitter, CodeSplitter, SemanticSplitterNodeParser, TokenTextSplitter\n"
+    code_snippet += "from llama_index.node_parser.file import HTMLNodeParser, JSONNodeParser, MarkdownNodeParser\n"
+    code_snippet += "from llama_index.vector_stores import MilvusVectorStore, QdrantVectorStore\n"
+    code_snippet += "import qdrant_client\n\n"
+
+    # LLM initialization
+    if llm_choice == "GPT-3.5":
+        code_snippet += "llm = OpenAI(temperature=0.1, model='gpt-3.5-turbo-1106')\n"
+    elif llm_choice == "GPT-4":
+        code_snippet += "llm = OpenAI(temperature=0.1, model='gpt-4-1106-preview')\n"
+    elif llm_choice == "Gemini":
+        code_snippet += "llm = Gemini(model='models/gemini-pro')\n"
+    elif llm_choice == "Cohere":
+        code_snippet += "llm = Cohere(model='command', api_key='&amp;lt;YOUR_API_KEY&amp;gt;')  # Replace &amp;lt;YOUR_API_KEY&amp;gt; with your actual API key\n"
+
+    # Embedding model initialization
+    code_snippet += f"embed_model = HuggingFaceEmbedding(model_name='{embed_model_choice}')\n\n"
+
+    # Node parser initialization
+    node_parsers = {
+        "SentenceSplitter": f"SentenceSplitter(chunk_size={node_parser_params.get('chunk_size', 1024)}, chunk_overlap={node_parser_params.get('chunk_overlap', 20)})",
+        "CodeSplitter": f"CodeSplitter(language={node_parser_params.get('language', 'python')}, chunk_lines={node_parser_params.get('chunk_lines', 40)}, chunk_lines_overlap={node_parser_params.get('chunk_lines_overlap', 15)}, max_chars={node_parser_params.get('max_chars', 1500)})",
+        "SemanticSplitterNodeParser": f"SemanticSplitterNodeParser(buffer_size={node_parser_params.get('buffer_size', 1)}, breakpoint_percentile_threshold={node_parser_params.get('breakpoint_percentile_threshold', 95)}, embed_model=embed_model)",
+        "TokenTextSplitter": f"TokenTextSplitter(chunk_size={node_parser_params.get('chunk_size', 1024)}, chunk_overlap={node_parser_params.get('chunk_overlap', 20)})",
+        "HTMLNodeParser": f"HTMLNodeParser(tags={node_parser_params.get('tags', ['p', 'h1'])})",
+        "JSONNodeParser": "JSONNodeParser()",
+        "MarkdownNodeParser": "MarkdownNodeParser()"
+    }
+    code_snippet += f"node_parser = {node_parsers[node_parser_choice]}\n\n"
+
+    # Response mode
+    code_snippet += f"response_mode = '{response_mode}'\n\n"
+
+    # Vector store initialization
+    if vector_store_choice == "Pinecone":
+        code_snippet += "pc = Pinecone(api_key=os.environ['PINECONE_API_KEY'])\n"
+        code_snippet += "index = pc.Index('test')\n"
+        code_snippet += "vector_store = PineconeVectorStore(pinecone_index=index)\n"
+    elif vector_store_choice == "Qdrant":
+        code_snippet += "client = qdrant_client.QdrantClient(location=':memory:')\n"
+        code_snippet += "vector_store = QdrantVectorStore(client=client, collection_name='sampledata')\n"
+    elif vector_store_choice == "Simple":
+        code_snippet += "vector_store = None  # Simple in-memory vector store selected\n"
+
+    code_snippet += "\n# Finalizing the RAG pipeline setup\n"
+    code_snippet += "if vector_store is not None:\n"
+    code_snippet += "    storage_context = StorageContext.from_defaults(vector_store=vector_store)\n"
+    code_snippet += "else:\n"
+    code_snippet += "    storage_context = None\n\n"
+
+    code_snippet += "service_context = ServiceContext.from_defaults(llm=llm, embed_model=embed_model, node_parser=node_parser)\n\n"
+
+    code_snippet += "_file = 'path_to_your_file'  # Replace with the path to your file\n"
+    code_snippet += "vector_index = VectorStoreIndex.from_documents(documents=_file, storage_context=storage_context, service_context=service_context, show_progress=True)\n"
+    code_snippet += "if storage_context:\n"
+    code_snippet += "    vector_index.storage_context.persist(persist_dir='persist_dir')\n\n"
+
+    code_snippet += "query_engine = vector_index.as_query_engine(response_mode=response_mode, verbose=True)\n"
+
+    return code_snippet
+
+# Conclusion
+
+RAGArch stands at the intersection of innovation and practicality, offering a streamlined no-code approach to RAG pipeline development. It’s designed to demystify the complexities of AI configurations. With RAGArch, both seasoned developers and AI enthusiasts can craft custom pipelines with ease, accelerating the journey from idea to implementation.
+
+Your insights and contributions are invaluable as I continue to evolve this tool. Check out RAGArch on Github and let’s start a conversation on Linkedin. I’m always eager to collaborate and share knowledge with fellow tech adventurers.
+
+[GitHub Repo](https://github.com/AI-ANK/RAGArch)
+
+[Connect with Me on LinkedIn](https://www.linkedin.com/in/harshadsuryawanshi/)
+
+[Live Demo](https://huggingface.co/spaces/AI-ANK/RAGArch)

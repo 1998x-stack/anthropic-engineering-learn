@@ -1,0 +1,487 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：From Model to Agent — Equipping the Responses API with a Computer Environment</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{
+      --bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;
+      --border:#e2e8f0;--radius:14px;
+      --purple:#6366f1;--amber:#f59e0b;--green:#10b981;--red:#ef4444;--blue:#3b82f6;--pink:#ec4899;--teal:#14b8a6;
+      --mono:'JetBrains Mono','SF Mono',monospace;
+      --sans:'Noto Sans SC','Inter',system-ui,sans-serif;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7;-webkit-font-smoothing:antialiased}
+    a{color:inherit;text-decoration:none}
+
+    .nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.88);backdrop-filter:blur(14px);border-bottom:1px solid var(--border)}
+    .nav-inner{max-width:1200px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:52px}
+    .nav-brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px}
+    .nav-back{font-size:13px;color:var(--text-secondary);transition:color .15s}
+    .nav-back:hover{color:var(--blue)}
+
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#0c4a6e 45%,#0369a1 100%);color:#fff;padding:80px 24px 64px;text-align:center;position:relative;overflow:hidden}
+    .hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 40% 55%,rgba(14,165,233,.15) 0%,transparent 55%),radial-gradient(ellipse at 65% 35%,rgba(99,102,241,.1) 0%,transparent 55%)}
+    .hero-inner{position:relative;max-width:800px;margin:0 auto}
+    .hero-tag{display:inline-block;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:5px 16px;font-size:12px;letter-spacing:.5px;text-transform:uppercase;margin-bottom:20px}
+    .hero h1{font-size:clamp(22px,4.5vw,36px);font-weight:800;line-height:1.2;margin-bottom:12px;letter-spacing:-.02em}
+    .hero .sub{font-size:15px;opacity:.65;margin-bottom:28px}
+    .hero-stats{display:flex;gap:20px;justify-content:center;flex-wrap:wrap}
+    .hero-stat{text-align:center;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:16px 20px;min-width:120px}
+    .hero-stat .v{font-size:26px;font-weight:800;background:linear-gradient(135deg,#7dd3fc,#a5b4fc);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .hero-stat .l{font-size:12px;opacity:.6;margin-top:4px}
+
+    .page{max-width:900px;margin:0 auto;padding:0 24px}
+
+    .toc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px 28px;margin:32px 0}
+    .toc h3{font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-secondary);margin-bottom:12px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
+    .toc a{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;font-size:14px;color:var(--text);transition:background .15s}
+    .toc a:hover{background:#f1f5f9}
+    .toc .num{background:var(--blue);color:#fff;width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+
+    .section{margin:48px 0}
+    .section h2{font-size:24px;font-weight:700;margin-bottom:8px;padding-bottom:10px;border-bottom:2px solid var(--border);display:flex;align-items:center;gap:10px}
+    .section .lead{font-size:16px;color:var(--text-secondary);line-height:1.8;margin-bottom:24px}
+
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+    .card h3{font-size:17px;font-weight:700;margin-bottom:10px}
+    .card p,.card li{font-size:14px;color:var(--text-secondary);line-height:1.7}
+    .card ul{padding-left:20px;margin-top:8px}
+
+    .chart{margin:24px 0}
+    .chart-row{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+    .chart-label{width:180px;font-size:13px;color:var(--text-secondary);text-align:right;flex-shrink:0;line-height:1.3}
+    .chart-bar-wrap{flex:1;height:32px;background:#f1f5f9;border-radius:6px;overflow:hidden;position:relative}
+    .chart-bar{height:100%;border-radius:6px;display:flex;align-items:center;padding-left:10px;font-size:12px;font-weight:600;color:#fff;transition:width .8s ease}
+    .chart-bar.purple{background:linear-gradient(90deg,#6366f1,#8b5cf6)}
+    .chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .chart-bar.green{background:linear-gradient(90deg,#10b981,#34d399)}
+    .chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}
+    .chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+    .chart-bar.teal{background:linear-gradient(90deg,#14b8a6,#5eead4)}
+
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:24px 0}
+    .compare-card{border-radius:var(--radius);padding:24px;border:1px solid}
+    .compare-card h4{font-size:15px;font-weight:700;margin-bottom:10px}
+    .compare-card p{font-size:14px;line-height:1.7;color:var(--text-secondary)}
+
+    .timeline{position:relative;padding-left:32px;margin:24px 0}
+    .timeline::before{content:'';position:absolute;left:14px;top:8px;bottom:8px;width:3px;background:linear-gradient(to bottom,#0369a1,#6366f1,#8b5cf6);border-radius:2px}
+    .tl-item{position:relative;margin-bottom:28px}
+    .tl-item:last-child{margin-bottom:0}
+    .tl-dot{position:absolute;left:-25px;top:4px;width:16px;height:16px;border-radius:50%;border:3px solid #fff}
+    .tl-item:nth-child(1) .tl-dot{background:#0369a1;box-shadow:0 0 0 2px #0369a1}
+    .tl-item:nth-child(2) .tl-dot{background:#0ea5e9;box-shadow:0 0 0 2px #0ea5e9}
+    .tl-item:nth-child(3) .tl-dot{background:#3b82f6;box-shadow:0 0 0 2px #3b82f6}
+    .tl-item:nth-child(4) .tl-dot{background:#6366f1;box-shadow:0 0 0 2px #6366f1}
+    .tl-item:nth-child(5) .tl-dot{background:#8b5cf6;box-shadow:0 0 0 2px #8b5cf6}
+    .tl-phase{font-size:14px;font-weight:700;margin-bottom:4px}
+    .tl-item:nth-child(1) .tl-phase{color:#0369a1}
+    .tl-item:nth-child(2) .tl-phase{color:#0ea5e9}
+    .tl-item:nth-child(3) .tl-phase{color:#3b82f6}
+    .tl-item:nth-child(4) .tl-phase{color:#6366f1}
+    .tl-item:nth-child(5) .tl-phase{color:#8b5cf6}
+    .tl-desc{font-size:14px;color:var(--text-secondary);line-height:1.7}
+
+    .diagram{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px;margin:24px 0;text-align:center}
+    .diagram h4{font-size:15px;font-weight:700;margin-bottom:16px}
+    .flow{display:flex;align-items:center;justify-content:center;gap:0;flex-wrap:wrap}
+    .flow-step{background:linear-gradient(135deg,#0369a1,#0ea5e9);color:#fff;padding:10px 14px;border-radius:10px;font-size:12px;font-weight:600;text-align:center;max-width:140px}
+    .flow-step.purple{background:linear-gradient(135deg,#6366f1,#8b5cf6)}
+    .flow-step.green{background:linear-gradient(135deg,#10b981,#34d399)}
+    .flow-step.amber{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#0f172a}
+    .flow-step.teal{background:linear-gradient(135deg,#14b8a6,#5eead4);color:#0f172a}
+    .flow-arrow{font-size:18px;color:var(--blue);padding:0 6px}
+
+    .agent-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;margin:20px 0}
+    .agent-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:22px}
+    .agent-card h4{font-size:15px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:8px}
+    .agent-card p{font-size:13px;color:var(--text-secondary);line-height:1.6}
+
+    .fail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:12px;margin:20px 0}
+    .fail-card{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:18px;text-align:center}
+    .fail-card .icon{font-size:32px;margin-bottom:8px}
+    .fail-card h4{font-size:14px;font-weight:700;margin-bottom:6px}
+    .fail-card p{font-size:12px;color:var(--text-secondary);line-height:1.5}
+
+    .block-q{background:#f0f9ff;border-left:4px solid #0ea5e9;border-radius:0 12px 12px 0;padding:20px 24px;margin:28px 0}
+    .block-q p{font-size:15px;line-height:1.8;color:#0c4a6e;font-style:italic}
+
+    .badge{display:inline-block;font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;letter-spacing:.3px}
+    .badge-blue{background:#dbeafe;color:#1d4ed8}
+    .badge-green{background:#dcfce7;color:#16a34a}
+    .badge-amber{background:#fef3c7;color:#b45309}
+    .badge-red{background:#fee2e2;color:#dc2626}
+    .badge-teal{background:#ccfbf1;color:#0d9488}
+    .badge-purple{background:#ede9fe;color:#6d28d9}
+
+    .tbl-wrap{overflow-x:auto;margin:20px 0}
+    table{width:100%;border-collapse:collapse;font-size:13px}
+    th{background:#f8fafc;font-weight:600;text-align:left;padding:10px 14px;border-bottom:2px solid var(--border)}
+    td{padding:10px 14px;border-bottom:1px solid var(--border);vertical-align:top}
+    tr:last-child td{border-bottom:none}
+
+    code{font-family:var(--mono);font-size:13px;background:#f1f5f9;padding:2px 6px;border-radius:4px}
+    pre{font-family:var(--mono);font-size:12px;background:#0f172a;color:#e2e8f0;padding:16px 20px;border-radius:10px;overflow-x:auto;margin:16px 0;line-height:1.6}
+
+    .layer-stack{margin:24px 0}
+    .layer-item{display:flex;align-items:stretch;margin-bottom:4px;border-radius:8px;overflow:hidden;min-height:48px}
+    .layer-label{width:150px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#fff;padding:12px;text-align:center}
+    .layer-desc{flex:1;display:flex;align-items:center;padding:12px 18px;font-size:13px;color:var(--text-secondary);background:var(--surface);border:1px solid var(--border);border-left:none}
+
+    .footer{text-align:center;padding:40px 24px 48px;border-top:1px solid var(--border);margin-top:60px;font-size:13px;color:var(--text-secondary)}
+    .footer a{color:var(--blue)}
+
+    @media(max-width:768px){
+      .hero-stats{gap:12px}
+      .compare-grid,.agent-grid,.fail-grid{grid-template-columns:1fr}
+      .chart-label{width:120px;font-size:12px}
+      .flow{flex-direction:column;gap:8px}
+      .flow-arrow{transform:rotate(90deg)}
+      .toc-grid{grid-template-columns:1fr}
+      .layer-item{flex-direction:column}
+      .layer-label{width:100%;min-height:auto}
+      .layer-desc{border-left:1px solid var(--border)}
+    }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href="../" class="nav-brand"><span>⚡</span><span>Engineering Notes</span></a>
+    <a href="../" class="nav-back">← Back to Hub</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="hero-inner">
+    <div class="hero-tag">🤖 Agent Architecture · Responses API · 深度解析</div>
+    <h1>从模型到智能体：为 Responses API 装备计算环境</h1>
+    <div class="sub">From Model to Agent: Equipping the Responses API with a Computer Environment · Published 2026-03-11 · OpenAI Engineering</div>
+    <div class="hero-stats">
+      <div class="hero-stat"><div class="v">5</div><div class="l">核心原语</div></div>
+      <div class="hero-stat"><div class="v">Shell</div><div class="l">执行工具</div></div>
+      <div class="hero-stat"><div class="v">容器</div><div class="l">隔离运行时</div></div>
+      <div class="hero-stat"><div class="v">Skills</div><div class="l">可复用工作流</div></div>
+    </div>
+  </div>
+</header>
+
+<div class="page">
+
+<nav class="toc">
+  <h3>📑 本文导航</h3>
+  <div class="toc-grid">
+    <a href="#s1"><span class="num">1</span>Shell Tool</a>
+    <a href="#s2"><span class="num">2</span>编排 Agent Loop</a>
+    <a href="#s3"><span class="num">3</span>Context Compaction</a>
+    <a href="#s4"><span class="num">4</span>Container Context</a>
+    <a href="#s5"><span class="num">5</span>Agent Skills</a>
+    <a href="#s6"><span class="num">6</span>Agent 全貌</a>
+  </div>
+</nav>
+
+<!-- ====== 1. Shell Tool ====== -->
+<section class="section" id="s1">
+  <h2>🖥️ Shell Tool：让模型操控计算机</h2>
+  <p class="lead">模型只能<strong>提议</strong>工具调用，不能直接执行。Shell Tool 让模型通过命令行与计算机交互——基于 Unix 工具链（<code>grep</code>、<code>curl</code>、<code>awk</code>），做任何命令行能做的事。</p>
+
+  <div class="compare-grid">
+    <div class="compare-card" style="background:#fef2f2;border-color:#fecaca">
+      <h4 style="color:#dc2626">❌ 仅靠 Prompt</h4>
+      <p>只能访问训练过的智能——无法运行服务、请求 API 数据、生成电子表格等实际产物。</p>
+    </div>
+    <div class="compare-card" style="background:#f0fdf4;border-color:#bbf7d0">
+      <h4 style="color:#16a34a">✅ 模型 + 计算环境</h4>
+      <p>运行服务、调用 API、处理文件、生成报告——从"文字生成器"进化为"任务执行者"。</p>
+    </div>
+  </div>
+
+  <div class="card" style="border-left:4px solid var(--blue)">
+    <h3>vs Code Interpreter</h3>
+    <p>Code Interpreter 只能执行 Python。Shell Tool 支持<strong>任意语言和运行时</strong>——Go、Java、Node.js 服务器等。这种灵活性让模型能完成复杂的 agentic tasks。</p>
+  </div>
+
+  <!-- Visualization 1: model + tool interaction -->
+  <div class="diagram">
+    <h4>模型如何使用 Tool</h4>
+    <div class="flow">
+      <div class="flow-step" style="max-width:100px">训练数据<br>学习 tool 用法</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step purple" style="max-width:100px">模型推理<br>决定何时用 tool</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step amber" style="max-width:110px">提议 Tool Call<br>生成命令</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step green" style="max-width:110px">平台执行<br>在容器中运行</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step" style="max-width:100px;background:linear-gradient(135deg,#0f172a,#334155)">结果反馈<br>喂回模型</div>
+    </div>
+  </div>
+</section>
+
+<!-- ====== 2. Agent Loop Orchestration ====== -->
+<section class="section" id="s2">
+  <h2>🔄 编排 Agent Loop</h2>
+  <p class="lead">Responses API 是模型与 hosted tools 之间的<strong>编排器</strong>——接收提示、组装上下文、执行命令、流式传回结果、循环直到完成。</p>
+
+  <!-- Visualization 2: agent loop diagram -->
+  <div class="diagram">
+    <h4>Responses API Agent Loop</h4>
+    <div style="position:relative;display:flex;flex-direction:column;align-items:center;gap:0;margin-top:16px">
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;justify-content:center">
+        <div class="flow-step" style="max-width:180px">1. 组装 Context<br><span style="font-weight:400;font-size:11px">user prompt + history + tool instructions</span></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step purple" style="max-width:150px">2. 模型决策<br><span style="font-weight:400;font-size:11px">选择 action 或 final answer</span></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step green" style="max-width:150px">3. 执行 Shell<br><span style="font-weight:400;font-size:11px">转发命令到容器</span></div>
+      </div>
+      <div style="font-size:18px;color:var(--blue);padding:8px 0">↓</div>
+      <div style="display:flex;align-items:center;gap:16px;flex-wrap:wrap;justify-content:center">
+        <div class="flow-step amber" style="max-width:180px">4. 流式输出<br><span style="font-weight:400;font-size:11px">近实时 relay 到模型</span></div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step" style="max-width:150px;background:linear-gradient(135deg,#0f172a,#334155)">5. 评估结果<br><span style="font-weight:400;font-size:11px">继续或返回最终答案</span></div>
+        <div style="font-size:14px;color:var(--text-secondary);padding:0 8px">↻ Loop</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="agent-grid">
+    <div class="agent-card">
+      <h4><span style="font-size:18px">⚡</span> 并行执行</h4>
+      <p>模型可一次提议多条 shell 命令，Responses API 在独立 container sessions 中<strong>并发执行</strong>，多路复用流式输出到结构化 tool outputs。</p>
+    </div>
+    <div class="agent-card">
+      <h4><span style="font-size:18px">📏</span> 有界输出</h4>
+      <p>模型为每条命令指定 <strong>output cap</strong>。API 保留首尾内容、标记省略部分，避免大量终端日志吞噬 context budget。</p>
+    </div>
+  </div>
+
+  <pre>text at the beginning ... 1000 chars truncated ... text at the end</pre>
+
+  <div class="block-q">
+    <p>"Together, concurrent execution and bounded output make the agent loop both fast and context-efficient so the model can keep reasoning over relevant results instead of getting overwhelmed by raw terminal logs."</p>
+  </div>
+</section>
+
+<!-- ====== 3. Compaction ====== -->
+<section class="section" id="s3">
+  <h2>📦 Context Window 满了怎么办：Compaction</h2>
+  <p class="lead">长时间运行的 agent 任务会填满 context window。OpenAI 内建了<strong>原生 compaction</strong>：模型分析对话历史，生成加密的 token 高效压缩表示。</p>
+
+  <!-- Visualization 3: compaction flow -->
+  <div class="diagram">
+    <h4>Compaction 工作流</h4>
+    <div class="flow">
+      <div class="flow-step" style="max-width:120px">长对话<br>Context 即将满</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step purple" style="max-width:130px">模型分析<br>识别关键状态</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step green" style="max-width:140px">生成 Compaction Item<br>加密 token 表示</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step" style="max-width:140px;background:linear-gradient(135deg,#0f172a,#334155)">新 Context<br>= Compaction + 高价值内容</div>
+    </div>
+  </div>
+
+  <div class="compare-grid">
+    <div class="compare-card" style="background:#f0f9ff;border-color:#bae6fd">
+      <h4 style="color:#0369a1">🖥️ Server-side Compaction</h4>
+      <p>配置阈值后<strong>自动处理</strong>压缩时机。支持稍大的有效 input context 窗口以容忍边界溢出——接近限制的请求可以处理后再压缩，而非直接拒绝。</p>
+    </div>
+    <div class="compare-card" style="background:#f5f3ff;border-color:#c4b5fd">
+      <h4 style="color:#6d28d9">🔌 /compact Endpoint</h4>
+      <p>独立端点，开发者可主动触发压缩。随模型训练演进，每个 OpenAI 模型发布的原生 compaction 方案自动升级。</p>
+    </div>
+  </div>
+
+  <div class="card" style="border-left:4px solid var(--amber)">
+    <h3>💡 Codex 的自我参照</h3>
+    <p>Codex 帮助构建了 compaction 系统，同时也是该系统的早期用户。当一个 Codex 实例遇到 compaction error，团队会启动第二个 Codex 实例来排查。<strong>"Most tools only require the user to learn how to use them; Codex learns alongside us."</strong></p>
+  </div>
+</section>
+
+<!-- ====== 4. Container Context ====== -->
+<section class="section" id="s4">
+  <h2>📂 Container Context：文件、数据库与网络</h2>
+  <p class="lead">容器不仅是运行命令的地方，更是模型的<strong>工作上下文</strong>——文件系统、结构化数据库和受控网络访问。</p>
+
+  <!-- Visualization 4: three pillars of container context -->
+  <div class="fail-grid">
+    <div class="fail-card" style="border-top:3px solid var(--blue)">
+      <div class="icon">📁</div>
+      <h4>文件系统</h4>
+      <p>上传、组织和管理资源。模型获得文件地图，执行<strong>定向文件操作</strong>而非盲目扫描。</p>
+    </div>
+    <div class="fail-card" style="border-top:3px solid var(--purple)">
+      <div class="icon">🗄️</div>
+      <h4>SQLite 数据库</h4>
+      <p>结构化数据存入数据库。模型通过表描述<strong>精准查询</strong>所需行，而非扫描整个电子表格。</p>
+    </div>
+    <div class="fail-card" style="border-top:3px solid var(--green)">
+      <div class="icon">🌐</div>
+      <h4>受控网络访问</h4>
+      <p>通过 sidecar egress proxy 强制执行 allowlists。凭证通过 <strong>domain-scoped secret injection</strong> 在出口注入。</p>
+    </div>
+  </div>
+
+  <div class="compare-grid">
+    <div class="compare-card" style="background:#fef2f2;border-color:#fecaca">
+      <h4 style="color:#dc2626">❌ Anti-pattern：全塞进 Prompt</h4>
+      <p>将所有输入直接打包到 prompt context。输入增长时变得<strong>昂贵</strong>且模型难以导航——效率低下。</p>
+    </div>
+    <div class="compare-card" style="background:#f0fdf4;border-color:#bbf7d0">
+      <h4 style="color:#16a34a">✅ Best practice：暂存到文件系统</h4>
+      <p>将资源暂存到容器文件系统，让模型决定打开、解析或用 shell 命令转换什么——就像人类处理组织化信息一样。</p>
+    </div>
+  </div>
+
+  <div class="card" style="border-left:4px solid var(--green)">
+    <h3>🔐 网络安全设计</h3>
+    <p>所有出站请求经过<strong>集中策略层</strong>，执行 allowlists 和访问控制并保持流量可观测。模型和容器只看到占位符（placeholders），原始 secret 值<strong>不进入模型可见上下文</strong>，只在批准的目标域注入。降低泄露风险的同时仍支持认证外部调用。</p>
+  </div>
+</section>
+
+<!-- ====== 5. Agent Skills ====== -->
+<section class="section" id="s5">
+  <h2>🧩 Agent Skills：可复用的工作流积木</h2>
+  <p class="lead">Shell 命令很强大，但许多任务重复相同的多步模式。Agent Skills 将这些模式打包为<strong>可复用、可组合的构建块</strong>。</p>
+
+  <div class="card">
+    <h3>Skill 的结构</h3>
+    <p>一个 skill 是一个文件夹 bundle：</p>
+    <ul>
+      <li><code>SKILL.md</code> — 元数据和指令</li>
+      <li>支持资源 — API specs、UI assets 等</li>
+    </ul>
+    <p style="margin-top:12px">这自然映射到前面的运行时架构：容器提供持久文件和执行上下文，shell tool 提供执行接口。模型可以通过 shell 命令（<code>ls</code>、<code>cat</code>）发现 skill 文件，解释指令并运行 skill 脚本——全部在同一个 agent loop 中。</p>
+  </div>
+
+  <!-- Visualization 5: skill loading timeline -->
+  <div class="timeline">
+    <div class="tl-item">
+      <div class="tl-dot"></div>
+      <div class="tl-phase">1. Fetch Skill Metadata</div>
+      <div class="tl-desc">获取 skill 的 name 和 description，用于模型判断是否相关。</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot"></div>
+      <div class="tl-phase">2. Fetch & Unpack Bundle</div>
+      <div class="tl-desc">获取 skill bundle，复制到容器中并解包。版本化存储在 OpenAI 平台。</div>
+    </div>
+    <div class="tl-item">
+      <div class="tl-dot"></div>
+      <div class="tl-phase">3. Update Model Context</div>
+      <div class="tl-desc">将 skill metadata 和容器路径注入模型上下文。模型渐进探索指令并通过 shell 执行脚本。</div>
+    </div>
+  </div>
+
+  <div class="block-q">
+    <p>"Agents have to rediscover the workflow each run — replanning, reissuing commands, and relearning conventions — leading to inconsistent results and wasted execution. Agent skills package those patterns into reusable, composable building blocks."</p>
+  </div>
+</section>
+
+<!-- ====== 6. How agents are made ====== -->
+<section class="section" id="s6">
+  <h2>🏭 Agent 全貌：五大原语的组合</h2>
+  <p class="lead">Responses API 提供编排，Shell Tool 提供执行，Container 提供运行上下文，Skills 叠加可复用工作流，Compaction 保障长时间运行——一个 prompt 就能展开端到端工作流。</p>
+
+  <!-- Visualization 6: full stack layer diagram -->
+  <div class="diagram">
+    <h4>Agent 原语栈</h4>
+    <div class="layer-stack">
+      <div class="layer-item">
+        <div class="layer-label" style="background:linear-gradient(135deg,#0369a1,#0284c7)">Responses API</div>
+        <div class="layer-desc">编排层 — 接收 prompt、组装 context、循环执行直到完成</div>
+      </div>
+      <div class="layer-item">
+        <div class="layer-label" style="background:linear-gradient(135deg,#0ea5e9,#38bdf8)">Shell Tool</div>
+        <div class="layer-desc">执行层 — 通过命令行运行任意操作（<code>grep</code>、<code>curl</code>、<code>python</code>、<code>node</code>...）</div>
+      </div>
+      <div class="layer-item">
+        <div class="layer-label" style="background:linear-gradient(135deg,#6366f1,#8b5cf6)">Container</div>
+        <div class="layer-desc">上下文层 — 文件系统 + SQLite + 受控网络 = 模型的工作环境</div>
+      </div>
+      <div class="layer-item">
+        <div class="layer-label" style="background:linear-gradient(135deg,#10b981,#34d399)">Agent Skills</div>
+        <div class="layer-desc">复用层 — 版本化 bundle 将多步模式打包为可发现、可组合的积木</div>
+      </div>
+      <div class="layer-item">
+        <div class="layer-label" style="background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#0f172a">Compaction</div>
+        <div class="layer-desc">持久层 — 压缩对话历史保留关键状态，支撑跨 context window 的长任务</div>
+      </div>
+    </div>
+  </div>
+
+  <div class="card">
+    <h3>🎯 端到端工作流示例</h3>
+    <p>一个 prompt 可以展开为：</p>
+    <div class="flow" style="margin-top:16px">
+      <div class="flow-step" style="max-width:110px">发现合适的 Skill</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step purple" style="max-width:100px">获取数据</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step teal" style="max-width:120px">转换为 SQLite</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step amber" style="max-width:110px">精准查询</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step green" style="max-width:120px">生成持久化产物</div>
+    </div>
+  </div>
+
+  <div class="tbl-wrap">
+    <table>
+      <thead>
+        <tr><th>原语</th><th>解决什么问题</th><th>关键特性</th></tr>
+      </thead>
+      <tbody>
+        <tr>
+          <td><strong>Responses API</strong></td>
+          <td>模型与 tool 之间的编排循环</td>
+          <td>streaming、并发执行、有界输出</td>
+        </tr>
+        <tr>
+          <td><strong>Shell Tool</strong></td>
+          <td>让模型实际执行操作</td>
+          <td>任意语言/运行时、Unix 工具链</td>
+        </tr>
+        <tr>
+          <td><strong>Container</strong></td>
+          <td>隔离运行环境 + 工作上下文</td>
+          <td>文件 API、SQLite、egress proxy</td>
+        </tr>
+        <tr>
+          <td><strong>Skills</strong></td>
+          <td>避免每次重新发现工作流</td>
+          <td>版本化 bundle、SKILL.md、平台 API</td>
+        </tr>
+        <tr>
+          <td><strong>Compaction</strong></td>
+          <td>长任务的 context 管理</td>
+          <td>原生压缩、server-side 自动、/compact endpoint</td>
+        </tr>
+      </tbody>
+    </table>
+  </div>
+
+  <div class="block-q">
+    <p>"Language models are meant to do more than generating text, images, and audio — we'll continue to evolve our platform to become more capable in handling complex, real-world tasks at scale."</p>
+  </div>
+
+  <p style="font-size:14px;color:var(--text-secondary);margin-top:32px">Source: <a href="https://openai.com/index/equip-responses-api-computer-environment/" target="_blank" rel="noopener" style="color:var(--blue)">openai.com/index/equip-responses-api-computer-environment</a></p>
+</section>
+
+</div>
+
+<footer class="footer">
+  <p><a href="../">← Engineering Notes Hub</a></p>
+  <p style="margin-top:8px">Source: <a href="https://openai.com/index/equip-responses-api-computer-environment/" target="_blank" rel="noopener">OpenAI Engineering Blog</a></p>
+</footer>
+
+</body>
+</html>

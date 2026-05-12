@@ -1,0 +1,318 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Unstructured Data Extraction: Turn Documents into Insights</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafbfc;
+      --surface: #fff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --amber: #d97706;
+      --amber-light: #fbbf24;
+      --amber-dark: #92400e;
+      --purple: #6366f1;
+      --teal: #14b8a6;
+      --green: #10b981;
+      --red: #ef4444;
+      --blue: #3b82f6;
+      --pink: #ec4899;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans SC', 'Inter', sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:var(--sans); background:var(--bg); color:var(--text); line-height:1.7; }
+
+    .nav { position:sticky; top:0; background:rgba(15,23,42,.92); backdrop-filter:blur(12px); z-index:100; border-bottom:1px solid rgba(255,255,255,.08); }
+    .nav-inner { max-width:1100px; margin:0 auto; padding:12px 24px; display:flex; justify-content:space-between; align-items:center; }
+    .nav-brand { color:#fbbf24; text-decoration:none; font-weight:700; display:flex; align-items:center; gap:8px; }
+    .nav-logo { font-size:20px; }
+    .nav a:last-child { font-size:13px; color:rgba(255,255,255,.6); text-decoration:none; }
+    .nav a:last-child:hover { color:#fbbf24; }
+
+    .hero { background:linear-gradient(135deg,#0f172a 0%,#78350f 50%,#d97706 100%); color:#fff; padding:60px 24px 48px; }
+    .hero-inner { max-width:1100px; margin:0 auto; }
+    .hero-tag { display:inline-block; background:rgba(251,191,36,.15); color:#fbbf24; padding:4px 14px; border-radius:20px; font-size:13px; font-weight:500; margin-bottom:16px; letter-spacing:.5px; }
+    .hero h1 { font-size:clamp(24px,4vw,42px); font-weight:800; line-height:1.2; margin-bottom:12px; }
+    .hero p { font-size:17px; color:rgba(255,255,255,.8); max-width:700px; margin-bottom:28px; line-height:1.6; }
+    .hero-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; max-width:600px; }
+    .stat { text-align:center; }
+    .stat-num { display:block; font-size:28px; font-weight:800; color:#fbbf24; font-family:var(--mono); }
+    .stat-label { font-size:12px; color:rgba(255,255,255,.6); text-transform:uppercase; letter-spacing:.5px; }
+
+    .page { max-width:1100px; margin:0 auto; padding:32px 24px 60px; }
+
+    .toc { margin-bottom:40px; }
+    .toc-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:10px; }
+    .toc-item { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); text-decoration:none; color:var(--text); font-size:14px; font-weight:500; transition:all .2s; }
+    .toc-item:hover { border-color:var(--amber); transform:translateY(-1px); box-shadow:0 4px 12px rgba(217,119,6,.1); }
+    .toc-num { font-size:16px; }
+
+    .section { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:32px; margin-bottom:24px; }
+    .section h2 { font-size:22px; font-weight:700; margin-bottom:12px; color:var(--text); }
+    .section h3 { font-size:17px; font-weight:600; margin:20px 0 8px; color:var(--amber-dark); }
+    .lead { color:var(--text-secondary); font-size:15px; margin-bottom:16px; line-height:1.7; }
+    .section p { margin-bottom:12px; font-size:15px; line-height:1.7; }
+
+    .chart { margin:20px 0; }
+    .chart-row { display:flex; align-items:center; margin-bottom:8px; }
+    .chart-label { width:160px; font-size:13px; font-weight:500; text-align:right; padding-right:12px; color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:28px; overflow:hidden; }
+    .chart-bar { height:100%; border-radius:8px; display:flex; align-items:center; padding-left:10px; font-size:12px; font-weight:600; color:#fff; transition:width .6s ease; min-width:40px; }
+    .chart-bar.amber { background:linear-gradient(90deg,#d97706,#f59e0b); }
+    .chart-bar.purple { background:linear-gradient(90deg,#6366f1,#818cf8); }
+    .chart-bar.teal { background:linear-gradient(90deg,#0d9488,#14b8a6); }
+    .chart-bar.green { background:linear-gradient(90deg,#059669,#10b981); }
+    .chart-bar.blue { background:linear-gradient(90deg,#2563eb,#3b82f6); }
+    .chart-bar.red { background:linear-gradient(90deg,#dc2626,#ef4444); }
+
+    .timeline { position:relative; padding-left:28px; margin:20px 0; }
+    .timeline::before { content:''; position:absolute; left:8px; top:0; bottom:0; width:3px; background:linear-gradient(180deg,#d97706,#6366f1,#14b8a6); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:20px; padding-left:16px; }
+    .tl-dot { position:absolute; left:-24px; top:4px; width:14px; height:14px; border-radius:50%; border:3px solid var(--amber); background:#fff; }
+    .tl-item:nth-child(2) .tl-dot { border-color:var(--purple); }
+    .tl-item:nth-child(3) .tl-dot { border-color:var(--teal); }
+    .tl-item:nth-child(4) .tl-dot { border-color:var(--green); }
+    .tl-item:nth-child(5) .tl-dot { border-color:var(--blue); }
+    .tl-phase { font-weight:600; font-size:15px; margin-bottom:4px; }
+    .tl-desc { font-size:13px; color:var(--text-secondary); line-height:1.5; }
+
+    .compare-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin:20px 0; }
+    .compare-card { padding:16px; border-radius:var(--radius); font-size:14px; line-height:1.6; }
+    .compare-card.old { background:#fef2f2; border:1px solid #fecaca; }
+    .compare-card.new { background:#f0fdf4; border:1px solid #bbf7d0; }
+
+    .flow { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:20px 0; }
+    .flow-step { padding:10px 18px; background:#f8fafc; border:2px solid var(--border); border-radius:var(--radius); font-size:13px; font-weight:600; text-align:center; }
+    .flow-step.purple { background:#eef2ff; border-color:var(--purple); color:var(--purple); }
+    .flow-arrow { color:var(--amber); font-size:20px; font-weight:700; }
+
+    .fail-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:20px 0; }
+    .fail-grid .card { padding:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); font-size:13px; line-height:1.6; }
+
+    .block-q { margin:20px 0; padding:20px 24px; background:linear-gradient(135deg,#fffbeb,#fef3c7); border-left:4px solid var(--amber); border-radius:0 var(--radius) var(--radius) 0; font-style:italic; color:#92400e; font-size:14px; line-height:1.7; }
+
+    .tbl-wrap { overflow-x:auto; margin:20px 0; }
+    table { width:100%; border-collapse:collapse; font-size:14px; }
+    th { background:#f8fafc; padding:10px 14px; text-align:left; font-weight:600; border-bottom:2px solid var(--border); white-space:nowrap; }
+    td { padding:10px 14px; border-bottom:1px solid var(--border); }
+    tr:hover td { background:#fffbeb; }
+
+    .badge { display:inline-block; padding:3px 10px; border-radius:12px; font-size:12px; font-weight:500; }
+    .badge-amber { background:#fffbeb; color:#92400e; }
+    .badge-purple { background:#eef2ff; color:#4338ca; }
+    .badge-green { background:#f0fdf4; color:#166534; }
+
+    .footer { background:#0f172a; color:rgba(255,255,255,.6); padding:32px 24px; text-align:center; font-size:13px; }
+    .footer a { color:#fbbf24; text-decoration:none; }
+    .footer a:hover { text-decoration:underline; }
+    .footer-links { display:flex; justify-content:center; gap:24px; margin-bottom:12px; flex-wrap:wrap; }
+
+    @media(max-width:768px) {
+      .hero-stats { grid-template-columns:repeat(2,1fr); }
+      .compare-grid, .fail-grid { grid-template-columns:1fr; }
+      .chart-label { width:100px; font-size:12px; }
+      .flow { flex-direction:column; gap:6px; }
+      .flow-arrow { transform:rotate(90deg); }
+      .toc-grid { grid-template-columns:1fr; }
+      .section { padding:20px 16px; }
+      .hero { padding:40px 16px 32px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="../" class="nav-brand">
+        <span class="nav-logo">🦙</span>
+        <span>LlamaIndex Blog Hub</span>
+      </a>
+      <a href="./">← Back to Hub</a>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="hero-tag">文档处理</div>
+      <h1>Unstructured Data Extraction: Turn Documents into Insights</h1>
+      <p>The average enterprise has tens of thousands of documents (purchase orders, invoices, compliance reports, customer emails, legal contracts) and most of their analytics infrastructure touches almost none of it. According to IDC, [90% of enterprise data is unstructured](https://blog.box.com/90-your-da</p>
+      <div class="hero-stats">
+        <div class="stat"><span class="stat-num">11</span><span class="stat-label">核心章节</span></div><div class="stat"><span class="stat-num">8</span><span class="stat-label">关键概念</span></div><div class="stat"><span class="stat-num">7min</span><span class="stat-label">阅读时长</span></div><div class="stat"><span class="stat-num">1961</span><span class="stat-label">总字数</span></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc"><div class="toc-grid">
+  <a href="#s0" class="toc-item"><span class="toc-num">🔍</span>Understanding the Spectrum: Structured, Semi-Structured, and Unstructured</a>
+  <a href="#s1" class="toc-item"><span class="toc-num">💡</span>How It Works: The AI Stack</a>
+  <a href="#s2" class="toc-item"><span class="toc-num">⚙️</span>The Extraction Workflow, Step by Step</a>
+  <a href="#s3" class="toc-item"><span class="toc-num">📊</span>Advanced Techniques: Getting More from LLM Prompts</a>
+  <a href="#s4" class="toc-item"><span class="toc-num">🔄</span>Use Cases: Where Extraction Creates Real Value</a>
+  <a href="#s8" class="toc-item"><span class="toc-num">🚀</span>The LlamaParse Approach</a>
+  <a href="#s9" class="toc-item"><span class="toc-num">📈</span>Best Practices and What&#x27;s Coming in 2026</a>
+  <a href="#s10" class="toc-item"><span class="toc-num">🧪</span>Conclusion</a>
+</div></nav>
+
+    <section class="section" id="s0">
+  <h2>🔍 Understanding the Spectrum: Structured, Semi-Structured, and Unstructured</h2>
+  <p class="lead">Not all data is equally hard to work with, but it’s more so a spectrum.</p>
+  <p>Structured data lives at one end, including SQL databases, Excel spreadsheets, ERP exports, where information is organized into rows and columns with a defined schema. Because each field has a known location and format, querying and analysis are straightforward. Semi-structured data sits in the middle. Formats such as JSON, XML, CSV files, log files include organizational markers but do not enforce a rigid schema. An API response might give you the same fields every time, or it might not. Unstructured data is everything else: emails, PDFs, Word documents, scanned contracts, transcripts. These documents are written for humans rather than machines, so there’s no consistent structure.. Two invoices from different vendors can describe the exact same transaction in completely different layouts.</p>
+  <p>Most extraction work involves pulling structured fields from unstructured sources. You&#x27;re essentially dealing with potentially thousands of oddly formatted documents, and they all look a little different.</p>
+<div class="chart">
+  <div class="chart-row">
+    <div class="chart-label">Structured data</div>
+    <div class="chart-bar-wrap">
+      <div class="chart-bar amber" style="width:95%"></div>
+    </div>
+  </div>
+  <div class="chart-row">
+    <div class="chart-label">Semi-structured data</div>
+    <div class="chart-bar-wrap">
+      <div class="chart-bar purple" style="width:83%"></div>
+    </div>
+  </div>
+  <div class="chart-row">
+    <div class="chart-label">Unstructured data</div>
+    <div class="chart-bar-wrap">
+      <div class="chart-bar teal" style="width:71%"></div>
+    </div>
+  </div>
+</div>
+</section>
+<section class="section" id="s1">
+  <h2>💡 How It Works: The AI Stack</h2>
+  <p class="lead">Until recently, unstructured data extraction meant writing brittle rule-based parsers: regex patterns, template matchers, keyword extractors. They work until the format changes, and then they break.</p>
+  <p>The modern approach, on the other hand, relies on three layers.</p>
+  <p>Natural Language Processing (NLP) gives algorithms the ability to read context rather than just match characters. Instead of searching for a literal string, NLP lets a model understand that &quot;due in 30 days&quot; and &quot;net-30 payment terms&quot; mean the same thing.</p>
+  <p>Named Entity Recognition (NER) goes further: it identifies and classifies specific pieces of information (names, dates, currencies, addresses, organization names, product identifiers) within unstructured text. A well-trained NER model can scan a 40-page contract and extract every date reference with high reliability. Training domain-specific NER models pays off quickly at scale, though out-of-box models handle the most common entities (dates, monetary values, organization names) well enough for many use cases without customization.</p>
+  <p>Large Language Models (LLMs) are where the real flexibility comes in. Instead of training a custom NER model for every document type, you describe what you want in plain language and let the model figure out how to extract it. This zero-shot capability (extracting information without domain-specific training examples) cuts the cost of adding new document types to your pipeline considerably. A model that has been trained on large volumes of document data can often generalize to common document types without requiring teams to manually label extensive training examples for each new format.</p>
+<div class="timeline">
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Understanding the Spectrum: Structured, Semi-Structured, and Unstructured</div>
+    <div class="tl-desc">Not all data is equally hard to work with, but it’s more so a spectrum.
+
+
+
+
+
+
+-  Structured data lives at one end, i</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">How It Works: The AI Stack</div>
+    <div class="tl-desc">Until recently, unstructured data extraction meant writing brittle rule-based parsers: regex patterns, template matchers</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">The Extraction Workflow, Step by Step</div>
+    <div class="tl-desc">Getting the components right is the easy part. Getting them to work together in a real pipeline is where things actually</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Advanced Techniques: Getting More from LLM Prompts</div>
+    <div class="tl-desc">The workflow above gets you started. Production pipelines handling thousands of documents daily need more precision on a</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Use Cases: Where Extraction Creates Real Value</div>
+    <div class="tl-desc">Unstructured data extraction isn&#x27;t a solution looking for a problem. It shows up in real workflows with real stakes.</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Media and Competitive Intelligence</div>
+    <div class="tl-desc">Marketing and strategy teams monitor competitors, track brand mentions, and aggregate industry news, all of which arrive</div>
+  </div>
+</div>
+</section>
+<section class="section" id="s2">
+  <h2>⚙️ The Extraction Workflow, Step by Step</h2>
+  <p class="lead">Getting the components right is the easy part. Getting them to work together in a real pipeline is where things actually get complicated. Here’s what it looks like.</p>
+  <p>Ingestion. Documents arrive from cloud storage, email attachments, API endpoints, or internal repositories. This step handles format normalization: your pipeline needs to accept PDFs, DOCXs, images, HTML, and whatever else your source systems produce. Pre-processing. Raw input text is always messier than you expect. Scanned PDFs need OCR to become machine-readable. Long documents need chunking strategies to fit within model context windows. Boilerplate (headers, footers, legal disclaimers that appear on every page) should be stripped so it doesn&#x27;t contaminate extraction results. Prompting and extraction. You specify what you want: a JSON schema of target fields, a list of entities to identify, or a set of questions to answer. The LLM extracts it from the prepared text. The quality of your prompt and schema determines the quality of your output. Validation. Cross-reference extracted data against known values where possible. Is that company name in your database? Does the date fall within a plausible range? Does the total match the sum of line items? Automated validation catches obvious errors before they hit downstream systems. When validation fails, records either route to a human review queue or trigger a second extraction pass with a revised prompt. Which path makes sense depends on the stakes and your throughput requirements. Output and integration. Clean, validated data goes to whatever format the downstream system needs: JSON for an API, CSV for a spreadsheet, a direct database insert.</p>
+<div class="compare-grid">
+  <div class="compare-card old"><strong>❌</strong> Documents arrive from cloud storage, email attachments, API endpoints, or internal repositories. This step handles format normalization: your pipeline needs to accept PDFs, DOCXs, images, HTML, and whatever else your source systems produce.</div>
+  <div class="compare-card new"><strong>✅</strong> Raw input text is always messier than you expect. Scanned PDFs need OCR to become machine-readable. Long documents need chunking strategies to fit within model context windows. Boilerplate (headers, footers, legal disclaimers that appear on every page) should be stripped so it doesn&#x27;t contaminate extraction results.</div>
+  <div class="compare-card old"><strong>❌</strong> You specify what you want: a JSON schema of target fields, a list of entities to identify, or a set of questions to answer. The LLM extracts it from the prepared text. The quality of your prompt and schema determines the quality of your output.</div>
+  <div class="compare-card new"><strong>✅</strong> Cross-reference extracted data against known values where possible. Is that company name in your database? Does the date fall within a plausible range? Does the total match the sum of line items? Automated validation catches obvious errors before they hit downstream systems. When validation fails, records either route to a human review queue or trigger a second extraction pass with a revised prompt. Which path makes sense depends on the stakes and your throughput requirements.</div>
+</div>
+</section>
+<section class="section" id="s3">
+  <h2>📊 Advanced Techniques: Getting More from LLM Prompts</h2>
+  <p class="lead">The workflow above gets you started. Production pipelines handling thousands of documents daily need more precision on a few fronts.</p>
+  <p>The first is zero-shot vs. few-shot extraction. Zero-shot asks the model to extract fields based purely on your schema and instructions, without requiring any examples. This works well for common document types because the model has seen enough of them in training. Few-shot adds examples to the prompt. It costs more tokens but improves accuracy on unusual formats or edge cases.</p>
+  <p>The second is schema enforcement: getting the model to return data in a format your code can actually consume. LLMs are probabilistic. Count on occasional malformed JSON or extra commentary that breaks a downstream parser. Using Pydantic models or JSON mode constrains the output structure and cuts those errors sharply.</p>
+  <p>The third is context window management. A 200-page financial filing doesn&#x27;t fit in a single prompt. Chunking strategies (sliding windows, semantic chunking, hierarchical summarization) determine how you partition a document without losing context that spans sections. Get this wrong and your extraction misses relationships between different parts of the same document.</p>
+</section>
+<section class="section" id="s4">
+  <h2>🔄 Use Cases: Where Extraction Creates Real Value</h2>
+  <p class="lead">Unstructured data extraction isn&#x27;t a solution looking for a problem. It shows up in real workflows with real stakes.</p>
+  <h3>Media and Competitive Intelligence</h3>
+  <p>Marketing and strategy teams monitor competitors, track brand mentions, and aggregate industry news, all of which arrive as unstructured text. Extraction pipelines turn news articles, earnings call transcripts, and press releases into structured feeds that analysts can query and track over time.</p>
+  <h3>Legal and Financial Document Analysis</h3>
+  <p>Contract review is one of the most time-consuming tasks in any legal or finance team. An extraction pipeline that identifies indemnification clauses, change-of-control provisions, payment terms, and renewal dates across thousands of contracts turns weeks of manual review into a query. The same logic applies to financial statements: pulling revenue figures, EPS, and risk disclosures from SEC filings at scale.</p>
+  <h3>Healthcare and Clinical Research</h3>
+  <p>Patient notes, clinical trial reports, and medical literature are almost entirely unstructured. Extracting structured data from them (diagnoses, medications, dosages, adverse events) powers everything from pharmacovigilance systems to clinical decision support tools. The scale difference is meaningful. Teams manually reviewing adverse event reports might process a few hundred cases weekly. A well-tuned pipeline handles the same volume overnight.</p>
+</section>
+<section class="section" id="s8">
+  <h2>🚀 The LlamaParse Approach</h2>
+  <p class="lead">Most extraction pipelines hit the same ceiling. Traditional OCR tools are deterministic pattern-matchers: accurate when documents follow predictable layouts, brittle when they don&#x27;t. Complex tables, e</p>
+  <p>LlamaParse (LlamaIndex) is built differently. Rather than applying a single OCR model to every document, LlamaParse uses agentic orchestration to route each element (text blocks, tables, figures, charts) to the combination of models (traditional OCR, vision language models, layout analyzers) that will produce the most accurate result. A dense financial table takes a different model path than a paragraph of body text.</p>
+  <p>In practice, this means LlamaParse handles the document types that break traditional pipelines (dense tables, multi-modal content, irregular layouts) without custom training when you add a new document type. You don&#x27;t have to teach it your invoices. A few capabilities worth calling out:</p>
+  <p>Multi-modal understanding: LlamaParse processes text, images, charts, and tables together. A chart that summarizes data described in adjacent text gets parsed with both in context, not as two disconnected elements. Multiple validation loops: Confidence scores and source citations let downstream systems (or human reviewers) know exactly how reliable each extracted field is before it leaves the pipeline. Flexible output formats: Markdown, JSON, or HTML, depending on what your downstream system needs.</p>
+  <p>For teams who need structured extraction on top of parsed output, LlamaParse lets you define a target schema and populate it consistently across thousands of documents. It’s free to try with 10,000 credits upon signup.</p>
+<div class="chart">
+  <div class="chart-row">
+    <div class="chart-label">Multi-modal understanding</div>
+    <div class="chart-bar-wrap">
+      <div class="chart-bar amber" style="width:95%"></div>
+    </div>
+  </div>
+  <div class="chart-row">
+    <div class="chart-label">Multiple validation loops</div>
+    <div class="chart-bar-wrap">
+      <div class="chart-bar purple" style="width:83%"></div>
+    </div>
+  </div>
+  <div class="chart-row">
+    <div class="chart-label">Flexible output formats</div>
+    <div class="chart-bar-wrap">
+      <div class="chart-bar teal" style="width:71%"></div>
+    </div>
+  </div>
+</div>
+</section>
+<section class="section" id="s9">
+  <h2>📈 Best Practices and What&#x27;s Coming in 2026</h2>
+  <p class="lead">A few things to get right before you scale.</p>
+  <p>PII handling. Documents contain personally identifiable information: names, addresses, account numbers, health data. Your pipeline needs to account for consent, retention policies, and regional compliance requirements (GDPR, HIPAA, CCPA). Identifying and masking PII before data reaches storage is much easier than cleaning it up afterward.</p>
+  <p>Human-in-the-loop validation. Automated extraction is accurate but not infallible, and the stakes vary. A miscategorized product code in an order processing system is a minor inconvenience. A misread indemnification clause in a liability contract can cost real money. Those aren&#x27;t the same problem. High-stakes document types need review workflows where humans can inspect and override low-confidence extractions. Confidence scores and source citations make this practical rather than requiring full manual review.</p>
+  <p>Agentic extraction is maturing. Current practice involves humans defining schemas and prompts upfront, then tuning when accuracy dips. The near-term direction is systems that observe document types, infer the right extraction approach, and iterate on their own prompts. LlamaParse is already building toward this: autonomous document agents that handle routing, validation, and correction without constant prompt engineering.</p>
+</section>
+<section class="section" id="s10">
+  <h2>🧪 Conclusion</h2>
+  <p class="lead">The 80% of enterprise data locked in unstructured documents isn&#x27;t going anywhere. If anything, it&#x27;s growing. More emails, more contracts, more reports, more PDFs every quarter. The organizations build</p>
+  <p>Getting extraction right means picking the right stack (NLP, NER, LLMs, schema enforcement), the right workflow (ingestion through validation), and tools that can handle complex real-world documents without constant retraining. That last part is where most traditional OCR solutions fall short.</p>
+  <p>LlamaParse is built for the document types that break traditional pipelines (dense tables, embedded images, irregular layouts) and produces clean, structured, AI-ready output without custom model training. It&#x27;s free to try, and you get 10,000 credits on signup. If you&#x27;re building a document intelligence pipeline, that&#x27;s where to start.</p>
+</section>
+
+    
+  </div>
+
+  <footer class="footer">
+    <div class="footer-links">
+      <a href="./">LlamaIndex Blog Hub</a>
+      <a href="https://www.llamaindex.ai/blog/unstructured-data-extraction" target="_blank" rel="noopener">原文链接 Original</a>
+      <a href="../">Engineering Blogs Hub</a>
+    </div>
+    <p>Generated from LlamaIndex blog content for learning purposes.</p>
+  </footer>
+</body>
+</html>

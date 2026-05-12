@@ -1,0 +1,261 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Document AI Guide: Agentic OCR &amp; Workflows | LlamaIndex</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafbfc;
+      --surface: #fff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --amber: #d97706;
+      --amber-light: #fbbf24;
+      --amber-dark: #92400e;
+      --purple: #6366f1;
+      --teal: #14b8a6;
+      --green: #10b981;
+      --red: #ef4444;
+      --blue: #3b82f6;
+      --pink: #ec4899;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans SC', 'Inter', sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:var(--sans); background:var(--bg); color:var(--text); line-height:1.7; }
+
+    .nav { position:sticky; top:0; background:rgba(15,23,42,.92); backdrop-filter:blur(12px); z-index:100; border-bottom:1px solid rgba(255,255,255,.08); }
+    .nav-inner { max-width:1100px; margin:0 auto; padding:12px 24px; display:flex; justify-content:space-between; align-items:center; }
+    .nav-brand { color:#fbbf24; text-decoration:none; font-weight:700; display:flex; align-items:center; gap:8px; }
+    .nav-logo { font-size:20px; }
+    .nav a:last-child { font-size:13px; color:rgba(255,255,255,.6); text-decoration:none; }
+    .nav a:last-child:hover { color:#fbbf24; }
+
+    .hero { background:linear-gradient(135deg,#0f172a 0%,#78350f 50%,#d97706 100%); color:#fff; padding:60px 24px 48px; }
+    .hero-inner { max-width:1100px; margin:0 auto; }
+    .hero-tag { display:inline-block; background:rgba(251,191,36,.15); color:#fbbf24; padding:4px 14px; border-radius:20px; font-size:13px; font-weight:500; margin-bottom:16px; letter-spacing:.5px; }
+    .hero h1 { font-size:clamp(24px,4vw,42px); font-weight:800; line-height:1.2; margin-bottom:12px; }
+    .hero p { font-size:17px; color:rgba(255,255,255,.8); max-width:700px; margin-bottom:28px; line-height:1.6; }
+    .hero-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; max-width:600px; }
+    .stat { text-align:center; }
+    .stat-num { display:block; font-size:28px; font-weight:800; color:#fbbf24; font-family:var(--mono); }
+    .stat-label { font-size:12px; color:rgba(255,255,255,.6); text-transform:uppercase; letter-spacing:.5px; }
+
+    .page { max-width:1100px; margin:0 auto; padding:32px 24px 60px; }
+
+    .toc { margin-bottom:40px; }
+    .toc-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:10px; }
+    .toc-item { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); text-decoration:none; color:var(--text); font-size:14px; font-weight:500; transition:all .2s; }
+    .toc-item:hover { border-color:var(--amber); transform:translateY(-1px); box-shadow:0 4px 12px rgba(217,119,6,.1); }
+    .toc-num { font-size:16px; }
+
+    .section { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:32px; margin-bottom:24px; }
+    .section h2 { font-size:22px; font-weight:700; margin-bottom:12px; color:var(--text); }
+    .section h3 { font-size:17px; font-weight:600; margin:20px 0 8px; color:var(--amber-dark); }
+    .lead { color:var(--text-secondary); font-size:15px; margin-bottom:16px; line-height:1.7; }
+    .section p { margin-bottom:12px; font-size:15px; line-height:1.7; }
+
+    .chart { margin:20px 0; }
+    .chart-row { display:flex; align-items:center; margin-bottom:8px; }
+    .chart-label { width:160px; font-size:13px; font-weight:500; text-align:right; padding-right:12px; color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:28px; overflow:hidden; }
+    .chart-bar { height:100%; border-radius:8px; display:flex; align-items:center; padding-left:10px; font-size:12px; font-weight:600; color:#fff; transition:width .6s ease; min-width:40px; }
+    .chart-bar.amber { background:linear-gradient(90deg,#d97706,#f59e0b); }
+    .chart-bar.purple { background:linear-gradient(90deg,#6366f1,#818cf8); }
+    .chart-bar.teal { background:linear-gradient(90deg,#0d9488,#14b8a6); }
+    .chart-bar.green { background:linear-gradient(90deg,#059669,#10b981); }
+    .chart-bar.blue { background:linear-gradient(90deg,#2563eb,#3b82f6); }
+    .chart-bar.red { background:linear-gradient(90deg,#dc2626,#ef4444); }
+
+    .timeline { position:relative; padding-left:28px; margin:20px 0; }
+    .timeline::before { content:''; position:absolute; left:8px; top:0; bottom:0; width:3px; background:linear-gradient(180deg,#d97706,#6366f1,#14b8a6); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:20px; padding-left:16px; }
+    .tl-dot { position:absolute; left:-24px; top:4px; width:14px; height:14px; border-radius:50%; border:3px solid var(--amber); background:#fff; }
+    .tl-item:nth-child(2) .tl-dot { border-color:var(--purple); }
+    .tl-item:nth-child(3) .tl-dot { border-color:var(--teal); }
+    .tl-item:nth-child(4) .tl-dot { border-color:var(--green); }
+    .tl-item:nth-child(5) .tl-dot { border-color:var(--blue); }
+    .tl-phase { font-weight:600; font-size:15px; margin-bottom:4px; }
+    .tl-desc { font-size:13px; color:var(--text-secondary); line-height:1.5; }
+
+    .compare-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin:20px 0; }
+    .compare-card { padding:16px; border-radius:var(--radius); font-size:14px; line-height:1.6; }
+    .compare-card.old { background:#fef2f2; border:1px solid #fecaca; }
+    .compare-card.new { background:#f0fdf4; border:1px solid #bbf7d0; }
+
+    .flow { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:20px 0; }
+    .flow-step { padding:10px 18px; background:#f8fafc; border:2px solid var(--border); border-radius:var(--radius); font-size:13px; font-weight:600; text-align:center; }
+    .flow-step.purple { background:#eef2ff; border-color:var(--purple); color:var(--purple); }
+    .flow-arrow { color:var(--amber); font-size:20px; font-weight:700; }
+
+    .fail-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:20px 0; }
+    .fail-grid .card { padding:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); font-size:13px; line-height:1.6; }
+
+    .block-q { margin:20px 0; padding:20px 24px; background:linear-gradient(135deg,#fffbeb,#fef3c7); border-left:4px solid var(--amber); border-radius:0 var(--radius) var(--radius) 0; font-style:italic; color:#92400e; font-size:14px; line-height:1.7; }
+
+    .tbl-wrap { overflow-x:auto; margin:20px 0; }
+    table { width:100%; border-collapse:collapse; font-size:14px; }
+    th { background:#f8fafc; padding:10px 14px; text-align:left; font-weight:600; border-bottom:2px solid var(--border); white-space:nowrap; }
+    td { padding:10px 14px; border-bottom:1px solid var(--border); }
+    tr:hover td { background:#fffbeb; }
+
+    .badge { display:inline-block; padding:3px 10px; border-radius:12px; font-size:12px; font-weight:500; }
+    .badge-amber { background:#fffbeb; color:#92400e; }
+    .badge-purple { background:#eef2ff; color:#4338ca; }
+    .badge-green { background:#f0fdf4; color:#166534; }
+
+    .footer { background:#0f172a; color:rgba(255,255,255,.6); padding:32px 24px; text-align:center; font-size:13px; }
+    .footer a { color:#fbbf24; text-decoration:none; }
+    .footer a:hover { text-decoration:underline; }
+    .footer-links { display:flex; justify-content:center; gap:24px; margin-bottom:12px; flex-wrap:wrap; }
+
+    @media(max-width:768px) {
+      .hero-stats { grid-template-columns:repeat(2,1fr); }
+      .compare-grid, .fail-grid { grid-template-columns:1fr; }
+      .chart-label { width:100px; font-size:12px; }
+      .flow { flex-direction:column; gap:6px; }
+      .flow-arrow { transform:rotate(90deg); }
+      .toc-grid { grid-template-columns:1fr; }
+      .section { padding:20px 16px; }
+      .hero { padding:40px 16px 32px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="../" class="nav-brand">
+        <span class="nav-logo">🦙</span>
+        <span>LlamaIndex Blog Hub</span>
+      </a>
+      <a href="./">← Back to Hub</a>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="hero-tag">文档处理</div>
+      <h1>Document AI Guide: Agentic OCR &amp; Workflows | LlamaIndex</h1>
+      <p>*How agentic OCR and LLM-powered workflows transform automation and accuracy.*</p>
+      <div class="hero-stats">
+        <div class="stat"><span class="stat-num">10</span><span class="stat-label">核心章节</span></div><div class="stat"><span class="stat-num">8</span><span class="stat-label">关键概念</span></div><div class="stat"><span class="stat-num">5min</span><span class="stat-label">阅读时长</span></div><div class="stat"><span class="stat-num">1493</span><span class="stat-label">总字数</span></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc"><div class="toc-grid">
+  <a href="#s0" class="toc-item"><span class="toc-num">🔍</span>**The Landscape: Why Document AI Matters**</a>
+  <a href="#s2" class="toc-item"><span class="toc-num">⚙️</span>**From OCR + RPA to Agentic Systems**</a>
+  <a href="#s3" class="toc-item"><span class="toc-num">📊</span>**Agentic OCR: Reading with Comprehension**</a>
+  <a href="#s4" class="toc-item"><span class="toc-num">🔄</span>**Agent Workflows: From Rules to Reasoning**</a>
+  <a href="#s5" class="toc-item"><span class="toc-num">🎯</span>**Measuring Success: Pass-Through and Error Handling**</a>
+  <a href="#s6" class="toc-item"><span class="toc-num">📋</span>**How Document AI Operates**</a>
+  <a href="#s7" class="toc-item"><span class="toc-num">🔧</span>**Business Impact and Measurable Gains**</a>
+  <a href="#s8" class="toc-item"><span class="toc-num">🚀</span>**Building with LlamaIndex**</a>
+  <a href="#s9" class="toc-item"><span class="toc-num">📈</span>**The Future of Document AI**</a>
+</div></nav>
+
+    <section class="section" id="s0">
+  <h2>🔍 **The Landscape: Why Document AI Matters**</h2>
+  <p class="lead">Every organization runs on documents: invoices, contracts, reports, receipts, and compliance forms. For years, these were handled by a patchwork of systems like OCR (optical character recognition), ID</p>
+  <p>Traditional systems work well on predictable layouts but struggle with real-world complexity. Layout changes, images, tables, charts, or handwritten notes often break automated pipelines and force manual review. Businesses spend large sums maintaining templates and retraining models for each new document style.</p>
+  <p>Document AI represents a new category of automation. Powered by large language models (LLMs), it doesn’t just extract text, it understands meaning, reasons through context, and takes action. Instead of isolated components, Document AI acts as a connected intelligence layer that reads, reasons, and executes.</p>
+<div class="flow">
+  <div class="flow-step">The Landscape: Why Document AI Matters</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">OCR</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">IDP</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">RPA</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step purple">Document AI</div>
+</div>
+</section>
+<section class="section" id="s2">
+  <h2>⚙️ **From OCR + RPA to Agentic Systems**</h2>
+  <p class="lead">Legacy document systems follow a rigid sequence: extract, classify, then act. They can only automate what they are explicitly trained to recognize.</p>
+  <p>Document AI replaces this with agentic systems that reason across the entire process. These systems combine two core capabilities:</p>
+  <p>Agentic OCR: Vision-language models that interpret visual and semantic structure rather than pixels. Agentic Workflows: LLM-based reasoning pipelines that coordinate multi-step logic, error recovery, and decision-making.</p>
+  <p>Together, these form the basis of more generalized, and complex automation over traditional document workflows often called document AI, a term coined to describe a new generation of intelligent, self-improving document systems.</p>
+</section>
+<section class="section" id="s3">
+  <h2>📊 **Agentic OCR: Reading with Comprehension**</h2>
+  <p class="lead">Advanced Layout Detection and Correction Loops</p>
+  <p>Traditional OCR operates like a camera. It can see words on a page but not the relationships between them. Agentic OCR acts more like a reader: it perceives layout, understands semantics, and adapts to new document formats without retraining.</p>
+  <p>When a new invoice arrives, a traditional OCR engine depends on layout templates to find fields like the vendor name or total amount, and if the layout changes, accuracy drops—often leaving you with a noisy text dump where you must rely on heuristics like searching for “Total” and grabbing the next amount-like token or scanning for patterns that resemble an address. Agentic OCR, powered by multimodal large vision-language models (VLMs), avoids these brittle approaches by reasoning through structure dynamically: it understands page layout and reading order, identifies tables, infers headers, interprets figures, and can even extract meaning from charts or embedded images. In other words, it “reads” documents the way humans do, contextually and flexibly,far surpassing the legacy template-driven methods many older tools were built around.</p>
+  <p>This contextual understanding dramatically improves pass-through rates, the percentage of documents processed end to end without manual review. Legacy OCR pipelines often plateau around 60–70 percent automation because they break under layout variance. Agentic OCR can push pass-through rates beyond 90 percent by generalizing across unseen document types and reasoning through structural noise.</p>
+  <p>Error handling also improves significantly. Instead of failing silently or producing garbled results, an agentic OCR system self-evaluates. It can flag uncertain fields, ask clarifying questions through an agent loop, or retry parsing with adjusted parameters. The result is a more resilient pipeline that not only extracts information accurately but also knows when it might be wrong, and self correct.</p>
+  <p>Multimodality</p>
+</section>
+<section class="section" id="s4">
+  <h2>🔄 **Agent Workflows: From Rules to Reasoning**</h2>
+  <p class="lead">Traditional RPA scripts follow fixed “if-then” rules. If a document deviates from expectations or is misclassified, the process fails.</p>
+  <p>Agentic workflows integrate LLM reasoning to plan and adapt dynamically. If an invoice lacks a vendor name, an agentic workflow might search the header and infer the correct match. It uses logic and retrieval to fill gaps rather than stopping execution.</p>
+  <p>These workflows maintain state across steps and use memory to recall past actions. They invoke tools for validation, calculations, or lookups when needed. When an error occurs, the agent analyzes why it failed and retries intelligently. For instance, if totals do not reconcile, it can recheck tables, adjust parsing, or escalate to human review with a structured explanation.</p>
+  <p>This reasoning-first approach allows workflows to achieve higher automation without losing accuracy. Pass-through rates rise not because the system ignores errors, but because it handles them intelligently.</p>
+</section>
+<section class="section" id="s5">
+  <h2>🎯 **Measuring Success: Pass-Through and Error Handling**</h2>
+  <p class="lead">Two metrics define the effectiveness of Document AI systems: pass-through rate and error recovery efficiency.</p>
+  <p>Pass-through rate reflects how many documents are processed automatically end to end. In traditional IDP systems, every new format reduces this rate because retraining and template updates are required. Agentic OCR and LLM reasoning remove that bottleneck by generalizing beyond training data.</p>
+  <p>Error handling efficiency measures how the system responds when issues arise. Legacy systems usually stop at the first failure, while agentic systems attempt corrections, request clarification, and record learnings. Over time, this leads to compounding improvement as the workflow learns from every exception.</p>
+  <p>Organizations adopting Document AI report lower exception volumes, faster turnaround, and fewer downstream errors. The result is not only faster document handling but smarter automation that continually improves.</p>
+</section>
+<section class="section" id="s6">
+  <h2>📋 **How Document AI Operates**</h2>
+  <p class="lead">Document AI typically includes four stages that work in concert:</p>
+  <p>Ingestion and Parsing – Documents are imported, raw data are extracted, common corruptions and errors are fixed. Understanding and Extraction – Agentic OCR interprets layout, identifies entities, and converts information into structured data. Reasoning and Validation – LLM agents apply logic to verify totals, match entities, and resolve inconsistencies. Action and Learning – The agent completes downstream actions such as posting data to an ERP system, then logs its reasoning for traceability and model improvement.</p>
+  <p>Frameworks like LlamaIndex provide the tools to build these intelligent workflows, handling state, retrieval, and orchestration so developers can focus on reasoning quality and workflow design.</p>
+<div class="fail-grid">
+  <div class="card"><strong>Ingestion and Parsing</strong><br>– Documents are imported, raw data are extracted, common corruptions and errors are fixed.</div>
+  <div class="card"><strong>Understanding and Extraction</strong><br>– Agentic OCR interprets layout, identifies entities, and converts information into structured data.</div>
+  <div class="card"><strong>Reasoning and Validation</strong><br>– LLM agents apply logic to verify totals, match entities, and resolve inconsistencies.</div>
+  <div class="card"><strong>Action and Learning</strong><br>– The agent completes downstream actions such as posting data to an ERP system, then logs its reasoning for traceability and model improvement.</div>
+</div>
+</section>
+<section class="section" id="s7">
+  <h2>🔧 **Business Impact and Measurable Gains**</h2>
+  <p class="lead">The impact of Document AI is already visible across industries. Enterprises using agentic systems achieve:</p>
+  <p>Higher throughput: More documents processed without manual review. Lower operational cost: Reduced need for rule updates and retraining. Faster deployment: Workflows adapt to new document types immediately. Improved compliance: Detailed reasoning logs enable full auditability.Increased accuracy: Contextual reasoning reduces false extractions.</p>
+  <p>For example, an accounts payable team using traditional IDP might manually handle 30 percent of invoices. With Document AI, that manual load can drop to under 10 percent while maintaining accuracy above 95 percent.</p>
+<div class="compare-grid">
+  <div class="compare-card old"><strong>❌</strong> More documents processed without manual review.</div>
+  <div class="compare-card new"><strong>✅</strong> Reduced need for rule updates and retraining.</div>
+  <div class="compare-card old"><strong>❌</strong> Workflows adapt to new document types immediately.</div>
+  <div class="compare-card new"><strong>✅</strong> Detailed reasoning logs enable full auditability.**Increased accuracy:** Contextual reasoning reduces false extractions.</div>
+</div>
+</section>
+<section class="section" id="s8">
+  <h2>🚀 **Building with LlamaIndex**</h2>
+  <p class="lead">LlamaIndex powers the modern Document AI stack by combining SOTA agentic OCR and agentic orchestration and deployment in one cohesive platform.</p>
+  <p>At the core is LlamaParse, which unifies the essential components for building and deploying intelligent document systems. LlamaParse converts documents (PDFS, Office, etc.), scans, faxes, and images into structured, layout-aware text that preserves context for downstream reasoning. LlamaExtract turns that structure into usable data through declarative extraction schemas, while Index stores and retrieves this information for contextual grounding and RAG-style reasoning.</p>
+  <p>Developers can orchestrate these steps using the LlamaIndex Workflows framework, creating multi-step, stateful pipelines that handle parsing, validation, and action with built-in memory and error recovery. The new LlamaAgents layer makes it even simpler to deploy complete document agents using templates for common tasks like invoice processing or contract analysis, all hosted and served through LlamaParse.</p>
+  <p>Together, these components give builders a full-stack framework for Document AI, systems that can read, reason, and act across enterprise-scale document collections with accuracy and autonomy.</p>
+</section>
+<section class="section" id="s9">
+  <h2>📈 **The Future of Document AI**</h2>
+  <p class="lead">As multimodal LLMs advance, Document AI will progress from document understanding to autonomous decision-making. Agents will cross-reference documents, reconcile data, and draft reports or communicati</p>
+  <p>Future systems will combine perception, reasoning, and execution in a single agentic loop, improving continuously from human feedback. Error handling will become proactive, and pass-through rates will approach full automation for many document types.</p>
+  <p>This is not just the next phase of OCR, it is the foundation of document AI or autonomous document intelligence.</p>
+</section>
+
+    
+  </div>
+
+  <footer class="footer">
+    <div class="footer-links">
+      <a href="./">LlamaIndex Blog Hub</a>
+      <a href="https://www.llamaindex.ai/blog/document-ai-the-next-evolution-of-intelligent-document-processing" target="_blank" rel="noopener">原文链接 Original</a>
+      <a href="../">Engineering Blogs Hub</a>
+    </div>
+    <p>Generated from LlamaIndex blog content for learning purposes.</p>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,286 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Why Deep Extraction is Superior to Single-Pass Pipelines</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafbfc;
+      --surface: #fff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --amber: #d97706;
+      --amber-light: #fbbf24;
+      --amber-dark: #92400e;
+      --purple: #6366f1;
+      --teal: #14b8a6;
+      --green: #10b981;
+      --red: #ef4444;
+      --blue: #3b82f6;
+      --pink: #ec4899;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans SC', 'Inter', sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:var(--sans); background:var(--bg); color:var(--text); line-height:1.7; }
+
+    .nav { position:sticky; top:0; background:rgba(15,23,42,.92); backdrop-filter:blur(12px); z-index:100; border-bottom:1px solid rgba(255,255,255,.08); }
+    .nav-inner { max-width:1100px; margin:0 auto; padding:12px 24px; display:flex; justify-content:space-between; align-items:center; }
+    .nav-brand { color:#fbbf24; text-decoration:none; font-weight:700; display:flex; align-items:center; gap:8px; }
+    .nav-logo { font-size:20px; }
+    .nav a:last-child { font-size:13px; color:rgba(255,255,255,.6); text-decoration:none; }
+    .nav a:last-child:hover { color:#fbbf24; }
+
+    .hero { background:linear-gradient(135deg,#0f172a 0%,#78350f 50%,#d97706 100%); color:#fff; padding:60px 24px 48px; }
+    .hero-inner { max-width:1100px; margin:0 auto; }
+    .hero-tag { display:inline-block; background:rgba(251,191,36,.15); color:#fbbf24; padding:4px 14px; border-radius:20px; font-size:13px; font-weight:500; margin-bottom:16px; letter-spacing:.5px; }
+    .hero h1 { font-size:clamp(24px,4vw,42px); font-weight:800; line-height:1.2; margin-bottom:12px; }
+    .hero p { font-size:17px; color:rgba(255,255,255,.8); max-width:700px; margin-bottom:28px; line-height:1.6; }
+    .hero-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; max-width:600px; }
+    .stat { text-align:center; }
+    .stat-num { display:block; font-size:28px; font-weight:800; color:#fbbf24; font-family:var(--mono); }
+    .stat-label { font-size:12px; color:rgba(255,255,255,.6); text-transform:uppercase; letter-spacing:.5px; }
+
+    .page { max-width:1100px; margin:0 auto; padding:32px 24px 60px; }
+
+    .toc { margin-bottom:40px; }
+    .toc-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:10px; }
+    .toc-item { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); text-decoration:none; color:var(--text); font-size:14px; font-weight:500; transition:all .2s; }
+    .toc-item:hover { border-color:var(--amber); transform:translateY(-1px); box-shadow:0 4px 12px rgba(217,119,6,.1); }
+    .toc-num { font-size:16px; }
+
+    .section { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:32px; margin-bottom:24px; }
+    .section h2 { font-size:22px; font-weight:700; margin-bottom:12px; color:var(--text); }
+    .section h3 { font-size:17px; font-weight:600; margin:20px 0 8px; color:var(--amber-dark); }
+    .lead { color:var(--text-secondary); font-size:15px; margin-bottom:16px; line-height:1.7; }
+    .section p { margin-bottom:12px; font-size:15px; line-height:1.7; }
+
+    .chart { margin:20px 0; }
+    .chart-row { display:flex; align-items:center; margin-bottom:8px; }
+    .chart-label { width:160px; font-size:13px; font-weight:500; text-align:right; padding-right:12px; color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:28px; overflow:hidden; }
+    .chart-bar { height:100%; border-radius:8px; display:flex; align-items:center; padding-left:10px; font-size:12px; font-weight:600; color:#fff; transition:width .6s ease; min-width:40px; }
+    .chart-bar.amber { background:linear-gradient(90deg,#d97706,#f59e0b); }
+    .chart-bar.purple { background:linear-gradient(90deg,#6366f1,#818cf8); }
+    .chart-bar.teal { background:linear-gradient(90deg,#0d9488,#14b8a6); }
+    .chart-bar.green { background:linear-gradient(90deg,#059669,#10b981); }
+    .chart-bar.blue { background:linear-gradient(90deg,#2563eb,#3b82f6); }
+    .chart-bar.red { background:linear-gradient(90deg,#dc2626,#ef4444); }
+
+    .timeline { position:relative; padding-left:28px; margin:20px 0; }
+    .timeline::before { content:''; position:absolute; left:8px; top:0; bottom:0; width:3px; background:linear-gradient(180deg,#d97706,#6366f1,#14b8a6); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:20px; padding-left:16px; }
+    .tl-dot { position:absolute; left:-24px; top:4px; width:14px; height:14px; border-radius:50%; border:3px solid var(--amber); background:#fff; }
+    .tl-item:nth-child(2) .tl-dot { border-color:var(--purple); }
+    .tl-item:nth-child(3) .tl-dot { border-color:var(--teal); }
+    .tl-item:nth-child(4) .tl-dot { border-color:var(--green); }
+    .tl-item:nth-child(5) .tl-dot { border-color:var(--blue); }
+    .tl-phase { font-weight:600; font-size:15px; margin-bottom:4px; }
+    .tl-desc { font-size:13px; color:var(--text-secondary); line-height:1.5; }
+
+    .compare-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin:20px 0; }
+    .compare-card { padding:16px; border-radius:var(--radius); font-size:14px; line-height:1.6; }
+    .compare-card.old { background:#fef2f2; border:1px solid #fecaca; }
+    .compare-card.new { background:#f0fdf4; border:1px solid #bbf7d0; }
+
+    .flow { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:20px 0; }
+    .flow-step { padding:10px 18px; background:#f8fafc; border:2px solid var(--border); border-radius:var(--radius); font-size:13px; font-weight:600; text-align:center; }
+    .flow-step.purple { background:#eef2ff; border-color:var(--purple); color:var(--purple); }
+    .flow-arrow { color:var(--amber); font-size:20px; font-weight:700; }
+
+    .fail-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:20px 0; }
+    .fail-grid .card { padding:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); font-size:13px; line-height:1.6; }
+
+    .block-q { margin:20px 0; padding:20px 24px; background:linear-gradient(135deg,#fffbeb,#fef3c7); border-left:4px solid var(--amber); border-radius:0 var(--radius) var(--radius) 0; font-style:italic; color:#92400e; font-size:14px; line-height:1.7; }
+
+    .tbl-wrap { overflow-x:auto; margin:20px 0; }
+    table { width:100%; border-collapse:collapse; font-size:14px; }
+    th { background:#f8fafc; padding:10px 14px; text-align:left; font-weight:600; border-bottom:2px solid var(--border); white-space:nowrap; }
+    td { padding:10px 14px; border-bottom:1px solid var(--border); }
+    tr:hover td { background:#fffbeb; }
+
+    .badge { display:inline-block; padding:3px 10px; border-radius:12px; font-size:12px; font-weight:500; }
+    .badge-amber { background:#fffbeb; color:#92400e; }
+    .badge-purple { background:#eef2ff; color:#4338ca; }
+    .badge-green { background:#f0fdf4; color:#166534; }
+
+    .footer { background:#0f172a; color:rgba(255,255,255,.6); padding:32px 24px; text-align:center; font-size:13px; }
+    .footer a { color:#fbbf24; text-decoration:none; }
+    .footer a:hover { text-decoration:underline; }
+    .footer-links { display:flex; justify-content:center; gap:24px; margin-bottom:12px; flex-wrap:wrap; }
+
+    @media(max-width:768px) {
+      .hero-stats { grid-template-columns:repeat(2,1fr); }
+      .compare-grid, .fail-grid { grid-template-columns:1fr; }
+      .chart-label { width:100px; font-size:12px; }
+      .flow { flex-direction:column; gap:6px; }
+      .flow-arrow { transform:rotate(90deg); }
+      .toc-grid { grid-template-columns:1fr; }
+      .section { padding:20px 16px; }
+      .hero { padding:40px 16px 32px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="../" class="nav-brand">
+        <span class="nav-logo">🦙</span>
+        <span>LlamaIndex Blog Hub</span>
+      </a>
+      <a href="./">← Back to Hub</a>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="hero-tag">文档处理</div>
+      <h1>Why Deep Extraction is Superior to Single-Pass Pipelines</h1>
+      <p>Most extraction pipelines look fine in demos. They break quietly on page 47 of a 200-page invoice, dropping rows and consolidating line items nobody asked them to consolidate. By the time anyone notices, the numbers have already traveled downstream into a payment run, a compliance report, or an audi</p>
+      <div class="hero-stats">
+        <div class="stat"><span class="stat-num">8</span><span class="stat-label">核心章节</span></div><div class="stat"><span class="stat-num">5</span><span class="stat-label">关键概念</span></div><div class="stat"><span class="stat-num">8min</span><span class="stat-label">阅读时长</span></div><div class="stat"><span class="stat-num">2028</span><span class="stat-label">总字数</span></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc"><div class="toc-grid">
+  <a href="#s0" class="toc-item"><span class="toc-num">🔍</span>Why Extraction Pipelines Break on Real-World Documents</a>
+  <a href="#s1" class="toc-item"><span class="toc-num">💡</span>What Deep Extraction Actually Is</a>
+  <a href="#s4" class="toc-item"><span class="toc-num">🔄</span>The Architecture Behind Accurate Agentic Document Processing</a>
+  <a href="#s5" class="toc-item"><span class="toc-num">🎯</span>Where Traditional OCR and Single-Pass Extraction Fall Short</a>
+  <a href="#s6" class="toc-item"><span class="toc-num">📋</span>Deep Extraction in Production: Where Field Accuracy Becomes Non-Negotiable</a>
+  <a href="#s7" class="toc-item"><span class="toc-num">🔧</span>Getting Deep Extraction Right Without Building It From Scratch</a>
+</div></nav>
+
+    <section class="section" id="s0">
+  <h2>🔍 Why Extraction Pipelines Break on Real-World Documents</h2>
+  <p class="lead">Single-pass document extraction has one fundamental blind spot: it has no mechanism to catch its own errors. If the model skips a row, nothing flags it. The pipeline moves on.</p>
+  <p>This failure mode is predictable. Language models take shortcuts on long, repetitive tasks. Given 1,000 line items across a 500-page fund statement, they stop short, consolidate entries, or silently drop records. Attention at scale degrades. This is what that looks like. The model treats the document as something to summarize, not something to audit.</p>
+  <p>Complex documents make it worse. Multi-column layouts, nested tables, footnotes that modify values on other pages, embedded images containing data: each is a failure surface that single-pass handles inconsistently. The model gets most of it right, most of the time. Production workflows need better odds than that.</p>
+  <p>OCR accuracy and extraction completeness are also two separate problems. Most pipelines only solve the first. Reading the text correctly is step one. Verifying that extracted values are complete, consistent, and reconcilable against document-level totals is the harder step, and it&#x27;s the one that determines whether downstream systems can trust the output.</p>
+  <p>The traditional response was human review. That works at low volume. Financial services teams processing hundreds of brokerage statements per week, or insurance carriers handling thousands of claims monthly, can&#x27;t have every extraction pass through a human checkpoint. The errors don&#x27;t go away. They get absorbed by the review queue until the backlog becomes the bottleneck.</p>
+  <p>That&#x27;s what makes the pipeline architecture itself the variable worth changing.</p>
+<div class="flow">
+  <div class="flow-step">Deep extraction</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Financial services</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Insurance</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Legal</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step purple">Government and agriculture</div>
+</div>
+</section>
+<section class="section" id="s1">
+  <h2>💡 What Deep Extraction Actually Is</h2>
+  <p class="lead">Deep extraction is an agentic loop that extracts, verifies against the source document, identifies gaps or inconsistencies, and re-extracts until output meets a defined quality threshold.</p>
+  <p>The architecture is fundamentally different from a single-pass approach. Sub-agents handle separate document components (line items, header fields, totals, embedded tables) rather than a single model ingesting the entire document in one pass. A verification agent then checks the assembled output against the source before anything is returned. If the invoice total doesn&#x27;t reconcile with the line item sum, the system knows. It re-extracts the affected section instead of moving on.</p>
+  <p>Vision language models (VLMs) are central to making this work on real documents. They&#x27;re what distinguishes modern agentic OCR from both traditional OCR and standard LLM extraction. Multi-modal understanding lets the system read tables, charts, and embedded images that text-only extraction misses entirely. A single-pass pipeline might pull clean text from a document and miss the chart on page 12 containing the actual performance figures. A VLM-equipped pipeline sees that chart as data, not decoration.</p>
+  <p>Deep learning-based models alone aren&#x27;t enough without an orchestration layer on top. A powerful model that extracts once and returns is still a single-pass system. The verification loop is what converts extraction into a process you can hold accountable.</p>
+  <p>How you define &quot;correct&quot; is a design decision worth getting right. Verification criteria can be explicit (totals must reconcile, schema must validate, required fields must be present) or inferred from document context by the agent itself. The strictness you apply should match the stakes of the downstream workflow.</p>
+  <h3>When You Actually Need Deep Extraction</h3>
+  <p>High-stakes documents make the case: financial statements, legal contracts, insurance claims, regulatory filings. Any document with more than 50 line items or cross-document reconciliation requirements. Any workflow where a dropped field has downstream consequences: payments that don&#x27;t process, compliance checks that fail, audits that surface errors months later. Invoice processing automation is one of the most common first deployments, but the pattern holds across any high-stakes document workflow. If manual review is currently your backstop, that&#x27;s the signal.</p>
+  <h3>When Standard Extraction Is Enough</h3>
+  <p>Short, structured documents with consistent layouts (standard forms, simple invoices) don&#x27;t need the overhead of an agentic loop. Workflows where ~95% field accuracy is acceptable, with human spot-checks covering the rest, don&#x27;t need deep extraction. The investment in agentic verification is justified by the cost of errors, not the volume of documents.</p>
+<div class="timeline">
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Why Extraction Pipelines Break on Real-World Documents</div>
+    <div class="tl-desc">Single-pass document extraction has one fundamental blind spot: it has no mechanism to catch its own errors. If the mode</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">What Deep Extraction Actually Is</div>
+    <div class="tl-desc">Deep extraction is an agentic loop that extracts, verifies against the source document, identifies gaps or inconsistenci</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">When You Actually Need Deep Extraction</div>
+    <div class="tl-desc">High-stakes documents make the case: financial statements, legal contracts, insurance claims, regulatory filings. Any do</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">When Standard Extraction Is Enough</div>
+    <div class="tl-desc">Short, structured documents with consistent layouts (standard forms, simple invoices) don&#x27;t need the overhead of an</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">The Architecture Behind Accurate Agentic Document Processing</div>
+    <div class="tl-desc">Breaking document processing into verifiable units is the key architectural move in [agentic document processing](https:</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Where Traditional OCR and Single-Pass Extraction Fall Short</div>
+    <div class="tl-desc">Optical character recognition extracts text from document images. It doesn&#x27;t verify whether extracted values are com</div>
+  </div>
+</div>
+</section>
+<section class="section" id="s4">
+  <h2>🔄 The Architecture Behind Accurate Agentic Document Processing</h2>
+  <p class="lead">Breaking document processing into verifiable units is the key architectural move in agentic document processing. It’s what separates deep extraction from standard single-pass pipelines. Rather than fe</p>
+  <p>In the verification loop extracted output is compared against the source document. Discrepancies (a line item count that doesn&#x27;t match the document&#x27;s own summary, a field value that doesn&#x27;t appear in the cited section) trigger targeted re-extraction rather than full reprocessing. The system addresses the specific gap without reprocessing content it already got right.</p>
+  <p>Citations and bounding boxes are the verifiability layer that makes this production-ready. Every extracted field maps to a specific location in the source document. This granular field provenance enables document understanding at the audit level, not just at the output level. An adjuster reviewing a claims extraction can trace any value directly to the source. A compliance team can prove exactly what the extraction system saw and when.</p>
+  <p>Production-ready pipelines need more than accuracy. They need explainability: confidence scores that signal which fields are certain and which warrant review, source citations that ground every output in the source material, and human-in-the-loop (HITL) touchpoints for regulated workflows where full automation isn&#x27;t permitted.</p>
+  <p>The cost-versus-accuracy tradeoff is frequently misframed. Agentic extraction does more work per document than a single pass. Measured against manual review on a 500-page fund statement, it&#x27;s faster and cheaper at scale. The relevant comparison isn&#x27;t &quot;deep extraction vs. single-pass extraction.&quot; It&#x27;s &quot;deep extraction vs. the headcount currently reviewing what single-pass gets wrong.&quot;</p>
+</section>
+<section class="section" id="s5">
+  <h2>🎯 Where Traditional OCR and Single-Pass Extraction Fall Short</h2>
+  <p class="lead">Optical character recognition extracts text from document images. It doesn&#x27;t verify whether extracted values are complete, consistent, or reconciled against document-level totals. That&#x27;s a design cons</p>
+  <p>Traditional OCR is also layout-fragile. Rotate the document, change the column order, use a non-standard table format, and accuracy drops. Tesseract and similar tools perform well on clean, consistent inputs. They degrade on the irregular documents that actually show up in enterprise workflows: agricultural invoices with handwritten annotations, multi-format brokerage statements, legal filings with embedded exhibits. In any document-heavy industry, these aren&#x27;t edge cases. They&#x27;re the norm.</p>
+  <p>Single-pass LLM extraction inherits the verification problem and adds its own. The model gets the whole document, extracts what it can in one pass, and returns without a loop or a check. It can produce plausible-looking output that&#x27;s missing fields, has consolidated entries the document didn&#x27;t consolidate, or contains values that appear nowhere in the source. The output looks reasonable. The errors stay invisible until they surface downstream.</p>
+  <p>LlamaParse addresses this at the architecture level. Agentic orchestration selects the best model for each document component (traditional OCR, a vision language model, or an LLM) depending on what that component requires. Verification loops run before any output is returned. When document formats change, no retraining is required because the orchestration layer adapts. A cost optimizer routes each element to the most efficient model for the task, which adds up at scale.</p>
+  <p>Multi-modal understanding handles what pure text recognition can&#x27;t: charts, embedded images, and tables with merged cells.</p>
+</section>
+<section class="section" id="s6">
+  <h2>📋 Deep Extraction in Production: Where Field Accuracy Becomes Non-Negotiable</h2>
+  <p class="lead">The use cases where deep extraction pays off share three characteristics: high field count, high accuracy requirement, and an audit trail that traces back to the source.</p>
+  <p>Financial services is the clearest case. Brokerage statements and fund reports require every transaction line to reconcile. A dropped row means a reporting error that flows directly into straight-through processing rates, which is what finance operations teams actually track for automation ROI.</p>
+  <p>Insurance presents the same requirement from a different angle. Claims processing extracts values that feed directly into downstream approvals. When an extracted figure is wrong, the approval is wrong. Citations let adjusters trace any field back to the source document, which matters for accuracy and for the regulatory requirement to document decision inputs.</p>
+  <p>Legal workflows need the full audit trail: contract extraction with field-level provenance, version-consistent output across large document sets, and traceable citations for review workflows and regulatory discovery.</p>
+  <p>Government and agriculture work with some of the most irregular document formats around. Rigid, template-based extraction fails on these reliably. County payment reports, cattle sales invoices, and agricultural permit applications aren&#x27;t structured PDFs with predictable layouts. An orchestration layer that adapts to format variation handles them where a fixed template breaks.</p>
+  <p>The difference between 10-20% field accuracy on a single-pass frontier model and 99-100% with an agentic extraction loop is the difference between a partial answer and a different category of solution.</p>
+</section>
+<section class="section" id="s7">
+  <h2>🔧 Getting Deep Extraction Right Without Building It From Scratch</h2>
+  <p class="lead">Building an agentic verification loop in-house is possible. It&#x27;s also a substantial engineering investment before you&#x27;ve processed a single production document. You need to design sub-agent orchestrat</p>
+  <p>LlamaExtract provides schema-based deep extraction with agentic verification built in. Define your schema, set your verification criteria, and the pipeline handles the loop. No training required to get started on your first document type, and no retraining required when formats change, because the orchestration layer adapts.</p>
+  <p>LlamaParse is the parsing foundation that LlamaExtract builds on. Parsing and extraction serve different functions in a document pipeline, and both are required for deep extraction to work. Before extraction can verify anything, the document needs to be converted accurately. LlamaParse&#x27;s layout-aware computer vision and multi-modal processing handle that at the input stage, selecting the best combination of OCR, VLMs, and LLMs per document component. The parsed output is what the extraction layer verifies against.</p>
+  <p>As document complexity increases and regulatory requirements around auditability tighten, single-pass extraction becomes untenable for high-stakes workflows. The question stops being &quot;can the model read this document&quot; and becomes &quot;can the model read it, verify what it read, and prove it.&quot;</p>
+  <p>If your current pipeline relies on a single pass and human review to catch what it misses, LlamaExtract is worth testing against your actual documents.</p>
+</section>
+
+    <section class="section" id="key-concepts">
+  <h2>🔑 核心概念 Key Concepts</h2>
+  <p class="lead">本文涉及的关键技术概念与术语。</p>
+<div class="flow">
+  <div class="flow-step">Deep extraction</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Financial services</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Insurance</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Legal</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step purple">Government and agriculture</div>
+</div>
+</section>
+
+  </div>
+
+  <footer class="footer">
+    <div class="footer-links">
+      <a href="./">LlamaIndex Blog Hub</a>
+      <a href="https://www.llamaindex.ai/blog/deep-extraction" target="_blank" rel="noopener">原文链接 Original</a>
+      <a href="../">Engineering Blogs Hub</a>
+    </div>
+    <p>Generated from LlamaIndex blog content for learning purposes.</p>
+  </footer>
+</body>
+</html>

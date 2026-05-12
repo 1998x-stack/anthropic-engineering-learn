@@ -1,0 +1,441 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>深度解析：Llama-Deploy: Microservice Workflow Deployment Guide | LlamaIndex</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #fafbfc;
+            --surface: #fff;
+            --text: #0f172a;
+            --text-secondary: #64748b;
+            --border: #e2e8f0;
+            --radius: 14px;
+            --amber: #d97706;
+            --amber-light: #fbbf24;
+            --amber-dark: #78350f;
+            --green: #10b981;
+            --red: #ef4444;
+            --blue: #3b82f6;
+            --purple: #6366f1;
+            --teal: #14b8a6;
+            --mono: 'JetBrains Mono', monospace;
+            --sans: 'Noto Sans SC', 'Inter', sans-serif;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family: var(--sans); background: var(--bg); color: var(--text); line-height: 1.7; }
+        a { color: var(--amber); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        /* Nav */
+        .nav {
+            position: sticky; top: 0; z-index: 100;
+            background: rgba(15,23,42,0.95);
+            backdrop-filter: blur(12px);
+            padding: 0 2rem; height: 56px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .nav-brand { color: #fbbf24; font-weight: 700; font-size: 1.1rem; }
+        .nav-back { color: #94a3b8; font-size: 0.9rem; }
+        .nav-back:hover { color: #fbbf24; text-decoration: none; }
+
+        /* Hero */
+        .hero {
+            background: linear-gradient(135deg, #0f172a 0%, #78350f 50%, #d97706 100%);
+            padding: 4rem 2rem 3rem;
+            color: #fff;
+        }
+        .hero-inner { max-width: 900px; margin: 0 auto; }
+        .hero h1 { font-size: 2rem; font-weight: 800; margin-bottom: 0.75rem; line-height: 1.3; }
+        .hero-desc { color: #fde68a; font-size: 1.05rem; margin-bottom: 2rem; }
+        .hero-meta { color: #d4a06a; font-size: 0.85rem; margin-bottom: 1.5rem; }
+        .stat-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem;
+        }
+        .stat-card {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: var(--radius);
+            padding: 1.2rem; text-align: center;
+            backdrop-filter: blur(6px);
+        }
+        .stat-value { font-size: 1.8rem; font-weight: 800; color: #fbbf24; }
+        .stat-label { font-size: 0.8rem; color: #fde68a; text-transform: uppercase; letter-spacing: 0.05em; }
+        .stat-desc { font-size: 0.75rem; color: #d4a06a; margin-top: 2px; }
+
+        /* Page */
+        .page { max-width: 900px; margin: 0 auto; padding: 2rem; }
+
+        /* TOC */
+        .toc {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 0.5rem; margin-bottom: 3rem;
+        }
+        .toc-item {
+            display: flex; align-items: center; gap: 8px;
+            padding: 0.6rem 1rem; border-radius: 8px;
+            background: var(--surface); border: 1px solid var(--border);
+            font-size: 0.85rem; color: var(--text); transition: all 0.2s;
+        }
+        .toc-item:hover { border-color: var(--amber); color: var(--amber); text-decoration: none; transform: translateY(-1px); }
+        .toc-num { font-family: var(--mono); font-weight: 700; color: var(--amber); font-size: 0.75rem; }
+
+        /* Section */
+        .section {
+            margin-bottom: 3rem;
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 2rem;
+            border: 1px solid var(--border);
+        }
+        .section h2 {
+            font-size: 1.4rem; font-weight: 700; margin-bottom: 0.5rem;
+            color: var(--text);
+        }
+        .lead { color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 1.5rem; }
+        .content-body { font-size: 0.95rem; }
+        .content-body p { margin-bottom: 1rem; }
+        .content-body ul { padding-left: 1.5rem; margin-bottom: 1rem; }
+        .content-body li { margin-bottom: 0.4rem; }
+        .content-body h3 { font-size: 1.1rem; font-weight: 600; margin: 1.5rem 0 0.75rem; color: var(--amber-dark); }
+        .content-body strong { color: var(--text); }
+
+        /* Code */
+        .code-block {
+            background: #1e293b; color: #e2e8f0; padding: 1rem 1.2rem;
+            border-radius: 8px; overflow-x: auto; font-family: var(--mono);
+            font-size: 0.82rem; line-height: 1.6; margin: 1rem 0;
+        }
+        .inline-code {
+            background: #f1f5f9; color: #b45309; padding: 2px 6px;
+            border-radius: 4px; font-family: var(--mono); font-size: 0.85em;
+        }
+
+        /* Visualizations */
+        .viz-block { margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
+        .viz-title { font-size: 0.9rem; color: var(--amber-dark); margin-bottom: 1rem; font-weight: 600; }
+
+        /* Chart */
+        .chart { display: flex; flex-direction: column; gap: 0.6rem; }
+        .chart-row { display: flex; align-items: center; gap: 0.75rem; }
+        .chart-label { width: 140px; font-size: 0.8rem; color: var(--text-secondary); text-align: right; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .chart-bar-wrap { flex: 1; background: #f1f5f9; border-radius: 6px; height: 28px; overflow: hidden; }
+        .chart-bar {
+            height: 100%; border-radius: 6px; display: flex; align-items: center;
+            padding: 0 10px; font-size: 0.75rem; font-weight: 600; color: #fff;
+            transition: width 0.8s ease;
+        }
+        .chart-bar.amber { background: linear-gradient(90deg, #d97706, #fbbf24); }
+        .chart-bar.green { background: linear-gradient(90deg, #059669, #10b981); }
+        .chart-bar.blue { background: linear-gradient(90deg, #2563eb, #3b82f6); }
+        .chart-bar.purple { background: linear-gradient(90deg, #4f46e5, #6366f1); }
+        .chart-bar.teal { background: linear-gradient(90deg, #0d9488, #14b8a6); }
+        .chart-bar.red { background: linear-gradient(90deg, #dc2626, #ef4444); }
+
+        /* Flow */
+        .flow {
+            display: flex; align-items: center; gap: 0.5rem;
+            flex-wrap: wrap; justify-content: center;
+        }
+        .flow-step {
+            background: #fffbeb; border: 2px solid #fbbf24;
+            padding: 0.6rem 1rem; border-radius: 10px;
+            font-size: 0.82rem; font-weight: 600; color: #78350f;
+            white-space: nowrap;
+        }
+        .flow-step.amber { background: #fef3c7; border-color: #d97706; }
+        .flow-arrow { color: #d97706; font-size: 1.2rem; font-weight: 700; }
+
+        /* Concept grid */
+        .concept-grid {
+            display: flex; flex-wrap: wrap; gap: 0.5rem;
+        }
+        .concept-card {
+            background: #fffbeb; border: 1px solid #fde68a;
+            border-radius: 8px; padding: 0.5rem 0.75rem;
+        }
+
+        /* Badge */
+        .badge {
+            display: inline-block; padding: 3px 10px; border-radius: 20px;
+            font-size: 0.75rem; font-weight: 600;
+        }
+        .badge-amber { background: #fef3c7; color: #92400e; }
+        .badge-green { background: #d1fae5; color: #065f46; }
+        .badge-blue { background: #dbeafe; color: #1e40af; }
+        .badge-purple { background: #e0e7ff; color: #3730a3; }
+        .badge-teal { background: #ccfbf1; color: #115e59; }
+        .badge-red { background: #fee2e2; color: #991b1b; }
+
+        /* Block quote */
+        .block-q {
+            border-left: 4px solid #fbbf24;
+            background: #fffbeb; padding: 1rem 1.5rem;
+            border-radius: 0 8px 8px 0; margin: 1rem 0;
+            font-style: italic; color: #78350f;
+        }
+
+        /* Footer */
+        .footer {
+            background: #0f172a; color: #94a3b8; padding: 2rem;
+            text-align: center; font-size: 0.85rem;
+        }
+        .footer a { color: #fbbf24; }
+        .footer-links { margin-top: 0.5rem; }
+        .footer-links a { margin: 0 1rem; }
+
+        /* Responsive */
+        @media(max-width:768px) {
+            .hero h1 { font-size: 1.4rem; }
+            .stat-grid { grid-template-columns: repeat(2, 1fr); }
+            .toc { grid-template-columns: 1fr; }
+            .flow { flex-direction: column; gap: 8px; }
+            .flow-arrow { transform: rotate(90deg); }
+            .chart-label { width: 100px; font-size: 0.72rem; }
+            .section { padding: 1.2rem; }
+            .nav { padding: 0 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <a href="../" class="nav-brand">LlamaIndex 深度解析</a>
+        <a href="../" class="nav-back">&larr; Back to Hub</a>
+    </nav>
+
+    <header class="hero">
+        <div class="hero-inner">
+            <div class="hero-meta"> &middot; LlamaIndex Blog</div>
+            <h1>Llama-Deploy: Microservice Workflow Deployment Guide | LlamaIndex</h1>
+            <p class="hero-desc">深入理解 LlamaIndex Workflow 系统的设计原理与应用模式</p>
+            <div class="stat-grid">
+                <div class="stat-card">
+                <div class="stat-value">7</div>
+                <div class="stat-label">Sections</div>
+                <div class="stat-desc">章节</div>
+            </div>
+<div class="stat-card">
+                <div class="stat-value">3</div>
+                <div class="stat-label">Code</div>
+                <div class="stat-desc">代码块</div>
+            </div>
+<div class="stat-card">
+                <div class="stat-value">1000+</div>
+                <div class="stat-label">Words</div>
+                <div class="stat-desc">字数</div>
+            </div>
+<div class="stat-card">
+                <div class="stat-value">7</div>
+                <div class="stat-label">Tech</div>
+                <div class="stat-desc">技术栈</div>
+            </div>
+
+            </div>
+        </div>
+    </header>
+
+    <div class="page">
+        <nav class="toc">
+            <a href="#s1" class="toc-item"><span class="toc-num">01</span>Overview</a>
+<a href="#s2" class="toc-item"><span class="toc-num">02</span>`llama-deploy`  , `llama-agent</a>
+<a href="#s3" class="toc-item"><span class="toc-num">03</span>`llama-deploy`  Architecture</a>
+<a href="#s4" class="toc-item"><span class="toc-num">04</span>Key Features of `llama-deploy`</a>
+<a href="#s5" class="toc-item"><span class="toc-num">05</span>Getting Started with `llama-de</a>
+<a href="#s6" class="toc-item"><span class="toc-num">06</span>Resources</a>
+<a href="#s7" class="toc-item"><span class="toc-num">07</span>The Future of Multi-Agent AI S</a>
+        </nav>
+
+        
+    <section class="section" id="s1">
+        <h2>📋 Overview</h2>
+        <p class="lead">Today, we&amp;39;re excited to announce the release of llama-deploy , our solution for deploying and scaling your agentic Workflows built with llama-in...</p>
+        <div class="content-body">
+            <p>Today, we&#39;re excited to announce the release of <code class="inline-code">llama-deploy</code> , our solution for deploying and scaling your agentic Workflows built with <code class="inline-code">llama-index</code> ! <code class="inline-code">llama-deploy</code>  is the result of our learning on how best to deploy agentic systems since introducing <code class="inline-code">llama-agents</code> . <code class="inline-code">llama-deploy</code>  launches <code class="inline-code">llama-index</code>  Workflows as scalable microservices in just a few lines of code. Want to dive right in? Check out the <a href="https://docs.llamaindex.ai/en/stable/module_guides/workflow/deployment/" target="_blank">docs</a>, or read on to learn more.</p>
+        </div>
+        
+            <div class="viz-block">
+                <h4 class="viz-title">文章结构流程</h4>
+                <div class="flow"><div class="flow-step">Overview</div>
+<div class="flow-arrow">&#8594;</div>
+<div class="flow-step amber">`llama-deploy`  , `l</div>
+<div class="flow-arrow">&#8594;</div>
+<div class="flow-step">`llama-deploy`  Arch</div>
+<div class="flow-arrow">&#8594;</div>
+<div class="flow-step amber">Key Features of `lla</div>
+<div class="flow-arrow">&#8594;</div>
+<div class="flow-step">Getting Started with</div></div>
+            </div>
+    </section>
+    <section class="section" id="s2">
+        <h2>🚀 `llama-deploy`  , `llama-agents`  and Workflows</h2>
+        <p class="lead">In June we released llama-agents  , a way of deploying agentic systems built in llama-index. Our microservice-based approach struck a chord with ou...</p>
+        <div class="content-body">
+            <p>In June <a href="https://www.llamaindex.ai/blog/introducing-llama-agents-a-powerful-framework-for-building-production-multi-agent-ai-systems" target="_blank">we released <code class="inline-code">llama-agents</code> </a> , a way of deploying agentic systems built in <code class="inline-code">llama-index</code> . Our microservice-based approach struck a chord with our community, with over 1K GitHub stars and a flurry of blog posts, tutorials and open-source contributions. Building on that successful experience, in August <a href="https://www.llamaindex.ai/blog/introducing-workflows-beta-a-new-way-to-create-complex-ai-applications-with-llamaindex" target="_blank">we released Workflows</a>, a powerful, event-driven architecture for designing any kind of genAI system including agentic systems. The response to Workflows has been similarly positive.</p>
+<p>Now we have dovetailed the two mechanisms, producing <code class="inline-code">llama-deploy</code>  , which combines the ease of building LlamaIndex Workflows with a simple, native deployment mechanism for them. <code class="inline-code">llama-deploy</code>  builds on the ideas and code of <code class="inline-code">llama-agents</code>  , which has been folded into the [new repo.</p>
+<p>All the ideas developers loved about <code class="inline-code">llama-agents</code>  are still there: everything is async-first, everything’s an independently-scalable microservice, and a central hub manages state and service registration. Anybody who used <code class="inline-code">llama-agents</code>  will be able to pick up <code class="inline-code">llama-deploy</code>  in seconds.</p>
+        </div>
+        
+            <div class="viz-block">
+                <h4 class="viz-title">内容深度分析</h4>
+                <div class="chart"><div class="chart-row">
+            <div class="chart-label">Overview</div>
+            <div class="chart-bar-wrap"><div class="chart-bar amber" style="width:17%">17%</div></div>
+        </div>
+<div class="chart-row">
+            <div class="chart-label">`llama-deploy`  , </div>
+            <div class="chart-bar-wrap"><div class="chart-bar green" style="width:44%">44%</div></div>
+        </div>
+<div class="chart-row">
+            <div class="chart-label">`llama-deploy`  Ar</div>
+            <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:46%">46%</div></div>
+        </div>
+<div class="chart-row">
+            <div class="chart-label">Key Features of `l</div>
+            <div class="chart-bar-wrap"><div class="chart-bar purple" style="width:34%">34%</div></div>
+        </div>
+<div class="chart-row">
+            <div class="chart-label">Getting Started wi</div>
+            <div class="chart-bar-wrap"><div class="chart-bar teal" style="width:64%">64%</div></div>
+        </div>
+<div class="chart-row">
+            <div class="chart-label">Resources</div>
+            <div class="chart-bar-wrap"><div class="chart-bar red" style="width:11%">11%</div></div>
+        </div></div>
+            </div>
+    </section>
+    <section class="section" id="s3">
+        <h2>🏗️ `llama-deploy`  Architecture</h2>
+        <p class="lead">We believe multi-agent systems need scalability, flexibility, and fault-tolerance in addition to easy deployment, and that’s what our architecture ...</p>
+        <div class="content-body">
+            <p>We believe multi-agent systems need scalability, flexibility, and fault-tolerance in addition to easy deployment, and that’s what our architecture delivers. <code class="inline-code">llama-deploy</code>  ’s architecture will be very familiar to anyone who worked with its predecessor, <code class="inline-code">llama-agents</code>  .</p>
+<p>In <code class="inline-code">llama_deploy</code> , there are several key components that make up the overall system
+<ul><li><code class="inline-code">message queue</code>  -- the message queue acts as a queue for all services and the <code class="inline-code">control plane</code> . It has methods for publishing methods to named queues, and delegates messages to consumers.</li>
+<li><code class="inline-code">control plane</code>  -- the control plane is a the central gateway to the <code class="inline-code">llama_deploy</code>  system. It keeps track of current tasks and the services that are registered to the system. The <code class="inline-code">control plane</code>  also performs state and session management and utilizes the <code class="inline-code">orchestrator</code> .</li>
+<li><code class="inline-code">orchestrator</code>  -- The module handles incoming tasks and decides what service to send it to, as well as how to handle results from services. By default, the <code class="inline-code">orchestrator</code>  is very simple, and assumes incoming tasks have a destination already specified. Beyond that, the default <code class="inline-code">orchestrator</code>  handles retries, failures, and other nice-to-haves.</li>
+<li><code class="inline-code">workflow services</code>  -- Services are where the actual work happens. A services accepts some incoming task and context, processes it, and publishes a result. When you deploy a workflow, it becomes a service.</li></ul></p>
+        </div>
+        
+            <div class="viz-block">
+                <h4 class="viz-title">核心技术概念</h4>
+                <div class="concept-grid"><div class="concept-card"><span class="badge badge-amber">API</span></div>
+<div class="concept-card"><span class="badge badge-green">Agent</span></div>
+<div class="concept-card"><span class="badge badge-blue">Async</span></div>
+<div class="concept-card"><span class="badge badge-purple">Deploy</span></div>
+<div class="concept-card"><span class="badge badge-teal">Docker</span></div>
+<div class="concept-card"><span class="badge badge-red">Document</span></div></div>
+            </div>
+    </section>
+    <section class="section" id="s4">
+        <h2>🚀 Key Features of `llama-deploy`</h2>
+        <p class="lead">-  Seamless Deployment: llama-deploy  allows you to deploy llama-index  workflows with minimal changes to your existing code, simplifying the trans...</p>
+        <div class="content-body">
+            <ul><li><strong>Seamless Deployment</strong>: <code class="inline-code">llama-deploy</code>  allows you to deploy <code class="inline-code">llama-index</code>  workflows with minimal changes to your existing code, simplifying the transition from development to production.</li>
+<li><strong>Scalability</strong>: The microservices architecture of <code class="inline-code">llama-deploy</code>  enables easy scaling of individual components, ensuring your system can handle growing demands.</li>
+<li><strong>Flexibility</strong>: The hub-and-spoke design of <code class="inline-code">llama-deploy</code>  empowers you to swap out components (like message queues) or add new services without disrupting the entire system.</li>
+<li><strong>Fault Tolerance</strong>: Built-in retry mechanisms and failure handling in <code class="inline-code">llama-deploy</code>  ensure your multi-agent AI system remains robust and resilient in production environments.</li>
+<li><strong>State Management</strong>: The control plane in <code class="inline-code">llama-deploy</code>  manages state across services, simplifying the development of complex, multi-step processes.</li>
+<li><strong>Async-First</strong>: Designed with high-concurrency scenarios in mind, <code class="inline-code">llama-deploy</code>  is well-suited for real-time and high-throughput applications.</li></ul>
+        </div>
+        
+    </section>
+    <section class="section" id="s5">
+        <h2>⚙️ Getting Started with `llama-deploy`</h2>
+        <p class="lead">To get started with llama-deploy , you can follow the comprehensive documentation available on the project&amp;39;s GitHub repository. The README provi...</p>
+        <div class="content-body">
+            <p>To get started with <code class="inline-code">llama-deploy</code> , you can follow the comprehensive documentation available on the project&#39;s GitHub repository. The README provides detailed instructions on installation, deployment, and usage of the library.</p>
+<p>Here&#39;s a quick glimpse of how you can deploy a simple workflow using <code class="inline-code">llama-deploy:</code></p>
+<p>First, deploy core services (includes a control plane and message queue):</p>
+<p>python</p>
+<pre class="code-block"><code>from llama_deploy import (
+    deploy_core,
+    ControlPlaneConfig,
+    SimpleMessageQueueConfig,
+)
+<p>async def main():
+		# Deploy the workflow as a service
+		await deploy_core(
+		    control_plane_config=ControlPlaneConfig(),
+		    message_queue_config=SimpleMessageQueueConfig(),
+		)</p>
+<p>if __name__ == "__main__":
+    import asyncio
+    asyncio.run(main())
+</code></pre>
+    Then, deploy your workflow:</p>
+<p>python</p>
+<pre class="code-block"><code>from llama_deploy import (
+    deploy_workflow,
+    WorkflowServiceConfig,
+    ControlPlaneConfig,
+)
+from llama_index.core.workflow import Workflow, StartEvent, StopEvent, step
+<p># Define a sample workflow
+class MyWorkflow(Workflow):
+    @step()
+    async def run_step(self, ev: StartEvent) -&gt; StopEvent:
+        arg1 = str(ev.get("arg1", ""))
+        result = arg1 + "_result"
+        return StopEvent(result=result)</p>
+<p>async def main():
+		# Deploy the workflow as a service
+		await deploy_workflow(
+		    MyWorkflow(),
+		    WorkflowServiceConfig(
+		        host="127.0.0.1", port=8002, service_name="my_workflow"
+		    ),
+		    ControlPlaneConfig(),
+		)</p>
+<p>if __name__ == "__main__":
+    import asyncio
+    asyncio.run(main())
+</code></pre>
+    Once deployed, you can interact with your deployment using a client:</p>
+<p>python</p>
+<pre class="code-block"><code>from llama_deploy import LlamaDeployClient, ControlPlaneConfig
+<p># client talks to the control plane
+client = LlamaDeployClient(ControlPlaneConfig())</p>
+<p>session = client.get_or_create_session("session_id")</p>
+<p>result = session.run("my_workflow", arg1="hello_world")
+print(result)  # prints "hello_world_result"
+</code></pre></p>
+        </div>
+        
+    </section>
+    <section class="section" id="s6">
+        <h2>📌 Resources</h2>
+        <p class="lead">See our examplesand [docs and API reference for more details, including using different messaging queues, deploying using Docker and Kubernetes, de...</p>
+        <div class="content-body">
+            <p>See our <a href="https://docs.llamaindex.ai/en/stable/module_guides/workflow/deployment/" target="_blank">examplesand [docs</a> and <a href="https://docs.llamaindex.ai/en/stable/api_reference/llama_deploy/client/" target="_blank">API reference</a> for more details, including using different messaging queues, deploying using Docker and Kubernetes, deploying nested workflows, and more!</p>
+        </div>
+        
+    </section>
+    <section class="section" id="s7">
+        <h2>🏗️ The Future of Multi-Agent AI Systems</h2>
+        <p class="lead">With the release of llama-deploy , we believe we&amp;39;re taking a significant step forward in the world of multi-agent AI systems. By empowering deve...</p>
+        <div class="content-body">
+            <p>With the release of <code class="inline-code">llama-deploy</code> , we believe we&#39;re taking a significant step forward in the world of multi-agent AI systems. By empowering developers to build, deploy, and scale complex AI applications with ease, we&#39;re paving the way for more innovative and impactful AI-powered solutions.</p>
+<p>Some features that are directly on our roadmap
+<ul><li>Streaming support</li>
+<li>Improved resiliency and failure handling</li>
+<li>Better config/setup options</li>
+ </ul>yaml
+<ul><li>environment variables</li>
+<li>CLI</li></p>
+</ul>We&#39;re excited to see what the community will create with <code class="inline-code">llama-deploy</code> , and we&#39;re committed to continuously improving and expanding the library to meet the evolving needs of the AI ecosystem.
+        </div>
+        
+    </section>
+    </div>
+
+    <footer class="footer">
+        <div>LlamaIndex Blog 深度解析系列</div>
+        <div class="footer-links">
+            <a href="../">返回 Hub</a>
+            <a href="https://www.llamaindex.ai/blog/introducing-llama-deploy-a-microservice-based-way-to-deploy-llamaindex-workflows" target="_blank">阅读原文</a>
+        </div>
+    </footer>
+</body>
+</html>

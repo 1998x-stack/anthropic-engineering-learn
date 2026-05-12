@@ -1,0 +1,395 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>深度解析：MCP Vs. Vector Search: What Still Matters In RAG | LlamaIndex</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #fafbfc;
+  --surface: #fff;
+  --text: #0f172a;
+  --text-secondary: #64748b;
+  --border: #e2e8f0;
+  --radius: 14px;
+  --amber: #d97706;
+  --amber-light: #fbbf24;
+  --amber-dark: #92400e;
+  --purple: #6366f1;
+  --teal: #14b8a6;
+  --green: #10b981;
+  --red: #ef4444;
+  --blue: #3b82f6;
+  --mono: 'JetBrains Mono', monospace;
+  --sans: 'Noto Sans SC', 'Inter', sans-serif;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:var(--sans); background:var(--bg); color:var(--text); line-height:1.7; }
+a { color:var(--amber); text-decoration:none; }
+a:hover { text-decoration:underline; }
+
+/* Nav */
+.nav {
+  position:sticky; top:0; z-index:100;
+  background:rgba(15,23,42,0.95); backdrop-filter:blur(12px);
+  padding:0 2rem; height:56px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.nav-brand { color:#fbbf24; font-weight:700; font-size:1.1rem; }
+.nav-back { color:#94a3b8; font-size:0.9rem; }
+.nav-back:hover { color:#fbbf24; }
+
+/* Hero */
+.hero {
+  background:linear-gradient(135deg,#0f172a 0%,#78350f 50%,#d97706 100%);
+  padding:4rem 2rem 3rem; color:#fff; text-align:center;
+}
+.hero-badge { display:inline-block; background:rgba(251,191,36,0.2); color:#fbbf24;
+  padding:4px 16px; border-radius:20px; font-size:0.85rem; margin-bottom:1rem; font-weight:500; }
+.hero h1 { font-size:clamp(1.5rem,4vw,2.4rem); font-weight:800; max-width:800px; margin:0 auto 1rem; line-height:1.3; }
+.hero-sub { color:rgba(255,255,255,0.8); font-size:1rem; max-width:600px; margin:0 auto 2rem; }
+.stats { display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; max-width:700px; margin:0 auto; }
+.stat-card {
+  background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12);
+  border-radius:12px; padding:1rem 0.5rem; text-align:center;
+}
+.stat-emoji { font-size:1.3rem; margin-bottom:4px; }
+.stat-val { font-size:1.4rem; font-weight:800; color:#fbbf24; }
+.stat-label { font-size:0.75rem; color:rgba(255,255,255,0.7); text-transform:uppercase; letter-spacing:0.5px; }
+.stat-desc { font-size:0.7rem; color:rgba(255,255,255,0.5); margin-top:2px; }
+
+/* Page */
+.page { max-width:900px; margin:0 auto; padding:2rem 1.5rem; }
+
+/* TOC */
+.toc { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:0.75rem; margin-bottom:3rem; }
+.toc-item {
+  display:flex; align-items:center; gap:10px;
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:10px; padding:10px 14px; font-size:0.9rem;
+  color:var(--text); transition:all 0.2s;
+}
+.toc-item:hover { border-color:var(--amber); background:#fffbeb; text-decoration:none; transform:translateY(-1px); }
+.toc-num {
+  background:linear-gradient(135deg,#d97706,#f59e0b);
+  color:#fff; font-weight:700; font-size:0.75rem;
+  width:28px; height:28px; border-radius:8px;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+
+/* Section */
+.section { margin-bottom:3rem; }
+.section h2 {
+  font-size:1.5rem; font-weight:700; margin-bottom:0.5rem;
+  padding-bottom:0.5rem; border-bottom:2px solid var(--amber);
+}
+.lead { color:var(--text-secondary); font-size:0.95rem; margin-bottom:1.2rem; }
+
+/* Cards */
+.card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius); padding:1.2rem; margin-bottom:0.8rem;
+}
+.card p { font-size:0.9rem; }
+.card-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:0.8rem; margin:1rem 0; }
+
+/* Code Block */
+.code-block {
+  background:#1e293b; border-radius:12px; overflow:hidden; margin:1rem 0;
+}
+.code-header { padding:8px 16px; background:#0f172a; display:flex; align-items:center; gap:8px; }
+.code-block pre {
+  padding:1rem 1.2rem; color:#e2e8f0; font-family:var(--mono);
+  font-size:0.82rem; line-height:1.6; overflow-x:auto; white-space:pre;
+}
+
+/* Compare */
+.compare-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin:1rem 0; }
+.compare-card {
+  background:var(--surface); border-radius:var(--radius); padding:1.2rem;
+  border:1px solid var(--border);
+}
+.compare-card.old { border-left:4px solid var(--red); }
+.compare-card.new { border-left:4px solid var(--green); }
+.compare-card h4 { font-size:0.95rem; margin-bottom:0.5rem; }
+
+/* Chart */
+.chart { margin:1rem 0; }
+.chart-row { display:flex; align-items:center; margin-bottom:8px; }
+.chart-label { width:160px; font-size:0.85rem; font-weight:500; flex-shrink:0; }
+.chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:32px; overflow:hidden; }
+.chart-bar {
+  height:100%; border-radius:8px; display:flex; align-items:center;
+  padding:0 12px; font-size:0.75rem; font-weight:600; color:#fff;
+  transition:width 0.6s ease;
+}
+.chart-bar.amber { background:linear-gradient(90deg,#d97706,#f59e0b); }
+.chart-bar.purple { background:linear-gradient(90deg,#6366f1,#818cf8); }
+.chart-bar.green { background:linear-gradient(90deg,#10b981,#34d399); }
+.chart-bar.blue { background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+.chart-bar.teal { background:linear-gradient(90deg,#14b8a6,#2dd4bf); }
+.chart-bar.red { background:linear-gradient(90deg,#ef4444,#f87171); }
+
+/* Timeline */
+.timeline { position:relative; padding-left:2rem; margin:1rem 0; }
+.timeline::before {
+  content:''; position:absolute; left:7px; top:0; bottom:0; width:3px;
+  background:linear-gradient(180deg,#d97706,#f59e0b,#fbbf24);
+  border-radius:2px;
+}
+.tl-item { position:relative; margin-bottom:1.5rem; padding-left:1rem; }
+.tl-dot {
+  position:absolute; left:-2rem; top:4px;
+  width:16px; height:16px; border-radius:50%;
+  background:#d97706; border:3px solid #fef3c7;
+}
+.tl-item:nth-child(2) .tl-dot { background:#3b82f6; border-color:#dbeafe; }
+.tl-item:nth-child(3) .tl-dot { background:#10b981; border-color:#d1fae5; }
+.tl-item:nth-child(4) .tl-dot { background:#6366f1; border-color:#e0e7ff; }
+.tl-item:nth-child(5) .tl-dot { background:#14b8a6; border-color:#ccfbf1; }
+.tl-phase { font-weight:600; font-size:0.95rem; }
+.tl-desc { color:var(--text-secondary); font-size:0.85rem; margin-top:2px; }
+
+/* Flow */
+.flow { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin:1rem 0; }
+.flow-step {
+  background:var(--surface); border:2px solid var(--border);
+  border-radius:12px; padding:10px 18px; font-weight:600; font-size:0.9rem;
+}
+.flow-step.amber { border-color:var(--amber); background:#fffbeb; }
+.flow-step.purple { border-color:var(--purple); background:#eef2ff; }
+.flow-arrow { color:var(--text-secondary); font-size:1.2rem; }
+
+/* Block Quote */
+.block-q {
+  border-left:4px solid var(--amber); background:#fffbeb;
+  padding:1.2rem 1.5rem; border-radius:0 12px 12px 0; margin:1rem 0;
+  font-style:italic; color:#78350f;
+}
+.block-q p { margin:0; font-size:0.92rem; }
+
+/* Badge */
+.badge {
+  display:inline-block; padding:3px 10px; border-radius:6px;
+  font-size:0.75rem; font-weight:600;
+}
+.badge-amber { background:#fef3c7; color:#92400e; }
+.badge-purple { background:#e0e7ff; color:#3730a3; }
+.badge-green { background:#d1fae5; color:#065f46; }
+.badge-red { background:#fee2e2; color:#991b1b; }
+.badge-blue { background:#dbeafe; color:#1e40af; }
+.badge-teal { background:#ccfbf1; color:#115e59; }
+
+/* Table */
+.tbl-wrap { overflow-x:auto; margin:1rem 0; }
+table { width:100%; border-collapse:collapse; font-size:0.85rem; }
+th { background:#f8fafc; padding:10px 12px; text-align:left; font-weight:600; border-bottom:2px solid var(--border); }
+td { padding:10px 12px; border-bottom:1px solid var(--border); }
+
+/* Footer */
+.footer {
+  background:#0f172a; color:#94a3b8; text-align:center;
+  padding:2rem; margin-top:3rem; font-size:0.85rem;
+}
+.footer a { color:#fbbf24; }
+.footer-links { display:flex; justify-content:center; gap:2rem; margin-top:0.8rem; flex-wrap:wrap; }
+
+/* Responsive */
+@media(max-width:768px) {
+  .stats { grid-template-columns:repeat(2,1fr); }
+  .toc { grid-template-columns:1fr; }
+  .compare-grid { grid-template-columns:1fr; }
+  .card-grid { grid-template-columns:1fr; }
+  .chart-label { width:120px; font-size:0.78rem; }
+  .flow { flex-direction:column; gap:8px; }
+  .flow-arrow { transform:rotate(90deg); }
+  .hero { padding:3rem 1rem 2rem; }
+  .hero h1 { font-size:1.4rem; }
+  .page { padding:1.5rem 1rem; }
+  .section h2 { font-size:1.2rem; }
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="../" class="nav-brand">LlamaIndex Blog</a>
+  <a href="../" class="nav-back">&larr; Back to Hub</a>
+</nav>
+
+<header class="hero">
+  <div class="hero-badge">RAG</div>
+  <h1>MCP Vs. Vector Search: What Still Matters In RAG | LlamaIndex</h1>
+  <p class="hero-sub">作者：Unknown | 日期：Unknown</p>
+  <div class="stats">
+<div class="stat-card">
+  <div class="stat-emoji">📝</div>
+  <div class="stat-val">1900+</div>
+  <div class="stat-label">words</div>
+  <div class="stat-desc">文章总字数</div>
+</div>
+<div class="stat-card">
+  <div class="stat-emoji">📑</div>
+  <div class="stat-val">6</div>
+  <div class="stat-label">sections</div>
+  <div class="stat-desc">核心章节</div>
+</div>
+<div class="stat-card">
+  <div class="stat-emoji">📌</div>
+  <div class="stat-val">44</div>
+  <div class="stat-label">key points</div>
+  <div class="stat-desc">关键要点</div>
+</div>
+<div class="stat-card">
+  <div class="stat-emoji">🏷️</div>
+  <div class="stat-val">RAG</div>
+  <div class="stat-label">category</div>
+  <div class="stat-desc">文章分类</div>
+</div>
+
+  </div>
+</header>
+
+<div class="page">
+
+<div class="intro-section"><p>](https://www.linkedin.com/company/91154103/)
+ -  [</p>
+<p>](https://www.youtube.com/@LlamaIndex)</p>
+<p>The Model Context Protocol (MCP) has sparked significant excitement in the AI community. It gives every data‑ or SaaS‑owner a universal “USB‑C port” that any agent can discover at run‑time. As standardized tool endpoints proliferate — the <a href="https://github.com/modelcontextprotocol/servers" target="_blank">official MCP servers repository</a> features everything from Auth0 to Zapier — developers are asking important questions about whether they should bother using vector indexing and retrieval pipelines, i.e. RAG pipelines. If agents can route queries directly to specialized MCP servers each owned by an external software/data provider (what we&amp;#39;ll call &amp;quot;federated MCP&amp;quot;), do we still need the traditional approach of crawling, indexing, and retrieving from centralized knowledge bases?</p>
+</div>
+
+<nav class="toc"><a href="#s0" class="toc-item"><span class="toc-num">01</span>The Promise of Federated MCP: all your data in real time</a>
+<a href="#s1" class="toc-item"><span class="toc-num">02</span>Counterpoint: Federated Search is still Worse than a Global Indexing Layer (for now)</a>
+<a href="#s2" class="toc-item"><span class="toc-num">03</span>CounterPoint 2: Your Unstructured Data Still Needs a High-Quality Document Intelligence Layer</a>
+<a href="#s3" class="toc-item"><span class="toc-num">04</span>Where Federated MCP is Better than Vector Search Right now</a>
+<a href="#s4" class="toc-item"><span class="toc-num">05</span>The best solutions will combine MCP and RAG</a>
+<a href="#s5" class="toc-item"><span class="toc-num">06</span>Use LlamaParse to provide your MCP tools over your unstructured data</a>
+</nav>
+
+
+<section class="section" id="s0">
+  <h2>🔍 The Promise of Federated MCP: all your data in real time</h2>
+  <p class="lead">MCP introduces a compelling alternative to vector indexing for some use cases. Instead of crawling Salesforce data into a vector store, you can expose Salesforce as a live queryable tool. An agent han</p>
+  <div class="block-q"><p>MCP introduces a compelling alternative to vector indexing for some use cases. Instead of crawling Salesforce data into a vector store, you can expose Salesforce as a live queryable tool. An agent handling &amp;quot;How many support tickets did we close this week?&amp;quot; could call a Jira MCP server dire</p></div>
+  <p>This approach promises fresher data since results come straight from the source at query time, and it can simplify pipelines for structured data sources. For well-organized SaaS tools like Jira issues or Salesforce records, MCP shifts the paradigm from &amp;quot;retrieve from my index&amp;quot; to &amp;quot;ask the source itself.&amp;quot;</p>
+<p>This “federated MCP” approach of building an agent that can connect directly to MCP servers owned by third-party providers is equivalent to <strong>federated search.</strong> In an agentic federated search architecture, the agent queries multiple specialized servers as tools and combines their results.</p>
+
+</section>
+
+<section class="section" id="s1">
+  <h2>⚡ Counterpoint: Federated Search is still Worse than a Global Indexing Layer (for now)</h2>
+  <p class="lead">While federated search through MCP sounds elegant in theory, it introduces several practical challenges that traditional unified indexing solves more effectively.</p>
+  <div class="card-grid"><div class="card" style="border-left:4px solid var(--amber)"><p><strong>No Global Understanding.</strong> When an agent queries five different MCP servers—say Confluence, Salesforce, Google Drive, Jira, and a document repository—each system returns results based on its own internal ranking. A Confluence page about &amp;quot;Q4 strategy&amp;quot; might rank highly in Confluence&amp;#39;s results, while a more relevant Salesforce opportunity record ranks lower in its results. Without a unified ranking algorithm that understands relationships across sources, the agent struggles to surface the most relevant information. As <a href="https://qatalog.com/blog/post/federated-search-vs-enterprise-search/" target="_blank">Qatalog&amp;#39;s research on federated vs. enterprise search</a> demonstrates, this fundamental limitation of federated approaches has been well-documented—each index is searched separately, making it impossible to achieve true relevance ranking across heterogeneous data sources.</p></div>
+<div class="card" style="border-left:4px solid var(--blue)"><p><strong>Performance and Latency Bottlenecks:</strong> Enterprise queries often need to span multiple data sources simultaneously. Consider asking &amp;quot;What were the customer complaints about our mobile app launch last quarter?&amp;quot; This might require data from:  With federated MCP queries, you&amp;#39;re making multiple API calls in parallel and waiting for the slowest response. <a href="https://www.coveo.com/blog/what-is-federated-search/" target="_blank">Coveo&amp;#39;s analysis of federated search</a> highlights how this &amp;quot;slowest link&amp;quot; problem becomes particularly acute at enterprise scale, where you might be querying dozens of systems simultaneously. Customer support tickets (Jira/Zendesk)</p></div>
+<div class="card" style="border-left:4px solid var(--green)"><p>Sales feedback (Salesforce)</p></div>
+<div class="card" style="border-left:4px solid var(--purple)"><p>Product analytics (internal databases)</p></div>
+<div class="card" style="border-left:4px solid var(--teal)"><p>Engineering post-mortems (Confluence)</p></div>
+<div class="card" style="border-left:4px solid var(--red)"><p><strong>The Quality Dependency Problem:</strong> MCP federated search is only as good as each provider&amp;#39;s search implementation. Many enterprise SaaS tools have basic keyword search capabilities that pale compared to modern semantic search. You&amp;#39;re in effect outsourcing your retrieval quality to vendors who may not prioritize search as a core competency. <a href="https://www.glean.com/blog/federated-indexed-enterprise-ai/" target="_blank">Glean&amp;#39;s recent analysis</a> puts this in stark terms: while federated search sounds simple in theory, third-party SaaS search endpoints are often basic keyword searches that lack the semantic understanding and ranking sophistication needed for enterprise AI applications.</p></div>
+</div>
+  <p>-  <strong>No Global Understanding.</strong> When an agent queries five different MCP servers—say Confluence, Salesforce, Google Drive, Jira, and a document repository—each system returns results based on its own internal ranking. A Confluence page about &amp;quot;Q4 strategy&amp;quot; might rank highly in Confluence&amp;#39;s results, while a more relevant Salesforce opportunity record ranks lower in its results. Without a unified ranking algorithm that understands relationships across sources, the agent struggles to surface the most relevant information. As <a href="https://qatalog.com/blog/post/federated-search-vs-enterprise-search/" target="_blank">Qatalog&amp;#39;s research on federated vs. enterprise search</a> demonstrates, this fundamental limitation of federated approaches has been well-documented—each index is searched separately, making it impossible to achieve true relevance ranking across heterogeneous data sources.
+  -  <strong>Performance and Latency Bottlenecks:</strong> Enterprise queries often need to span multiple data sources simultaneously. Consider asking &amp;quot;What were the customer complaints about our mobile app launch last quarter?&amp;quot; This might require data from:  With federated MCP queries, you&amp;#39;re making multiple API calls in parallel and waiting for the slowest response. <a href="https://www.coveo.com/blog/what-is-federated-search/" target="_blank">Coveo&amp;#39;s analysis of federated search</a> highlights how this &amp;quot;slowest link&amp;quot; problem becomes particularly acute at enterprise scale, where you might be querying dozens of systems simultaneously.
+ Customer support tickets (Jira/Zendesk)
+  -  Sales feedback (Salesforce)
+  -  Product analytics (internal databases)
+  -  Engineering post-mortems (Confluence)</p>
+<p>-  <strong>The Quality Dependency Problem:</strong> MCP federated search is only as good as each provider&amp;#39;s search implementation. Many enterprise SaaS tools have basic keyword search capabilities that pale compared to modern semantic search. You&amp;#39;re in effect outsourcing your retrieval quality to vendors who may not prioritize search as a core competency. <a href="https://www.glean.com/blog/federated-indexed-enterprise-ai/" target="_blank">Glean&amp;#39;s recent analysis</a> puts this in stark terms: while federated search sounds simple in theory, third-party SaaS search endpoints are often basic keyword searches that lack the semantic understanding and ranking sophistication needed for enterprise AI applications.</p>
+<p><strong>What this means in practice:</strong> If you try to replicate RAG by just hooking your agent up to a bunch of federated MCP servers, your users will experience longer wait times, less relevant results, and inconsistent quality depending on which systems happen to contain their answers. For enterprise use cases where information workers need fast, comprehensive answers, these limitations can make MCP-only approaches frustrating rather than helpful.</p>
+<p>Instead, providing <strong>a centralized indexing and retrieval layer across heterogenous data sources</strong> and exposing that as a <em>centralized</em> MCP retrieval tool to the agent can enable rapid lookup of semantically relevant content.</p>
+
+</section>
+
+<section class="section" id="s2">
+  <h2>🏗️ CounterPoint 2: Your Unstructured Data Still Needs a High-Quality Document Intelligence Layer</h2>
+  <p class="lead">Despite the promise of MCP for structured data sources, 90% of enterprise data is in the form of PDFs, PPTs, scans, and spreadsheets—formats that lack a native query API. This content needs to be prep</p>
+  <div class="card-grid"><div class="card" style="border-left:4px solid var(--amber)"><p><strong>Document Parsing</strong> - Converting complex PDFs, Word docs, PowerPoint, and other file formats into structured, searchable content</p></div>
+<div class="card" style="border-left:4px solid var(--blue)"><p><strong>Extraction</strong> - pulling out the right metadata, e.g. a table of financial metrics or key fields from an invoice</p></div>
+<div class="card" style="border-left:4px solid var(--green)"><p><strong>Chunking + Indexing</strong> - breaking the document down into relevant context chunks - this helps return bite-sized context for the agent in a way that helps to more easily embed this data but also return data.</p></div>
+<div class="card" style="border-left:4px solid var(--purple)"><p><strong>Document Parser Tool</strong>: Converts any file format into structured, searchable content</p></div>
+<div class="card" style="border-left:4px solid var(--teal)"><p><strong>Semantic Search Tool</strong>: Performs vector search across processed document collections</p></div>
+<div class="card" style="border-left:4px solid var(--red)"><p><strong>Document QA Tool</strong>: Answers questions about specific documents with full context</p></div>
+</div>
+  <p>-  <strong>Document Parsing</strong> - Converting complex PDFs, Word docs, PowerPoint, and other file formats into structured, searchable content
+  -  <strong>Extraction</strong> - pulling out the right metadata, e.g. a table of financial metrics or key fields from an invoice
+  -  <strong>Chunking + Indexing</strong> - breaking the document down into relevant context chunks - this helps return bite-sized context for the agent in a way that helps to more easily embed this data but also return data.</p>
+<p><a href="https://cloud.llamaindex.ai/" target="_blank">LlamaParse</a> helps to solve this by providing best-in-class document parsing that can handle complex layouts, tables, charts, scanned images, and multi-column text. We transform documents into clean, structured data using templates or custom schemas for batch document processing, then enable <a href="https://www.llamaindex.ai/blog/rag-is-dead-long-live-agentic-retrieval" target="_blank">advanced, agentic hybrid retrieval</a> with metadata filtering.</p>
+<p>###  Unstructured data as MCP tools</p>
+<p>In the world of documents, we see MCP as an opportunity to expose sophisticated document intelligence through standardized tool interfaces (we support this through the <a href="https://github.com/run-llama/llamacloud-mcp" target="_blank">LlamaParse MCP demo repo</a>).</p>
+<p>A &amp;quot;document MCP toolbox&amp;quot; might include:</p>
+
+</section>
+
+<section class="section" id="s3">
+  <h2>📊 Where Federated MCP is Better than Vector Search Right now</h2>
+  <p class="lead">Today, there are already certain interaction modes where having an agent directly connect to a third-party MCP server <em>is strictly better</em> than trying to index that data and use RAG.</p>
+  <div class="card-grid"><div class="card" style="border-left:4px solid var(--amber)"><p>Write and send an email through Gmail</p></div>
+<div class="card" style="border-left:4px solid var(--blue)"><p>Create a new Jira ticket with specific assignees and priority</p></div>
+<div class="card" style="border-left:4px solid var(--green)"><p>Update a Salesforce opportunity status</p></div>
+<div class="card" style="border-left:4px solid var(--purple)"><p>Schedule a meeting in Google Calendar</p></div>
+<div class="card" style="border-left:4px solid var(--teal)"><p>Post a message to a specific Slack channel</p></div>
+</div>
+  <p>###  MCP Provides Ways to Manipulate Your Services</p>
+<p>This advantage is straightforward but crucial. Native search indexes are designed for lookup, not action-taking. When you want an agent to:</p>
+<p>-  Write and send an email through Gmail
+  -  Create a new Jira ticket with specific assignees and priority
+  -  Update a Salesforce opportunity status
+  -  Schedule a meeting in Google Calendar
+  -  Post a message to a specific Slack channel</p>
+<p>You need the actual service APIs, not indexed representations of past data. Service providers maintain a natural moat here since they already expose these capabilities through well-documented APIs.</p>
+<p>###  Direct MCP Interfaces Provide Deeper Ways to Query a Specific Data Source</p>
+
+</section>
+
+<section class="section" id="s4">
+  <h2>🎯 The best solutions will combine MCP and RAG</h2>
+  <p class="lead">As we see things, the best agents will use a mix of MCP tools: tools that directly connect to third-party services, and retrieval tools over pre-indexed data.</p>
+  <div class="card-grid"><div class="card" style="border-left:4px solid var(--amber)"><p><strong>Fast Lookup Phase</strong>: Use retrieval tools powered by preprocessed indexes to quickly identify relevant context and get the lay of the land</p></div>
+<div class="card" style="border-left:4px solid var(--blue)"><p><strong>Deep Dive Phase</strong>: Use native MCP interfaces to drill down into specific data sources for precise information or to take actions</p></div>
+<div class="card" style="border-left:4px solid var(--green)"><p><strong>Synthesis Phase</strong>: Combine insights from both approaches to provide comprehensive, actionable responses</p></div>
+<div class="card" style="border-left:4px solid var(--purple)"><p><strong>RAG Search</strong>: Find past equipment ROI analyses, CapEx policies, and vendor contracts from document archives</p></div>
+<div class="card" style="border-left:4px solid var(--teal)"><p><strong>MCP Queries</strong>: Check current budget status in ERP and pull live equipment maintenance costs</p></div>
+<div class="card" style="border-left:4px solid var(--red)"><p><strong>Action Taking</strong>: Create purchase orders, update budgets, and notify stakeholders through enterprise systems</p></div>
+</div>
+  <p>Imagine an agent architecture that mimics how humans actually work:</p>
+<p>-  <strong>Fast Lookup Phase</strong>: Use retrieval tools powered by preprocessed indexes to quickly identify relevant context and get the lay of the land
+  -  <strong>Deep Dive Phase</strong>: Use native MCP interfaces to drill down into specific data sources for precise information or to take actions
+  -  <strong>Synthesis Phase</strong>: Combine insights from both approaches to provide comprehensive, actionable responses</p>
+<p>For example, when asked &amp;quot;Should we approve this $2M equipment purchase?&amp;quot;, an agent might:</p>
+<p>-  <strong>RAG Search</strong>: Find past equipment ROI analyses, CapEx policies, and vendor contracts from document archives
+  -  <strong>MCP Queries</strong>: Check current budget status in ERP and pull live equipment maintenance costs
+  -  <strong>Action Taking</strong>: Create purchase orders, update budgets, and notify stakeholders through enterprise systems</p>
+
+</section>
+
+<section class="section" id="s5">
+  <h2>🔧 Use LlamaParse to provide your MCP tools over your unstructured data</h2>
+  <p class="lead">MCP represents a significant evolution in how AI systems access and manipulate data, but it doesn&amp;#39;t replace the fundamental need for intelligent information processing. Instead, it creates new opp</p>
+  <div class="card-grid"><div class="card" style="border-left:4px solid var(--amber)"><p><strong>Combine both approaches strategically</strong>: Use MCP for real-time structured data and actions, while maintaining sophisticated indexing for complex document understanding and cross-source search</p></div>
+<div class="card" style="border-left:4px solid var(--blue)"><p><strong>Provide intelligent preprocessing</strong>: Transform raw data into formats that agents can actually use effectively</p></div>
+<div class="card" style="border-left:4px solid var(--green)"><p><strong>Expose capabilities through standard interfaces</strong>: Make advanced functionality accessible through MCP while maintaining the underlying intelligence layer</p></div>
+<div class="card" style="border-left:4px solid var(--purple)"><p><strong>Enable hybrid architectures</strong>: Allow developers to mix and match approaches based on specific use case requirements</p></div>
+</div>
+  <p>The winners in this new landscape will be platforms that:</p>
+<p>-  <strong>Combine both approaches strategically</strong>: Use MCP for real-time structured data and actions, while maintaining sophisticated indexing for complex document understanding and cross-source search
+  -  <strong>Provide intelligent preprocessing</strong>: Transform raw data into formats that agents can actually use effectively
+  -  <strong>Expose capabilities through standard interfaces</strong>: Make advanced functionality accessible through MCP while maintaining the underlying intelligence layer
+  -  <strong>Enable hybrid architectures</strong>: Allow developers to mix and match approaches based on specific use case requirements</p>
+<p><strong><a href="https://cloud.llamaindex.ai/" target="_blank">LlamaParse</a> is the document MCP server for your agents</strong> - use it to parse, process, and index your unstructured document data, then <a href="https://github.com/run-llama/llamacloud-mcp" target="_blank">expose it as an MCP server</a>. Plug it into any MCP client to take actions on downstream services. With our specialized document parsing capabilities, deep extraction technology, and enterprise-grade indexing, we handle the complex challenge of making your documents truly accessible to AI agents.</p>
+<p>If you’re interested in using LlamaParse, <a href="https://www.llamaindex.ai/contact" target="_blank">come get in touch</a>.</p>
+
+</section>
+
+
+</div>
+
+<footer class="footer">
+  <p>LlamaIndex Blog Deep-Dive | 深度解析系列</p>
+  <div class="footer-links">
+    <a href="../">Hub 首页</a>
+    <a href="https://www.llamaindex.ai/blog/does-mcp-kill-vector-search" target="_blank">原文链接</a>
+  </div>
+</footer>
+
+</body>
+</html>

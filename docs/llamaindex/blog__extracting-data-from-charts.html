@@ -1,0 +1,249 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Extracting Data From Charts: A Step-by-Step Guide</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafbfc;
+      --surface: #fff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --amber: #d97706;
+      --amber-light: #fbbf24;
+      --amber-dark: #92400e;
+      --purple: #6366f1;
+      --teal: #14b8a6;
+      --green: #10b981;
+      --red: #ef4444;
+      --blue: #3b82f6;
+      --pink: #ec4899;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans SC', 'Inter', sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:var(--sans); background:var(--bg); color:var(--text); line-height:1.7; }
+
+    .nav { position:sticky; top:0; background:rgba(15,23,42,.92); backdrop-filter:blur(12px); z-index:100; border-bottom:1px solid rgba(255,255,255,.08); }
+    .nav-inner { max-width:1100px; margin:0 auto; padding:12px 24px; display:flex; justify-content:space-between; align-items:center; }
+    .nav-brand { color:#fbbf24; text-decoration:none; font-weight:700; display:flex; align-items:center; gap:8px; }
+    .nav-logo { font-size:20px; }
+    .nav a:last-child { font-size:13px; color:rgba(255,255,255,.6); text-decoration:none; }
+    .nav a:last-child:hover { color:#fbbf24; }
+
+    .hero { background:linear-gradient(135deg,#0f172a 0%,#78350f 50%,#d97706 100%); color:#fff; padding:60px 24px 48px; }
+    .hero-inner { max-width:1100px; margin:0 auto; }
+    .hero-tag { display:inline-block; background:rgba(251,191,36,.15); color:#fbbf24; padding:4px 14px; border-radius:20px; font-size:13px; font-weight:500; margin-bottom:16px; letter-spacing:.5px; }
+    .hero h1 { font-size:clamp(24px,4vw,42px); font-weight:800; line-height:1.2; margin-bottom:12px; }
+    .hero p { font-size:17px; color:rgba(255,255,255,.8); max-width:700px; margin-bottom:28px; line-height:1.6; }
+    .hero-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; max-width:600px; }
+    .stat { text-align:center; }
+    .stat-num { display:block; font-size:28px; font-weight:800; color:#fbbf24; font-family:var(--mono); }
+    .stat-label { font-size:12px; color:rgba(255,255,255,.6); text-transform:uppercase; letter-spacing:.5px; }
+
+    .page { max-width:1100px; margin:0 auto; padding:32px 24px 60px; }
+
+    .toc { margin-bottom:40px; }
+    .toc-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:10px; }
+    .toc-item { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); text-decoration:none; color:var(--text); font-size:14px; font-weight:500; transition:all .2s; }
+    .toc-item:hover { border-color:var(--amber); transform:translateY(-1px); box-shadow:0 4px 12px rgba(217,119,6,.1); }
+    .toc-num { font-size:16px; }
+
+    .section { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:32px; margin-bottom:24px; }
+    .section h2 { font-size:22px; font-weight:700; margin-bottom:12px; color:var(--text); }
+    .section h3 { font-size:17px; font-weight:600; margin:20px 0 8px; color:var(--amber-dark); }
+    .lead { color:var(--text-secondary); font-size:15px; margin-bottom:16px; line-height:1.7; }
+    .section p { margin-bottom:12px; font-size:15px; line-height:1.7; }
+
+    .chart { margin:20px 0; }
+    .chart-row { display:flex; align-items:center; margin-bottom:8px; }
+    .chart-label { width:160px; font-size:13px; font-weight:500; text-align:right; padding-right:12px; color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:28px; overflow:hidden; }
+    .chart-bar { height:100%; border-radius:8px; display:flex; align-items:center; padding-left:10px; font-size:12px; font-weight:600; color:#fff; transition:width .6s ease; min-width:40px; }
+    .chart-bar.amber { background:linear-gradient(90deg,#d97706,#f59e0b); }
+    .chart-bar.purple { background:linear-gradient(90deg,#6366f1,#818cf8); }
+    .chart-bar.teal { background:linear-gradient(90deg,#0d9488,#14b8a6); }
+    .chart-bar.green { background:linear-gradient(90deg,#059669,#10b981); }
+    .chart-bar.blue { background:linear-gradient(90deg,#2563eb,#3b82f6); }
+    .chart-bar.red { background:linear-gradient(90deg,#dc2626,#ef4444); }
+
+    .timeline { position:relative; padding-left:28px; margin:20px 0; }
+    .timeline::before { content:''; position:absolute; left:8px; top:0; bottom:0; width:3px; background:linear-gradient(180deg,#d97706,#6366f1,#14b8a6); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:20px; padding-left:16px; }
+    .tl-dot { position:absolute; left:-24px; top:4px; width:14px; height:14px; border-radius:50%; border:3px solid var(--amber); background:#fff; }
+    .tl-item:nth-child(2) .tl-dot { border-color:var(--purple); }
+    .tl-item:nth-child(3) .tl-dot { border-color:var(--teal); }
+    .tl-item:nth-child(4) .tl-dot { border-color:var(--green); }
+    .tl-item:nth-child(5) .tl-dot { border-color:var(--blue); }
+    .tl-phase { font-weight:600; font-size:15px; margin-bottom:4px; }
+    .tl-desc { font-size:13px; color:var(--text-secondary); line-height:1.5; }
+
+    .compare-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin:20px 0; }
+    .compare-card { padding:16px; border-radius:var(--radius); font-size:14px; line-height:1.6; }
+    .compare-card.old { background:#fef2f2; border:1px solid #fecaca; }
+    .compare-card.new { background:#f0fdf4; border:1px solid #bbf7d0; }
+
+    .flow { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:20px 0; }
+    .flow-step { padding:10px 18px; background:#f8fafc; border:2px solid var(--border); border-radius:var(--radius); font-size:13px; font-weight:600; text-align:center; }
+    .flow-step.purple { background:#eef2ff; border-color:var(--purple); color:var(--purple); }
+    .flow-arrow { color:var(--amber); font-size:20px; font-weight:700; }
+
+    .fail-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:20px 0; }
+    .fail-grid .card { padding:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); font-size:13px; line-height:1.6; }
+
+    .block-q { margin:20px 0; padding:20px 24px; background:linear-gradient(135deg,#fffbeb,#fef3c7); border-left:4px solid var(--amber); border-radius:0 var(--radius) var(--radius) 0; font-style:italic; color:#92400e; font-size:14px; line-height:1.7; }
+
+    .tbl-wrap { overflow-x:auto; margin:20px 0; }
+    table { width:100%; border-collapse:collapse; font-size:14px; }
+    th { background:#f8fafc; padding:10px 14px; text-align:left; font-weight:600; border-bottom:2px solid var(--border); white-space:nowrap; }
+    td { padding:10px 14px; border-bottom:1px solid var(--border); }
+    tr:hover td { background:#fffbeb; }
+
+    .badge { display:inline-block; padding:3px 10px; border-radius:12px; font-size:12px; font-weight:500; }
+    .badge-amber { background:#fffbeb; color:#92400e; }
+    .badge-purple { background:#eef2ff; color:#4338ca; }
+    .badge-green { background:#f0fdf4; color:#166534; }
+
+    .footer { background:#0f172a; color:rgba(255,255,255,.6); padding:32px 24px; text-align:center; font-size:13px; }
+    .footer a { color:#fbbf24; text-decoration:none; }
+    .footer a:hover { text-decoration:underline; }
+    .footer-links { display:flex; justify-content:center; gap:24px; margin-bottom:12px; flex-wrap:wrap; }
+
+    @media(max-width:768px) {
+      .hero-stats { grid-template-columns:repeat(2,1fr); }
+      .compare-grid, .fail-grid { grid-template-columns:1fr; }
+      .chart-label { width:100px; font-size:12px; }
+      .flow { flex-direction:column; gap:6px; }
+      .flow-arrow { transform:rotate(90deg); }
+      .toc-grid { grid-template-columns:1fr; }
+      .section { padding:20px 16px; }
+      .hero { padding:40px 16px 32px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="../" class="nav-brand">
+        <span class="nav-logo">🦙</span>
+        <span>LlamaIndex Blog Hub</span>
+      </a>
+      <a href="./">← Back to Hub</a>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="hero-tag">文档处理</div>
+      <h1>Extracting Data From Charts: A Step-by-Step Guide</h1>
+      <p>You&#x27;ve found the exact numbers you need, right there in a bar chart on page 42 of a 200-page PDF. Getting them out is a different problem. For years, the answer was to squint at axis lines and type into a spreadsheet. AI has changed what&#x27;s possible, but the right approach still depends on what you&#x27;r</p>
+      <div class="hero-stats">
+        <div class="stat"><span class="stat-num">8</span><span class="stat-label">核心章节</span></div><div class="stat"><span class="stat-num">8</span><span class="stat-label">关键概念</span></div><div class="stat"><span class="stat-num">7min</span><span class="stat-label">阅读时长</span></div><div class="stat"><span class="stat-num">1931</span><span class="stat-label">总字数</span></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc"><div class="toc-grid">
+  <a href="#s0" class="toc-item"><span class="toc-num">🔍</span>Why Charts Are a Data Trap</a>
+  <a href="#s1" class="toc-item"><span class="toc-num">💡</span>How to Extract Data From Charts: Step by Step</a>
+  <a href="#s4" class="toc-item"><span class="toc-num">🔄</span>Manual, OCR, and AI: Choosing the Right Approach</a>
+  <a href="#s5" class="toc-item"><span class="toc-num">🎯</span>Where Traditional OCR Hits Its Limit on Charts</a>
+  <a href="#s6" class="toc-item"><span class="toc-num">📋</span>When Scale Changes Everything</a>
+  <a href="#s7" class="toc-item"><span class="toc-num">🔧</span>Stop Recreating Charts by Hand</a>
+</div></nav>
+
+    <section class="section" id="s0">
+  <h2>🔍 Why Charts Are a Data Trap</h2>
+  <p class="lead">Charts look simple. A bar reaches a certain height, a line crosses a grid. The data feels obvious. The problem is that charts encode numerical data as visual relationships, not as text or structured v</p>
+  <p>Traditional OCR (optical character recognition) reads pixels and recognizes text. It can pull the label &quot;Q3 Revenue&quot; off a chart axis without any trouble, but it can&#x27;t connect that label to the height of the adjacent bar, read the scale, and conclude that Q3 Revenue was $142M. That interpretation requires understanding the coordinate system embedded in the graph image.</p>
+  <p>Manual extraction works fine for a single or a few charts at best. At any real volume, say 50 charts across a quarterly earnings report pack, the math gets ugly fast. Manual chart digitization typically runs 15 to 30 minutes per chart, with error rates that compound when axes are compressed, legends overlap, or resolution is poor. A 3D bar chart introduces perspective distortion that makes visual height estimation unreliable. A pie chart with twelve slices, several under 5% of the total, is nearly impossible to read accurately without access to the underlying data. These are common cases in scanned industry reports and exported PDFs.</p>
+  <p>The core challenge is that extracting data from charts is a geometry problem wrapped in a visual interpretation problem, and traditional text-reading tools solve neither.</p>
+<div class="flow">
+  <div class="flow-step">Chart data extraction</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">numerical data</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">graph image</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Identify the graph type.</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step purple">graph type</div>
+</div>
+</section>
+<section class="section" id="s1">
+  <h2>💡 How to Extract Data From Charts: Step by Step</h2>
+  <p class="lead">Understanding this process matters whether you&#x27;re doing it manually, evaluating a tool, or debugging why an extraction went wrong. Here is what accurate chart data extraction actually requires:</p>
+  <p>Identify the graph type. Whether you’re dealing with a bar, line, pie, scatter, stacked bar, or area chart, each has different extraction logic. A pie chart requires reading arc angles and converting them to percentages. A scatter plot requires mapping individual points to coordinate pairs. Knowing the graph type determines every step that follows. Parse the axes. Read the x-axis labels, the y-axis scale and units, and any secondary axes. Note whether the scale is linear or logarithmic, and note where zero is. Read the legend. Map each series, color, or pattern to its label. A stacked bar chart with five series and ambiguous color coding is one of the harder extraction cases you&#x27;ll encounter. Locate and record each data point. Map each visual mark (bar height, point position, line vertex) to its coordinate value on the axes. This is where most of the work happens, and where most of the error occurs. Export to a structured format. CSV, JSON, or a table. The goal is data points in rows and columns, not a screenshot with annotations.</p>
+  <p>This is the same process AI systems replicate, which is why understanding it helps when evaluating how well a given tool actually performs.</p>
+  <h3>What Makes a Chart Easy or Hard to Extract</h3>
+  <p>Not all charts are equal. A clean 2D bar chart with labeled axes, high-resolution source, and a single data series is about as easy as it gets. The hard cases are where most real-world data lives:</p>
+  <p>Low-resolution scans or compressed PDFs Overlapping data series with similar colors 3D effects that distort bar heights and pie angles Compressed or unlabeled axes Small-slice pie charts where angles are nearly indistinguishable Stacked bars requiring cumulative value calculation</p>
+  <p>The graph type matters significantly here. Line charts with multiple series require tracking each series independently across the x-axis. Scatter plots may have hundreds of individual points. Stacked bar charts require subtracting values to recover per-series data.</p>
+  <h3>Validating the Data You Extract</h3>
+  <p>Spot-checking extracted data is not optional, especially if downstream decisions depend on it. A few verification steps that catch the most common errors:</p>
+  <p>Do totals add up? A stacked bar chart&#x27;s segments should sum to the bar&#x27;s total height. Do extracted values match any numbers mentioned in the surrounding text? Does the trend make sense relative to adjacent charts in the same report? Keep a reference back to the source graph image for each extracted value so discrepancies can be traced.</p>
+  <p>At scale, this validation step is where manual methods fail. Checking 500 data points against 50 source charts is its own full-time job.</p>
+<div class="fail-grid">
+  <div class="card"><strong>Identify the graph type.</strong><br>Whether you’re dealing with a bar, line, pie, scatter, stacked bar, or area chart, each has different extraction logic. A pie chart requires reading arc angles and converting them to percentages. A scatter plot requires mapping individual points to coordinate pairs. Knowing the **graph type** determines every step that follows.</div>
+  <div class="card"><strong>Parse the axes.</strong><br>Read the x-axis labels, the y-axis scale and units, and any secondary axes. Note whether the scale is linear or logarithmic, and note where zero is.</div>
+  <div class="card"><strong>Read the legend.</strong><br>Map each series, color, or pattern to its label. A stacked bar chart with five series and ambiguous color coding is one of the harder extraction cases you&#x27;ll encounter.</div>
+  <div class="card"><strong>Locate and record each data point.</strong><br>Map each visual mark (bar height, point position, line vertex) to its coordinate value on the axes. This is where most of the work happens, and where most of the error occurs.</div>
+  <div class="card"><strong>Export to a structured format.</strong><br>CSV, JSON, or a table. The goal is **data points** in rows and columns, not a screenshot with annotations.</div>
+</div>
+</section>
+<section class="section" id="s4">
+  <h2>🔄 Manual, OCR, and AI: Choosing the Right Approach</h2>
+  <p class="lead">Three methods exist, each with real trade-offs:</p>
+  <p>Method Accuracy Speed Scale Output Format Validation</p>
+  <p>Manual High (single chart) 15-30 min/chart Fails at volume Whatever you type Human judgment only</p>
+  <p>Traditional OCR Text labels only Fast Scales for text Structured text Cannot validate missing values</p>
+  <p>AI/VLM (e.g., LlamaParse) High across chart types Fast Scales CSV, JSON, Markdown Confidence scores, citations</p>
+  <p>Manual extraction makes sense when you have one chart, you need to verify something quickly, or the chart is unusual enough that automation would require significant custom work. It doesn&#x27;t scale.</p>
+</section>
+<section class="section" id="s5">
+  <h2>🎯 Where Traditional OCR Hits Its Limit on Charts</h2>
+  <p class="lead">Traditional OCR was designed to recognize characters. Tools like Tesseract and AWS Textract do this well. The problem is that a bar chart&#x27;s data isn&#x27;t stored as characters. The number 142 doesn&#x27;t appe</p>
+  <p>LlamaParse&#x27;s agentic approach handles this differently. Rather than treating a document as a text extraction problem, it processes text, tables, images, and charts through the same multi-modal pipeline. For charts, this means reconstructing actual data values from visual reasoning, not just pulling axis labels.</p>
+  <p>The result is that when you run a financial report through LlamaParse, you get the chart data out as structured values alongside the surrounding text, in Markdown, JSON, or HTML, without needing a separate chart-extraction tool bolted onto your pipeline. LlamaParse handles the document as a whole. It also applies self-correction loops as part of its agentic pipeline, checking extracted values for internal consistency and flagging outputs that fall outside the range defined by the axis. That verification step is what makes the results auditable and fast.</p>
+  <p>Where traditional OCR stops at axis labels, LlamaParse reconstructs the actual data values through visual reasoning, outputting the numbers behind the bars and lines as structured data. That difference matters for any workflow where charts are a meaningful source of information.</p>
+</section>
+<section class="section" id="s6">
+  <h2>📋 When Scale Changes Everything</h2>
+  <p class="lead">Processing one chart manually is fine. Processing 50 charts across a quarterly earnings report pack, or pulling data from a hundred competitor filings each containing fifteen or more charts, requires </p>
+  <p>The scenarios where scale forces the issue:</p>
+  <p>Financial analysts building market models from industry reports, pulling revenue, margin, and volume data across dozens of company filings where the underlying numbers live in charts, not tables Insurance assessors processing claim documents where embedded charts document loss history or actuarial projections Researchers aggregating competitor data across analyst reports and trade publications Legal teams reviewing exhibits that include charts as evidence, where each extracted value needs to be traceable back to a specific page and source image</p>
+  <p>At this scale, the requirements change. You need bulk processing across entire document sets, consistent structured output across every chart regardless of type, the ability to extract data from every chart without manually identifying each one, and an audit trail linking extracted values back to source pages.</p>
+  <p>Manual methods fail on item one. Traditional OCR fails on items two and three. The volume of data locked in charts across PDFs, scanned reports, and presentation decks is large and keeps growing, and most document pipelines have no good answer for it.</p>
+<div class="compare-grid">
+  <div class="compare-card old"><strong>❌</strong> building market models from industry reports, pulling revenue, margin, and volume data across dozens of company filings where the underlying numbers live in charts, not tables</div>
+  <div class="compare-card new"><strong>✅</strong> processing claim documents where embedded charts document loss history or actuarial projections</div>
+  <div class="compare-card old"><strong>❌</strong> aggregating competitor data across analyst reports and trade publications</div>
+  <div class="compare-card new"><strong>✅</strong> reviewing exhibits that include charts as evidence, where each extracted value needs to be traceable back to a specific page and source image</div>
+</div>
+</section>
+<section class="section" id="s7">
+  <h2>🔧 Stop Recreating Charts by Hand</h2>
+  <p class="lead">More reports, more PDFs, more dashboards screenshotted and embedded in decks: the volume of data locked in chart images is increasing, not shrinking. The question for any team processing documents at </p>
+  <p>LlamaParse handles charts as part of full document parsing. Multi-modal from the start, not a chart-specific add-on. When a PDF comes in with tables, text, and bar charts, all of it goes through the same pipeline and comes out as structured, AI-ready data in Markdown, JSON, or HTML, with each chart&#x27;s extracted values mapped to their source page. No separate workflow for visual data, no stitching three tools together for one document type, and no manual cleanup before the data is usable downstream.</p>
+  <p>If you&#x27;re processing documents that include charts and currently handling the visual data manually or skipping it entirely, LlamaParse handles charts as part of full document parsing. LlamaCloud is free to try with 10,000 credits on signup.</p>
+</section>
+
+    
+  </div>
+
+  <footer class="footer">
+    <div class="footer-links">
+      <a href="./">LlamaIndex Blog Hub</a>
+      <a href="https://www.llamaindex.ai/blog/extracting-data-from-charts" target="_blank" rel="noopener">原文链接 Original</a>
+      <a href="../">Engineering Blogs Hub</a>
+    </div>
+    <p>Generated from LlamaIndex blog content for learning purposes.</p>
+  </footer>
+</body>
+</html>

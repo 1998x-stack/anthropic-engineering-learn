@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：The Cost of Overthinking: Why Reasoning Models Fail at Document Parsing</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafbfc;
+      --surface: #fff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --amber: #d97706;
+      --amber-light: #fbbf24;
+      --amber-dark: #92400e;
+      --purple: #6366f1;
+      --teal: #14b8a6;
+      --green: #10b981;
+      --red: #ef4444;
+      --blue: #3b82f6;
+      --pink: #ec4899;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans SC', 'Inter', sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:var(--sans); background:var(--bg); color:var(--text); line-height:1.7; }
+
+    .nav { position:sticky; top:0; background:rgba(15,23,42,.92); backdrop-filter:blur(12px); z-index:100; border-bottom:1px solid rgba(255,255,255,.08); }
+    .nav-inner { max-width:1100px; margin:0 auto; padding:12px 24px; display:flex; justify-content:space-between; align-items:center; }
+    .nav-brand { color:#fbbf24; text-decoration:none; font-weight:700; display:flex; align-items:center; gap:8px; }
+    .nav-logo { font-size:20px; }
+    .nav a:last-child { font-size:13px; color:rgba(255,255,255,.6); text-decoration:none; }
+    .nav a:last-child:hover { color:#fbbf24; }
+
+    .hero { background:linear-gradient(135deg,#0f172a 0%,#78350f 50%,#d97706 100%); color:#fff; padding:60px 24px 48px; }
+    .hero-inner { max-width:1100px; margin:0 auto; }
+    .hero-tag { display:inline-block; background:rgba(251,191,36,.15); color:#fbbf24; padding:4px 14px; border-radius:20px; font-size:13px; font-weight:500; margin-bottom:16px; letter-spacing:.5px; }
+    .hero h1 { font-size:clamp(24px,4vw,42px); font-weight:800; line-height:1.2; margin-bottom:12px; }
+    .hero p { font-size:17px; color:rgba(255,255,255,.8); max-width:700px; margin-bottom:28px; line-height:1.6; }
+    .hero-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; max-width:600px; }
+    .stat { text-align:center; }
+    .stat-num { display:block; font-size:28px; font-weight:800; color:#fbbf24; font-family:var(--mono); }
+    .stat-label { font-size:12px; color:rgba(255,255,255,.6); text-transform:uppercase; letter-spacing:.5px; }
+
+    .page { max-width:1100px; margin:0 auto; padding:32px 24px 60px; }
+
+    .toc { margin-bottom:40px; }
+    .toc-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:10px; }
+    .toc-item { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); text-decoration:none; color:var(--text); font-size:14px; font-weight:500; transition:all .2s; }
+    .toc-item:hover { border-color:var(--amber); transform:translateY(-1px); box-shadow:0 4px 12px rgba(217,119,6,.1); }
+    .toc-num { font-size:16px; }
+
+    .section { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:32px; margin-bottom:24px; }
+    .section h2 { font-size:22px; font-weight:700; margin-bottom:12px; color:var(--text); }
+    .section h3 { font-size:17px; font-weight:600; margin:20px 0 8px; color:var(--amber-dark); }
+    .lead { color:var(--text-secondary); font-size:15px; margin-bottom:16px; line-height:1.7; }
+    .section p { margin-bottom:12px; font-size:15px; line-height:1.7; }
+
+    .chart { margin:20px 0; }
+    .chart-row { display:flex; align-items:center; margin-bottom:8px; }
+    .chart-label { width:160px; font-size:13px; font-weight:500; text-align:right; padding-right:12px; color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:28px; overflow:hidden; }
+    .chart-bar { height:100%; border-radius:8px; display:flex; align-items:center; padding-left:10px; font-size:12px; font-weight:600; color:#fff; transition:width .6s ease; min-width:40px; }
+    .chart-bar.amber { background:linear-gradient(90deg,#d97706,#f59e0b); }
+    .chart-bar.purple { background:linear-gradient(90deg,#6366f1,#818cf8); }
+    .chart-bar.teal { background:linear-gradient(90deg,#0d9488,#14b8a6); }
+    .chart-bar.green { background:linear-gradient(90deg,#059669,#10b981); }
+    .chart-bar.blue { background:linear-gradient(90deg,#2563eb,#3b82f6); }
+    .chart-bar.red { background:linear-gradient(90deg,#dc2626,#ef4444); }
+
+    .timeline { position:relative; padding-left:28px; margin:20px 0; }
+    .timeline::before { content:''; position:absolute; left:8px; top:0; bottom:0; width:3px; background:linear-gradient(180deg,#d97706,#6366f1,#14b8a6); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:20px; padding-left:16px; }
+    .tl-dot { position:absolute; left:-24px; top:4px; width:14px; height:14px; border-radius:50%; border:3px solid var(--amber); background:#fff; }
+    .tl-item:nth-child(2) .tl-dot { border-color:var(--purple); }
+    .tl-item:nth-child(3) .tl-dot { border-color:var(--teal); }
+    .tl-item:nth-child(4) .tl-dot { border-color:var(--green); }
+    .tl-item:nth-child(5) .tl-dot { border-color:var(--blue); }
+    .tl-phase { font-weight:600; font-size:15px; margin-bottom:4px; }
+    .tl-desc { font-size:13px; color:var(--text-secondary); line-height:1.5; }
+
+    .compare-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin:20px 0; }
+    .compare-card { padding:16px; border-radius:var(--radius); font-size:14px; line-height:1.6; }
+    .compare-card.old { background:#fef2f2; border:1px solid #fecaca; }
+    .compare-card.new { background:#f0fdf4; border:1px solid #bbf7d0; }
+
+    .flow { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:20px 0; }
+    .flow-step { padding:10px 18px; background:#f8fafc; border:2px solid var(--border); border-radius:var(--radius); font-size:13px; font-weight:600; text-align:center; }
+    .flow-step.purple { background:#eef2ff; border-color:var(--purple); color:var(--purple); }
+    .flow-arrow { color:var(--amber); font-size:20px; font-weight:700; }
+
+    .fail-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:20px 0; }
+    .fail-grid .card { padding:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); font-size:13px; line-height:1.6; }
+
+    .block-q { margin:20px 0; padding:20px 24px; background:linear-gradient(135deg,#fffbeb,#fef3c7); border-left:4px solid var(--amber); border-radius:0 var(--radius) var(--radius) 0; font-style:italic; color:#92400e; font-size:14px; line-height:1.7; }
+
+    .tbl-wrap { overflow-x:auto; margin:20px 0; }
+    table { width:100%; border-collapse:collapse; font-size:14px; }
+    th { background:#f8fafc; padding:10px 14px; text-align:left; font-weight:600; border-bottom:2px solid var(--border); white-space:nowrap; }
+    td { padding:10px 14px; border-bottom:1px solid var(--border); }
+    tr:hover td { background:#fffbeb; }
+
+    .badge { display:inline-block; padding:3px 10px; border-radius:12px; font-size:12px; font-weight:500; }
+    .badge-amber { background:#fffbeb; color:#92400e; }
+    .badge-purple { background:#eef2ff; color:#4338ca; }
+    .badge-green { background:#f0fdf4; color:#166534; }
+
+    .footer { background:#0f172a; color:rgba(255,255,255,.6); padding:32px 24px; text-align:center; font-size:13px; }
+    .footer a { color:#fbbf24; text-decoration:none; }
+    .footer a:hover { text-decoration:underline; }
+    .footer-links { display:flex; justify-content:center; gap:24px; margin-bottom:12px; flex-wrap:wrap; }
+
+    @media(max-width:768px) {
+      .hero-stats { grid-template-columns:repeat(2,1fr); }
+      .compare-grid, .fail-grid { grid-template-columns:1fr; }
+      .chart-label { width:100px; font-size:12px; }
+      .flow { flex-direction:column; gap:6px; }
+      .flow-arrow { transform:rotate(90deg); }
+      .toc-grid { grid-template-columns:1fr; }
+      .section { padding:20px 16px; }
+      .hero { padding:40px 16px 32px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="../" class="nav-brand">
+        <span class="nav-logo">🦙</span>
+        <span>LlamaIndex Blog Hub</span>
+      </a>
+      <a href="./">← Back to Hub</a>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="hero-tag">文档处理</div>
+      <h1>The Cost of Overthinking: Why Reasoning Models Fail at Document Parsing</h1>
+      <p>Solving document OCR with high accuracy requires accurate extraction of tables, formulas, and reading order. A misread cell or formula can ruin a financial summary or scientific claim. At the same time, models are getting better at reasoning; reasoning helps a model devote more processing power to c</p>
+      <div class="hero-stats">
+        <div class="stat"><span class="stat-num">5</span><span class="stat-label">核心章节</span></div><div class="stat"><span class="stat-num">8</span><span class="stat-label">关键概念</span></div><div class="stat"><span class="stat-num">5min</span><span class="stat-label">阅读时长</span></div><div class="stat"><span class="stat-num">1335</span><span class="stat-label">总字数</span></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc"><div class="toc-grid">
+  <a href="#s0" class="toc-item"><span class="toc-num">🔍</span>Table Infilling</a>
+  <a href="#s1" class="toc-item"><span class="toc-num">💡</span>One table becomes three</a>
+  <a href="#s2" class="toc-item"><span class="toc-num">⚙️</span>You can&#x27;t reason past what you can&#x27;t see</a>
+  <a href="#s3" class="toc-item"><span class="toc-num">📊</span>When does thinking help?</a>
+  <a href="#s4" class="toc-item"><span class="toc-num">🔄</span>What can we do if more thinking **doesn&#x27;t** help?</a>
+</div></nav>
+
+    <section class="section" id="s0">
+  <h2>🔍 Table Infilling</h2>
+  <p class="lead">Original Image    xHigh Result</p>
+  <p>One of our samples is a table from a scanned academic paper. It takes 6+ minutes for GPT-5.2 xHigh to go through this page, using +13,700 reasoning tokens and producing approx. 1,300 output tokens (a 10-to-1 reasoning/output ratio).</p>
+  <p>The most egregious error is that GPT-5.2 xHigh hallucinates &quot;4-CNY&quot; to &quot;4-CYN&quot;, when all of the other thinking modes output the correct characters.</p>
+  <p>A less egregious behavior is that GPT-5.2 xHigh fills in the empty table spaces in the &quot;model&quot; column with values. It infers that each row in the Model column applies to an entire block of rows, instead of a single row. This is technically still semantically correct - each model refers to a set of pairwise interactions, and the authors didn’t fill out the entire column to save space. However, it is technically not a faithful reconstruction of the source document, and since OmniDocBench tests for exact matching, this leads to an accuracy decrease.</p>
+<div class="flow">
+  <div class="flow-step">Quality</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Time(s)</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Cost($)</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">0.821</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step purple">18.71</div>
+</div>
+</section>
+<section class="section" id="s1">
+  <h2>💡 One table becomes three</h2>
+  <p class="lead">Original Image    High / xHigh Result</p>
+  <p>In another example, a continuous table in an academic paper contains a single row that contains section headers (such as &quot;Random generation&quot; and &quot;Reading span&quot;). Each row aligns consistently, and the table itself has continuous borders. Clearly, there is only one table.</p>
+  <p>We find that the higher reasoning modes, high and xHigh, tend to split this single, contiguous table into separate subsections. Our analysis reveals that the model overthinks the table structure and breaks the structural fidelity of the table: if a model sees a row that has no data in the subsequent columns, it determines &quot;there must be a boundary between tables&quot; using only the spatial organization of the data being visually reviewed as a basis for separating the two tables. The base model tends to maintain the entire table as one object when it uses a model to visually map the statistical representation directly rather than over-analyzing it in context.</p>
+  <p>More thinking leads the model to override what it sees with what it thinks should be there.</p>
+<div class="timeline">
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Table Infilling</div>
+    <div class="tl-desc">Original Imag</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">One table becomes three</div>
+    <div class="tl-desc">Original Im</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">You can&#x27;t reason past what you can&#x27;t see</div>
+    <div class="tl-desc">When GPT-</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">When does thinking help?</div>
+    <div class="tl-desc">There is value in reasoning. We found an example of this with xHigh&#x27;s increased success in utilizing logos and icons</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">What can we do if more thinking **doesn&#x27;t** help?</div>
+    <div class="tl-desc">Previous scenarios indicate that there is an inconsistency between the semantic reasoning of the model and the spatial i</div>
+  </div>
+</div>
+</section>
+<section class="section" id="s2">
+  <h2>⚙️ You can&#x27;t reason past what you can&#x27;t see</h2>
+  <p class="lead">When GPT-5.2 encounters [Illegible] or has to skip over portions of text regardless of the difficulty or length of those portions, it will do so when the text is small, dense, and oriented vertically.</p>
+  <p>We used OpenAI&#x27;s default `auto`  setting for the `detail`  parameter. This should start high-resolution processing (512x512 tile crops at 170 tokens each) for images that are complicated, but it still fails. This indicates a bottleneck in the vision encoder: before reasoning even starts, the model loses information during the image encoding phase. Thinking tokens can&#x27;t recover what the vision encoder loses at the pixel level.</p>
+  <p>Both documents are fully extracted by LlamaParse, including the vertical text.</p>
+</section>
+<section class="section" id="s3">
+  <h2>📊 When does thinking help?</h2>
+  <p class="lead">There is value in reasoning. We found an example of this with xHigh&#x27;s increased success in utilizing logos and icons over the zero thinking model.</p>
+  <p>Original (Logos and icons)    xHigh Result</p>
+  <p>The base model does not parse logos at all, as it cannot &quot;read&quot; them as characters, so they are treated as whitespace. The xHigh model does describe logos: &quot;EXPLORE • EDUCATE • ENGAGE (circular logo)&quot;. The distinction here is critical: the base model limits itself to transcription (OCR), while the reasoning model performs visual interpretation.</p>
+  <p>This is how understanding differs from parsing. Parsing asks &quot;what is written?&quot; Understanding asks &quot;what is this?&quot; Understanding backfires when it comes to tables and formulas because the model fills in what it believes should be there, but it is exactly what we want for non-text elements.</p>
+</section>
+<section class="section" id="s4">
+  <h2>🔄 What can we do if more thinking **doesn&#x27;t** help?</h2>
+  <p class="lead">Previous scenarios indicate that there is an inconsistency between the semantic reasoning of the model and the spatial integrity of the document layout. When the content already exists on the document</p>
+  <p>Rather than relying on a single-pass approach where a vision encoder struggles to handle OCR, layout, and structure simultaneously, a pipeline-based approach allows us to solve parsing using specialized components. The key is to divide the work: one part reads the pixel, while another structures the text. After dedicated OCR extracts it at native resolution, the LLM organizes the text that has already been read. Every component plays to its strengths.</p>
+  <p>This architecture addresses the primary failure modes of overthinking:</p>
+  <p>No hallucinations: Pre-extracted, deterministic text verifies cell content No splitting: Table boundaries are established by layout analysis before content extraction No resolution limits: Native-resolution OCR captures details missed by blurred vision encoders</p>
+  <p>Instead of scaling general-purpose reasoning tokens, LlamaParse achieve better results by adding agentic reasoning with intention in specific pockets of this pipeline. This orchestration uses agentic loops to validate structured output against raw OCR data, ensuring reasoning is reserved for complex structural decisions rather than pixel-level speculation.</p>
+  <p>Start to building high-fidelity document pipelines at LlamaParse today.</p>
+<div class="compare-grid">
+  <div class="compare-card old"><strong>❌</strong> Pre-extracted, deterministic text verifies cell content</div>
+  <div class="compare-card new"><strong>✅</strong> Table boundaries are established by layout analysis before content extraction</div>
+  <div class="compare-card old"><strong>❌</strong> Native-resolution OCR captures details missed by blurred vision encoders</div>
+  <div class="compare-card new"><strong>✅</strong> = best, underline = second best. For TextEdit and RO Edit, lower is better. For everything else, higher is better.*</div>
+</div>
+</section>
+
+    
+  </div>
+
+  <footer class="footer">
+    <div class="footer-links">
+      <a href="./">LlamaIndex Blog Hub</a>
+      <a href="https://www.llamaindex.ai/blog/the-cost-of-overthinking-why-reasoning-models-fail-at-document-parsing" target="_blank" rel="noopener">原文链接 Original</a>
+      <a href="../">Engineering Blogs Hub</a>
+    </div>
+    <p>Generated from LlamaIndex blog content for learning purposes.</p>
+  </footer>
+</body>
+</html>

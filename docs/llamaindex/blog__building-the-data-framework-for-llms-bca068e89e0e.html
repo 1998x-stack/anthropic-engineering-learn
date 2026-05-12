@@ -1,0 +1,321 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>深度解析：LLM Data Framework: How to Build With Private Data | LlamaIndex</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #fafbfc;
+  --surface: #fff;
+  --text: #0f172a;
+  --text-secondary: #64748b;
+  --border: #e2e8f0;
+  --radius: 14px;
+  --amber: #d97706;
+  --amber-light: #fbbf24;
+  --amber-dark: #92400e;
+  --purple: #6366f1;
+  --teal: #14b8a6;
+  --green: #10b981;
+  --red: #ef4444;
+  --blue: #3b82f6;
+  --mono: 'JetBrains Mono', monospace;
+  --sans: 'Noto Sans SC', 'Inter', sans-serif;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:var(--sans); background:var(--bg); color:var(--text); line-height:1.7; }
+a { color:var(--amber); text-decoration:none; }
+a:hover { text-decoration:underline; }
+
+/* Nav */
+.nav {
+  position:sticky; top:0; z-index:100;
+  background:rgba(15,23,42,0.95); backdrop-filter:blur(12px);
+  padding:0 2rem; height:56px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.nav-brand { color:#fbbf24; font-weight:700; font-size:1.1rem; }
+.nav-back { color:#94a3b8; font-size:0.9rem; }
+.nav-back:hover { color:#fbbf24; }
+
+/* Hero */
+.hero {
+  background:linear-gradient(135deg,#0f172a 0%,#78350f 50%,#d97706 100%);
+  padding:4rem 2rem 3rem; color:#fff; text-align:center;
+}
+.hero-badge { display:inline-block; background:rgba(251,191,36,0.2); color:#fbbf24;
+  padding:4px 16px; border-radius:20px; font-size:0.85rem; margin-bottom:1rem; font-weight:500; }
+.hero h1 { font-size:clamp(1.5rem,4vw,2.4rem); font-weight:800; max-width:800px; margin:0 auto 1rem; line-height:1.3; }
+.hero-sub { color:rgba(255,255,255,0.8); font-size:1rem; max-width:600px; margin:0 auto 2rem; }
+.stats { display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; max-width:700px; margin:0 auto; }
+.stat-card {
+  background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12);
+  border-radius:12px; padding:1rem 0.5rem; text-align:center;
+}
+.stat-emoji { font-size:1.3rem; margin-bottom:4px; }
+.stat-val { font-size:1.4rem; font-weight:800; color:#fbbf24; }
+.stat-label { font-size:0.75rem; color:rgba(255,255,255,0.7); text-transform:uppercase; letter-spacing:0.5px; }
+.stat-desc { font-size:0.7rem; color:rgba(255,255,255,0.5); margin-top:2px; }
+
+/* Page */
+.page { max-width:900px; margin:0 auto; padding:2rem 1.5rem; }
+
+/* TOC */
+.toc { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:0.75rem; margin-bottom:3rem; }
+.toc-item {
+  display:flex; align-items:center; gap:10px;
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:10px; padding:10px 14px; font-size:0.9rem;
+  color:var(--text); transition:all 0.2s;
+}
+.toc-item:hover { border-color:var(--amber); background:#fffbeb; text-decoration:none; transform:translateY(-1px); }
+.toc-num {
+  background:linear-gradient(135deg,#d97706,#f59e0b);
+  color:#fff; font-weight:700; font-size:0.75rem;
+  width:28px; height:28px; border-radius:8px;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+
+/* Section */
+.section { margin-bottom:3rem; }
+.section h2 {
+  font-size:1.5rem; font-weight:700; margin-bottom:0.5rem;
+  padding-bottom:0.5rem; border-bottom:2px solid var(--amber);
+}
+.lead { color:var(--text-secondary); font-size:0.95rem; margin-bottom:1.2rem; }
+
+/* Cards */
+.card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius); padding:1.2rem; margin-bottom:0.8rem;
+}
+.card p { font-size:0.9rem; }
+.card-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:0.8rem; margin:1rem 0; }
+
+/* Code Block */
+.code-block {
+  background:#1e293b; border-radius:12px; overflow:hidden; margin:1rem 0;
+}
+.code-header { padding:8px 16px; background:#0f172a; display:flex; align-items:center; gap:8px; }
+.code-block pre {
+  padding:1rem 1.2rem; color:#e2e8f0; font-family:var(--mono);
+  font-size:0.82rem; line-height:1.6; overflow-x:auto; white-space:pre;
+}
+
+/* Compare */
+.compare-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin:1rem 0; }
+.compare-card {
+  background:var(--surface); border-radius:var(--radius); padding:1.2rem;
+  border:1px solid var(--border);
+}
+.compare-card.old { border-left:4px solid var(--red); }
+.compare-card.new { border-left:4px solid var(--green); }
+.compare-card h4 { font-size:0.95rem; margin-bottom:0.5rem; }
+
+/* Chart */
+.chart { margin:1rem 0; }
+.chart-row { display:flex; align-items:center; margin-bottom:8px; }
+.chart-label { width:160px; font-size:0.85rem; font-weight:500; flex-shrink:0; }
+.chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:32px; overflow:hidden; }
+.chart-bar {
+  height:100%; border-radius:8px; display:flex; align-items:center;
+  padding:0 12px; font-size:0.75rem; font-weight:600; color:#fff;
+  transition:width 0.6s ease;
+}
+.chart-bar.amber { background:linear-gradient(90deg,#d97706,#f59e0b); }
+.chart-bar.purple { background:linear-gradient(90deg,#6366f1,#818cf8); }
+.chart-bar.green { background:linear-gradient(90deg,#10b981,#34d399); }
+.chart-bar.blue { background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+.chart-bar.teal { background:linear-gradient(90deg,#14b8a6,#2dd4bf); }
+.chart-bar.red { background:linear-gradient(90deg,#ef4444,#f87171); }
+
+/* Timeline */
+.timeline { position:relative; padding-left:2rem; margin:1rem 0; }
+.timeline::before {
+  content:''; position:absolute; left:7px; top:0; bottom:0; width:3px;
+  background:linear-gradient(180deg,#d97706,#f59e0b,#fbbf24);
+  border-radius:2px;
+}
+.tl-item { position:relative; margin-bottom:1.5rem; padding-left:1rem; }
+.tl-dot {
+  position:absolute; left:-2rem; top:4px;
+  width:16px; height:16px; border-radius:50%;
+  background:#d97706; border:3px solid #fef3c7;
+}
+.tl-item:nth-child(2) .tl-dot { background:#3b82f6; border-color:#dbeafe; }
+.tl-item:nth-child(3) .tl-dot { background:#10b981; border-color:#d1fae5; }
+.tl-item:nth-child(4) .tl-dot { background:#6366f1; border-color:#e0e7ff; }
+.tl-item:nth-child(5) .tl-dot { background:#14b8a6; border-color:#ccfbf1; }
+.tl-phase { font-weight:600; font-size:0.95rem; }
+.tl-desc { color:var(--text-secondary); font-size:0.85rem; margin-top:2px; }
+
+/* Flow */
+.flow { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin:1rem 0; }
+.flow-step {
+  background:var(--surface); border:2px solid var(--border);
+  border-radius:12px; padding:10px 18px; font-weight:600; font-size:0.9rem;
+}
+.flow-step.amber { border-color:var(--amber); background:#fffbeb; }
+.flow-step.purple { border-color:var(--purple); background:#eef2ff; }
+.flow-arrow { color:var(--text-secondary); font-size:1.2rem; }
+
+/* Block Quote */
+.block-q {
+  border-left:4px solid var(--amber); background:#fffbeb;
+  padding:1.2rem 1.5rem; border-radius:0 12px 12px 0; margin:1rem 0;
+  font-style:italic; color:#78350f;
+}
+.block-q p { margin:0; font-size:0.92rem; }
+
+/* Badge */
+.badge {
+  display:inline-block; padding:3px 10px; border-radius:6px;
+  font-size:0.75rem; font-weight:600;
+}
+.badge-amber { background:#fef3c7; color:#92400e; }
+.badge-purple { background:#e0e7ff; color:#3730a3; }
+.badge-green { background:#d1fae5; color:#065f46; }
+.badge-red { background:#fee2e2; color:#991b1b; }
+.badge-blue { background:#dbeafe; color:#1e40af; }
+.badge-teal { background:#ccfbf1; color:#115e59; }
+
+/* Table */
+.tbl-wrap { overflow-x:auto; margin:1rem 0; }
+table { width:100%; border-collapse:collapse; font-size:0.85rem; }
+th { background:#f8fafc; padding:10px 12px; text-align:left; font-weight:600; border-bottom:2px solid var(--border); }
+td { padding:10px 12px; border-bottom:1px solid var(--border); }
+
+/* Footer */
+.footer {
+  background:#0f172a; color:#94a3b8; text-align:center;
+  padding:2rem; margin-top:3rem; font-size:0.85rem;
+}
+.footer a { color:#fbbf24; }
+.footer-links { display:flex; justify-content:center; gap:2rem; margin-top:0.8rem; flex-wrap:wrap; }
+
+/* Responsive */
+@media(max-width:768px) {
+  .stats { grid-template-columns:repeat(2,1fr); }
+  .toc { grid-template-columns:1fr; }
+  .compare-grid { grid-template-columns:1fr; }
+  .card-grid { grid-template-columns:1fr; }
+  .chart-label { width:120px; font-size:0.78rem; }
+  .flow { flex-direction:column; gap:8px; }
+  .flow-arrow { transform:rotate(90deg); }
+  .hero { padding:3rem 1rem 2rem; }
+  .hero h1 { font-size:1.4rem; }
+  .page { padding:1.5rem 1rem; }
+  .section h2 { font-size:1.2rem; }
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="../" class="nav-brand">LlamaIndex Blog</a>
+  <a href="../" class="nav-back">&larr; Back to Hub</a>
+</nav>
+
+<header class="hero">
+  <div class="hero-badge">Tools &amp; Integrations</div>
+  <h1>LLM Data Framework: How to Build With Private Data | LlamaIndex</h1>
+  <p class="hero-sub">作者：Unknown | 日期：Unknown</p>
+  <div class="stats">
+<div class="stat-card">
+  <div class="stat-emoji">📝</div>
+  <div class="stat-val">1400+</div>
+  <div class="stat-label">words</div>
+  <div class="stat-desc">文章总字数</div>
+</div>
+<div class="stat-card">
+  <div class="stat-emoji">📑</div>
+  <div class="stat-val">2</div>
+  <div class="stat-label">sections</div>
+  <div class="stat-desc">核心章节</div>
+</div>
+<div class="stat-card">
+  <div class="stat-emoji">📌</div>
+  <div class="stat-val">33</div>
+  <div class="stat-label">key points</div>
+  <div class="stat-desc">关键要点</div>
+</div>
+<div class="stat-card">
+  <div class="stat-emoji">🏷️</div>
+  <div class="stat-val">Tools &amp; Integrations</div>
+  <div class="stat-label">category</div>
+  <div class="stat-desc">文章分类</div>
+</div>
+
+  </div>
+</header>
+
+<div class="page">
+
+<div class="intro-section"><p>](https://www.linkedin.com/company/91154103/)
+ -  [</p>
+<p>](https://www.youtube.com/@LlamaIndex)</p>
+<p>Today is an exciting day for LlamaIndex, and a big milestone in my personal journey with generative AI. I’ve followed generative models for most of my academic/professional career — from <a href="https://scholar.google.com/citations?user=8JjemawAAAAJ&amp;amp;hl=en" target="_blank">my research on GANs/sensor compression</a> to following <a href="https://arxiv.org/abs/1706.03762" target="_blank">Transformers</a>/<a href="https://openai.com/blog/gpt-3-apps" target="_blank">GPT</a> <a href="https://openai.com/blog/chatgpt" target="_blank">developments</a>. It became increasingly clear that as these models got bigger/better, they were evolving from knowledge generators to intelligent engines that could reason/act over new information.</p>
+</div>
+
+<nav class="toc"><a href="#s0" class="toc-item"><span class="toc-num">01</span>**Build the best open source data framework and developer community**</a>
+<a href="#s1" class="toc-item"><span class="toc-num">02</span>**Solving the data problem at scale for Enterprises**</a>
+</nav>
+
+
+<section class="section" id="s0">
+  <h2>🔍 **Build the best open source data framework and developer community**</h2>
+  <p class="lead">At a high-level, we want to continue iterating on our core feature capabilities, improving reliability, and satisfy both the needs of beginner and advanced users.</p>
+  <div class="card-grid"><div class="card" style="border-left:4px solid var(--amber)"><p><strong>Handle complex queries:</strong> We want to continue advancing the idea of “querying your data”, whether it’s through leveraging agent-style interactions for data retrieval and synthesis or program synthesis/DSL.</p></div>
+<div class="card" style="border-left:4px solid var(--blue)"><p><strong>Multi-modal data management:</strong> The future of foundation models is multimodal, not just contained to LLMs. There are many types of semi-structured data (e.g. semi-structured data like JSONs, yaml files) as well as “complex” unstructured data (audio, images, video) that we’d love to have native support for.</p></div>
+<div class="card" style="border-left:4px solid var(--green)"><p><strong>Better evaluation of LLM data systems: </strong>Properly evaluating LLM calls is already tricky (how do you best evaluate the quality of a generated output? Some <a href="https://github.com/openai/evals" target="_blank">libraries</a> for handling this). This becomes even more tricky when you chain LLM calls within an overall data system. We want to invest efforts into this area to provide greater transparency to our users.</p></div>
+<div class="card" style="border-left:4px solid var(--purple)"><p><strong>Optimization of Latency/Cost: </strong>Users are faced with a plethora of choices when it comes to building a data-driven LLM app: the choice of LLM model, embedding model, vector database, etc. They must choose in accordance to a variety of factors, from latency and cost to privacy.</p></div>
+<div class="card" style="border-left:4px solid var(--teal)"><p><strong>Ease of use for both beginner users and advanced users: </strong>Our goal is to make the utilization of LLM capabilities accessible and user-friendly for individuals at all skill levels. We will develop clear tutorials, examples, and tools to simplify the learning curve and convey the value of all of our features.</p></div>
+</div>
+  <p>- <strong>Handle complex queries:</strong> We want to continue advancing the idea of “querying your data”, whether it’s through leveraging agent-style interactions for data retrieval and synthesis or program synthesis/DSL.
+- <strong>Multi-modal data management:</strong> The future of foundation models is multimodal, not just contained to LLMs. There are many types of semi-structured data (e.g. semi-structured data like JSONs, yaml files) as well as “complex” unstructured data (audio, images, video) that we’d love to have native support for.
+- <strong>Better evaluation of LLM data systems: </strong>Properly evaluating LLM calls is already tricky (how do you best evaluate the quality of a generated output? Some <a href="https://github.com/openai/evals" target="_blank">libraries</a> for handling this). This becomes even more tricky when you chain LLM calls within an overall data system. We want to invest efforts into this area to provide greater transparency to our users.
+- <strong>Optimization of Latency/Cost: </strong>Users are faced with a plethora of choices when it comes to building a data-driven LLM app: the choice of LLM model, embedding model, vector database, etc. They must choose in accordance to a variety of factors, from latency and cost to privacy.
+- <strong>Ease of use for both beginner users and advanced users: </strong>Our goal is to make the utilization of LLM capabilities accessible and user-friendly for individuals at all skill levels. We will develop clear tutorials, examples, and tools to simplify the learning curve and convey the value of all of our features.</p>
+
+</section>
+
+<section class="section" id="s1">
+  <h2>⚡ **Solving the data problem at scale for Enterprises**</h2>
+  <p class="lead">As we’re iterating on the open-source project, we also want to identify the surrounding pain points in being able to build and deploy data-powered LLM apps to production. Our solution to this will bui</p>
+  <div class="card-grid"><div class="card" style="border-left:4px solid var(--amber)"><p><strong>Production-ready data ingestion and management:</strong> We want to handle data updates, data consistency, and scalability to larger volumes of data parsing. We also want to continue expanding on the right storage abstractions for multi-modal data.</p></div>
+<div class="card" style="border-left:4px solid var(--blue)"><p><strong>Scale to Large Data Volumes: </strong>Enterprises will typically have orders of magnitude more data than an individual. We want to invest in hosted infrastructure/deployment solutions around our core package so that you don’t have to.</p></div>
+<div class="card" style="border-left:4px solid var(--green)"><p><strong>Domain-specific LLM solutions: </strong>We want to offer packaged solutions to enable users to easily build LLM apps in different domains, from healthcare to finance to legal.</p></div>
+<div class="card" style="border-left:4px solid var(--purple)"><p>Foundation Model Development</p></div>
+<div class="card" style="border-left:4px solid var(--teal)"><p>Information Retrieval + Recommendation Systems</p></div>
+<div class="card" style="border-left:4px solid var(--red)"><p>Data Systems</p></div>
+</div>
+  <p>- <strong>Production-ready data ingestion and management:</strong> We want to handle data updates, data consistency, and scalability to larger volumes of data parsing. We also want to continue expanding on the right storage abstractions for multi-modal data.
+- <strong>Scale to Large Data Volumes: </strong>Enterprises will typically have orders of magnitude more data than an individual. We want to invest in hosted infrastructure/deployment solutions around our core package so that you don’t have to.
+- <strong>Domain-specific LLM solutions: </strong>We want to offer packaged solutions to enable users to easily build LLM apps in different domains, from healthcare to finance to legal.</p>
+<p>If you’re building LLM apps in the enterprise setting, we’d love to chat and learn more about pain points + desired features! Check out our <a href="https://docs.google.com/forms/d/1lzXIE9G07D9eoK7MBUpRuN-PdBYGA7nWVqcIvNtN9mQ/edit#responses" target="_blank">form here</a>.</p>
+<p># <strong>Join the Llama Gang! 🦙</strong></p>
+<p>Join the Llama(Index) gang as we embark on this journey to solve problems at the intersection of LLMs and data. We are not just building tools for ML practitioners/researchers; the emerging LLM + data architecture stacks have implications for <em>all</em> of software development. As a result, we are operating at the intersection of incredibly fun and challenging problems from a variety of different fields:</p>
+<p>- Foundation Model Development
+- Information Retrieval + Recommendation Systems
+- Data Systems
+- MLOps
+- DevOps</p>
+
+</section>
+
+
+</div>
+
+<footer class="footer">
+  <p>LlamaIndex Blog Deep-Dive | 深度解析系列</p>
+  <div class="footer-links">
+    <a href="../">Hub 首页</a>
+    <a href="https://www.llamaindex.ai/blog/building-the-data-framework-for-llms-bca068e89e0e" target="_blank">原文链接</a>
+  </div>
+</footer>
+
+</body>
+</html>

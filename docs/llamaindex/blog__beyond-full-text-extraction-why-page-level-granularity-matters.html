@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Page-Level Document Extraction with AI | LlamaExtract</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafbfc;
+      --surface: #fff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --amber: #d97706;
+      --amber-light: #fbbf24;
+      --amber-dark: #92400e;
+      --purple: #6366f1;
+      --teal: #14b8a6;
+      --green: #10b981;
+      --red: #ef4444;
+      --blue: #3b82f6;
+      --pink: #ec4899;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans SC', 'Inter', sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:var(--sans); background:var(--bg); color:var(--text); line-height:1.7; }
+
+    .nav { position:sticky; top:0; background:rgba(15,23,42,.92); backdrop-filter:blur(12px); z-index:100; border-bottom:1px solid rgba(255,255,255,.08); }
+    .nav-inner { max-width:1100px; margin:0 auto; padding:12px 24px; display:flex; justify-content:space-between; align-items:center; }
+    .nav-brand { color:#fbbf24; text-decoration:none; font-weight:700; display:flex; align-items:center; gap:8px; }
+    .nav-logo { font-size:20px; }
+    .nav a:last-child { font-size:13px; color:rgba(255,255,255,.6); text-decoration:none; }
+    .nav a:last-child:hover { color:#fbbf24; }
+
+    .hero { background:linear-gradient(135deg,#0f172a 0%,#78350f 50%,#d97706 100%); color:#fff; padding:60px 24px 48px; }
+    .hero-inner { max-width:1100px; margin:0 auto; }
+    .hero-tag { display:inline-block; background:rgba(251,191,36,.15); color:#fbbf24; padding:4px 14px; border-radius:20px; font-size:13px; font-weight:500; margin-bottom:16px; letter-spacing:.5px; }
+    .hero h1 { font-size:clamp(24px,4vw,42px); font-weight:800; line-height:1.2; margin-bottom:12px; }
+    .hero p { font-size:17px; color:rgba(255,255,255,.8); max-width:700px; margin-bottom:28px; line-height:1.6; }
+    .hero-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; max-width:600px; }
+    .stat { text-align:center; }
+    .stat-num { display:block; font-size:28px; font-weight:800; color:#fbbf24; font-family:var(--mono); }
+    .stat-label { font-size:12px; color:rgba(255,255,255,.6); text-transform:uppercase; letter-spacing:.5px; }
+
+    .page { max-width:1100px; margin:0 auto; padding:32px 24px 60px; }
+
+    .toc { margin-bottom:40px; }
+    .toc-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:10px; }
+    .toc-item { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); text-decoration:none; color:var(--text); font-size:14px; font-weight:500; transition:all .2s; }
+    .toc-item:hover { border-color:var(--amber); transform:translateY(-1px); box-shadow:0 4px 12px rgba(217,119,6,.1); }
+    .toc-num { font-size:16px; }
+
+    .section { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:32px; margin-bottom:24px; }
+    .section h2 { font-size:22px; font-weight:700; margin-bottom:12px; color:var(--text); }
+    .section h3 { font-size:17px; font-weight:600; margin:20px 0 8px; color:var(--amber-dark); }
+    .lead { color:var(--text-secondary); font-size:15px; margin-bottom:16px; line-height:1.7; }
+    .section p { margin-bottom:12px; font-size:15px; line-height:1.7; }
+
+    .chart { margin:20px 0; }
+    .chart-row { display:flex; align-items:center; margin-bottom:8px; }
+    .chart-label { width:160px; font-size:13px; font-weight:500; text-align:right; padding-right:12px; color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:28px; overflow:hidden; }
+    .chart-bar { height:100%; border-radius:8px; display:flex; align-items:center; padding-left:10px; font-size:12px; font-weight:600; color:#fff; transition:width .6s ease; min-width:40px; }
+    .chart-bar.amber { background:linear-gradient(90deg,#d97706,#f59e0b); }
+    .chart-bar.purple { background:linear-gradient(90deg,#6366f1,#818cf8); }
+    .chart-bar.teal { background:linear-gradient(90deg,#0d9488,#14b8a6); }
+    .chart-bar.green { background:linear-gradient(90deg,#059669,#10b981); }
+    .chart-bar.blue { background:linear-gradient(90deg,#2563eb,#3b82f6); }
+    .chart-bar.red { background:linear-gradient(90deg,#dc2626,#ef4444); }
+
+    .timeline { position:relative; padding-left:28px; margin:20px 0; }
+    .timeline::before { content:''; position:absolute; left:8px; top:0; bottom:0; width:3px; background:linear-gradient(180deg,#d97706,#6366f1,#14b8a6); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:20px; padding-left:16px; }
+    .tl-dot { position:absolute; left:-24px; top:4px; width:14px; height:14px; border-radius:50%; border:3px solid var(--amber); background:#fff; }
+    .tl-item:nth-child(2) .tl-dot { border-color:var(--purple); }
+    .tl-item:nth-child(3) .tl-dot { border-color:var(--teal); }
+    .tl-item:nth-child(4) .tl-dot { border-color:var(--green); }
+    .tl-item:nth-child(5) .tl-dot { border-color:var(--blue); }
+    .tl-phase { font-weight:600; font-size:15px; margin-bottom:4px; }
+    .tl-desc { font-size:13px; color:var(--text-secondary); line-height:1.5; }
+
+    .compare-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin:20px 0; }
+    .compare-card { padding:16px; border-radius:var(--radius); font-size:14px; line-height:1.6; }
+    .compare-card.old { background:#fef2f2; border:1px solid #fecaca; }
+    .compare-card.new { background:#f0fdf4; border:1px solid #bbf7d0; }
+
+    .flow { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:20px 0; }
+    .flow-step { padding:10px 18px; background:#f8fafc; border:2px solid var(--border); border-radius:var(--radius); font-size:13px; font-weight:600; text-align:center; }
+    .flow-step.purple { background:#eef2ff; border-color:var(--purple); color:var(--purple); }
+    .flow-arrow { color:var(--amber); font-size:20px; font-weight:700; }
+
+    .fail-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:20px 0; }
+    .fail-grid .card { padding:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); font-size:13px; line-height:1.6; }
+
+    .block-q { margin:20px 0; padding:20px 24px; background:linear-gradient(135deg,#fffbeb,#fef3c7); border-left:4px solid var(--amber); border-radius:0 var(--radius) var(--radius) 0; font-style:italic; color:#92400e; font-size:14px; line-height:1.7; }
+
+    .tbl-wrap { overflow-x:auto; margin:20px 0; }
+    table { width:100%; border-collapse:collapse; font-size:14px; }
+    th { background:#f8fafc; padding:10px 14px; text-align:left; font-weight:600; border-bottom:2px solid var(--border); white-space:nowrap; }
+    td { padding:10px 14px; border-bottom:1px solid var(--border); }
+    tr:hover td { background:#fffbeb; }
+
+    .badge { display:inline-block; padding:3px 10px; border-radius:12px; font-size:12px; font-weight:500; }
+    .badge-amber { background:#fffbeb; color:#92400e; }
+    .badge-purple { background:#eef2ff; color:#4338ca; }
+    .badge-green { background:#f0fdf4; color:#166534; }
+
+    .footer { background:#0f172a; color:rgba(255,255,255,.6); padding:32px 24px; text-align:center; font-size:13px; }
+    .footer a { color:#fbbf24; text-decoration:none; }
+    .footer a:hover { text-decoration:underline; }
+    .footer-links { display:flex; justify-content:center; gap:24px; margin-bottom:12px; flex-wrap:wrap; }
+
+    @media(max-width:768px) {
+      .hero-stats { grid-template-columns:repeat(2,1fr); }
+      .compare-grid, .fail-grid { grid-template-columns:1fr; }
+      .chart-label { width:100px; font-size:12px; }
+      .flow { flex-direction:column; gap:6px; }
+      .flow-arrow { transform:rotate(90deg); }
+      .toc-grid { grid-template-columns:1fr; }
+      .section { padding:20px 16px; }
+      .hero { padding:40px 16px 32px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="../" class="nav-brand">
+        <span class="nav-logo">🦙</span>
+        <span>LlamaIndex Blog Hub</span>
+      </a>
+      <a href="./">← Back to Hub</a>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="hero-tag">文档处理</div>
+      <h1>Page-Level Document Extraction with AI | LlamaExtract</h1>
+      <p>*Stop drowning in documents. Start surfacing exactly what matters, down to the page.* Every enterprise has them: the 200-page compliance reports, the dense financial filings, the technical manuals that make War and Peace look like a pamphlet. You know the critical information is in there somewhere. </p>
+      <div class="hero-stats">
+        <div class="stat"><span class="stat-num">16</span><span class="stat-label">核心章节</span></div><div class="stat"><span class="stat-num">8</span><span class="stat-label">关键概念</span></div><div class="stat"><span class="stat-num">4min</span><span class="stat-label">阅读时长</span></div><div class="stat"><span class="stat-num">1239</span><span class="stat-label">总字数</span></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc"><div class="toc-grid">
+  <a href="#s0" class="toc-item"><span class="toc-num">🔍</span>**The Problem: Extraction Without Context is Just Noise**</a>
+  <a href="#s1" class="toc-item"><span class="toc-num">💡</span>**The Solution: Page-Level Extraction with Full Provenance**</a>
+  <a href="#s2" class="toc-item"><span class="toc-num">⚙️</span>**Real-World Use Cases: Where Page-Level Extraction Shines**</a>
+  <a href="#s8" class="toc-item"><span class="toc-num">🚀</span>**How It Works: A Quick Walkthrough**</a>
+  <a href="#s15" class="toc-item"><span class="toc-num">🌐</span>**Try It Yourself**</a>
+</div></nav>
+
+    <section class="section" id="s0">
+  <h2>🔍 **The Problem: Extraction Without Context is Just Noise**</h2>
+  <p class="lead">Picture this scenario: Your legal team needs to review a 150-page vendor contract for liability clauses. A typical workflow looks something like this:</p>
+  <p>Upload the PDF to your extraction tool Get back a blob of extracted entities Spend hours manually cross-referencing against the original document Pray you didn&#x27;t miss anything on page 87</p>
+  <p>Or consider the compliance analyst reviewing quarterly financial reports across dozens of subsidiaries. Sure, you can extract &quot;all revenue figures,&quot;but which came from page 12 of the APAC report versus page 45 of the European filing? When the auditor asks, &quot;show me exactly where this number came from,&quot; a citation that says &quot;somewhere in Q3_Financials.pdf&quot; doesn&#x27;t cut it.</p>
+  <p>The before state is brutal:</p>
+  <p>No page attribution — Extracted data floats in a void, disconnected from its source Manual verification required — Hours spent hunting through documents to validate findings Audit nightmares — &quot;Where did this figure come from?&quot; becomes an existential question Context collapse — A 200-page document becomes a single undifferentiated blob in a generically extracted document</p>
+<div class="chart">
+  <div class="chart-row">
+    <div class="chart-label">Upload the PDF to yo</div>
+    <div class="chart-bar-wrap">
+      <div class="chart-bar amber" style="width:95%"></div>
+    </div>
+  </div>
+  <div class="chart-row">
+    <div class="chart-label">Get back a blob of e</div>
+    <div class="chart-bar-wrap">
+      <div class="chart-bar purple" style="width:83%"></div>
+    </div>
+  </div>
+  <div class="chart-row">
+    <div class="chart-label">Spend hours manually</div>
+    <div class="chart-bar-wrap">
+      <div class="chart-bar teal" style="width:71%"></div>
+    </div>
+  </div>
+  <div class="chart-row">
+    <div class="chart-label">Pray you didn&#x27;t miss</div>
+    <div class="chart-bar-wrap">
+      <div class="chart-bar green" style="width:59%"></div>
+    </div>
+  </div>
+  <div class="chart-row">
+    <div class="chart-label">No page attribution</div>
+    <div class="chart-bar-wrap">
+      <div class="chart-bar blue" style="width:47%"></div>
+    </div>
+  </div>
+  <div class="chart-row">
+    <div class="chart-label">Manual verification required</div>
+    <div class="chart-bar-wrap">
+      <div class="chart-bar red" style="width:35%"></div>
+    </div>
+  </div>
+</div>
+</section>
+<section class="section" id="s1">
+  <h2>💡 **The Solution: Page-Level Extraction with Full Provenance**</h2>
+  <p class="lead">Page-Level Extraction in LlamaExtract solves this by treating each page as a discrete extraction unit while maintaining document-wide schema consistency. You define what you want to extract and get ba</p>
+  <p>The after state:</p>
+  <p>Page-attributed insights — Every extracted field maps to a specific page Bounding box precision — See exactly where on the page each value was found Skim-ready output — Quickly scan a 200-page document by reviewing only the pages with relevant extractions Audit-ready citations — One click from extracted data to source location</p>
+  <p>This is a fundamental shift in how document intelligence works.</p>
+<div class="fail-grid">
+  <div class="card"><strong>Page-attributed insights</strong><br>— Every extracted field maps to a specific page</div>
+  <div class="card"><strong>Bounding box precision</strong><br>— See exactly where on the page each value was found</div>
+  <div class="card"><strong>Skim-ready output</strong><br>— Quickly scan a 200-page document by reviewing only the pages with relevant extractions</div>
+  <div class="card"><strong>Audit-ready citations</strong><br>— One click from extracted data to source location</div>
+</div>
+</section>
+<section class="section" id="s2">
+  <h2>⚙️ **Real-World Use Cases: Where Page-Level Extraction Shines**</h2>
+  <h3>**Financial Services: SEC Filing Analysis**</h3>
+  <p>Investment analysts reviewing 10-K filings need to extract risk factors, revenue breakdowns, and management commentary, but they also need to know exactly where each disclosure appears. Page-level extraction lets analysts quickly validate extracted figures against source pages, essential when billions of dollars ride on the accuracy.</p>
+  <h3>**Legal: Contract Review at Scale**</h3>
+  <p>Law firms reviewing M&amp;A due diligence documents, sometimes thousands of contracts, need to flag specific clauses: indemnification terms, change-of-control provisions, termination rights. Page-level extraction means associates can jump directly to page 47 of Contract #847 instead of re-reading the entire document.</p>
+  <h3>**Healthcare &amp; Life Sciences: Clinical Trial Documentation**</h3>
+  <p>Regulatory teams preparing FDA submissions extract endpoints, adverse events, and protocol deviations from clinical study reports. When regulators ask for clarification on a specific data point, page-level provenance provides instant traceability back to the source.</p>
+  <h3>**Insurance: Claims Processing**</h3>
+  <p>Adjusters processing complex claims, property damage reports, medical records, police reports, need to extract key facts while maintaining clear documentation of where each fact originated. Page-level extraction creates an audit trail that holds up to scrutiny.</p>
+</section>
+<section class="section" id="s8">
+  <h2>🚀 **How It Works: A Quick Walkthrough**</h2>
+  <p class="lead">Here&#x27;s how to use Page-Level Extraction in LlamaParse. The entire process takes minutes, not hours.</p>
+  <h3>**Step 1: Sign Up for LlamaParse (Free)**</h3>
+  <p>Head to cloud.llamaindex.ai and create a free account. No credit card required to get started.</p>
+  <h3>**Step 2: Navigate to the Extract Module**</h3>
+  <p>Once you&#x27;re in the dashboard, click on the Extract module in the left sidebar. This is your home for all schema-based document extraction.</p>
+  <h3>**Step 3: Define Your Schema with Auto-Generate**</h3>
+  <p>Here&#x27;s where LlamaExtract saves you serious time. Instead of manually defining every field you want to extract, use the Auto-Generate Schema feature:</p>
+  <p>Click &quot;Auto-Generate Schema&quot; Enter a natural language prompt describing what you need. For example: &quot;Extract all financial metrics including revenue, expenses, and profit margins. Also capture any risk factors mentioned and the names of key executives discussed.&quot; LlamaExtract generates a structured schema based on your prompt—no JSON wrestling required</p>
+  <p>You can review and tweak the generated schema, but for most use cases, the auto-generated version gets you 90% of the way there.</p>
+  <h3>**Step 4: Upload Your Document and Review Credits**</h3>
+  <p>Upload the document you want to process. Once you select an extraction tier and upload your file, you&#x27;ll see a credit estimate at the bottom of the screen. This tells you exactly what the extraction will cost before you commit—no surprises.</p>
+</section>
+<section class="section" id="s15">
+  <h2>🌐 **Try It Yourself**</h2>
+  <p class="lead">Page-Level Extraction is available in LlamaParse. Sign up for free at and see what your documents have been trying to tell you, page by page.</p>
+</section>
+
+    <section class="section" id="key-concepts">
+  <h2>🔑 核心概念 Key Concepts</h2>
+  <p class="lead">本文涉及的关键技术概念与术语。</p>
+<div class="flow">
+  <div class="flow-step">Page-Level Extraction</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">The Problem: Extraction Without Context is Just Noise</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">The before state is brutal:</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">No page attribution</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step purple">Manual verification required</div>
+</div>
+</section>
+
+  </div>
+
+  <footer class="footer">
+    <div class="footer-links">
+      <a href="./">LlamaIndex Blog Hub</a>
+      <a href="https://www.llamaindex.ai/blog/beyond-full-text-extraction-why-page-level-granularity-matters" target="_blank" rel="noopener">原文链接 Original</a>
+      <a href="../">Engineering Blogs Hub</a>
+    </div>
+    <p>Generated from LlamaIndex blog content for learning purposes.</p>
+  </footer>
+</body>
+</html>

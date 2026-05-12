@@ -1,0 +1,355 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Agentic Document Processing: How AI Agents Automate Workflows</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafbfc;
+      --surface: #fff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --amber: #d97706;
+      --amber-light: #fbbf24;
+      --amber-dark: #92400e;
+      --purple: #6366f1;
+      --teal: #14b8a6;
+      --green: #10b981;
+      --red: #ef4444;
+      --blue: #3b82f6;
+      --pink: #ec4899;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans SC', 'Inter', sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:var(--sans); background:var(--bg); color:var(--text); line-height:1.7; }
+
+    .nav { position:sticky; top:0; background:rgba(15,23,42,.92); backdrop-filter:blur(12px); z-index:100; border-bottom:1px solid rgba(255,255,255,.08); }
+    .nav-inner { max-width:1100px; margin:0 auto; padding:12px 24px; display:flex; justify-content:space-between; align-items:center; }
+    .nav-brand { color:#fbbf24; text-decoration:none; font-weight:700; display:flex; align-items:center; gap:8px; }
+    .nav-logo { font-size:20px; }
+    .nav a:last-child { font-size:13px; color:rgba(255,255,255,.6); text-decoration:none; }
+    .nav a:last-child:hover { color:#fbbf24; }
+
+    .hero { background:linear-gradient(135deg,#0f172a 0%,#78350f 50%,#d97706 100%); color:#fff; padding:60px 24px 48px; }
+    .hero-inner { max-width:1100px; margin:0 auto; }
+    .hero-tag { display:inline-block; background:rgba(251,191,36,.15); color:#fbbf24; padding:4px 14px; border-radius:20px; font-size:13px; font-weight:500; margin-bottom:16px; letter-spacing:.5px; }
+    .hero h1 { font-size:clamp(24px,4vw,42px); font-weight:800; line-height:1.2; margin-bottom:12px; }
+    .hero p { font-size:17px; color:rgba(255,255,255,.8); max-width:700px; margin-bottom:28px; line-height:1.6; }
+    .hero-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; max-width:600px; }
+    .stat { text-align:center; }
+    .stat-num { display:block; font-size:28px; font-weight:800; color:#fbbf24; font-family:var(--mono); }
+    .stat-label { font-size:12px; color:rgba(255,255,255,.6); text-transform:uppercase; letter-spacing:.5px; }
+
+    .page { max-width:1100px; margin:0 auto; padding:32px 24px 60px; }
+
+    .toc { margin-bottom:40px; }
+    .toc-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:10px; }
+    .toc-item { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); text-decoration:none; color:var(--text); font-size:14px; font-weight:500; transition:all .2s; }
+    .toc-item:hover { border-color:var(--amber); transform:translateY(-1px); box-shadow:0 4px 12px rgba(217,119,6,.1); }
+    .toc-num { font-size:16px; }
+
+    .section { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:32px; margin-bottom:24px; }
+    .section h2 { font-size:22px; font-weight:700; margin-bottom:12px; color:var(--text); }
+    .section h3 { font-size:17px; font-weight:600; margin:20px 0 8px; color:var(--amber-dark); }
+    .lead { color:var(--text-secondary); font-size:15px; margin-bottom:16px; line-height:1.7; }
+    .section p { margin-bottom:12px; font-size:15px; line-height:1.7; }
+
+    .chart { margin:20px 0; }
+    .chart-row { display:flex; align-items:center; margin-bottom:8px; }
+    .chart-label { width:160px; font-size:13px; font-weight:500; text-align:right; padding-right:12px; color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:28px; overflow:hidden; }
+    .chart-bar { height:100%; border-radius:8px; display:flex; align-items:center; padding-left:10px; font-size:12px; font-weight:600; color:#fff; transition:width .6s ease; min-width:40px; }
+    .chart-bar.amber { background:linear-gradient(90deg,#d97706,#f59e0b); }
+    .chart-bar.purple { background:linear-gradient(90deg,#6366f1,#818cf8); }
+    .chart-bar.teal { background:linear-gradient(90deg,#0d9488,#14b8a6); }
+    .chart-bar.green { background:linear-gradient(90deg,#059669,#10b981); }
+    .chart-bar.blue { background:linear-gradient(90deg,#2563eb,#3b82f6); }
+    .chart-bar.red { background:linear-gradient(90deg,#dc2626,#ef4444); }
+
+    .timeline { position:relative; padding-left:28px; margin:20px 0; }
+    .timeline::before { content:''; position:absolute; left:8px; top:0; bottom:0; width:3px; background:linear-gradient(180deg,#d97706,#6366f1,#14b8a6); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:20px; padding-left:16px; }
+    .tl-dot { position:absolute; left:-24px; top:4px; width:14px; height:14px; border-radius:50%; border:3px solid var(--amber); background:#fff; }
+    .tl-item:nth-child(2) .tl-dot { border-color:var(--purple); }
+    .tl-item:nth-child(3) .tl-dot { border-color:var(--teal); }
+    .tl-item:nth-child(4) .tl-dot { border-color:var(--green); }
+    .tl-item:nth-child(5) .tl-dot { border-color:var(--blue); }
+    .tl-phase { font-weight:600; font-size:15px; margin-bottom:4px; }
+    .tl-desc { font-size:13px; color:var(--text-secondary); line-height:1.5; }
+
+    .compare-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin:20px 0; }
+    .compare-card { padding:16px; border-radius:var(--radius); font-size:14px; line-height:1.6; }
+    .compare-card.old { background:#fef2f2; border:1px solid #fecaca; }
+    .compare-card.new { background:#f0fdf4; border:1px solid #bbf7d0; }
+
+    .flow { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:20px 0; }
+    .flow-step { padding:10px 18px; background:#f8fafc; border:2px solid var(--border); border-radius:var(--radius); font-size:13px; font-weight:600; text-align:center; }
+    .flow-step.purple { background:#eef2ff; border-color:var(--purple); color:var(--purple); }
+    .flow-arrow { color:var(--amber); font-size:20px; font-weight:700; }
+
+    .fail-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:20px 0; }
+    .fail-grid .card { padding:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); font-size:13px; line-height:1.6; }
+
+    .block-q { margin:20px 0; padding:20px 24px; background:linear-gradient(135deg,#fffbeb,#fef3c7); border-left:4px solid var(--amber); border-radius:0 var(--radius) var(--radius) 0; font-style:italic; color:#92400e; font-size:14px; line-height:1.7; }
+
+    .tbl-wrap { overflow-x:auto; margin:20px 0; }
+    table { width:100%; border-collapse:collapse; font-size:14px; }
+    th { background:#f8fafc; padding:10px 14px; text-align:left; font-weight:600; border-bottom:2px solid var(--border); white-space:nowrap; }
+    td { padding:10px 14px; border-bottom:1px solid var(--border); }
+    tr:hover td { background:#fffbeb; }
+
+    .badge { display:inline-block; padding:3px 10px; border-radius:12px; font-size:12px; font-weight:500; }
+    .badge-amber { background:#fffbeb; color:#92400e; }
+    .badge-purple { background:#eef2ff; color:#4338ca; }
+    .badge-green { background:#f0fdf4; color:#166534; }
+
+    .footer { background:#0f172a; color:rgba(255,255,255,.6); padding:32px 24px; text-align:center; font-size:13px; }
+    .footer a { color:#fbbf24; text-decoration:none; }
+    .footer a:hover { text-decoration:underline; }
+    .footer-links { display:flex; justify-content:center; gap:24px; margin-bottom:12px; flex-wrap:wrap; }
+
+    @media(max-width:768px) {
+      .hero-stats { grid-template-columns:repeat(2,1fr); }
+      .compare-grid, .fail-grid { grid-template-columns:1fr; }
+      .chart-label { width:100px; font-size:12px; }
+      .flow { flex-direction:column; gap:6px; }
+      .flow-arrow { transform:rotate(90deg); }
+      .toc-grid { grid-template-columns:1fr; }
+      .section { padding:20px 16px; }
+      .hero { padding:40px 16px 32px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="../" class="nav-brand">
+        <span class="nav-logo">🦙</span>
+        <span>LlamaIndex Blog Hub</span>
+      </a>
+      <a href="./">← Back to Hub</a>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="hero-tag">文档处理</div>
+      <h1>Agentic Document Processing: How AI Agents Automate Workflows</h1>
+      <p>Most document automation tools have a secret: they don&#x27;t actually understand documents. They scan them, extract text, maybe fill in a field or two, and then hand them off to a human the moment anything gets complicated. Agentic document processing is a fundamentally different approach. Instead of re</p>
+      <div class="hero-stats">
+        <div class="stat"><span class="stat-num">22</span><span class="stat-label">核心章节</span></div><div class="stat"><span class="stat-num">7</span><span class="stat-label">关键概念</span></div><div class="stat"><span class="stat-num">10min</span><span class="stat-label">阅读时长</span></div><div class="stat"><span class="stat-num">2620</span><span class="stat-label">总字数</span></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc"><div class="toc-grid">
+  <a href="#s0" class="toc-item"><span class="toc-num">🔍</span>What Is Agentic Document Processing?</a>
+  <a href="#s3" class="toc-item"><span class="toc-num">📊</span>Agentic AI vs. Traditional IDP: What&#x27;s the Difference?</a>
+  <a href="#s4" class="toc-item"><span class="toc-num">🔄</span>The Architecture of an Agentic Document Workflow</a>
+  <a href="#s9" class="toc-item"><span class="toc-num">📈</span>High-Value Use Cases: From Legal to Finance</a>
+  <a href="#s13" class="toc-item"><span class="toc-num">🛡️</span>Overcoming the Challenges of Agentic Workflows</a>
+  <a href="#s17" class="toc-item"><span class="toc-num">⚡</span>Implementing Agentic Document Processing: A Strategic Roadmap</a>
+  <a href="#s21" class="toc-item"><span class="toc-num">🧠</span>The Future of Autonomous Operations</a>
+</div></nav>
+
+    <section class="section" id="s0">
+  <h2>🔍 What Is Agentic Document Processing?</h2>
+  <p class="lead">Agentic document processing (ADP) is the use of AI agents to autonomously handle document-centric workflows without requiring constant human oversight.</p>
+  <p>The keyword is &quot;agentic.&quot; An agent is more than a model that reads text. It&#x27;s actually a system that has goals, uses tools, and makes decisions about how to achieve those goals. Applied to documents, that means an agent can:</p>
+  <p>Ingest a document in any format or layout Understand its structure, content, and intent Extract the specific information relevant to the task Cross-reference that information against a knowledge base or historical data Trigger a downstream action—update a database, flag a risk, approve an invoice Ask for human input only when genuinely uncertain</p>
+  <h3>Document Understanding vs. Document Extraction</h3>
+  <p>There&#x27;s a meaningful distinction between understanding and extraction. Extraction is pulling data from a document, such as a name, a date, a dollar amount. Understanding is knowing what that data means in context.</p>
+  <p>Consider a clause in a commercial lease that says &quot;Tenant shall not sublease without prior written consent, not to be unreasonably withheld.&quot; An extraction system pulls the text. An agentic system understands it&#x27;s a conditional restriction, that it has legal implications, and that it should be flagged during a contract review if the client&#x27;s playbook prohibits any sublease restrictions.</p>
+  <p>Document understanding (context, intent, and relationships between concepts) is what makes agentic workflows possible. Without it, you&#x27;re back to template-matching.</p>
+  <h3>Beyond Pixel-Level Text Extraction</h3>
+  <p>Real-world documents are messy. They contain charts, tables, scanned images, embedded PDFs, handwritten notes, and layouts that change constantly. Traditional text extraction tools (the ones built on legacy OCR engines) break on all of this.</p>
+  <p>Agentic document processing handles it differently. Instead of trying to force every document through a single extraction pipeline, it uses specialized models for different content types: language models for text, vision models for charts and images, layout-aware computer vision for structure. An orchestration layer decides which model handles which element, then stitches the outputs together into a single, AI-ready format.</p>
+  <p>This is exactly how LlamaParse approaches the problem. LlamaParse uses agentic document parsing, with a team of specialized document understanding agents that work together. The result is industry-leading accuracy on complex documents, without the need for custom training every time a layout changes.</p>
+<div class="chart">
+  <div class="chart-row">
+    <div class="chart-label">Ingest a document in</div>
+    <div class="chart-bar-wrap">
+      <div class="chart-bar amber" style="width:95%"></div>
+    </div>
+  </div>
+  <div class="chart-row">
+    <div class="chart-label">Understand its struc</div>
+    <div class="chart-bar-wrap">
+      <div class="chart-bar purple" style="width:83%"></div>
+    </div>
+  </div>
+  <div class="chart-row">
+    <div class="chart-label">Extract the specific</div>
+    <div class="chart-bar-wrap">
+      <div class="chart-bar teal" style="width:71%"></div>
+    </div>
+  </div>
+  <div class="chart-row">
+    <div class="chart-label">Cross-reference that</div>
+    <div class="chart-bar-wrap">
+      <div class="chart-bar green" style="width:59%"></div>
+    </div>
+  </div>
+  <div class="chart-row">
+    <div class="chart-label">Trigger a downstream</div>
+    <div class="chart-bar-wrap">
+      <div class="chart-bar blue" style="width:47%"></div>
+    </div>
+  </div>
+  <div class="chart-row">
+    <div class="chart-label">Ask for human input </div>
+    <div class="chart-bar-wrap">
+      <div class="chart-bar red" style="width:35%"></div>
+    </div>
+  </div>
+</div>
+</section>
+<section class="section" id="s3">
+  <h2>📊 Agentic AI vs. Traditional IDP: What&#x27;s the Difference?</h2>
+  <p class="lead">Traditional intelligent document processing was a meaningful step forward when it emerged. It was better than purely manual data entry, capable of handling high-volume, predictable document types. But</p>
+  <p>Here&#x27;s a direct comparison:</p>
+  <p>Dimension Traditional IDP Agentic Document Processing</p>
+  <p>Processing model Template-based, rigid pipelines Reasoning-based, adaptive orchestration</p>
+  <p>Exception handling Escalates to human review queue Resolves autonomously using LLM judgment</p>
+  <p>Document types Pre-configured, known layouts Any layout, including novel formats</p>
+</section>
+<section class="section" id="s4">
+  <h2>🔄 The Architecture of an Agentic Document Workflow</h2>
+  <p class="lead">There are four core components to any well-built agentic document workflow. Understanding each one is important if you&#x27;re evaluating platforms or planning an implementation.</p>
+  <h3>The Brain: Large Language Models for Reasoning and Planning</h3>
+  <p>The LLM is the orchestration layer. It receives parsed document content, understands the task, decides which tools to invoke, and determines what the output should be. For document workflows, this means things like: deciding whether a clause warrants a risk flag, calculating a derived financial metric, or recognizing that two pieces of information in different sections of a document are contradictory.</p>
+  <p>This is qualitatively different from rule-based processing. The model doesn&#x27;t need to be pre-programmed with every possible scenario—it reasons through novel situations using its training and the context you provide.</p>
+  <h3>The Memory: Knowledge Bases and RAG</h3>
+  <p>A language model alone doesn&#x27;t know your specific contracts, your firm&#x27;s risk thresholds, or your company&#x27;s compliance requirements. That&#x27;s what the knowledge base is for.</p>
+  <p>In agentic document workflows, the knowledge base typically lives in a vector database and gets queried via retrieval-augmented generation (RAG). When an agent encounters an ambiguous clause, it can retrieve relevant precedent from past contracts. When it&#x27;s processing a financial statement, it can pull in your firm&#x27;s valuation models or sector benchmarks.</p>
+  <p>This is what makes agentic document processing firm-specific rather than generic. The model&#x27;s reasoning gets grounded in your context.</p>
+  <h3>The Tools: APIs, ERPs, and External Systems</h3>
+  <p>An agent that can only read documents and return text isn&#x27;t useful enough. The value of agentic document processing comes from connecting extracted data to action by being integrated into the business logic and systems.</p>
+  <p>When an agent finishes processing an invoice, it should be able to push the data directly to your ERP. For example, when it flags a compliance issue in a contract, it should be able to open a ticket in your legal workflow system. Or when it completes KYC verification, it should update the client record.</p>
+  <p>Agent workflows connect the intelligence layer to the execution layer. Without that connection, you would just automate the reading.</p>
+  <h3>The Output: Structured Data Ready for Downstream Automation</h3>
+  <p>The final output of a well-built agentic document workflow is structured data. Think, clean JSON, formatted records, populated fields, and triggered events. Something that can flow directly into the next step of your business process without human re-entry.</p>
+  <p>LlamaParse outputs AI-ready formats (Markdown, JSON, or HTML) specifically so the parsed content can move seamlessly into downstream agent workflows.</p>
+</section>
+<section class="section" id="s9">
+  <h2>📈 High-Value Use Cases: From Legal to Finance</h2>
+  <p class="lead">Document-heavy workflows exist in almost every industry, but a few stand out for the sheer volume of manual effort they require (and the outsized risk that comes with human error). Legal review, finan</p>
+  <h3>Legal Documents and Contract Review</h3>
+  <p>Contract review is one of the clearest wins for agentic document processing. Legal documents are structured but highly variable—every counterparty has their own templates, clause language, and negotiating positions.</p>
+  <p>An agentic workflow for contract review can extract key dates (effective dates, termination dates, notice periods), identify key clauses (indemnity, force majeure, limitation of liability, IP assignment), and compare each clause against a company&#x27;s preferred playbook. The system flags deviations, proposes standard alternatives, and escalates genuinely novel language for attorney review.</p>
+  <p>What would take a paralegal hours to complete manually, an agent can do in seconds, consistently, at any volume, thus automating the redlining process.</p>
+  <h3>Financial Statements and Investment Analysis</h3>
+  <p>Financial documents are structurally complex. Income statements, balance sheets, footnotes, MD&amp;A sections, segment breakdowns. To make things more complicated, every company formats them slightly differently. Traditional extraction tools routinely miss tables embedded in PDFs, misread numbers in formatted cells, or ignore charts entirely.</p>
+  <p>Agentic document processing handles the full document: text, tables, embedded charts, and financial schedules. An agent can process a financial statement, extract key metrics, calculate ratios, identify year-over-year trends, and flag anomalies—all without manual intervention.</p>
+  <p>Automation compresses hours of work into minutes and removes the risk of transcription errors that have historically created real downstream problems in financial analysis.</p>
+  <h3>Complex Business Onboarding: The Multi-Document Problem</h3>
+  <p>Customer onboarding—particularly in regulated industries—is a document-heavy nightmare. Just think about a banking application where you would need the identity documents, the proof of address, or income statements that all need to be reviewed and processed. Each document type has different formats, different data fields, and different validation requirements.</p>
+  <p>The &quot;multi-document trap&quot; is real: each individual document might be processable, but verifying that information is consistent across all of them is where things break down. An agentic workflow handles this by treating the entire onboarding packet as a single task. The agent extracts information from documents, cross-references it across files, flags discrepancies, and produces a structured verification summary—all before a human ever looks at the file.</p>
+  <p>The result is faster onboarding, better compliance, and less manual review time wasted on cases that turn out to be clean.</p>
+</section>
+<section class="section" id="s13">
+  <h2>🛡️ Overcoming the Challenges of Agentic Workflows</h2>
+  <p class="lead">Agentic document processing is powerful, but it&#x27;s not plug-and-play. Like any system that operates with real autonomy on sensitive data, it comes with challenges that need to be addressed before you g</p>
+  <h3>Hallucination Management: Visual Grounding</h3>
+  <p>Hallucination is the most serious practical problem in deploying any LLM-based system for document work. If an agent invents a number in a financial statement or misrepresents a contract clause, the consequences can be significant.</p>
+  <p>The solution is to build systems that make every output verifiable. This is what &quot;visual grounding&quot; means in practice: every piece of extracted information is linked back to its source location in the original document, with a confidence score and a citation.</p>
+  <p>LlamaParse includes verifiable outputs with metadata, (confidence scores and citations) specifically for this reason. When an agent isn&#x27;t certain, the system knows it, and the output includes the metadata needed for a human to verify it quickly rather than re-reading the entire document.</p>
+  <h3>Security and Privacy in Document Workflows</h3>
+  <p>Legal documents and financial records are among the most sensitive data in any organization. Any agentic document processing implementation has to address data handling seriously. It looks at where data is processed, how long it&#x27;s retained, who has access to it, and what happens if something goes wrong.</p>
+  <p>This is especially important when evaluating cloud-based platforms. The question is whether the security and privacy architecture is appropriate for the sensitivity of what you&#x27;re processing.</p>
+  <h3>Human-in-the-Loop: Designing the Right Guardrails</h3>
+  <p>Full autonomy isn&#x27;t always the goal. In many document workflows, you want the agent to handle the routine cases autonomously and escalate to a human only when confidence is low or the stakes are unusually high. That&#x27;s the human-in-the-loop (HITL) design pattern.</p>
+  <p>Getting HITL right requires two things. First, the system needs to know when it&#x27;s uncertain, and actually admit it, rather than generating a plausible-sounding but wrong answer. Second, the escalation has to be efficient: the human should see the specific flagged item, the relevant context, and the system&#x27;s tentative interpretation.</p>
+  <p>LlamaParse supports this through verifiable outputs with confidence scores. An agent can be configured to auto-approve extractions above a confidence threshold, flag extractions below it for review, and include the relevant document context alongside the flagged item. That&#x27;s a practical HITL workflow, not just a theoretical safeguard.</p>
+</section>
+<section class="section" id="s17">
+  <h2>⚡ Implementing Agentic Document Processing: A Strategic Roadmap</h2>
+  <p class="lead">The question isn&#x27;t whether to invest in agentic document processing—it&#x27;s where to start.</p>
+  <h3>Step 1: Audit Your Processes for Bottleneck Documents</h3>
+  <p>Every business has documents that consistently create delays. Think invoices waiting for approval, contracts stuck in review queues, onboarding packets that require manual verification. These are your highest-value targets.</p>
+  <p>Look for document types that are high-volume (processed frequently), medium-to-high in manual effort, and consistent enough in structure to have a clear &quot;success&quot; definition. Invoices, standard contracts, financial filings, and KYC documents typically fit this profile.</p>
+  <h3>Step 2: Build Your Knowledge Base</h3>
+  <p>An agent is only as good as the context it has access to. Before deploying agentic document workflows, invest in centralizing your source of truth: your contract playbook, your compliance requirements, your historical document corpus, your risk thresholds.</p>
+  <p>This knowledge base becomes the memory layer of your agentic system. It&#x27;s what lets an agent make firm-specific decisions rather than generic ones. Without it, you&#x27;re getting general intelligence applied to your specific problem. It may which work, but not as well as a grounded, context-aware agent.</p>
+  <h3>Step 3: Pilot a Workflow at Manageable Scale</h3>
+  <p>Start with one workflow, not five. Pick something high-volume and medium-complexity. Build the pipeline, validate the outputs against known-good human reviews, and tune from there.</p>
+  <p>LlamaParse makes this easier with a free tier (10k credits on signup) that lets you test parsing and extraction on your actual documents before committing. Most importantly, the agent’s output needs to be compared to a human one to measure the accuracy of the process. Once this is done, you can expand it to other workflows easily.</p>
+</section>
+<section class="section" id="s21">
+  <h2>🧠 The Future of Autonomous Operations</h2>
+  <p class="lead">Agentic document processing is, at its core, the self-driving version of the back office. It automates the repetitive tasks and takes on the reasoning-intensive ones that have always required human ju</p>
+  <p>The competitive divide over the next few years is going to be between companies that have automated document processing and those that haven&#x27;t. The ones who move first are going to have structurally lower operational costs, better compliance posture, and faster decision cycles.</p>
+  <p>LlamaParse has proven that it has the technology ready to reason through complex documents and use agentic document processing to build workflows that are directly connected to your business processes. It’s free to try today and comes with 10k free credits upon signup.</p>
+</section>
+
+    <section class="section" id="key-concepts">
+  <h2>🔑 核心概念 Key Concepts</h2>
+  <p class="lead">本文涉及的关键技术概念与术语。</p>
+<div class="flow">
+  <div class="flow-step">Processing model</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Exception handling</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Document types</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Output</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step purple">Non-text content</div>
+</div>
+</section>
+<section class="section" id="structure">
+  <h2>📊 文章结构 Article Structure</h2>
+  <p class="lead">文章各章节的组织脉络。</p>
+<div class="timeline">
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">What Is Agentic Document Processing?</div>
+    <div class="tl-desc">Agentic document processing (ADP) is the use of AI agents to autonomously handle document-centric workflows without requ</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Document Understanding vs. Document Extraction</div>
+    <div class="tl-desc">There&#x27;s a meaningful distinction between understanding and extraction. Extraction is pulling data from a document, s</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Beyond Pixel-Level Text Extraction</div>
+    <div class="tl-desc">Real-world documents are messy. They contain charts, tables, scanned images, embedded PDFs, handwritten notes, and layou</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Agentic AI vs. Traditional IDP: What&#x27;s the Difference?</div>
+    <div class="tl-desc">Traditional intelligent document processing was a meaningful step forward when it emerged. It was better than purely man</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">The Architecture of an Agentic Document Workflow</div>
+    <div class="tl-desc">There are four core components to any well-built agentic document workflow. Understanding each one is important if you&amp;#</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">The Brain: Large Language Models for Reasoning and Planning</div>
+    <div class="tl-desc">The LLM is the orchestration layer. It receives parsed document content, understands the task, decides which tools to in</div>
+  </div>
+</div>
+</section>
+
+  </div>
+
+  <footer class="footer">
+    <div class="footer-links">
+      <a href="./">LlamaIndex Blog Hub</a>
+      <a href="https://www.llamaindex.ai/blog/agentic-document-processing" target="_blank" rel="noopener">原文链接 Original</a>
+      <a href="../">Engineering Blogs Hub</a>
+    </div>
+    <p>Generated from LlamaIndex blog content for learning purposes.</p>
+  </footer>
+</body>
+</html>

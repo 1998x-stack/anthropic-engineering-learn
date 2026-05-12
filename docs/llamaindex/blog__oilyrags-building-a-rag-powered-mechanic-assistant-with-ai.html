@@ -1,0 +1,488 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>深度解析：RAG-Powered Mechanic Assistant: How-To Guide | LlamaIndex</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #fafbfc;
+  --surface: #fff;
+  --text: #0f172a;
+  --text-secondary: #64748b;
+  --border: #e2e8f0;
+  --radius: 14px;
+  --amber: #d97706;
+  --amber-light: #fbbf24;
+  --amber-dark: #92400e;
+  --purple: #6366f1;
+  --teal: #14b8a6;
+  --green: #10b981;
+  --red: #ef4444;
+  --blue: #3b82f6;
+  --mono: 'JetBrains Mono', monospace;
+  --sans: 'Noto Sans SC', 'Inter', sans-serif;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:var(--sans); background:var(--bg); color:var(--text); line-height:1.7; }
+a { color:var(--amber); text-decoration:none; }
+a:hover { text-decoration:underline; }
+
+/* Nav */
+.nav {
+  position:sticky; top:0; z-index:100;
+  background:rgba(15,23,42,0.95); backdrop-filter:blur(12px);
+  padding:0 2rem; height:56px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.nav-brand { color:#fbbf24; font-weight:700; font-size:1.1rem; }
+.nav-back { color:#94a3b8; font-size:0.9rem; }
+.nav-back:hover { color:#fbbf24; }
+
+/* Hero */
+.hero {
+  background:linear-gradient(135deg,#0f172a 0%,#78350f 50%,#d97706 100%);
+  padding:4rem 2rem 3rem; color:#fff; text-align:center;
+}
+.hero-badge { display:inline-block; background:rgba(251,191,36,0.2); color:#fbbf24;
+  padding:4px 16px; border-radius:20px; font-size:0.85rem; margin-bottom:1rem; font-weight:500; }
+.hero h1 { font-size:clamp(1.5rem,4vw,2.4rem); font-weight:800; max-width:800px; margin:0 auto 1rem; line-height:1.3; }
+.hero-sub { color:rgba(255,255,255,0.8); font-size:1rem; max-width:600px; margin:0 auto 2rem; }
+.stats { display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; max-width:700px; margin:0 auto; }
+.stat-card {
+  background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12);
+  border-radius:12px; padding:1rem 0.5rem; text-align:center;
+}
+.stat-emoji { font-size:1.3rem; margin-bottom:4px; }
+.stat-val { font-size:1.4rem; font-weight:800; color:#fbbf24; }
+.stat-label { font-size:0.75rem; color:rgba(255,255,255,0.7); text-transform:uppercase; letter-spacing:0.5px; }
+.stat-desc { font-size:0.7rem; color:rgba(255,255,255,0.5); margin-top:2px; }
+
+/* Page */
+.page { max-width:900px; margin:0 auto; padding:2rem 1.5rem; }
+
+/* TOC */
+.toc { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:0.75rem; margin-bottom:3rem; }
+.toc-item {
+  display:flex; align-items:center; gap:10px;
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:10px; padding:10px 14px; font-size:0.9rem;
+  color:var(--text); transition:all 0.2s;
+}
+.toc-item:hover { border-color:var(--amber); background:#fffbeb; text-decoration:none; transform:translateY(-1px); }
+.toc-num {
+  background:linear-gradient(135deg,#d97706,#f59e0b);
+  color:#fff; font-weight:700; font-size:0.75rem;
+  width:28px; height:28px; border-radius:8px;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+
+/* Section */
+.section { margin-bottom:3rem; }
+.section h2 {
+  font-size:1.5rem; font-weight:700; margin-bottom:0.5rem;
+  padding-bottom:0.5rem; border-bottom:2px solid var(--amber);
+}
+.lead { color:var(--text-secondary); font-size:0.95rem; margin-bottom:1.2rem; }
+
+/* Cards */
+.card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius); padding:1.2rem; margin-bottom:0.8rem;
+}
+.card p { font-size:0.9rem; }
+.card-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:0.8rem; margin:1rem 0; }
+
+/* Code Block */
+.code-block {
+  background:#1e293b; border-radius:12px; overflow:hidden; margin:1rem 0;
+}
+.code-header { padding:8px 16px; background:#0f172a; display:flex; align-items:center; gap:8px; }
+.code-block pre {
+  padding:1rem 1.2rem; color:#e2e8f0; font-family:var(--mono);
+  font-size:0.82rem; line-height:1.6; overflow-x:auto; white-space:pre;
+}
+
+/* Compare */
+.compare-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin:1rem 0; }
+.compare-card {
+  background:var(--surface); border-radius:var(--radius); padding:1.2rem;
+  border:1px solid var(--border);
+}
+.compare-card.old { border-left:4px solid var(--red); }
+.compare-card.new { border-left:4px solid var(--green); }
+.compare-card h4 { font-size:0.95rem; margin-bottom:0.5rem; }
+
+/* Chart */
+.chart { margin:1rem 0; }
+.chart-row { display:flex; align-items:center; margin-bottom:8px; }
+.chart-label { width:160px; font-size:0.85rem; font-weight:500; flex-shrink:0; }
+.chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:32px; overflow:hidden; }
+.chart-bar {
+  height:100%; border-radius:8px; display:flex; align-items:center;
+  padding:0 12px; font-size:0.75rem; font-weight:600; color:#fff;
+  transition:width 0.6s ease;
+}
+.chart-bar.amber { background:linear-gradient(90deg,#d97706,#f59e0b); }
+.chart-bar.purple { background:linear-gradient(90deg,#6366f1,#818cf8); }
+.chart-bar.green { background:linear-gradient(90deg,#10b981,#34d399); }
+.chart-bar.blue { background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+.chart-bar.teal { background:linear-gradient(90deg,#14b8a6,#2dd4bf); }
+.chart-bar.red { background:linear-gradient(90deg,#ef4444,#f87171); }
+
+/* Timeline */
+.timeline { position:relative; padding-left:2rem; margin:1rem 0; }
+.timeline::before {
+  content:''; position:absolute; left:7px; top:0; bottom:0; width:3px;
+  background:linear-gradient(180deg,#d97706,#f59e0b,#fbbf24);
+  border-radius:2px;
+}
+.tl-item { position:relative; margin-bottom:1.5rem; padding-left:1rem; }
+.tl-dot {
+  position:absolute; left:-2rem; top:4px;
+  width:16px; height:16px; border-radius:50%;
+  background:#d97706; border:3px solid #fef3c7;
+}
+.tl-item:nth-child(2) .tl-dot { background:#3b82f6; border-color:#dbeafe; }
+.tl-item:nth-child(3) .tl-dot { background:#10b981; border-color:#d1fae5; }
+.tl-item:nth-child(4) .tl-dot { background:#6366f1; border-color:#e0e7ff; }
+.tl-item:nth-child(5) .tl-dot { background:#14b8a6; border-color:#ccfbf1; }
+.tl-phase { font-weight:600; font-size:0.95rem; }
+.tl-desc { color:var(--text-secondary); font-size:0.85rem; margin-top:2px; }
+
+/* Flow */
+.flow { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin:1rem 0; }
+.flow-step {
+  background:var(--surface); border:2px solid var(--border);
+  border-radius:12px; padding:10px 18px; font-weight:600; font-size:0.9rem;
+}
+.flow-step.amber { border-color:var(--amber); background:#fffbeb; }
+.flow-step.purple { border-color:var(--purple); background:#eef2ff; }
+.flow-arrow { color:var(--text-secondary); font-size:1.2rem; }
+
+/* Block Quote */
+.block-q {
+  border-left:4px solid var(--amber); background:#fffbeb;
+  padding:1.2rem 1.5rem; border-radius:0 12px 12px 0; margin:1rem 0;
+  font-style:italic; color:#78350f;
+}
+.block-q p { margin:0; font-size:0.92rem; }
+
+/* Badge */
+.badge {
+  display:inline-block; padding:3px 10px; border-radius:6px;
+  font-size:0.75rem; font-weight:600;
+}
+.badge-amber { background:#fef3c7; color:#92400e; }
+.badge-purple { background:#e0e7ff; color:#3730a3; }
+.badge-green { background:#d1fae5; color:#065f46; }
+.badge-red { background:#fee2e2; color:#991b1b; }
+.badge-blue { background:#dbeafe; color:#1e40af; }
+.badge-teal { background:#ccfbf1; color:#115e59; }
+
+/* Table */
+.tbl-wrap { overflow-x:auto; margin:1rem 0; }
+table { width:100%; border-collapse:collapse; font-size:0.85rem; }
+th { background:#f8fafc; padding:10px 12px; text-align:left; font-weight:600; border-bottom:2px solid var(--border); }
+td { padding:10px 12px; border-bottom:1px solid var(--border); }
+
+/* Footer */
+.footer {
+  background:#0f172a; color:#94a3b8; text-align:center;
+  padding:2rem; margin-top:3rem; font-size:0.85rem;
+}
+.footer a { color:#fbbf24; }
+.footer-links { display:flex; justify-content:center; gap:2rem; margin-top:0.8rem; flex-wrap:wrap; }
+
+/* Responsive */
+@media(max-width:768px) {
+  .stats { grid-template-columns:repeat(2,1fr); }
+  .toc { grid-template-columns:1fr; }
+  .compare-grid { grid-template-columns:1fr; }
+  .card-grid { grid-template-columns:1fr; }
+  .chart-label { width:120px; font-size:0.78rem; }
+  .flow { flex-direction:column; gap:8px; }
+  .flow-arrow { transform:rotate(90deg); }
+  .hero { padding:3rem 1rem 2rem; }
+  .hero h1 { font-size:1.4rem; }
+  .page { padding:1.5rem 1rem; }
+  .section h2 { font-size:1.2rem; }
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="../" class="nav-brand">LlamaIndex Blog</a>
+  <a href="../" class="nav-back">&larr; Back to Hub</a>
+</nav>
+
+<header class="hero">
+  <div class="hero-badge">RAG</div>
+  <h1>RAG-Powered Mechanic Assistant: How-To Guide | LlamaIndex</h1>
+  <p class="hero-sub">作者：Unknown | 日期：Unknown</p>
+  <div class="stats">
+<div class="stat-card">
+  <div class="stat-emoji">📝</div>
+  <div class="stat-val">1000+</div>
+  <div class="stat-label">words</div>
+  <div class="stat-desc">文章总字数</div>
+</div>
+<div class="stat-card">
+  <div class="stat-emoji">📑</div>
+  <div class="stat-val">10</div>
+  <div class="stat-label">sections</div>
+  <div class="stat-desc">核心章节</div>
+</div>
+<div class="stat-card">
+  <div class="stat-emoji">💻</div>
+  <div class="stat-val">2</div>
+  <div class="stat-label">code blocks</div>
+  <div class="stat-desc">代码示例</div>
+</div>
+<div class="stat-card">
+  <div class="stat-emoji">🏷️</div>
+  <div class="stat-val">RAG</div>
+  <div class="stat-label">category</div>
+  <div class="stat-desc">文章分类</div>
+</div>
+
+  </div>
+</header>
+
+<div class="page">
+
+<div class="intro-section"><p>](https://www.linkedin.com/company/91154103/)
+ -  [</p>
+<p>](https://www.youtube.com/@LlamaIndex)</p>
+<p><em>This is a guest post by Jeff Davis, one of the winners of our recent hackathon.</em></p>
+</div>
+
+<nav class="toc"><a href="#s0" class="toc-item"><span class="toc-num">01</span>The Concept</a>
+<a href="#s1" class="toc-item"><span class="toc-num">02</span>The Problem</a>
+<a href="#s2" class="toc-item"><span class="toc-num">03</span>The Solution</a>
+<a href="#s3" class="toc-item"><span class="toc-num">04</span>How It Works</a>
+<a href="#s4" class="toc-item"><span class="toc-num">05</span>Real World Impact</a>
+<a href="#s5" class="toc-item"><span class="toc-num">06</span>Technical Implementation</a>
+<a href="#s6" class="toc-item"><span class="toc-num">07</span>Observability &amp;amp; Evaluation</a>
+<a href="#s7" class="toc-item"><span class="toc-num">08</span>Next Steps</a>
+<a href="#s8" class="toc-item"><span class="toc-num">09</span>Takeaways</a>
+<a href="#s9" class="toc-item"><span class="toc-num">10</span>Where to Find Me</a>
+</nav>
+
+
+<section class="section" id="s0">
+  <h2>🔍 The Concept</h2>
+  <p class="lead">OilyRAGs is an AI mechanic assistant catalog for mechanics by mechanics. The aim is to accelerate customer service, mechanical maintenance, and repetitive operational tasks with artificial intelligenc</p>
+  <div class="block-q"><p>OilyRAGs is an AI mechanic assistant catalog for mechanics by mechanics. The aim is to accelerate customer service, mechanical maintenance, and repetitive operational tasks with artificial intelligence and machine learning. Essentially, OilyRAGs is a catalog of public, private, and manufacturer spon</p></div>
+  <p>The market potential is massive: there are 1.4 billion autos (cars, trucks, buses) worldwide, billions of aircraft, billions of watercraft, and billions of appliances including refrigerators, washing machines, dryers, dishwashers, etc. There are also hundreds of millions of small engine devices, including tractors, loaders, forklifts and lawnmowers.</p>
+<p>###  Focus Market: Marine Industry</p>
+<p>For the prototype, I focused on boats.</p>
+<p>This is a $50+ billion market alone. Recreational boating and fishing was the number one contributor to the $689 billion outdoor recreation industry in 2020, according to the US Department of Commerce&amp;#39;s Bureau of Economics Analysis.</p>
+
+</section>
+
+<section class="section" id="s1">
+  <h2>⚡ The Problem</h2>
+  <p class="lead">To understand the pain points, consider a boat mechanic&amp;#39;s typical workflow when encountering an engine model number like &amp;quot;P0006B051FW20A&amp;quot; for a PCM engine:</p>
+  <div class="card-grid"><div class="card" style="border-left:4px solid var(--amber)"><p>Crawl into the engine compartment (requiring contortionist-level flexibility)</p></div>
+<div class="card" style="border-left:4px solid var(--blue)"><p>Write down the number on scratch paper</p></div>
+<div class="card" style="border-left:4px solid var(--green)"><p>Climb down from the boat</p></div>
+<div class="card" style="border-left:4px solid var(--purple)"><p>Walk to the computer room at the far side of the building</p></div>
+<div class="card" style="border-left:4px solid var(--teal)"><p>Pull up a PDF</p></div>
+<div class="card" style="border-left:4px solid var(--red)"><p>Decipher the model number</p></div>
+</div>
+  <p>-  Crawl into the engine compartment (requiring contortionist-level flexibility)
+  -  Write down the number on scratch paper
+  -  Climb down from the boat
+  -  Walk to the computer room at the far side of the building
+  -  Pull up a PDF
+  -  Decipher the model number
+  -  Look up corresponding parts for maintenance tasks</p>
+<p>This can take considerable time and isn’t the best use of a mechanic’s abilities.</p>
+
+</section>
+
+<section class="section" id="s2">
+  <h2>🏗️ The Solution</h2>
+  <p class="lead">OilyRAGs uses LlamaIndex to create a RAG-enabled chatbot with a multimodal hands-free interface. The mechanic can use their phone to decipher model numbers, diagnose problems and make simple queries w</p>
+  <div class="block-q"><p>OilyRAGs uses LlamaIndex to create a RAG-enabled chatbot with a multimodal hands-free interface. The mechanic can use their phone to decipher model numbers, diagnose problems and make simple queries without leaving the boat, such as:  &amp;quot;List all the parts and part numbers needed to perform a</p></div>
+  <p>&amp;quot;List all the parts and part numbers needed to perform a 50 hour service on a 2020 PCM 06.2 L DI, PEG 90A E, 2.0:1, return, A&amp;quot;</p>
+<p>Using the application not only provides a standard output which is better all around, it is 6,000% faster - an order of magnitude of improvement rarely seen in innovation.</p>
+<p></p>
+
+</section>
+
+<section class="section" id="s3">
+  <h2>📊 How It Works</h2>
+  <p class="lead">The backend implementation uses LlamaIndex to build a RAG pipeline which is interfaced by a chatbot paired with a LlamaIndex workflow. This enables an AI agent to pass information to another AI agent </p>
+  <div class="card-grid"><div class="card" style="border-left:4px solid var(--amber)"><p>Engine model number</p></div>
+<div class="card" style="border-left:4px solid var(--blue)"><p>Deciphered characteristics</p></div>
+<div class="card" style="border-left:4px solid var(--green)"><p>Parts numbers associated with each required service item</p></div>
+<div class="card" style="border-left:4px solid var(--purple)"><p>Space for notes (visible only to the marina)</p></div>
+<div class="card" style="border-left:4px solid var(--teal)"><p>Digital signature and date</p></div>
+<div class="card" style="border-left:4px solid var(--red)"><p>PDF export capability</p></div>
+</div>
+  <p>The form includes:</p>
+<p>-  Engine model number
+  -  Deciphered characteristics
+  -  Parts numbers associated with each required service item
+  -  Space for notes (visible only to the marina)
+  -  Digital signature and date
+  -  PDF export capability</p>
+<p>All data is stored digitally and can be referenced by the RAG system for future queries. This eliminates 100% of carbon waste, removes issues with illegible handwriting and oily fingerprints, and creates easily shareable documentation.</p>
+
+</section>
+
+<section class="section" id="s4">
+  <h2>🎯 Real World Impact</h2>
+  <p class="lead"></p>
+  <div class="card-grid"><div class="card" style="border-left:4px solid var(--amber)"><p>Mechanics become more efficient</p></div>
+<div class="card" style="border-left:4px solid var(--blue)"><p>Marinas increase throughput</p></div>
+<div class="card" style="border-left:4px solid var(--green)"><p>Manufacturers/Suppliers sell more parts</p></div>
+<div class="card" style="border-left:4px solid var(--purple)"><p>Customers receive faster service</p></div>
+</div>
+  <p>As a Service Mechanic at a local marina noted: &amp;quot;Using AI for repetitive tasks is a game changer. It makes completing time-sucking tasks exponentially faster.&amp;quot;</p>
+<p>In the boat service industry, where oil changes cost $300 for customers and mechanics are paid $30 per hour, OilyRAGs creates benefits for everyone:</p>
+<p>-  Mechanics become more efficient
+  -  Marinas increase throughput
+  -  Manufacturers/Suppliers sell more parts
+  -  Customers receive faster service</p>
+<p>It&amp;#39;s a win-win-win-win scenario where mechanics, marinas, manufacturers, and boat owners all benefit.</p>
+
+</section>
+
+<section class="section" id="s5">
+  <h2>🔧 Technical Implementation</h2>
+  <p class="lead">The application was built using LlamaIndex for several key components:</p>
+  <div class="code-block">
+<div class="code-header"><span class="badge badge-amber">code</span></div>
+<pre># Storage
+from pinecone import Pinecone
+from llama_index.vector_stores.pinecone import PineconeVectorStore
+from llama_index.core import SimpleDirectoryReader, StorageContext, Document, VectorStoreIndex, set_global_handler, Settings
+
+# RAG
+from llama_index.core.node_parser import SimpleNodeParser
+from llama_index.core.storage.docstore import SimpleDocumentStore
+from llama_index.core.storage.index_store import SimpleIndexStore
+
+# LLM
+from llama_index.llms.openai import OpenAI
+
+# Workflow
+from llama_index.core.workflow import (
+    StartEvent,
+    StopEvent,
+    Workflow,
+    step,
+    Event,
+)
+
+# Workflow Graph
+from llama_index.utils.workflow import draw_all_possible_flows
+
+# Embeddings
+from llama_index.embeddings.openai import OpenAIEmbedding</pre>
+</div>
+  <p>python</p>
+<p>```
+# Storage
+from pinecone import Pinecone
+from llama_index.vector_stores.pinecone import PineconeVectorStore
+from llama_index.core import SimpleDirectoryReader, StorageContext, Document, VectorStoreIndex, set_global_handler, Settings</p>
+<p># RAG
+from llama_index.core.node_parser import SimpleNodeParser
+from llama_index.core.storage.docstore import SimpleDocumentStore
+from llama_index.core.storage.index_store import SimpleIndexStore</p>
+<p># LLM
+from llama_index.llms.openai import OpenAI</p>
+<p># Workflow
+from llama_index.core.workflow import (
+    StartEvent,
+    StopEvent,
+    Workflow,
+    step,
+    Event,
+)</p>
+
+</section>
+
+<section class="section" id="s6">
+  <h2>💡 Observability &amp;amp; Evaluation</h2>
+  <p class="lead">The system includes observability using LlamaTrace with Arize Phoenix:</p>
+  <div class="code-block">
+<div class="code-header"><span class="badge badge-amber">code</span></div>
+<pre>llama_index.core.set_global_handler(
+    &quot;arize_phoenix&quot;, project_name=&quot;oilyrags&quot;, endpoint=&quot;https://llamatrace.com/v1/traces&quot;
+)</pre>
+</div>
+  <p>python</p>
+<p>``<code>
+llama_index.core.set_global_handler(
+    &quot;arize_phoenix&quot;, project_name=&quot;oilyrags&quot;, endpoint=&quot;https://llamatrace.com/v1/traces&quot;
+)
+</code>``</p>
+
+</section>
+
+<section class="section" id="s7">
+  <h2>📈 Next Steps</h2>
+  <p class="lead">The validation of interest in OilyRAGs by the marine industry service providers demonstrates the potential for expansion into other mechanical sectors. Looking ahead, I plan to:</p>
+  <div class="card-grid"><div class="card" style="border-left:4px solid var(--amber)"><p>Implement a continuous feedback hands-free mode for the mechanics using the chatbot</p></div>
+<div class="card" style="border-left:4px solid var(--blue)"><p>Expand offerings to cover even more niche vehicles and engines</p></div>
+<div class="card" style="border-left:4px solid var(--green)"><p>Develop predictive maintenance features using machine learning</p></div>
+<div class="card" style="border-left:4px solid var(--purple)"><p>Scheduling and notification features for boat owners and service providers</p></div>
+<div class="card" style="border-left:4px solid var(--teal)"><p>Partner with manufacturers for sponsored RAG applications</p></div>
+<div class="card" style="border-left:4px solid var(--red)"><p>Partner with suppliers for seamless ordering within the app</p></div>
+</div>
+  <p>-  Implement a continuous feedback hands-free mode for the mechanics using the chatbot
+  -  Expand offerings to cover even more niche vehicles and engines
+  -  Develop predictive maintenance features using machine learning
+  -  Scheduling and notification features for boat owners and service providers
+  -  Partner with manufacturers for sponsored RAG applications
+  -  Partner with suppliers for seamless ordering within the app</p>
+
+</section>
+
+<section class="section" id="s8">
+  <h2>🧩 Takeaways</h2>
+  <p class="lead">This RAG-A-THON project demonstrates how LlamaIndex can be used to create practical, impactful solutions that transform traditional industries through the power of RAG and AI agents.The ability to imp</p>
+  <div class="compare-grid">
+<div class="compare-card old"><h4>传统方法</h4><p>This RAG-A-THON project demonstrates how LlamaIndex can be used to create practical, impactful solutions that transform traditional industries through the power of RAG and AI agents.The ability to imp</p></div>
+<div class="compare-card new"><h4>新方法</h4><p>lement so many key technical features using LlamaIndex is so powerful, fast, and reduces exposure to inconsistent code bases across multiple projects.
+
+
+
+ If you have questions on implementation of an</p></div>
+</div>
+  <p>If you have questions on implementation of an agentic RAG or are looking to develop one for your business, let’s talk!</p>
+
+</section>
+
+<section class="section" id="s9">
+  <h2>🔑 Where to Find Me</h2>
+  <p class="lead">If you&amp;#39;re interested in investing, partnering, or want to learn more about OilyRAGs development, <a href="https://linkedin.com/in/tahoedesigner" target="_blank">connect with me on LinkedIn</a>. I&amp;#39;m particularly interest</p>
+  <div class="block-q"><p>If you&amp;#39;re interested in investing, partnering, or want to learn more about OilyRAGs development, <a href="https://linkedin.com/in/tahoedesigner" target="_blank">connect with me on LinkedIn</a>. I&amp;#39;m particularly interested in connecting with: -  Investors   -  Marina Operators   -  Boat Owners  Let&amp;#39;s work toge</p></div>
+  <p>-  Investors
+  -  Marina Operators
+  -  Boat Owners</p>
+<p>Let&amp;#39;s work together to bring AI-powered efficiency to mechanical maintenance across industries!</p>
+
+</section>
+
+
+</div>
+
+<footer class="footer">
+  <p>LlamaIndex Blog Deep-Dive | 深度解析系列</p>
+  <div class="footer-links">
+    <a href="../">Hub 首页</a>
+    <a href="https://www.llamaindex.ai/blog/oilyrags-building-a-rag-powered-mechanic-assistant-with-ai" target="_blank">原文链接</a>
+  </div>
+</footer>
+
+</body>
+</html>

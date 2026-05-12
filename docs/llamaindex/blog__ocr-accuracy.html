@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：OCR Accuracy Explained: How to Improve It</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafbfc;
+      --surface: #fff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --amber: #d97706;
+      --amber-light: #fbbf24;
+      --amber-dark: #92400e;
+      --purple: #6366f1;
+      --teal: #14b8a6;
+      --green: #10b981;
+      --red: #ef4444;
+      --blue: #3b82f6;
+      --pink: #ec4899;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans SC', 'Inter', sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:var(--sans); background:var(--bg); color:var(--text); line-height:1.7; }
+
+    .nav { position:sticky; top:0; background:rgba(15,23,42,.92); backdrop-filter:blur(12px); z-index:100; border-bottom:1px solid rgba(255,255,255,.08); }
+    .nav-inner { max-width:1100px; margin:0 auto; padding:12px 24px; display:flex; justify-content:space-between; align-items:center; }
+    .nav-brand { color:#fbbf24; text-decoration:none; font-weight:700; display:flex; align-items:center; gap:8px; }
+    .nav-logo { font-size:20px; }
+    .nav a:last-child { font-size:13px; color:rgba(255,255,255,.6); text-decoration:none; }
+    .nav a:last-child:hover { color:#fbbf24; }
+
+    .hero { background:linear-gradient(135deg,#0f172a 0%,#78350f 50%,#d97706 100%); color:#fff; padding:60px 24px 48px; }
+    .hero-inner { max-width:1100px; margin:0 auto; }
+    .hero-tag { display:inline-block; background:rgba(251,191,36,.15); color:#fbbf24; padding:4px 14px; border-radius:20px; font-size:13px; font-weight:500; margin-bottom:16px; letter-spacing:.5px; }
+    .hero h1 { font-size:clamp(24px,4vw,42px); font-weight:800; line-height:1.2; margin-bottom:12px; }
+    .hero p { font-size:17px; color:rgba(255,255,255,.8); max-width:700px; margin-bottom:28px; line-height:1.6; }
+    .hero-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; max-width:600px; }
+    .stat { text-align:center; }
+    .stat-num { display:block; font-size:28px; font-weight:800; color:#fbbf24; font-family:var(--mono); }
+    .stat-label { font-size:12px; color:rgba(255,255,255,.6); text-transform:uppercase; letter-spacing:.5px; }
+
+    .page { max-width:1100px; margin:0 auto; padding:32px 24px 60px; }
+
+    .toc { margin-bottom:40px; }
+    .toc-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:10px; }
+    .toc-item { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); text-decoration:none; color:var(--text); font-size:14px; font-weight:500; transition:all .2s; }
+    .toc-item:hover { border-color:var(--amber); transform:translateY(-1px); box-shadow:0 4px 12px rgba(217,119,6,.1); }
+    .toc-num { font-size:16px; }
+
+    .section { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:32px; margin-bottom:24px; }
+    .section h2 { font-size:22px; font-weight:700; margin-bottom:12px; color:var(--text); }
+    .section h3 { font-size:17px; font-weight:600; margin:20px 0 8px; color:var(--amber-dark); }
+    .lead { color:var(--text-secondary); font-size:15px; margin-bottom:16px; line-height:1.7; }
+    .section p { margin-bottom:12px; font-size:15px; line-height:1.7; }
+
+    .chart { margin:20px 0; }
+    .chart-row { display:flex; align-items:center; margin-bottom:8px; }
+    .chart-label { width:160px; font-size:13px; font-weight:500; text-align:right; padding-right:12px; color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:28px; overflow:hidden; }
+    .chart-bar { height:100%; border-radius:8px; display:flex; align-items:center; padding-left:10px; font-size:12px; font-weight:600; color:#fff; transition:width .6s ease; min-width:40px; }
+    .chart-bar.amber { background:linear-gradient(90deg,#d97706,#f59e0b); }
+    .chart-bar.purple { background:linear-gradient(90deg,#6366f1,#818cf8); }
+    .chart-bar.teal { background:linear-gradient(90deg,#0d9488,#14b8a6); }
+    .chart-bar.green { background:linear-gradient(90deg,#059669,#10b981); }
+    .chart-bar.blue { background:linear-gradient(90deg,#2563eb,#3b82f6); }
+    .chart-bar.red { background:linear-gradient(90deg,#dc2626,#ef4444); }
+
+    .timeline { position:relative; padding-left:28px; margin:20px 0; }
+    .timeline::before { content:''; position:absolute; left:8px; top:0; bottom:0; width:3px; background:linear-gradient(180deg,#d97706,#6366f1,#14b8a6); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:20px; padding-left:16px; }
+    .tl-dot { position:absolute; left:-24px; top:4px; width:14px; height:14px; border-radius:50%; border:3px solid var(--amber); background:#fff; }
+    .tl-item:nth-child(2) .tl-dot { border-color:var(--purple); }
+    .tl-item:nth-child(3) .tl-dot { border-color:var(--teal); }
+    .tl-item:nth-child(4) .tl-dot { border-color:var(--green); }
+    .tl-item:nth-child(5) .tl-dot { border-color:var(--blue); }
+    .tl-phase { font-weight:600; font-size:15px; margin-bottom:4px; }
+    .tl-desc { font-size:13px; color:var(--text-secondary); line-height:1.5; }
+
+    .compare-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin:20px 0; }
+    .compare-card { padding:16px; border-radius:var(--radius); font-size:14px; line-height:1.6; }
+    .compare-card.old { background:#fef2f2; border:1px solid #fecaca; }
+    .compare-card.new { background:#f0fdf4; border:1px solid #bbf7d0; }
+
+    .flow { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:20px 0; }
+    .flow-step { padding:10px 18px; background:#f8fafc; border:2px solid var(--border); border-radius:var(--radius); font-size:13px; font-weight:600; text-align:center; }
+    .flow-step.purple { background:#eef2ff; border-color:var(--purple); color:var(--purple); }
+    .flow-arrow { color:var(--amber); font-size:20px; font-weight:700; }
+
+    .fail-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:20px 0; }
+    .fail-grid .card { padding:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); font-size:13px; line-height:1.6; }
+
+    .block-q { margin:20px 0; padding:20px 24px; background:linear-gradient(135deg,#fffbeb,#fef3c7); border-left:4px solid var(--amber); border-radius:0 var(--radius) var(--radius) 0; font-style:italic; color:#92400e; font-size:14px; line-height:1.7; }
+
+    .tbl-wrap { overflow-x:auto; margin:20px 0; }
+    table { width:100%; border-collapse:collapse; font-size:14px; }
+    th { background:#f8fafc; padding:10px 14px; text-align:left; font-weight:600; border-bottom:2px solid var(--border); white-space:nowrap; }
+    td { padding:10px 14px; border-bottom:1px solid var(--border); }
+    tr:hover td { background:#fffbeb; }
+
+    .badge { display:inline-block; padding:3px 10px; border-radius:12px; font-size:12px; font-weight:500; }
+    .badge-amber { background:#fffbeb; color:#92400e; }
+    .badge-purple { background:#eef2ff; color:#4338ca; }
+    .badge-green { background:#f0fdf4; color:#166534; }
+
+    .footer { background:#0f172a; color:rgba(255,255,255,.6); padding:32px 24px; text-align:center; font-size:13px; }
+    .footer a { color:#fbbf24; text-decoration:none; }
+    .footer a:hover { text-decoration:underline; }
+    .footer-links { display:flex; justify-content:center; gap:24px; margin-bottom:12px; flex-wrap:wrap; }
+
+    @media(max-width:768px) {
+      .hero-stats { grid-template-columns:repeat(2,1fr); }
+      .compare-grid, .fail-grid { grid-template-columns:1fr; }
+      .chart-label { width:100px; font-size:12px; }
+      .flow { flex-direction:column; gap:6px; }
+      .flow-arrow { transform:rotate(90deg); }
+      .toc-grid { grid-template-columns:1fr; }
+      .section { padding:20px 16px; }
+      .hero { padding:40px 16px 32px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="../" class="nav-brand">
+        <span class="nav-logo">🦙</span>
+        <span>LlamaIndex Blog Hub</span>
+      </a>
+      <a href="./">← Back to Hub</a>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="hero-tag">文档处理</div>
+      <h1>OCR Accuracy Explained: How to Improve It</h1>
+      <p>OCR accuracy is one of those metrics that sounds simple until you try to actually measure it in production. &#x27;Our system is 99% accurate&#x27; means almost nothing without knowing what that 99% is measuring, on what kinds of documents, and under what conditions. The gap between OCR accuracy on clean, prin</p>
+      <div class="hero-stats">
+        <div class="stat"><span class="stat-num">22</span><span class="stat-label">核心章节</span></div><div class="stat"><span class="stat-num">8</span><span class="stat-label">关键概念</span></div><div class="stat"><span class="stat-num">9min</span><span class="stat-label">阅读时长</span></div><div class="stat"><span class="stat-num">2465</span><span class="stat-label">总字数</span></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc"><div class="toc-grid">
+  <a href="#s0" class="toc-item"><span class="toc-num">🔍</span>How OCR Accuracy Is Actually Measured</a>
+  <a href="#s4" class="toc-item"><span class="toc-num">🔄</span>What Actually Affects OCR Accuracy</a>
+  <a href="#s10" class="toc-item"><span class="toc-num">🧪</span>How to Improve OCR Results: A Practical Toolkit</a>
+  <a href="#s14" class="toc-item"><span class="toc-num">📝</span>Validation: Comparing Output Against Ground Truth</a>
+  <a href="#s17" class="toc-item"><span class="toc-num">⚡</span>Choosing Your OCR Solution: 2026 Landscape</a>
+  <a href="#s21" class="toc-item"><span class="toc-num">🧠</span>Summary: Accuracy Is a Pipeline Problem</a>
+</div></nav>
+
+    <section class="section" id="s0">
+  <h2>🔍 How OCR Accuracy Is Actually Measured</h2>
+  <p class="lead">OCR accuracy isn&#x27;t a single number. Depending on what your system does with the extracted text, different metrics tell you different things. High-performing systems in 2026 are evaluated across three </p>
+  <p>Metric What It Measures 2026 Benchmark When It Matters</p>
+  <p>Character Error Rate (CER) % of characters incorrectly converted &lt; 1% printed; 3–5% handwriting Archive digitization, legal documents</p>
+  <p>Word Error Rate (WER) % of words containing at least one error &lt; 2% standard documents NLP pipelines, searchable text</p>
+  <p>Field-Level Accuracy Whether a specific field (e.g. invoice total) is 100% correct 99.9% for critical financial fields Invoice processing, KYC, data extraction</p>
+  <h3>Character Error Rate (CER)</h3>
+  <p>CER is the technical gold standard. It measures the percentage of individual characters that are incorrectly converted, calculated using Levenshtein distance—counting insertions, deletions, and substitutions needed to transform the OCR output into the correct text.</p>
+  <p>Formula: CER = (Insertions + Deletions + Substitutions) / Total Characters in Ground Truth</p>
+  <p>Current benchmarks: below 1% for clean printed text, while 3–5% for handwriting recognition. CER is the right metric when you need character-level fidelity (, anything where a single wrong character changes meaning).</p>
+  <h3>Word Error Rate (WER)</h3>
+  <p>WER tracks the percentage of words containing at least one error. It&#x27;s less granular than CER but more intuitive for evaluating business utility. If a word is wrong, it&#x27;s wrong, regardless of how many characters are off.</p>
+  <p>Current benchmark: below 2% for standard documents. WER is the relevant metric when extracted text feeds into NLP pipelines, search indexes, or any downstream process that operates at the word level.</p>
+  <h3>Field-Level (Semantic) Accuracy</h3>
+  <p>This is the metric that matters most for document automation. Field-level accuracy measures whether a specific extracted field (such as invoice total, expiry date, or policy number) is completely correct, regardless of how accurate the surrounding text is.</p>
+  <p>A system can have 99% CER and still extract an invoice total incorrectly. That&#x27;s an error that costs money. For financial fields and identity documents, the 2026 benchmark is 99.9% field-level accuracy. This number is the threshold required to enable straight-through processing (STP), where documents move through the workflow without any human review.</p>
+<div class="flow">
+  <div class="flow-step">Character Error Rate (CER)</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Word Error Rate (WER)</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Field-Level Accuracy</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">below 1%</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step purple">3–5%</div>
+</div>
+</section>
+<section class="section" id="s4">
+  <h2>🔄 What Actually Affects OCR Accuracy</h2>
+  <p class="lead">Even the best OCR engines fail when the input is flawed or the document type is outside their training distribution. These are the factors that most commonly degrade accuracy in real-world deployments</p>
+  <h3>Image Resolution</h3>
+  <p>Resolution is the most controllable factor and the one most often overlooked. Anything below 300 DPI causes a measurable drop in character recognition accuracy. Some studies put it at 20% or more for degraded scans. For high-stakes text extraction, 300–600 DPI is the current standard.</p>
+  <p>The practical implication: if your documents are being scanned at the point of intake, standardizing scan settings is one of the cheapest accuracy improvements available. It costs nothing to change a scanner setting; it costs a lot to correct downstream errors caused by low-resolution inputs.</p>
+  <h3>Document Types and Layout Complexity</h3>
+  <p>OCR software struggles with layouts that deviate from clean, single-column text. Multi-column formats, nested tables, documents with overlapping text layers, faded watermarks, and embedded graphics all introduce recognition errors.</p>
+  <p>This is where the gap between traditional OCR and modern agentic document parsing becomes significant. Traditional OCR engines treat the page as a flat text grid. Layout-aware systems understand structure, capable of detecting column boundaries, identifying table cells, and processing each document region appropriately.</p>
+  <h3>Handwriting Variability</h3>
+  <p>Handwriting recognition has improved substantially with LLM-based systems, but it remains the hardest problem in document processing. Cursive text, overlapping characters, non-standard letterforms, and mixed print-and-cursive documents still produce high character error rates even in top-performing systems.</p>
+  <p>The honest benchmark for handwriting: 3–5% CER is considered good. For anything requiring high accuracy on handwritten content, a human-in-the-loop validation step is still necessary for low-confidence extractions.</p>
+  <h3>Hardware and Infrastructure Constraints</h3>
+  <p>Running local OCR models, like Tesseract, on underpowered machines introduces a class of errors that&#x27;s easy to miss: tiling errors, where the engine processes the image in segments and misses text at segment boundaries. Low VRAM forces lower-resolution processing, which compounds with any existing image quality issues.</p>
+  <p>Cloud-based solutions sidestep this entirely. But for teams running on-premise for privacy or compliance reasons, hardware constraints need to be accounted for in accuracy benchmarking.</p>
+</section>
+<section class="section" id="s10">
+  <h2>🧪 How to Improve OCR Results: A Practical Toolkit</h2>
+  <p class="lead">Improving OCR accuracy in practice is a pipeline problem, not an engine problem. The engine matters, but the biggest gains usually come from what happens before and after recognition.</p>
+  <h3>Phase 1: Pre-Processing</h3>
+  <p>Pre-processing is where you clean the input before the OCR engine sees it. The most impactful techniques:</p>
+  <p>Binarization and denoising: Converting images to high-contrast black and white while removing noise. Libraries like OpenCV handle this well. The goal is to give the OCR engine the clearest possible signal before recognition. Adaptive deskewing: Automatically detecting and correcting page orientation. A 5-degree tilt that looks minor visually can meaningfully spike your WER. Deskewing should be automatic, not manual. Resolution normalization: Upsampling low-DPI inputs to at least 300 DPI before processing. This won&#x27;t recover detail that was never captured, but it prevents the engine from misreading artifacts caused by low-resolution rendering.</p>
+  <h3>Phase 2: Synthetic Data for Training</h3>
+  <p>For teams training or fine-tuning their own models, synthetic data generation is now a standard practice. Tools like SynthOCR-Gen and Genalog create large volumes of labeled training documents that mimic real-world noise conditions—smudges, folds, compression artifacts, variable fonts.</p>
+  <p>The practical benefit: training on synthetic noisy data can reduce production error rates by up to 40% compared to models trained only on clean documents. The synthetic data teaches the model what real intake conditions actually look like, rather than the clean benchmark conditions it might otherwise optimize for.</p>
+  <h3>Phase 3: LLM Post-OCR Correction</h3>
+  <p>This is the most significant development in OCR accuracy improvement over the past few years. Raw OCR output is passed through a language model with a targeted correction prompt—the model fixes clear misrecognitions without rewriting or paraphrasing the original text.</p>
+  <p>The key is prompt specificity. A prompt like &quot;Fix ONLY OCR misrecognitions such as character transpositions or substitutions. Do not rewrite, rephrase, or improve the prose. Preserve original formatting exactly.&quot; produces far more reliable corrections than a generic proofreading prompt.</p>
+  <p>This approach works because language models have strong priors about what words and phrases should look like. An OCR output of &#x27;app1e&#x27; gets corrected to &#x27;apple&#x27; because the model recognizes the pattern. It&#x27;s not a replacement for good OCR per se, but rather a validation layer that catches the errors that slip through.</p>
+</section>
+<section class="section" id="s14">
+  <h2>📝 Validation: Comparing Output Against Ground Truth</h2>
+  <p class="lead">You can&#x27;t improve what you don&#x27;t measure. The only way to know your actual OCR accuracy is to compare OCR output against human-verified ground truth.</p>
+  <h3>Building a Ground Truth Set</h3>
+  <p>A ground truth set is a sample of documents that have been manually verified to be 100% correct. The size requirement depends on your document variability: for a homogeneous corpus (one document type, consistent format), 5,000 words is usually sufficient to get stable accuracy estimates. For diverse, multi-format corpora, 10,000 words or more gives you a more reliable baseline.</p>
+  <p>The ground truth set should reflect your actual document distribution; not your cleanest documents, not your worst, but a representative sample. Accuracy measured on cherry-picked easy documents tells you nothing useful.</p>
+  <h3>Automated Comparison and the Cost-of-Error Framework</h3>
+  <p>Once you have ground truth, automated diff tools can calculate CER, WER, and flag field-level discrepancies across your sample. The raw numbers are useful, but the more important framing is cost of error: what does each type of error actually cost your operation?</p>
+  <p>An error in a vendor name is an annoyance. An error in an invoice total is a financial risk. An error in a drug name on a medical record is a safety issue. Weighting your accuracy assessment by error cost tells you where to focus improvement efforts.</p>
+</section>
+<section class="section" id="s17">
+  <h2>⚡ Choosing Your OCR Solution: 2026 Landscape</h2>
+  <p class="lead">The right solution depends on your document complexity, volume, accuracy requirements, and how much engineering overhead you&#x27;re willing to carry. Here&#x27;s an honest breakdown:</p>
+  <p>Solution Type Best For Typical Accuracy</p>
+  <p>Open Source (PaddleOCR, Tesseract) High-volume, simple layouts, privacy-first 88% – 94%</p>
+  <p>Enterprise APIs (Google, Azure, AWS) Scalable, multi-language, standard forms 96% – 98%</p>
+  <p>Agentic Document Processing (LlamaParse) Complex documents, messy scans, tables, handwriting — with built-in validation loops 99%+ with straight-through processing</p>
+  <h3>Open Source: Where It Works and Where It Doesn&#x27;t</h3>
+  <p>Tesseract and PaddleOCR are legitimate options for high-volume, simple document types where privacy requirements make cloud processing impractical. They&#x27;re free, customizable, and have active communities.</p>
+  <p>The ceiling is real though. On complex layouts, mixed content types, or degraded scans, open source OCR engines top out around 88–94% accuracy without significant additional engineering. That accuracy level is fine for some use cases; it&#x27;s not sufficient for financial data extraction or any workflow where errors carry meaningful cost.</p>
+  <h3>Enterprise APIs: The Middle Ground</h3>
+  <p>Google Document AI, Azure Form Recognizer, and AWS Textract represent the current enterprise standard for general-purpose document processing. They handle multi-language documents well, scale without infrastructure management, and perform reliably on standard document types.</p>
+  <p>The limitation is customization and complex document handling. These systems are optimized for common formats. When your documents are genuinely complex—irregular layouts, heavy tables, embedded charts, mixed handwriting and print—accuracy drops and you&#x27;re left with limited ability to tune the system for your specific corpus.</p>
+  <h3>Agentic Document Processing: Why It&#x27;s Different</h3>
+  <p>This is where LlamaParse operates, and the distinction from traditional OCR is worth being precise about. LlamaParse is an agentic document parsing platform where OCR is one component of a larger orchestration system.</p>
+  <p>What that means in practice: an LLM orchestration layer decides which specialized model handles each element of a document. Text goes to the OCR engine, charts go to a vision model, tables get processed with layout-aware computer vision. The outputs are validated through multiple correction loops and stitched together into a single structured output—Markdown, JSON, or HTML—with confidence scores and source citations at the field level.</p>
+  <p>The practical result is that it handles the document types that break traditional OCR: complex invoices, multi-page contracts, scanned documents with mixed content, handwritten annotations on printed forms. And because the system is model-agnostic and layout-aware rather than template-dependent, it doesn&#x27;t require retraining or reconfiguration when document formats change.</p>
+</section>
+<section class="section" id="s21">
+  <h2>🧠 Summary: Accuracy Is a Pipeline Problem</h2>
+  <p class="lead">OCR accuracy is a pipeline problem. The engine you choose matters, but input quality, pre-processing, post-correction, and solution architecture often have a bigger impact on real-world performance th</p>
+  <p>The first thing to understand is that accuracy means different things depending on what you&#x27;re measuring. Character error rate tells you how many characters are wrong. Word error rate tells you how many words are wrong. Field-level accuracy tells you whether the specific data you actually need is correct. For document automation, field-level accuracy is the only number that matters, and 99.9% is the threshold you need to hit to enable straight-through processing.</p>
+  <p>Getting there requires working every part of the pipeline. Start with input quality since a scan resolution below 300 DPI degrades accuracy before the engine even runs. Layer in pre-processing to correct orientation, remove noise, and normalize resolution. Add LLM post-correction as a validation layer to catch the misrecognitions that slip through even well-tuned engines. And measure your accuracy against ground truth built from your actual documents, not vendor benchmark numbers from controlled test sets.</p>
+  <p>The solution you choose sets the ceiling. Open source engines like Tesseract top out around 88–94% on anything complex. Enterprise APIs from Google, Azure, and AWS get you to 96–98% on standard formats. For complex, variable, or high-stakes documents, agentic document parsing is where the accuracy gap closes. LlamaParse handles OCR as one component of a larger orchestration system, routing each document element to the right model, validating outputs through multiple correction loops, and surfacing confidence scores at the field level so you know exactly where to focus human review.</p>
+</section>
+
+    <section class="section" id="key-concepts">
+  <h2>🔑 核心概念 Key Concepts</h2>
+  <p class="lead">本文涉及的关键技术概念与术语。</p>
+<div class="flow">
+  <div class="flow-step">Character Error Rate (CER)</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Word Error Rate (WER)</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Field-Level Accuracy</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">below 1%</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step purple">3–5%</div>
+</div>
+</section>
+<section class="section" id="structure">
+  <h2>📊 文章结构 Article Structure</h2>
+  <p class="lead">文章各章节的组织脉络。</p>
+<div class="timeline">
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">How OCR Accuracy Is Actually Measured</div>
+    <div class="tl-desc">OCR accuracy isn&#x27;t a single number. Depending on what your system does with the extracted text, different metrics te</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Character Error Rate (CER)</div>
+    <div class="tl-desc">CER is the technical gold standard. It measures the percentage of individual characters that are incorrectly converted,</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Word Error Rate (WER)</div>
+    <div class="tl-desc">WER tracks the percentage of words containing at least one error. It&#x27;s less granular than CER but more intuitive for</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Field-Level (Semantic) Accuracy</div>
+    <div class="tl-desc">This is the metric that matters most for document automation. Field-level accuracy measures whether a specific extracted</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">What Actually Affects OCR Accuracy</div>
+    <div class="tl-desc">Even the best OCR engines fail when the input is flawed or the document type is outside their training distribution. The</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Image Resolution</div>
+    <div class="tl-desc">Resolution is the most controllable factor and the one most often overlooked. Anything below 300 DPI causes a measurable</div>
+  </div>
+</div>
+</section>
+
+  </div>
+
+  <footer class="footer">
+    <div class="footer-links">
+      <a href="./">LlamaIndex Blog Hub</a>
+      <a href="https://www.llamaindex.ai/blog/ocr-accuracy" target="_blank" rel="noopener">原文链接 Original</a>
+      <a href="../">Engineering Blogs Hub</a>
+    </div>
+    <p>Generated from LlamaIndex blog content for learning purposes.</p>
+  </footer>
+</body>
+</html>

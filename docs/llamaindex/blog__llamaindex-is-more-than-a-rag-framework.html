@@ -1,0 +1,380 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>深度解析：LlamaIndex is more than a RAG Framework. It is Agentic Document Processing.</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #fafbfc;
+  --surface: #fff;
+  --text: #0f172a;
+  --text-secondary: #64748b;
+  --border: #e2e8f0;
+  --radius: 14px;
+  --amber: #d97706;
+  --amber-light: #fbbf24;
+  --amber-dark: #92400e;
+  --purple: #6366f1;
+  --teal: #14b8a6;
+  --green: #10b981;
+  --red: #ef4444;
+  --blue: #3b82f6;
+  --mono: 'JetBrains Mono', monospace;
+  --sans: 'Noto Sans SC', 'Inter', sans-serif;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:var(--sans); background:var(--bg); color:var(--text); line-height:1.7; }
+a { color:var(--amber); text-decoration:none; }
+a:hover { text-decoration:underline; }
+
+/* Nav */
+.nav {
+  position:sticky; top:0; z-index:100;
+  background:rgba(15,23,42,0.95); backdrop-filter:blur(12px);
+  padding:0 2rem; height:56px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.nav-brand { color:#fbbf24; font-weight:700; font-size:1.1rem; }
+.nav-back { color:#94a3b8; font-size:0.9rem; }
+.nav-back:hover { color:#fbbf24; }
+
+/* Hero */
+.hero {
+  background:linear-gradient(135deg,#0f172a 0%,#78350f 50%,#d97706 100%);
+  padding:4rem 2rem 3rem; color:#fff; text-align:center;
+}
+.hero-badge { display:inline-block; background:rgba(251,191,36,0.2); color:#fbbf24;
+  padding:4px 16px; border-radius:20px; font-size:0.85rem; margin-bottom:1rem; font-weight:500; }
+.hero h1 { font-size:clamp(1.5rem,4vw,2.4rem); font-weight:800; max-width:800px; margin:0 auto 1rem; line-height:1.3; }
+.hero-sub { color:rgba(255,255,255,0.8); font-size:1rem; max-width:600px; margin:0 auto 2rem; }
+.stats { display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; max-width:700px; margin:0 auto; }
+.stat-card {
+  background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12);
+  border-radius:12px; padding:1rem 0.5rem; text-align:center;
+}
+.stat-emoji { font-size:1.3rem; margin-bottom:4px; }
+.stat-val { font-size:1.4rem; font-weight:800; color:#fbbf24; }
+.stat-label { font-size:0.75rem; color:rgba(255,255,255,0.7); text-transform:uppercase; letter-spacing:0.5px; }
+.stat-desc { font-size:0.7rem; color:rgba(255,255,255,0.5); margin-top:2px; }
+
+/* Page */
+.page { max-width:900px; margin:0 auto; padding:2rem 1.5rem; }
+
+/* TOC */
+.toc { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:0.75rem; margin-bottom:3rem; }
+.toc-item {
+  display:flex; align-items:center; gap:10px;
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:10px; padding:10px 14px; font-size:0.9rem;
+  color:var(--text); transition:all 0.2s;
+}
+.toc-item:hover { border-color:var(--amber); background:#fffbeb; text-decoration:none; transform:translateY(-1px); }
+.toc-num {
+  background:linear-gradient(135deg,#d97706,#f59e0b);
+  color:#fff; font-weight:700; font-size:0.75rem;
+  width:28px; height:28px; border-radius:8px;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+
+/* Section */
+.section { margin-bottom:3rem; }
+.section h2 {
+  font-size:1.5rem; font-weight:700; margin-bottom:0.5rem;
+  padding-bottom:0.5rem; border-bottom:2px solid var(--amber);
+}
+.lead { color:var(--text-secondary); font-size:0.95rem; margin-bottom:1.2rem; }
+
+/* Cards */
+.card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius); padding:1.2rem; margin-bottom:0.8rem;
+}
+.card p { font-size:0.9rem; }
+.card-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:0.8rem; margin:1rem 0; }
+
+/* Code Block */
+.code-block {
+  background:#1e293b; border-radius:12px; overflow:hidden; margin:1rem 0;
+}
+.code-header { padding:8px 16px; background:#0f172a; display:flex; align-items:center; gap:8px; }
+.code-block pre {
+  padding:1rem 1.2rem; color:#e2e8f0; font-family:var(--mono);
+  font-size:0.82rem; line-height:1.6; overflow-x:auto; white-space:pre;
+}
+
+/* Compare */
+.compare-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin:1rem 0; }
+.compare-card {
+  background:var(--surface); border-radius:var(--radius); padding:1.2rem;
+  border:1px solid var(--border);
+}
+.compare-card.old { border-left:4px solid var(--red); }
+.compare-card.new { border-left:4px solid var(--green); }
+.compare-card h4 { font-size:0.95rem; margin-bottom:0.5rem; }
+
+/* Chart */
+.chart { margin:1rem 0; }
+.chart-row { display:flex; align-items:center; margin-bottom:8px; }
+.chart-label { width:160px; font-size:0.85rem; font-weight:500; flex-shrink:0; }
+.chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:32px; overflow:hidden; }
+.chart-bar {
+  height:100%; border-radius:8px; display:flex; align-items:center;
+  padding:0 12px; font-size:0.75rem; font-weight:600; color:#fff;
+  transition:width 0.6s ease;
+}
+.chart-bar.amber { background:linear-gradient(90deg,#d97706,#f59e0b); }
+.chart-bar.purple { background:linear-gradient(90deg,#6366f1,#818cf8); }
+.chart-bar.green { background:linear-gradient(90deg,#10b981,#34d399); }
+.chart-bar.blue { background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+.chart-bar.teal { background:linear-gradient(90deg,#14b8a6,#2dd4bf); }
+.chart-bar.red { background:linear-gradient(90deg,#ef4444,#f87171); }
+
+/* Timeline */
+.timeline { position:relative; padding-left:2rem; margin:1rem 0; }
+.timeline::before {
+  content:''; position:absolute; left:7px; top:0; bottom:0; width:3px;
+  background:linear-gradient(180deg,#d97706,#f59e0b,#fbbf24);
+  border-radius:2px;
+}
+.tl-item { position:relative; margin-bottom:1.5rem; padding-left:1rem; }
+.tl-dot {
+  position:absolute; left:-2rem; top:4px;
+  width:16px; height:16px; border-radius:50%;
+  background:#d97706; border:3px solid #fef3c7;
+}
+.tl-item:nth-child(2) .tl-dot { background:#3b82f6; border-color:#dbeafe; }
+.tl-item:nth-child(3) .tl-dot { background:#10b981; border-color:#d1fae5; }
+.tl-item:nth-child(4) .tl-dot { background:#6366f1; border-color:#e0e7ff; }
+.tl-item:nth-child(5) .tl-dot { background:#14b8a6; border-color:#ccfbf1; }
+.tl-phase { font-weight:600; font-size:0.95rem; }
+.tl-desc { color:var(--text-secondary); font-size:0.85rem; margin-top:2px; }
+
+/* Flow */
+.flow { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin:1rem 0; }
+.flow-step {
+  background:var(--surface); border:2px solid var(--border);
+  border-radius:12px; padding:10px 18px; font-weight:600; font-size:0.9rem;
+}
+.flow-step.amber { border-color:var(--amber); background:#fffbeb; }
+.flow-step.purple { border-color:var(--purple); background:#eef2ff; }
+.flow-arrow { color:var(--text-secondary); font-size:1.2rem; }
+
+/* Block Quote */
+.block-q {
+  border-left:4px solid var(--amber); background:#fffbeb;
+  padding:1.2rem 1.5rem; border-radius:0 12px 12px 0; margin:1rem 0;
+  font-style:italic; color:#78350f;
+}
+.block-q p { margin:0; font-size:0.92rem; }
+
+/* Badge */
+.badge {
+  display:inline-block; padding:3px 10px; border-radius:6px;
+  font-size:0.75rem; font-weight:600;
+}
+.badge-amber { background:#fef3c7; color:#92400e; }
+.badge-purple { background:#e0e7ff; color:#3730a3; }
+.badge-green { background:#d1fae5; color:#065f46; }
+.badge-red { background:#fee2e2; color:#991b1b; }
+.badge-blue { background:#dbeafe; color:#1e40af; }
+.badge-teal { background:#ccfbf1; color:#115e59; }
+
+/* Table */
+.tbl-wrap { overflow-x:auto; margin:1rem 0; }
+table { width:100%; border-collapse:collapse; font-size:0.85rem; }
+th { background:#f8fafc; padding:10px 12px; text-align:left; font-weight:600; border-bottom:2px solid var(--border); }
+td { padding:10px 12px; border-bottom:1px solid var(--border); }
+
+/* Footer */
+.footer {
+  background:#0f172a; color:#94a3b8; text-align:center;
+  padding:2rem; margin-top:3rem; font-size:0.85rem;
+}
+.footer a { color:#fbbf24; }
+.footer-links { display:flex; justify-content:center; gap:2rem; margin-top:0.8rem; flex-wrap:wrap; }
+
+/* Responsive */
+@media(max-width:768px) {
+  .stats { grid-template-columns:repeat(2,1fr); }
+  .toc { grid-template-columns:1fr; }
+  .compare-grid { grid-template-columns:1fr; }
+  .card-grid { grid-template-columns:1fr; }
+  .chart-label { width:120px; font-size:0.78rem; }
+  .flow { flex-direction:column; gap:8px; }
+  .flow-arrow { transform:rotate(90deg); }
+  .hero { padding:3rem 1rem 2rem; }
+  .hero h1 { font-size:1.4rem; }
+  .page { padding:1.5rem 1rem; }
+  .section h2 { font-size:1.2rem; }
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="../" class="nav-brand">LlamaIndex Blog</a>
+  <a href="../" class="nav-back">&larr; Back to Hub</a>
+</nav>
+
+<header class="hero">
+  <div class="hero-badge">RAG</div>
+  <h1>LlamaIndex is more than a RAG Framework. It is Agentic Document Processing.</h1>
+  <p class="hero-sub">作者：Unknown | 日期：Unknown</p>
+  <div class="stats">
+<div class="stat-card">
+  <div class="stat-emoji">📝</div>
+  <div class="stat-val">1900+</div>
+  <div class="stat-label">words</div>
+  <div class="stat-desc">文章总字数</div>
+</div>
+<div class="stat-card">
+  <div class="stat-emoji">📑</div>
+  <div class="stat-val">7</div>
+  <div class="stat-label">sections</div>
+  <div class="stat-desc">核心章节</div>
+</div>
+<div class="stat-card">
+  <div class="stat-emoji">📌</div>
+  <div class="stat-val">23</div>
+  <div class="stat-label">key points</div>
+  <div class="stat-desc">关键要点</div>
+</div>
+<div class="stat-card">
+  <div class="stat-emoji">🏷️</div>
+  <div class="stat-val">RAG</div>
+  <div class="stat-label">category</div>
+  <div class="stat-desc">文章分类</div>
+</div>
+
+  </div>
+</header>
+
+<div class="page">
+
+<div class="intro-section"><p>](https://www.linkedin.com/company/91154103/)
+ -  [</p>
+<p>](https://www.youtube.com/@LlamaIndex)</p>
+<p>We launched LlamaIndex as an open-source framework in late 2022, right at the start of the RAG wave. The framework grew fast (47K GitHub stars, 5.2M monthly downloads), and became a core starter toolkit for any developer building RAG and agentic applications in production.</p>
+</div>
+
+<nav class="toc"><a href="#s0" class="toc-item"><span class="toc-num">01</span>Where It Started</a>
+<a href="#s1" class="toc-item"><span class="toc-num">02</span>Agent Orchestration and Retrieval Have Fundamentally Changed</a>
+<a href="#s2" class="toc-item"><span class="toc-num">03</span>There’s a Lot of Alpha in Solving Document Understanding</a>
+<a href="#s3" class="toc-item"><span class="toc-num">04</span>Better OCR also Transforms the Legacy IDP Industry</a>
+<a href="#s4" class="toc-item"><span class="toc-num">05</span>LlamaParse</a>
+<a href="#s5" class="toc-item"><span class="toc-num">06</span>Automating Knowledge Work with Agents</a>
+<a href="#s6" class="toc-item"><span class="toc-num">07</span>On Open Source</a>
+</nav>
+
+
+<section class="section" id="s0">
+  <h2>🔍 Where It Started</h2>
+  <p class="lead">Even back during the early days of LlamaIndex as a framework, it was clear that LLMs were incredible at making sense of unstructured text and taking actions on top of it, and one of the biggest opport</p>
+  <div class="block-q"><p>Even back during the early days of LlamaIndex as a framework, it was clear that LLMs were incredible at making sense of unstructured text and taking actions on top of it, and one of the biggest opportunities was providing these LLMs high-quality context.  The most common initial use case we obser</p></div>
+  <p>The most common initial use case we observed was people building RAG chatbots over PDFs. We tried a variety of our OCR data connectors to help users parse the most complex documents. Without naming names, the results were terrible - existing OCR tools would misalign tables, ignore charts, and introduce text gibberish instead of a coherent reading order. This led to downstream failures in the applications themselves; the generated answers would be incomplete or hallucinated and the citations don&amp;#39;t link back to good source data. We saw this over and over, and it kept being true even as models got better and agent architectures evolved.</p>
+<p></p>
+
+</section>
+
+<section class="section" id="s1">
+  <h2>⚡ Agent Orchestration and Retrieval Have Fundamentally Changed</h2>
+  <p class="lead">We spent a lot of time building out the framework to advance RAG patterns and early agent architectures. Indexing abstractions, query engines, tool integrations, agent loops - these were the tools dev</p>
+  <div class="card-grid"><div class="card" style="border-left:4px solid var(--amber)"><p>General agent reasoning loops got way more sophisticated. Simple ReAct agents or deterministic workflows used to be the best we had. Now agent loops can do extended reasoning, self-correction, and multi-step planning in ways that are fundamentally more trustworthy. The gap between what a basic tool-calling agent could do in 2023 and what Claude or GPT can do in an agent loop today is massive.</p></div>
+<div class="card" style="border-left:4px solid var(--blue)"><p>New abstractions emerged around how agents discover and use tools. Skills and MCP created standardized ways for agents to access capabilities without needing framework-level integrations for everything. You no longer need a framework integration for every single tool - the agent can discover and call tools on its own.</p></div>
+<div class="card" style="border-left:4px solid var(--green)"><p>Coding agents changed how people build software. When Claude Code or Cursor can just write the Python for you, the value of framework abstractions drops significantly. Developers don&amp;#39;t need a library to wrap an LLM call anymore.</p></div>
+</div>
+  <p>But the stack moved faster than anyone expected, in three ways we didn&amp;#39;t anticipate:</p>
+<p>-  General agent reasoning loops got way more sophisticated. Simple ReAct agents or deterministic workflows used to be the best we had. Now agent loops can do extended reasoning, self-correction, and multi-step planning in ways that are fundamentally more trustworthy. The gap between what a basic tool-calling agent could do in 2023 and what Claude or GPT can do in an agent loop today is massive.
+  -  New abstractions emerged around how agents discover and use tools. Skills and MCP created standardized ways for agents to access capabilities without needing framework-level integrations for everything. You no longer need a framework integration for every single tool - the agent can discover and call tools on its own.
+  -  Coding agents changed how people build software. When Claude Code or Cursor can just write the Python for you, the value of framework abstractions drops significantly. Developers don&amp;#39;t need a library to wrap an LLM call anymore.</p>
+<p>The net result is that general-purpose LLM frameworks - the kind of thing LlamaIndex and LangChain (and some others) built - aren&amp;#39;t as central as they used to be. That&amp;#39;s OK. The industry needed those tools to bootstrap, and now it&amp;#39;s moved past the point where you need as many abstractions between you and the model.`</p>
+<p>RAG patterns have shifted too. We wrote about this in our &amp;quot;<a href="https://www.llamaindex.ai/blog/files-are-all-you-need" target="_blank">Files Are All You Need</a>&amp;quot; post: it turns out that if you equip agents with good filesystem tools, they can do dynamic search over document collections that outperforms naive semantic search. The agent interleaves search with read operations, deciding what to look at based on what it&amp;#39;s already found - similar to how a human would browse through a folder of files. The chunking and indexing part of traditional RAG has become less critical as a result.</p>
+<p></p>
+
+</section>
+
+<section class="section" id="s2">
+  <h2>🏗️ There’s a Lot of Alpha in Solving Document Understanding</h2>
+  <p class="lead">When frontier models started to add vision capabilities, I like many others thought that document parsing would get commoditized: screenshot every page and prompt the model to parse the document into </p>
+  <div class="card-grid"><div class="card" style="border-left:4px solid var(--amber)"><p>Frontier vision models struggle with the long tail of accuracy parsing information-rich pages, like line charts, extremely dense tables (~hundreds or rows/columns in a single page), and handwritten forms. They also struggle with one-shot extraction that requires navigating relationships within large documents.</p></div>
+<div class="card" style="border-left:4px solid var(--blue)"><p>They’re also not price optimized. Most production OCR stacks process millions if not billions of pages every month. Frontier models are tuned for general reasoning, and you could get equivalent performance at &amp;lt;1/10th the cost. Also document types vary wildly; you’re unnecessarily burning vision tokens if most of your pages are text.</p></div>
+<div class="card" style="border-left:4px solid var(--green)"><p>A one-shot LLM call will miss a lot of crucial metadata like precise layouts, citations, and confidence scores.</p></div>
+</div>
+  <p>-  Frontier vision models struggle with the long tail of accuracy parsing information-rich pages, like line charts, extremely dense tables (~hundreds or rows/columns in a single page), and handwritten forms. They also struggle with one-shot extraction that requires navigating relationships within large documents.
+  -  They’re also not price optimized. Most production OCR stacks process millions if not billions of pages every month. Frontier models are tuned for general reasoning, and you could get equivalent performance at &amp;lt;1/10th the cost. Also document types vary wildly; you’re unnecessarily burning vision tokens if most of your pages are text.
+  -  A one-shot LLM call will miss a lot of crucial metadata like precise layouts, citations, and confidence scores.</p>
+<p></p>
+<p>Document parsing remains a core need as the AI world has evolved from RAG to agentic workflows to general long-running agents. The latest agents are amazing at operating over plaintext files like .md or .txt, but by definition they cannot read any non-plaintext formats like .pdf or .docx unless there is an OCR layer in place.</p>
+
+</section>
+
+<section class="section" id="s3">
+  <h2>📊 Better OCR also Transforms the Legacy IDP Industry</h2>
+  <p class="lead">As we went deeper on document parsing, we started to realize we weren&amp;#39;t just solving the LLM context problem. We were also building the right tooling for a massive existing industry that has been </p>
+  <div class="compare-grid">
+<div class="compare-card old"><h4>传统方法</h4><p>As we went deeper on document parsing, we started to realize we weren&amp;#39;t just solving the LLM context problem. We were also building the right tooling for a massive existing industry that has been</p></div>
+<div class="compare-card new"><h4>新方法</h4><p>underserved for decades.
+
+
+
+ OCR has been around for 20+ years, and it powers an entire category of enterprise software that most people in the LLM world don&amp;#39;t think about much. IDP (intelligent d</p></div>
+</div>
+  <p>OCR has been around for 20+ years, and it powers an entire category of enterprise software that most people in the LLM world don&amp;#39;t think about much. IDP (intelligent document processing) is what happens when companies need to take unstructured documents and extract structured data from them at scale - insurance underwriting, invoice processing, claims review, financial document analysis. Companies like ABBYY and Kofax have built large businesses around these use cases. These are huge enterprise workflows where humans use software to manually review and extract data from documents every day, completely separate from anything related to LLMs or RAG.</p>
+<p>The existing OCR tools for these workflows have always been fragile. They break with layout changes, needs frequent retraining, can&amp;#39;t interpret images or charts, and produces error rates that demand heavy manual review.</p>
+<p>When your parsing accuracy is 90% instead of 99%, the impact on these workflows is huge. That gap is the difference between automating a process end-to-end and needing a human to review every single output. It directly hits straight-through processing rates, which is what enterprises actually care about when they measure document automation ROI. And it turns out the same technology that makes a PDF readable by an LLM agent also makes it far more accurate for these traditional IDP workflows.</p>
+<p></p>
+
+</section>
+
+<section class="section" id="s4">
+  <h2>🎯 LlamaParse</h2>
+  <p class="lead">We built <a href="https://www.llamaindex.ai/llamaparse" target="_blank">LlamaParse</a> to solve both of these problems - accurate document understanding for LLM context and for traditional document extraction. It started as a p</p>
+  <div class="block-q"><p>We built <a href="https://www.llamaindex.ai/llamaparse" target="_blank">LlamaParse</a> to solve both of these problems - accurate document understanding for LLM context and for traditional document extraction. It started as a parsing API and has grown into what I think is the best agentic document understanding system availab</p></div>
+  <p>We&amp;#39;ve now processed over half a billion pages through LlamaParse across 50+ file formats, and are used across enterprises like Carlyle, Cemex, KPMG to popular AI-native startups across coding, finance, insurance, and more.</p>
+<p>We have a dedicated applied AI research team making sure our OCR technology is best in class. LlamaParse wraps this and allows users to execute additional operations: “Extract” for pulling structured data out of docs using custom schemas, “Classify” for fast document routing, “Split” for breaking a document into subsections, and <a href="https://www.llamaindex.ai/blog/announcing-llamasheets-turn-messy-spreadsheets-into-ai-ready-data-beta" target="_blank">“Sheets” for dealing with Excel files in particular</a>. We also have indexing and retrieval built in so you can build searchable knowledge bases over everything you&amp;#39;ve parsed.</p>
+
+</section>
+
+<section class="section" id="s5">
+  <h2>🔧 Automating Knowledge Work with Agents</h2>
+  <p class="lead">The bigger opportunity is taking all of these capabilities and composing them into e2e workflows that automate real knowledge work. Completely separate from chatbots and RAG, there are a ton of existi</p>
+  <div class="compare-grid">
+<div class="compare-card old"><h4>传统方法</h4><p>The bigger opportunity is taking all of these capabilities and composing them into e2e workflows that automate real knowledge work. Completely separate from chatbots and RAG, there are a ton of existi</p></div>
+<div class="compare-card new"><h4>新方法</h4><p>ng workflows where humans manually process documents every single day. Financial analysts spend hours reading dense reports to find a few key figures. Operations teams update shipment data across syst</p></div>
+</div>
+  <p>These workflows have been running on bad OCR and manual review for years. With good enough document understanding and agent orchestration, we can start to model them as e2e agentic processes. Imagine an agent that ingests a stack of contracts, extracts key terms using your company&amp;#39;s schema, checks them against compliance policies, and flags exceptions for human review. That takes a legal team hours to do manually. An agent does it in minutes.</p>
+<p>We&amp;#39;re starting to help companies build exactly these kinds of workflows with <a href="https://www.llamaindex.ai/blog/llamaagents-build-serve-and-deploy-document-agents" target="_blank">LlamaAgents</a> - our platform that lets you build complex document workflows either through code or <a href="https://www.llamaindex.ai/blog/llamaagents-builder-idea-to-deployed-agent-in-minutes" target="_blank">describing the workflow in plain English</a>. The underlying code layer is powered by our <a href="https://github.com/run-llama/workflows-py" target="_blank">Workflows framework</a>, a light but extremely powerful event-driven way of orchestrating an LLM workflow.</p>
+<p></p>
+
+</section>
+
+<section class="section" id="s6">
+  <h2>💡 On Open Source</h2>
+  <p class="lead">We started as an open-source company, and that still matters to us. We&amp;#39;ll keep supporting <a href="https://github.com/run-llama/llama_index" target="_blank">framework</a> users, and we&amp;#39;re going to evolve our OSS tooling</p>
+  <div class="card-grid"><div class="card" style="border-left:4px solid var(--amber)"><p>If you’re dealing with document processing challenges, whether it’s within an agent or human workflow, come try <a href="https://www.llamaindex.ai/" target="_blank">LlamaParse</a> and check out our <a href="https://developers.llamaindex.ai/python/cloud/" target="_blank">documentation</a>.</p></div>
+<div class="card" style="border-left:4px solid var(--blue)"><p>If you want to talk about agentic document workflows for your use case, <a href="https://www.llamaindex.ai/contact" target="_blank">reach out</a>.</p></div>
+<div class="card" style="border-left:4px solid var(--green)"><p>If you’re excited about orchestrating and tuning the latest frontier/open-source LLMs/VLMs for solving document understanding, we have a few roles open on our <a href="https://www.llamaindex.ai/careers" target="_blank">careers page</a>!</p></div>
+</div>
+  <p>Our North Star is automating knowledge work over documents, and we&amp;#39;re excited about what&amp;#39;s ahead.</p>
+<p>-  If you’re dealing with document processing challenges, whether it’s within an agent or human workflow, come try <a href="https://www.llamaindex.ai/" target="_blank">LlamaParse</a> and check out our <a href="https://developers.llamaindex.ai/python/cloud/" target="_blank">documentation</a>.
+  -  If you want to talk about agentic document workflows for your use case, <a href="https://www.llamaindex.ai/contact" target="_blank">reach out</a>.
+  -  If you’re excited about orchestrating and tuning the latest frontier/open-source LLMs/VLMs for solving document understanding, we have a few roles open on our <a href="https://www.llamaindex.ai/careers" target="_blank">careers page</a>!</p>
+
+</section>
+
+
+</div>
+
+<footer class="footer">
+  <p>LlamaIndex Blog Deep-Dive | 深度解析系列</p>
+  <div class="footer-links">
+    <a href="../">Hub 首页</a>
+    <a href="https://www.llamaindex.ai/blog/llamaindex-is-more-than-a-rag-framework" target="_blank">原文链接</a>
+  </div>
+</footer>
+
+</body>
+</html>

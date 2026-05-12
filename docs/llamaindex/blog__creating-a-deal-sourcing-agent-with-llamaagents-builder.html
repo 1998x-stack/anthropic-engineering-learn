@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>深度解析：Create a Deal Sourcing Agent with LlamaAgents Builder</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #fafbfc;
+            --surface: #fff;
+            --text: #0f172a;
+            --text-secondary: #64748b;
+            --border: #e2e8f0;
+            --radius: 14px;
+            --amber: #d97706;
+            --amber-light: #fbbf24;
+            --amber-dark: #78350f;
+            --green: #10b981;
+            --red: #ef4444;
+            --blue: #3b82f6;
+            --purple: #6366f1;
+            --teal: #14b8a6;
+            --mono: 'JetBrains Mono', monospace;
+            --sans: 'Noto Sans SC', 'Inter', sans-serif;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family: var(--sans); background: var(--bg); color: var(--text); line-height: 1.7; }
+        a { color: var(--amber); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        /* Nav */
+        .nav {
+            position: sticky; top: 0; z-index: 100;
+            background: rgba(15,23,42,0.95);
+            backdrop-filter: blur(12px);
+            padding: 0 2rem; height: 56px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .nav-brand { color: #fbbf24; font-weight: 700; font-size: 1.1rem; }
+        .nav-back { color: #94a3b8; font-size: 0.9rem; }
+        .nav-back:hover { color: #fbbf24; text-decoration: none; }
+
+        /* Hero */
+        .hero {
+            background: linear-gradient(135deg, #0f172a 0%, #78350f 50%, #d97706 100%);
+            padding: 4rem 2rem 3rem;
+            color: #fff;
+        }
+        .hero-inner { max-width: 900px; margin: 0 auto; }
+        .hero h1 { font-size: 2rem; font-weight: 800; margin-bottom: 0.75rem; line-height: 1.3; }
+        .hero-desc { color: #fde68a; font-size: 1.05rem; margin-bottom: 2rem; }
+        .hero-meta { color: #d4a06a; font-size: 0.85rem; margin-bottom: 1.5rem; }
+        .stat-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem;
+        }
+        .stat-card {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: var(--radius);
+            padding: 1.2rem; text-align: center;
+            backdrop-filter: blur(6px);
+        }
+        .stat-value { font-size: 1.8rem; font-weight: 800; color: #fbbf24; }
+        .stat-label { font-size: 0.8rem; color: #fde68a; text-transform: uppercase; letter-spacing: 0.05em; }
+        .stat-desc { font-size: 0.75rem; color: #d4a06a; margin-top: 2px; }
+
+        /* Page */
+        .page { max-width: 900px; margin: 0 auto; padding: 2rem; }
+
+        /* TOC */
+        .toc {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 0.5rem; margin-bottom: 3rem;
+        }
+        .toc-item {
+            display: flex; align-items: center; gap: 8px;
+            padding: 0.6rem 1rem; border-radius: 8px;
+            background: var(--surface); border: 1px solid var(--border);
+            font-size: 0.85rem; color: var(--text); transition: all 0.2s;
+        }
+        .toc-item:hover { border-color: var(--amber); color: var(--amber); text-decoration: none; transform: translateY(-1px); }
+        .toc-num { font-family: var(--mono); font-weight: 700; color: var(--amber); font-size: 0.75rem; }
+
+        /* Section */
+        .section {
+            margin-bottom: 3rem;
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 2rem;
+            border: 1px solid var(--border);
+        }
+        .section h2 {
+            font-size: 1.4rem; font-weight: 700; margin-bottom: 0.5rem;
+            color: var(--text);
+        }
+        .lead { color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 1.5rem; }
+        .content-body { font-size: 0.95rem; }
+        .content-body p { margin-bottom: 1rem; }
+        .content-body ul { padding-left: 1.5rem; margin-bottom: 1rem; }
+        .content-body li { margin-bottom: 0.4rem; }
+        .content-body h3 { font-size: 1.1rem; font-weight: 600; margin: 1.5rem 0 0.75rem; color: var(--amber-dark); }
+        .content-body strong { color: var(--text); }
+
+        /* Code */
+        .code-block {
+            background: #1e293b; color: #e2e8f0; padding: 1rem 1.2rem;
+            border-radius: 8px; overflow-x: auto; font-family: var(--mono);
+            font-size: 0.82rem; line-height: 1.6; margin: 1rem 0;
+        }
+        .inline-code {
+            background: #f1f5f9; color: #b45309; padding: 2px 6px;
+            border-radius: 4px; font-family: var(--mono); font-size: 0.85em;
+        }
+
+        /* Visualizations */
+        .viz-block { margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
+        .viz-title { font-size: 0.9rem; color: var(--amber-dark); margin-bottom: 1rem; font-weight: 600; }
+
+        /* Chart */
+        .chart { display: flex; flex-direction: column; gap: 0.6rem; }
+        .chart-row { display: flex; align-items: center; gap: 0.75rem; }
+        .chart-label { width: 140px; font-size: 0.8rem; color: var(--text-secondary); text-align: right; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .chart-bar-wrap { flex: 1; background: #f1f5f9; border-radius: 6px; height: 28px; overflow: hidden; }
+        .chart-bar {
+            height: 100%; border-radius: 6px; display: flex; align-items: center;
+            padding: 0 10px; font-size: 0.75rem; font-weight: 600; color: #fff;
+            transition: width 0.8s ease;
+        }
+        .chart-bar.amber { background: linear-gradient(90deg, #d97706, #fbbf24); }
+        .chart-bar.green { background: linear-gradient(90deg, #059669, #10b981); }
+        .chart-bar.blue { background: linear-gradient(90deg, #2563eb, #3b82f6); }
+        .chart-bar.purple { background: linear-gradient(90deg, #4f46e5, #6366f1); }
+        .chart-bar.teal { background: linear-gradient(90deg, #0d9488, #14b8a6); }
+        .chart-bar.red { background: linear-gradient(90deg, #dc2626, #ef4444); }
+
+        /* Flow */
+        .flow {
+            display: flex; align-items: center; gap: 0.5rem;
+            flex-wrap: wrap; justify-content: center;
+        }
+        .flow-step {
+            background: #fffbeb; border: 2px solid #fbbf24;
+            padding: 0.6rem 1rem; border-radius: 10px;
+            font-size: 0.82rem; font-weight: 600; color: #78350f;
+            white-space: nowrap;
+        }
+        .flow-step.amber { background: #fef3c7; border-color: #d97706; }
+        .flow-arrow { color: #d97706; font-size: 1.2rem; font-weight: 700; }
+
+        /* Concept grid */
+        .concept-grid {
+            display: flex; flex-wrap: wrap; gap: 0.5rem;
+        }
+        .concept-card {
+            background: #fffbeb; border: 1px solid #fde68a;
+            border-radius: 8px; padding: 0.5rem 0.75rem;
+        }
+
+        /* Badge */
+        .badge {
+            display: inline-block; padding: 3px 10px; border-radius: 20px;
+            font-size: 0.75rem; font-weight: 600;
+        }
+        .badge-amber { background: #fef3c7; color: #92400e; }
+        .badge-green { background: #d1fae5; color: #065f46; }
+        .badge-blue { background: #dbeafe; color: #1e40af; }
+        .badge-purple { background: #e0e7ff; color: #3730a3; }
+        .badge-teal { background: #ccfbf1; color: #115e59; }
+        .badge-red { background: #fee2e2; color: #991b1b; }
+
+        /* Block quote */
+        .block-q {
+            border-left: 4px solid #fbbf24;
+            background: #fffbeb; padding: 1rem 1.5rem;
+            border-radius: 0 8px 8px 0; margin: 1rem 0;
+            font-style: italic; color: #78350f;
+        }
+
+        /* Footer */
+        .footer {
+            background: #0f172a; color: #94a3b8; padding: 2rem;
+            text-align: center; font-size: 0.85rem;
+        }
+        .footer a { color: #fbbf24; }
+        .footer-links { margin-top: 0.5rem; }
+        .footer-links a { margin: 0 1rem; }
+
+        /* Responsive */
+        @media(max-width:768px) {
+            .hero h1 { font-size: 1.4rem; }
+            .stat-grid { grid-template-columns: repeat(2, 1fr); }
+            .toc { grid-template-columns: 1fr; }
+            .flow { flex-direction: column; gap: 8px; }
+            .flow-arrow { transform: rotate(90deg); }
+            .chart-label { width: 100px; font-size: 0.72rem; }
+            .section { padding: 1.2rem; }
+            .nav { padding: 0 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <a href="../" class="nav-brand">LlamaIndex 深度解析</a>
+        <a href="../" class="nav-back">&larr; Back to Hub</a>
+    </nav>
+
+    <header class="hero">
+        <div class="hero-inner">
+            <div class="hero-meta"> &middot; LlamaIndex Blog</div>
+            <h1>Create a Deal Sourcing Agent with LlamaAgents Builder</h1>
+            <p class="hero-desc">探索 AI Agent 架构与实现，了解如何构建智能自主系统</p>
+            <div class="stat-grid">
+                <div class="stat-card">
+                <div class="stat-value">8</div>
+                <div class="stat-label">Sections</div>
+                <div class="stat-desc">章节</div>
+            </div>
+<div class="stat-card">
+                <div class="stat-value">1</div>
+                <div class="stat-label">Code</div>
+                <div class="stat-desc">代码块</div>
+            </div>
+<div class="stat-card">
+                <div class="stat-value">1400+</div>
+                <div class="stat-label">Words</div>
+                <div class="stat-desc">字数</div>
+            </div>
+<div class="stat-card">
+                <div class="stat-value">7</div>
+                <div class="stat-label">Tech</div>
+                <div class="stat-desc">技术栈</div>
+            </div>
+
+            </div>
+        </div>
+    </header>
+
+    <div class="page">
+        <nav class="toc">
+            <a href="#s1" class="toc-item"><span class="toc-num">01</span>Overview</a>
+<a href="#s2" class="toc-item"><span class="toc-num">02</span>Prompt</a>
+<a href="#s3" class="toc-item"><span class="toc-num">03</span>Example Files</a>
+<a href="#s4" class="toc-item"><span class="toc-num">04</span>Visualizing the Agent</a>
+<a href="#s5" class="toc-item"><span class="toc-num">05</span>Connecting to GitHub and Deplo</a>
+<a href="#s6" class="toc-item"><span class="toc-num">06</span>Testing the Deployed Applicati</a>
+<a href="#s7" class="toc-item"><span class="toc-num">07</span>Modifying the Deployment</a>
+<a href="#s8" class="toc-item"><span class="toc-num">08</span>Conclusion</a>
+        </nav>
+
+        
+    <section class="section" id="s1">
+        <h2>📋 Overview</h2>
+        <p class="lead">LlamaAgents Builder is a natural language interface that enables technical and non-technical users to generate agentic workflows with the purpose o...</p>
+        <div class="content-body">
+            <a href="https://developers.llamaindex.ai/python/llamaagents/cloud/builder/" target="_blank">LlamaAgents Builder</a> is a natural language interface that enables technical and non-technical users to generate agentic workflows with the purpose of automating document-related tasks and knowledge work, leveraging LlamaParse products such as LlamaExtract, LlamaClassify and LlamaParse.
+<p>In this blog, we will go through some tips and tricks to get the most out of the AI-assisted coding experience with the Builder, and we will do it by creating a private equity deal-sourcing agent that can read deal files such as teasers or financial summaries, classify each opportunity into one of three investment strategies (buyout, growth, or minority) and extract the key financial and operational metrics required for preliminary investment assessment.</p>
+        </div>
+        
+            <div class="viz-block">
+                <h4 class="viz-title">文章结构流程</h4>
+                <div class="flow"><div class="flow-step">Overview</div>
+<div class="flow-arrow">&#8594;</div>
+<div class="flow-step amber">Prompt</div>
+<div class="flow-arrow">&#8594;</div>
+<div class="flow-step">Example Files</div>
+<div class="flow-arrow">&#8594;</div>
+<div class="flow-step amber">Visualizing the Agen</div>
+<div class="flow-arrow">&#8594;</div>
+<div class="flow-step">Connecting to GitHub</div></div>
+            </div>
+    </section>
+    <section class="section" id="s2">
+        <h2>🧠 Prompt</h2>
+        <p class="lead">The first phase has to be prompt design: the Builder itself is carefully prompt (and context) engineered to provide high quality Python code based ...</p>
+        <div class="content-body">
+            <p>The first phase has to be prompt design: the Builder itself is carefully prompt (and context) engineered to provide high quality Python code based on <a href="https://developers.llamaindex.ai/python/cloud/" target="_blank">LlamaIndex Agent Workflowsand [LlamaParse services</a>, but you still need to provide details on the specific use case(s) you want the agent to tackle.</p>
+<p>There are three main best practices to follow when crafting a prompt:
+<ul><li><strong>Be explicit:</strong> do not assume that the agent knows all the domain-specific terminology, so try to avoid niche jargon and acronyms, preferring simpler words and expression that directly convey the meaning of your request</li>
+<li><strong>Be specific:</strong> prompts in the style of “build a clone of X” do not work when you want to get high quality results for your use case. Try to be as specific as you can in describing the needs of your application, going into details about the categories you want the agent to classify your documents as, the data you wish to be extracted, the parsing modalities the agent has to adopt…</li>
+<li><strong>Be concise:</strong> since the agent is already highly specialized in document work automation, there is no need to create long and complex prompts adding details on technical implementations or architecture: simply describe your use case, trying to be specific on what processing steps you want for your documents, and the Builder will do its magic!</li></p>
+</ul>Here is the prompt we will use for this session:
+<p>markdown</p>
+<pre class="code-block"><code>Build a private equity agent whose task is to assist with sourcing deals.
+<p>The agent has to be able to first classify deals according to three categories:
+<ul><li><em>buyout</em></li>
+<li><em>growth</em></li>
+<li><em>minority</em></li></p>
+</ul>Once the deal has been classified according to one of those categories, the agent has to be able to extract the following metrics (with the necessary per-category adjustments):
+<ul><li>Revenue</li>
+<li>EBITDA</li>
+<li>Growth rate</li>
+<li>ARR / MRR</li>
+<li>Margins</li>
+<li>Debt levels</li>
+</ul>Refer to the attached files to find an example of the kind of data the agent will be dealing with.
+</code></pre>
+    As you can see, we mention attached files, which brings us to the next section:
+        </div>
+        
+            <div class="viz-block">
+                <h4 class="viz-title">内容深度分析</h4>
+                <div class="chart"><div class="chart-row">
+            <div class="chart-label">Overview</div>
+            <div class="chart-bar-wrap"><div class="chart-bar amber" style="width:27%">27%</div></div>
+        </div>
+<div class="chart-row">
+            <div class="chart-label">Prompt</div>
+            <div class="chart-bar-wrap"><div class="chart-bar green" style="width:69%">69%</div></div>
+        </div>
+<div class="chart-row">
+            <div class="chart-label">Example Files</div>
+            <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:35%">35%</div></div>
+        </div>
+<div class="chart-row">
+            <div class="chart-label">Visualizing the Ag</div>
+            <div class="chart-bar-wrap"><div class="chart-bar purple" style="width:24%">24%</div></div>
+        </div>
+<div class="chart-row">
+            <div class="chart-label">Connecting to GitH</div>
+            <div class="chart-bar-wrap"><div class="chart-bar teal" style="width:31%">31%</div></div>
+        </div>
+<div class="chart-row">
+            <div class="chart-label">Testing the Deploy</div>
+            <div class="chart-bar-wrap"><div class="chart-bar red" style="width:24%">24%</div></div>
+        </div></div>
+            </div>
+    </section>
+    <section class="section" id="s3">
+        <h2>🧪 Example Files</h2>
+        <p class="lead">LlamaAgents Builder supports a maximum of 5 example files as context (each of them up to 100MB in size): these files will be downloaded within the ...</p>
+        <div class="content-body">
+            <p>LlamaAgents Builder supports a maximum of 5 example files as context (each of them up to 100MB in size): these files will be downloaded within the Builder’s ephemeral sandbox and read by it to get a better and more concrete understanding of the kind of documents your desired application will be dealing with.</p>
+<p>When researching or collecting example files for the Builder, there are a couple of best practices that should be followed:
+<ul><li>Do not provide files that are too large: a maximum of 20-30 pages is suggested, as LlamaAgents builder might struggle to piece together all the provided document context</li>
+<li>Avoid being too generic or too specific: the files you provide should be a sample of what you expect your application to process: if you provide examples that are too specific, there is a risk of overfitting for a subset of your use case, whereas if you provide documents that are too generic there is a risk of over-generalization.</li></p>
+</ul>Here is the full input for LlamaAgents builder in our case:
+<p>>  You can find the example files [here</p>
+        </div>
+        
+            <div class="viz-block">
+                <h4 class="viz-title">核心技术概念</h4>
+                <div class="concept-grid"><div class="concept-card"><span class="badge badge-amber">Agent</span></div>
+<div class="concept-card"><span class="badge badge-green">Deploy</span></div>
+<div class="concept-card"><span class="badge badge-blue">Document</span></div>
+<div class="concept-card"><span class="badge badge-purple">GitHub</span></div>
+<div class="concept-card"><span class="badge badge-teal">Index</span></div>
+<div class="concept-card"><span class="badge badge-red">LlamaExtract</span></div></div>
+            </div>
+    </section>
+    <section class="section" id="s4">
+        <h2>🤖 Visualizing the Agent</h2>
+        <p class="lead">While the Builder works, you can visualize the agent Workflow  being built on the side of your chat page:
+
+  
+
+ You can click on the LlamaClassify ...</p>
+        <div class="content-body">
+            <p>While the Builder works, you can visualize the agent <code class="inline-code">Workflow</code>  being built on the side of your chat page:</p>
+<p>You can click on the LlamaClassify and LlamaExtract nodes to see the configurations the agent is using to classify and extract structured data from your files:</p>
+<p>This helps you get a no-code overview of what the Builder has produced and how the data will flow through your application, allowing you to understand whether or not you should be refining the produced code with another conversation round, or if the first shot is enough.</p>
+<p>In our case, the Builder produced an agent that satisfies our requirements, so we can move to pushing the produced to GitHub and deploy it as a LlamaAgent on the LlamaParse platform.</p>
+        </div>
+        
+    </section>
+    <section class="section" id="s5">
+        <h2>🚀 Connecting to GitHub and Deploying</h2>
+        <p class="lead">In order to start syncing the produced code with a GitHub repository and deploying it as an agent, we need to click on the “Deploy” button that app...</p>
+        <div class="content-body">
+            <p>In order to start syncing the produced code with a GitHub repository and deploying it as an agent, we need to click on the “Deploy” button that appears at the end of the conversation turn.</p>
+<p>We will be first asked to create a repository, by choosing the owner (a personal account or one of the organizations we have access to) and assigning a name (<code class="inline-code">deal-sourcing-agent</code>  in this case).</p>
+<p>Once you set the repository metadata, we need to connect the LlamaAgents GitHub Application in order to push the created code to the repository that was just created.</p>
+<p>Once the GitHub application is set up, we can simply click the “Deploy” button to complete the deployment, and we will be redirected to a page that will show us the deployment progress and its logs (which we can copy/download to explore potential failures).</p>
+<p>In our case, the deployment does not fail, and we can thus visit the deployed application and test it by clicking “Visit deployment”:</p>
+        </div>
+        
+    </section>
+    <section class="section" id="s6">
+        <h2>🚀 Testing the Deployed Application</h2>
+        <p class="lead">The deployed application has a minimal UI that you can interact with to load and process our documents, which looks like this:
+
+  
+
+ Once we click ...</p>
+        <div class="content-body">
+            <p>The deployed application has a minimal UI that you can interact with to load and process our documents, which looks like this:</p>
+<p>Once we click on the “Upload File” button, we can load our own files and start processing them right away. The UI will show when the processed file is ready:</p>
+<p>We can review the file directly by clicking on it, and the review page will show the extracted data alongside with the document they were extracted from, allowing us to compare them.</p>
+<p>We can also download the JSON report of extracted data, and approve or reject the result once we complete the review.</p>
+<p>In the picture above, the agent has been very precise in classifying the deal memo and extracting the information, so we can approve it.</p>
+        </div>
+        
+    </section>
+    <section class="section" id="s7">
+        <h2>🚀 Modifying the Deployment</h2>
+        <p class="lead">If we wish to modify the deployed app, we can take two approaches:
+
+-  Start a new conversation turn with the Builder, asking it to implement the d...</p>
+        <div class="content-body">
+            <p>If we wish to modify the deployed app, we can take two approaches:
+<ul><li>Start a new conversation turn with the Builder, asking it to implement the desired changes. This will automatically update the code in GitHub and will allow us to re-deploy the application once the conversation turn is completed.</li>
+<li>Clone the GitHub repository where the code is stored, make changes locally (the repository has a detailed README coding agents can use to help with the task) and push them to GitHub. Once the changes are pushed, we can re-deploy the application from LlamaParse.</li></p>
+</ul>In general, LlamaAgents Builder can always help with modifying existing deployment, but we own the code, so we can always retouch it on our own, locally.
+        </div>
+        
+    </section>
+    <section class="section" id="s8">
+        <h2>✅ Conclusion</h2>
+        <p class="lead">In this blog, we went through all the necessary steps to build a document processing agent with LlamaAgents Builder. There are two important messag...</p>
+        <div class="content-body">
+            <p>In this blog, we went through all the necessary steps to build a document processing agent with LlamaAgents Builder.</p>
+<p>There are two important messages that should be taken away from this blog:
+<ul><li><strong>Inputs are critical in defining output quality</strong>: a concise-but-specific prompt, that focuses exactly on what you need, plus highly relevant example files, can be the difference between an over-generalized/over-specific agent and one that suits your use case perfectly.</li>
+<li><strong>Own and refine the code</strong>: LlamaAgents Builder gives you insights in the code (with the workflow visualization) and full ownership (by syncing to <em>your</em> GitHub accounts): you should exploit this advantage to iterate over the produced application and perfect it for your use case (through multiple chats with the Builder or implementing changes on your own).</li></ul></p>
+        </div>
+        
+    </section>
+    </div>
+
+    <footer class="footer">
+        <div>LlamaIndex Blog 深度解析系列</div>
+        <div class="footer-links">
+            <a href="../">返回 Hub</a>
+            <a href="https://www.llamaindex.ai/blog/creating-a-deal-sourcing-agent-with-llamaagents-builder" target="_blank">阅读原文</a>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,539 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>深度解析：LLM Agents in TypeScript: Step-by-Step Guide | LlamaIndex</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #fafbfc;
+            --surface: #fff;
+            --text: #0f172a;
+            --text-secondary: #64748b;
+            --border: #e2e8f0;
+            --radius: 14px;
+            --amber: #d97706;
+            --amber-light: #fbbf24;
+            --amber-dark: #78350f;
+            --green: #10b981;
+            --red: #ef4444;
+            --blue: #3b82f6;
+            --purple: #6366f1;
+            --teal: #14b8a6;
+            --mono: 'JetBrains Mono', monospace;
+            --sans: 'Noto Sans SC', 'Inter', sans-serif;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family: var(--sans); background: var(--bg); color: var(--text); line-height: 1.7; }
+        a { color: var(--amber); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        /* Nav */
+        .nav {
+            position: sticky; top: 0; z-index: 100;
+            background: rgba(15,23,42,0.95);
+            backdrop-filter: blur(12px);
+            padding: 0 2rem; height: 56px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .nav-brand { color: #fbbf24; font-weight: 700; font-size: 1.1rem; }
+        .nav-back { color: #94a3b8; font-size: 0.9rem; }
+        .nav-back:hover { color: #fbbf24; text-decoration: none; }
+
+        /* Hero */
+        .hero {
+            background: linear-gradient(135deg, #0f172a 0%, #78350f 50%, #d97706 100%);
+            padding: 4rem 2rem 3rem;
+            color: #fff;
+        }
+        .hero-inner { max-width: 900px; margin: 0 auto; }
+        .hero h1 { font-size: 2rem; font-weight: 800; margin-bottom: 0.75rem; line-height: 1.3; }
+        .hero-desc { color: #fde68a; font-size: 1.05rem; margin-bottom: 2rem; }
+        .hero-meta { color: #d4a06a; font-size: 0.85rem; margin-bottom: 1.5rem; }
+        .stat-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem;
+        }
+        .stat-card {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: var(--radius);
+            padding: 1.2rem; text-align: center;
+            backdrop-filter: blur(6px);
+        }
+        .stat-value { font-size: 1.8rem; font-weight: 800; color: #fbbf24; }
+        .stat-label { font-size: 0.8rem; color: #fde68a; text-transform: uppercase; letter-spacing: 0.05em; }
+        .stat-desc { font-size: 0.75rem; color: #d4a06a; margin-top: 2px; }
+
+        /* Page */
+        .page { max-width: 900px; margin: 0 auto; padding: 2rem; }
+
+        /* TOC */
+        .toc {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 0.5rem; margin-bottom: 3rem;
+        }
+        .toc-item {
+            display: flex; align-items: center; gap: 8px;
+            padding: 0.6rem 1rem; border-radius: 8px;
+            background: var(--surface); border: 1px solid var(--border);
+            font-size: 0.85rem; color: var(--text); transition: all 0.2s;
+        }
+        .toc-item:hover { border-color: var(--amber); color: var(--amber); text-decoration: none; transform: translateY(-1px); }
+        .toc-num { font-family: var(--mono); font-weight: 700; color: var(--amber); font-size: 0.75rem; }
+
+        /* Section */
+        .section {
+            margin-bottom: 3rem;
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 2rem;
+            border: 1px solid var(--border);
+        }
+        .section h2 {
+            font-size: 1.4rem; font-weight: 700; margin-bottom: 0.5rem;
+            color: var(--text);
+        }
+        .lead { color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 1.5rem; }
+        .content-body { font-size: 0.95rem; }
+        .content-body p { margin-bottom: 1rem; }
+        .content-body ul { padding-left: 1.5rem; margin-bottom: 1rem; }
+        .content-body li { margin-bottom: 0.4rem; }
+        .content-body h3 { font-size: 1.1rem; font-weight: 600; margin: 1.5rem 0 0.75rem; color: var(--amber-dark); }
+        .content-body strong { color: var(--text); }
+
+        /* Code */
+        .code-block {
+            background: #1e293b; color: #e2e8f0; padding: 1rem 1.2rem;
+            border-radius: 8px; overflow-x: auto; font-family: var(--mono);
+            font-size: 0.82rem; line-height: 1.6; margin: 1rem 0;
+        }
+        .inline-code {
+            background: #f1f5f9; color: #b45309; padding: 2px 6px;
+            border-radius: 4px; font-family: var(--mono); font-size: 0.85em;
+        }
+
+        /* Visualizations */
+        .viz-block { margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
+        .viz-title { font-size: 0.9rem; color: var(--amber-dark); margin-bottom: 1rem; font-weight: 600; }
+
+        /* Chart */
+        .chart { display: flex; flex-direction: column; gap: 0.6rem; }
+        .chart-row { display: flex; align-items: center; gap: 0.75rem; }
+        .chart-label { width: 140px; font-size: 0.8rem; color: var(--text-secondary); text-align: right; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .chart-bar-wrap { flex: 1; background: #f1f5f9; border-radius: 6px; height: 28px; overflow: hidden; }
+        .chart-bar {
+            height: 100%; border-radius: 6px; display: flex; align-items: center;
+            padding: 0 10px; font-size: 0.75rem; font-weight: 600; color: #fff;
+            transition: width 0.8s ease;
+        }
+        .chart-bar.amber { background: linear-gradient(90deg, #d97706, #fbbf24); }
+        .chart-bar.green { background: linear-gradient(90deg, #059669, #10b981); }
+        .chart-bar.blue { background: linear-gradient(90deg, #2563eb, #3b82f6); }
+        .chart-bar.purple { background: linear-gradient(90deg, #4f46e5, #6366f1); }
+        .chart-bar.teal { background: linear-gradient(90deg, #0d9488, #14b8a6); }
+        .chart-bar.red { background: linear-gradient(90deg, #dc2626, #ef4444); }
+
+        /* Flow */
+        .flow {
+            display: flex; align-items: center; gap: 0.5rem;
+            flex-wrap: wrap; justify-content: center;
+        }
+        .flow-step {
+            background: #fffbeb; border: 2px solid #fbbf24;
+            padding: 0.6rem 1rem; border-radius: 10px;
+            font-size: 0.82rem; font-weight: 600; color: #78350f;
+            white-space: nowrap;
+        }
+        .flow-step.amber { background: #fef3c7; border-color: #d97706; }
+        .flow-arrow { color: #d97706; font-size: 1.2rem; font-weight: 700; }
+
+        /* Concept grid */
+        .concept-grid {
+            display: flex; flex-wrap: wrap; gap: 0.5rem;
+        }
+        .concept-card {
+            background: #fffbeb; border: 1px solid #fde68a;
+            border-radius: 8px; padding: 0.5rem 0.75rem;
+        }
+
+        /* Badge */
+        .badge {
+            display: inline-block; padding: 3px 10px; border-radius: 20px;
+            font-size: 0.75rem; font-weight: 600;
+        }
+        .badge-amber { background: #fef3c7; color: #92400e; }
+        .badge-green { background: #d1fae5; color: #065f46; }
+        .badge-blue { background: #dbeafe; color: #1e40af; }
+        .badge-purple { background: #e0e7ff; color: #3730a3; }
+        .badge-teal { background: #ccfbf1; color: #115e59; }
+        .badge-red { background: #fee2e2; color: #991b1b; }
+
+        /* Block quote */
+        .block-q {
+            border-left: 4px solid #fbbf24;
+            background: #fffbeb; padding: 1rem 1.5rem;
+            border-radius: 0 8px 8px 0; margin: 1rem 0;
+            font-style: italic; color: #78350f;
+        }
+
+        /* Footer */
+        .footer {
+            background: #0f172a; color: #94a3b8; padding: 2rem;
+            text-align: center; font-size: 0.85rem;
+        }
+        .footer a { color: #fbbf24; }
+        .footer-links { margin-top: 0.5rem; }
+        .footer-links a { margin: 0 1rem; }
+
+        /* Responsive */
+        @media(max-width:768px) {
+            .hero h1 { font-size: 1.4rem; }
+            .stat-grid { grid-template-columns: repeat(2, 1fr); }
+            .toc { grid-template-columns: 1fr; }
+            .flow { flex-direction: column; gap: 8px; }
+            .flow-arrow { transform: rotate(90deg); }
+            .chart-label { width: 100px; font-size: 0.72rem; }
+            .section { padding: 1.2rem; }
+            .nav { padding: 0 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <a href="../" class="nav-brand">LlamaIndex 深度解析</a>
+        <a href="../" class="nav-back">&larr; Back to Hub</a>
+    </nav>
+
+    <header class="hero">
+        <div class="hero-inner">
+            <div class="hero-meta"> &middot; LlamaIndex Blog</div>
+            <h1>LLM Agents in TypeScript: Step-by-Step Guide | LlamaIndex</h1>
+            <p class="hero-desc">探索 AI Agent 架构与实现，了解如何构建智能自主系统</p>
+            <div class="stat-grid">
+                <div class="stat-card">
+                <div class="stat-value">9</div>
+                <div class="stat-label">Sections</div>
+                <div class="stat-desc">章节</div>
+            </div>
+<div class="stat-card">
+                <div class="stat-value">1100+</div>
+                <div class="stat-label">Words</div>
+                <div class="stat-desc">字数</div>
+            </div>
+<div class="stat-card">
+                <div class="stat-value">10</div>
+                <div class="stat-label">Tech</div>
+                <div class="stat-desc">技术栈</div>
+            </div>
+<div class="stat-card">
+                <div class="stat-value">AI</div>
+                <div class="stat-label">Focus</div>
+                <div class="stat-desc">核心</div>
+            </div>
+
+            </div>
+        </div>
+    </header>
+
+    <div class="page">
+        <nav class="toc">
+            <a href="#s1" class="toc-item"><span class="toc-num">01</span>Overview</a>
+<a href="#s2" class="toc-item"><span class="toc-num">02</span>Import the classes:</a>
+<a href="#s3" class="toc-item"><span class="toc-num">03</span>Function Tool</a>
+<a href="#s4" class="toc-item"><span class="toc-num">04</span>Chat with Agent</a>
+<a href="#s5" class="toc-item"><span class="toc-num">05</span>Import the classes and functio</a>
+<a href="#s6" class="toc-item"><span class="toc-num">06</span>Loading Documents</a>
+<a href="#s7" class="toc-item"><span class="toc-num">07</span>Creating the Query Engine Tool</a>
+<a href="#s8" class="toc-item"><span class="toc-num">08</span>Creating the OpenAI Agent</a>
+<a href="#s9" class="toc-item"><span class="toc-num">09</span>Chat with Agent</a>
+        </nav>
+
+        
+    <section class="section" id="s1">
+        <h2>📋 Overview</h2>
+        <p class="lead">Agents are autonomous systems that can execute end-to-end tasks without much or fewer instructions. These agents are capable of solving tasks relat...</p>
+        <div class="content-body">
+            <p>Agents are autonomous systems that can execute end-to-end tasks without much or fewer instructions. These agents are capable of solving tasks related to questions and answering, using tools to achieve a desired behavior, or even planning tasks.</p>
+        </div>
+        
+            <div class="viz-block">
+                <h4 class="viz-title">文章结构流程</h4>
+                <div class="flow"><div class="flow-step">Overview</div>
+<div class="flow-arrow">&#8594;</div>
+<div class="flow-step amber">Import the classes:</div>
+<div class="flow-arrow">&#8594;</div>
+<div class="flow-step">Function Tool</div>
+<div class="flow-arrow">&#8594;</div>
+<div class="flow-step amber">Chat with Agent</div>
+<div class="flow-arrow">&#8594;</div>
+<div class="flow-step">Import the classes a</div></div>
+            </div>
+    </section>
+    <section class="section" id="s2">
+        <h2>📌 Import the classes:</h2>
+        <p class="lead">import { FunctionTool, OpenAIAgent } from "llamaindex";</p>
+        <div class="content-body">
+            <p>import { FunctionTool, OpenAIAgent } from "llamaindex";</p>
+        </div>
+        
+            <div class="viz-block">
+                <h4 class="viz-title">内容深度分析</h4>
+                <div class="chart"><div class="chart-row">
+            <div class="chart-label">Overview</div>
+            <div class="chart-bar-wrap"><div class="chart-bar amber" style="width:10%">10%</div></div>
+        </div>
+<div class="chart-row">
+            <div class="chart-label">Import the classes</div>
+            <div class="chart-bar-wrap"><div class="chart-bar green" style="width:10%">10%</div></div>
+        </div>
+<div class="chart-row">
+            <div class="chart-label">Function Tool</div>
+            <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:57%">57%</div></div>
+        </div>
+<div class="chart-row">
+            <div class="chart-label">Chat with Agent</div>
+            <div class="chart-bar-wrap"><div class="chart-bar purple" style="width:36%">36%</div></div>
+        </div>
+<div class="chart-row">
+            <div class="chart-label">Import the classes</div>
+            <div class="chart-bar-wrap"><div class="chart-bar teal" style="width:10%">10%</div></div>
+        </div>
+<div class="chart-row">
+            <div class="chart-label">Loading Documents</div>
+            <div class="chart-bar-wrap"><div class="chart-bar red" style="width:19%">19%</div></div>
+        </div></div>
+            </div>
+    </section>
+    <section class="section" id="s3">
+        <h2>📌 Function Tool</h2>
+        <p class="lead">The first step will be creating tools that the agent will have access to, we will be creating an add function and a multiply function. OpenAI provi...</p>
+        <div class="content-body">
+            <p>The first step will be creating tools that the agent will have access to, we will be creating an <code class="inline-code">add</code> function and a <code class="inline-code">multiply</code> function.</p>
+<p>OpenAI provides us a function calling API which we can send our function arguments and get back a response</p>
+<p>We start by creating two functions:</p>
+<p>// Define a function to sum two numbers
+function sum({ a, b }: { a: number; b: number }): number {
+  return a + b;
+}</p>
+<p>// Define a function to multiply two numbers
+function multiply({ a, b }: { a: number; b: number }): number {
+  return a * b;
+}Now we can set up the <code class="inline-code">FunctionTool</code> class which will be given to the agent, this class requires the properties of the function and metadata for the tool, helping the Large Language Models (LLMs) to identify which tool the LLM should use and the parameters.</p>
+<p>// Sum properties to give to the LLM
+const sumJSON = {
+  type: "object",
+  properties: {
+    a: {
+      type: "number",
+      description: "The first number",
+    },
+    b: {
+      type: "number",
+      description: "The second number",
+    },
+  },
+  required: ["a", "b"],
+};</p>
+<p>// Multiply properties to give to the LLM
+const multiplyJSON = {
+  type: "object",
+  properties: {
+    a: {
+      type: "number",
+      description: "The number to multiply",
+    },
+    b: {
+      type: "number",
+      description: "The multiplier",
+    },
+  },
+  required: ["a", "b"],
+};</p>
+<p>// Create sum function tool
+const sumFunctionTool = new FunctionTool(sum, {
+  name: "sum",
+  description: "Use this function to sum two numbers",
+  parameters: sumJSON,
+});</p>
+<p>// Creat multiply function tool
+const multiplyFunctionTool = new FunctionTool(multiply, {
+  name: "multiply",
+  description: "Use this function to multiply two numbers",
+  parameters: multiplyJSON,
+});</p>
+        </div>
+        
+            <div class="viz-block">
+                <h4 class="viz-title">核心技术概念</h4>
+                <div class="concept-grid"><div class="concept-card"><span class="badge badge-amber">API</span></div>
+<div class="concept-card"><span class="badge badge-green">Agent</span></div>
+<div class="concept-card"><span class="badge badge-blue">Document</span></div>
+<div class="concept-card"><span class="badge badge-purple">Function Calling</span></div>
+<div class="concept-card"><span class="badge badge-teal">Index</span></div>
+<div class="concept-card"><span class="badge badge-red">LLM</span></div></div>
+            </div>
+    </section>
+    <section class="section" id="s4">
+        <h2>🤖 Chat with Agent</h2>
+        <p class="lead">Now we have the tools to give to the agent, we can set up the agent:
+
+// Setup the agent with the respective tools
+const agent = new OpenAIAgent({
+...</p>
+        <div class="content-body">
+            <p>Now we have the tools to give to the agent, we can set up the agent:</p>
+<p>// Setup the agent with the respective tools
+const agent = new OpenAIAgent({
+  tools: [sumFunctionTool, multiplyFunctionTool],
+  verbose: true,
+});And then ask a question:</p>
+<p>// Chat with LLM
+const response = await agent.chat({
+  message: "How much is 5 + 5? then multiply by 2",
+});</p>
+<p>// Agent output
+console.log(String(response));Now the agent will choose the right tools to achieve the desired task using the functions provided by you. Then you should see an output as:</p>
+<p>=== Calling Function ===
+Calling function: sum with args: {
+  "a": 5,
+  "b": 5
+}
+Got output 10
+==========================
+=== Calling Function ===
+Calling function: multiply with args: {
+  "a": 10,
+  "b": 2
+}
+Got output 20
+==========================
+The result of adding 5 and 5 is 10. When you multiply 10 by 2, the result is 20.</p>
+<p># Using Agents with your documents</p>
+<p>The second agent will be responsible for going through a set of Dan Abramov essays and answering questions based on the available data.</p>
+<p>Firstly, we will import the necessary classes and functions</p>
+        </div>
+        
+    </section>
+    <section class="section" id="s5">
+        <h2>📌 Import the classes and functions</h2>
+        <p class="lead">import {
+  OpenAIAgent,
+  SimpleDirectoryReader,
+  VectorStoreIndex,
+  SummaryIndex,
+  QueryEngineTool,
+} from "llamaindex";</p>
+        <div class="content-body">
+            <p>import {
+  OpenAIAgent,
+  SimpleDirectoryReader,
+  VectorStoreIndex,
+  SummaryIndex,
+  QueryEngineTool,
+} from "llamaindex";</p>
+        </div>
+        
+    </section>
+    <section class="section" id="s6">
+        <h2>📌 Loading Documents</h2>
+        <p class="lead">Now we will load the documents and insert them into a local vector store index which will be responsible for storing the documents and allowing the...</p>
+        <div class="content-body">
+            <p>Now we will load the documents and insert them into a local vector store index which will be responsible for storing the documents and allowing the agent to query the most relevant data for the task and a summarize vector index which can better help on tasks summary related.</p>
+<p>// Load the documents
+const documents = await new SimpleDirectoryReader().loadData({
+  directoryPath: "node_modules/llamaindex/examples",
+});</p>
+<p>// Create a vector index from the documents
+const vectorIndex = await VectorStoreIndex.fromDocuments(documents);
+const summaryIndex = await SummaryIndex.fromDocuments(documents)</p>
+        </div>
+        
+    </section>
+    <section class="section" id="s7">
+        <h2>🔎 Creating the Query Engine Tool</h2>
+        <p class="lead">Now we will create the tooling that allows the Agents to access the Vector Index:
+
+// Create a query engine from the vector index
+const abramovQuer...</p>
+        <div class="content-body">
+            <p>Now we will create the tooling that allows the Agents to access the Vector Index:</p>
+<p>// Create a query engine from the vector index
+const abramovQueryEngine = vectorIndex.asQueryEngine();
+const abramovSummaryEngine = summaryIndex.asQueryEngine();</p>
+<p>// Create a QueryEngineTool with the vector engine
+const vectorEngineTool = new QueryEngineTool({
+  queryEngine: abramovQueryEngine,
+  metadata: {
+    name: "abramov_query_engine",
+    description: "Use this engine to answer specific questions about Abramov",
+  },
+});</p>
+<p>// Create a QueryEngineTool with the summary engine
+const summaryEngineTool = new QueryEngineTool({
+  queryEngine: abramovSummaryEngine,
+  metadata: {
+    name: "abramov_summary_engine",
+    description: "Use this engine to generate summaries about Abramov",
+  },
+});</p>
+        </div>
+        
+    </section>
+    <section class="section" id="s8">
+        <h2>🤖 Creating the OpenAI Agent</h2>
+        <p class="lead">Now we can create and provide the necessary tools for the agent
+
+// Setup the agent
+const agent = new OpenAIAgent({
+  tools: [vectorEngineTool, sum...</p>
+        <div class="content-body">
+            <p>Now we can create and provide the necessary tools for the agent</p>
+<p>// Setup the agent
+const agent = new OpenAIAgent({
+  tools: [vectorEngineTool, summaryEngineTool],
+  verbose: true,
+});</p>
+        </div>
+        
+    </section>
+    <section class="section" id="s9">
+        <h2>🤖 Chat with Agent</h2>
+        <p class="lead">Now you can chat with the agent about Dan Abramov and it will select the right tools to achieve the goal. // Chat with Agent
+const response = await...</p>
+        <div class="content-body">
+            <p>Now you can chat with the agent about Dan Abramov and it will select the right tools to achieve the goal.</p>
+<p>// Chat with Agent
+const response = await agent.chat({
+  message: "Where he worked in his 20s?",
+});</p>
+<p>// Log output
+console.log(String(response));The tool output</p>
+<p>=== Calling Function ===
+Calling function: abramov_query_engine with args: {
+  "query": "work experience in 20s"
+}
+Got output The individual had their first job as a software developer in their 20s. They worked for a Russian-American outsourcing company and their salary was $18k/year.
+==========================
+In his 20s, Abramov worked as a software developer for a Russian-American outsourcing company. His salary during that time was $18,000 per year.</p>
+<p># Conclusion</p>
+<p>Autonomous agents are powerful when talking about creating workflows and automation that can take your business to the next level or make your life easier.</p>
+<p>There is still a long way to go before they are fully autonomous but the arrival of LLMs is allowing the first steps of these reasoning and decision-making engines</p>
+<p>Do you already use agents in your day-to-day? and wanna discuss agents or help with agents? Reach me on <a href="https://ts.llamaindex.ai/modules/agent/openai" target="_blank">Twitter# References</p>
+<p>Code example: [ Documentation: [https://ts.llamaindex.ai/modules/agent/openai</a></p>
+<a href="https://www.llamaindex.ai/" target="_blank">https://www.llamaindex.ai/</a>
+        </div>
+        
+    </section>
+    </div>
+
+    <footer class="footer">
+        <div>LlamaIndex Blog 深度解析系列</div>
+        <div class="footer-links">
+            <a href="../">返回 Hub</a>
+            <a href="https://www.llamaindex.ai/blog/how-to-build-llm-agents-in-typescript-with-llamaindex-ts-a88ed364a7aa" target="_blank">阅读原文</a>
+        </div>
+    </footer>
+</body>
+</html>

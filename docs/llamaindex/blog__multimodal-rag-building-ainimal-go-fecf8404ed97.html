@@ -1,0 +1,415 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>深度解析：Multimodal RAG Guide: Build AInimal Go App | LlamaIndex</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #fafbfc;
+  --surface: #fff;
+  --text: #0f172a;
+  --text-secondary: #64748b;
+  --border: #e2e8f0;
+  --radius: 14px;
+  --amber: #d97706;
+  --amber-light: #fbbf24;
+  --amber-dark: #92400e;
+  --purple: #6366f1;
+  --teal: #14b8a6;
+  --green: #10b981;
+  --red: #ef4444;
+  --blue: #3b82f6;
+  --mono: 'JetBrains Mono', monospace;
+  --sans: 'Noto Sans SC', 'Inter', sans-serif;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:var(--sans); background:var(--bg); color:var(--text); line-height:1.7; }
+a { color:var(--amber); text-decoration:none; }
+a:hover { text-decoration:underline; }
+
+/* Nav */
+.nav {
+  position:sticky; top:0; z-index:100;
+  background:rgba(15,23,42,0.95); backdrop-filter:blur(12px);
+  padding:0 2rem; height:56px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.nav-brand { color:#fbbf24; font-weight:700; font-size:1.1rem; }
+.nav-back { color:#94a3b8; font-size:0.9rem; }
+.nav-back:hover { color:#fbbf24; }
+
+/* Hero */
+.hero {
+  background:linear-gradient(135deg,#0f172a 0%,#78350f 50%,#d97706 100%);
+  padding:4rem 2rem 3rem; color:#fff; text-align:center;
+}
+.hero-badge { display:inline-block; background:rgba(251,191,36,0.2); color:#fbbf24;
+  padding:4px 16px; border-radius:20px; font-size:0.85rem; margin-bottom:1rem; font-weight:500; }
+.hero h1 { font-size:clamp(1.5rem,4vw,2.4rem); font-weight:800; max-width:800px; margin:0 auto 1rem; line-height:1.3; }
+.hero-sub { color:rgba(255,255,255,0.8); font-size:1rem; max-width:600px; margin:0 auto 2rem; }
+.stats { display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; max-width:700px; margin:0 auto; }
+.stat-card {
+  background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12);
+  border-radius:12px; padding:1rem 0.5rem; text-align:center;
+}
+.stat-emoji { font-size:1.3rem; margin-bottom:4px; }
+.stat-val { font-size:1.4rem; font-weight:800; color:#fbbf24; }
+.stat-label { font-size:0.75rem; color:rgba(255,255,255,0.7); text-transform:uppercase; letter-spacing:0.5px; }
+.stat-desc { font-size:0.7rem; color:rgba(255,255,255,0.5); margin-top:2px; }
+
+/* Page */
+.page { max-width:900px; margin:0 auto; padding:2rem 1.5rem; }
+
+/* TOC */
+.toc { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:0.75rem; margin-bottom:3rem; }
+.toc-item {
+  display:flex; align-items:center; gap:10px;
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:10px; padding:10px 14px; font-size:0.9rem;
+  color:var(--text); transition:all 0.2s;
+}
+.toc-item:hover { border-color:var(--amber); background:#fffbeb; text-decoration:none; transform:translateY(-1px); }
+.toc-num {
+  background:linear-gradient(135deg,#d97706,#f59e0b);
+  color:#fff; font-weight:700; font-size:0.75rem;
+  width:28px; height:28px; border-radius:8px;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+
+/* Section */
+.section { margin-bottom:3rem; }
+.section h2 {
+  font-size:1.5rem; font-weight:700; margin-bottom:0.5rem;
+  padding-bottom:0.5rem; border-bottom:2px solid var(--amber);
+}
+.lead { color:var(--text-secondary); font-size:0.95rem; margin-bottom:1.2rem; }
+
+/* Cards */
+.card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius); padding:1.2rem; margin-bottom:0.8rem;
+}
+.card p { font-size:0.9rem; }
+.card-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:0.8rem; margin:1rem 0; }
+
+/* Code Block */
+.code-block {
+  background:#1e293b; border-radius:12px; overflow:hidden; margin:1rem 0;
+}
+.code-header { padding:8px 16px; background:#0f172a; display:flex; align-items:center; gap:8px; }
+.code-block pre {
+  padding:1rem 1.2rem; color:#e2e8f0; font-family:var(--mono);
+  font-size:0.82rem; line-height:1.6; overflow-x:auto; white-space:pre;
+}
+
+/* Compare */
+.compare-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin:1rem 0; }
+.compare-card {
+  background:var(--surface); border-radius:var(--radius); padding:1.2rem;
+  border:1px solid var(--border);
+}
+.compare-card.old { border-left:4px solid var(--red); }
+.compare-card.new { border-left:4px solid var(--green); }
+.compare-card h4 { font-size:0.95rem; margin-bottom:0.5rem; }
+
+/* Chart */
+.chart { margin:1rem 0; }
+.chart-row { display:flex; align-items:center; margin-bottom:8px; }
+.chart-label { width:160px; font-size:0.85rem; font-weight:500; flex-shrink:0; }
+.chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:32px; overflow:hidden; }
+.chart-bar {
+  height:100%; border-radius:8px; display:flex; align-items:center;
+  padding:0 12px; font-size:0.75rem; font-weight:600; color:#fff;
+  transition:width 0.6s ease;
+}
+.chart-bar.amber { background:linear-gradient(90deg,#d97706,#f59e0b); }
+.chart-bar.purple { background:linear-gradient(90deg,#6366f1,#818cf8); }
+.chart-bar.green { background:linear-gradient(90deg,#10b981,#34d399); }
+.chart-bar.blue { background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+.chart-bar.teal { background:linear-gradient(90deg,#14b8a6,#2dd4bf); }
+.chart-bar.red { background:linear-gradient(90deg,#ef4444,#f87171); }
+
+/* Timeline */
+.timeline { position:relative; padding-left:2rem; margin:1rem 0; }
+.timeline::before {
+  content:''; position:absolute; left:7px; top:0; bottom:0; width:3px;
+  background:linear-gradient(180deg,#d97706,#f59e0b,#fbbf24);
+  border-radius:2px;
+}
+.tl-item { position:relative; margin-bottom:1.5rem; padding-left:1rem; }
+.tl-dot {
+  position:absolute; left:-2rem; top:4px;
+  width:16px; height:16px; border-radius:50%;
+  background:#d97706; border:3px solid #fef3c7;
+}
+.tl-item:nth-child(2) .tl-dot { background:#3b82f6; border-color:#dbeafe; }
+.tl-item:nth-child(3) .tl-dot { background:#10b981; border-color:#d1fae5; }
+.tl-item:nth-child(4) .tl-dot { background:#6366f1; border-color:#e0e7ff; }
+.tl-item:nth-child(5) .tl-dot { background:#14b8a6; border-color:#ccfbf1; }
+.tl-phase { font-weight:600; font-size:0.95rem; }
+.tl-desc { color:var(--text-secondary); font-size:0.85rem; margin-top:2px; }
+
+/* Flow */
+.flow { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin:1rem 0; }
+.flow-step {
+  background:var(--surface); border:2px solid var(--border);
+  border-radius:12px; padding:10px 18px; font-weight:600; font-size:0.9rem;
+}
+.flow-step.amber { border-color:var(--amber); background:#fffbeb; }
+.flow-step.purple { border-color:var(--purple); background:#eef2ff; }
+.flow-arrow { color:var(--text-secondary); font-size:1.2rem; }
+
+/* Block Quote */
+.block-q {
+  border-left:4px solid var(--amber); background:#fffbeb;
+  padding:1.2rem 1.5rem; border-radius:0 12px 12px 0; margin:1rem 0;
+  font-style:italic; color:#78350f;
+}
+.block-q p { margin:0; font-size:0.92rem; }
+
+/* Badge */
+.badge {
+  display:inline-block; padding:3px 10px; border-radius:6px;
+  font-size:0.75rem; font-weight:600;
+}
+.badge-amber { background:#fef3c7; color:#92400e; }
+.badge-purple { background:#e0e7ff; color:#3730a3; }
+.badge-green { background:#d1fae5; color:#065f46; }
+.badge-red { background:#fee2e2; color:#991b1b; }
+.badge-blue { background:#dbeafe; color:#1e40af; }
+.badge-teal { background:#ccfbf1; color:#115e59; }
+
+/* Table */
+.tbl-wrap { overflow-x:auto; margin:1rem 0; }
+table { width:100%; border-collapse:collapse; font-size:0.85rem; }
+th { background:#f8fafc; padding:10px 12px; text-align:left; font-weight:600; border-bottom:2px solid var(--border); }
+td { padding:10px 12px; border-bottom:1px solid var(--border); }
+
+/* Footer */
+.footer {
+  background:#0f172a; color:#94a3b8; text-align:center;
+  padding:2rem; margin-top:3rem; font-size:0.85rem;
+}
+.footer a { color:#fbbf24; }
+.footer-links { display:flex; justify-content:center; gap:2rem; margin-top:0.8rem; flex-wrap:wrap; }
+
+/* Responsive */
+@media(max-width:768px) {
+  .stats { grid-template-columns:repeat(2,1fr); }
+  .toc { grid-template-columns:1fr; }
+  .compare-grid { grid-template-columns:1fr; }
+  .card-grid { grid-template-columns:1fr; }
+  .chart-label { width:120px; font-size:0.78rem; }
+  .flow { flex-direction:column; gap:8px; }
+  .flow-arrow { transform:rotate(90deg); }
+  .hero { padding:3rem 1rem 2rem; }
+  .hero h1 { font-size:1.4rem; }
+  .page { padding:1.5rem 1rem; }
+  .section h2 { font-size:1.2rem; }
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="../" class="nav-brand">LlamaIndex Blog</a>
+  <a href="../" class="nav-back">&larr; Back to Hub</a>
+</nav>
+
+<header class="hero">
+  <div class="hero-badge">RAG</div>
+  <h1>Multimodal RAG Guide: Build AInimal Go App | LlamaIndex</h1>
+  <p class="hero-sub">作者：Unknown | 日期：Unknown</p>
+  <div class="stats">
+<div class="stat-card">
+  <div class="stat-emoji">📝</div>
+  <div class="stat-val">1400+</div>
+  <div class="stat-label">words</div>
+  <div class="stat-desc">文章总字数</div>
+</div>
+<div class="stat-card">
+  <div class="stat-emoji">📑</div>
+  <div class="stat-val">7</div>
+  <div class="stat-label">sections</div>
+  <div class="stat-desc">核心章节</div>
+</div>
+<div class="stat-card">
+  <div class="stat-emoji">📌</div>
+  <div class="stat-val">15</div>
+  <div class="stat-label">key points</div>
+  <div class="stat-desc">关键要点</div>
+</div>
+<div class="stat-card">
+  <div class="stat-emoji">🏷️</div>
+  <div class="stat-val">RAG</div>
+  <div class="stat-label">category</div>
+  <div class="stat-desc">文章分类</div>
+</div>
+
+  </div>
+</header>
+
+<div class="page">
+
+<div class="intro-section"><p>](https://www.linkedin.com/company/91154103/)
+ -  [</p>
+<p>](https://www.youtube.com/@LlamaIndex)</p>
+<p>In the current landscape where GPT-4 Vision (GPT-4V) use cases are everywhere, I wanted to explore an alternative approach: pairing deep learning vision models with large language models (LLMs). My latest project, ‘AInimal Go!’, is an attempt to showcase how a specialized vision model like ResNet18 can seamlessly integrate with an LLM, using LlamaIndex as the orchestration layer and Wikipedia articles as the knowledge base.</p>
+</div>
+
+<nav class="toc"><a href="#s0" class="toc-item"><span class="toc-num">01</span>1. Image Capture/Upload</a>
+<a href="#s1" class="toc-item"><span class="toc-num">02</span>2. Initializing ResNet for Image Classification</a>
+<a href="#s2" class="toc-item"><span class="toc-num">03</span>3. Animal Detection with ResNet18</a>
+<a href="#s3" class="toc-item"><span class="toc-num">04</span>4. Validating Animal Presence in Images</a>
+<a href="#s4" class="toc-item"><span class="toc-num">05</span>5. Initializing LLM</a>
+<a href="#s5" class="toc-item"><span class="toc-num">06</span>6. Creating the Chat Engine</a>
+<a href="#s6" class="toc-item"><span class="toc-num">07</span>7. Bringing It All Together</a>
+</nav>
+
+
+<section class="section" id="s0">
+  <h2>🔍 1. Image Capture/Upload</h2>
+  <p class="lead">In ‘AInimal Go!’, the flow begins with the user uploading an image or capturing one using their device’s camera. This is a crucial step as it sets the stage for the subsequent interaction with the ide</p>
+  <div class="block-q"><p>In ‘AInimal Go!’, the flow begins with the user uploading an image or capturing one using their device’s camera. This is a crucial step as it sets the stage for the subsequent interaction with the identified animal. The code snippet below illustrates how Streamlit is used to create a UI for image u</p></div>
+  <p>The code snippet below illustrates how Streamlit is used to create a UI for image upload and capture. It offers two options: a file uploader for selecting an image file and a camera input for real-time capture. Once an image is provided through either method, it’s converted into a byte stream (<code>BytesIO</code>) for processing. This streamlining ensures a seamless user experience, whether the image is uploaded from a gallery or captured on the spot.</p>
+<p># Image upload section.
+    image_file = st.file_uploader(&quot;Upload an image&quot;, type=[&quot;jpg&quot;, &quot;jpeg&quot;, &quot;png&quot;], key=&quot;uploaded_image&quot;, on_change=on_image_upload)</p>
+<p>col1, col2, col3 = st.columns([1, 2, 1])
+    with col2:  # Camera input will be in the middle column
+        camera_image = st.camera_input(&quot;Take a picture&quot;, on_change=on_image_upload)</p>
+<p># Determine the source of the image (upload or camera)
+    if image_file is not None:
+        image_data = BytesIO(image_file.getvalue())
+    elif camera_image is not None:
+        image_data = BytesIO(camera_image.getvalue())
+    else:
+        image_data = None</p>
+<p>if image_data:
+        # Display the uploaded image at a standard width.
+        st.session_state[&#x27;assistant_avatar&#x27;] = image_data
+        st.image(image_data, caption=&#x27;Uploaded Image.&#x27;, width=200)</p>
+
+</section>
+
+<section class="section" id="s1">
+  <h2>⚡ 2. Initializing ResNet for Image Classification</h2>
+  <p class="lead">Once the user uploads or captures an image, the next critical step is identifying the animal within it. This is where ResNet18, a robust deep learning model for image classification, comes into play.</p>
+  <div class="block-q"><p>Once the user uploads or captures an image, the next critical step is identifying the animal within it. This is where ResNet18, a robust deep learning model for image classification, comes into play. The function <code>load_model_and_labels</code> performs two key tasks: - <strong>Loading Animal Labels:</strong> It start</p></div>
+  <p>The function <code>load_model_and_labels</code> performs two key tasks:</p>
+<p>- <strong>Loading Animal Labels:</strong> It starts by loading a subset of ImageNet labels specific to animals. These labels are stored in a dictionary, mapping class IDs to their corresponding animal names. This mapping is essential for interpreting the output of the ResNet model.
+- <strong>Initializing ResNet18:</strong> The function then initializes the feature extractor and the ResNet18 model. The feature extractor preprocesses the images to the format required by ResNet18, while the model itself is responsible for the actual classification task.</p>
+<p>def load_model_and_labels():
+    # Load animal labels as a dictionary
+    animal_labels_dict = {}
+    with open(&#x27;imagenet_animal_labels_subset.txt&#x27;, &#x27;r&#x27;) as file:
+        for line in file:
+            parts = line.strip().split(&#x27;:&#x27;)
+            class_id = int(parts[0].strip())
+            label_name = parts[1].strip().strip(&quot;&#x27;&quot;)
+            animal_labels_dict[class_id] = label_name</p>
+<p># Initialize feature extractor and model
+    feature_extractor = AutoFeatureExtractor.from_pretrained(&quot;microsoft/resnet-18&quot;)
+    model = ResNetForImageClassification.from_pretrained(&quot;microsoft/resnet-18&quot;)</p>
+<p>return feature_extractor, model, animal_labels_dict</p>
+
+</section>
+
+<section class="section" id="s2">
+  <h2>🏗️ 3. Animal Detection with ResNet18</h2>
+  <p class="lead">After initializing ResNet18, the next step is to use it for detecting the animal in the uploaded image. The function <code>get_image_caption</code> handles this task.</p>
+  <div class="card-grid"><div class="card" style="border-left:4px solid var(--amber)"><p><strong>Image Preprocessing: </strong>The uploaded image is first opened and then preprocessed using the feature extractor initialized earlier. This preprocessing adapts the image to the format required by ResNet18.</p></div>
+<div class="card" style="border-left:4px solid var(--blue)"><p><strong>Animal Detection:</strong> The preprocessed image is then fed into ResNet18, which predicts the class of the image. The logits (the model’s raw output) are processed to find the class with the highest probability, which corresponds to the predicted animal.</p></div>
+<div class="card" style="border-left:4px solid var(--green)"><p><strong>Retrieving the Animal Name: </strong>The predicted class ID is mapped to the corresponding animal name using the label dictionary created earlier. This name is then displayed to the user.</p></div>
+</div>
+  <p>- <strong>Image Preprocessing: </strong>The uploaded image is first opened and then preprocessed using the feature extractor initialized earlier. This preprocessing adapts the image to the format required by ResNet18.
+- <strong>Animal Detection:</strong> The preprocessed image is then fed into ResNet18, which predicts the class of the image. The logits (the model’s raw output) are processed to find the class with the highest probability, which corresponds to the predicted animal.
+- <strong>Retrieving the Animal Name: </strong>The predicted class ID is mapped to the corresponding animal name using the label dictionary created earlier. This name is then displayed to the user.</p>
+<p>def get_image_caption(image_data):
+    image = Image.open(image_data)
+    inputs = feature_extractor(images=image, return_tensors=&quot;pt&quot;)</p>
+<p>with torch.no_grad():
+        logits = model(**inputs).logits</p>
+<p>predicted_label_id = logits.argmax(-1).item()
+    predicted_label_name = model.config.id2label[predicted_label_id]
+    st.write(predicted_label_name)
+    # Return the predicted animal name
+    return predicted_label_name, predicted_label_id</p>
+
+</section>
+
+<section class="section" id="s3">
+  <h2>📊 4. Validating Animal Presence in Images</h2>
+  <p class="lead">To ensure that the conversation in ‘AInimal Go!’ is relevant and engaging, it’s crucial to verify that the uploaded image indeed depicts an animal. This verification is handled by the <code>is_animal</code> func</p>
+  <div class="block-q"><p>To ensure that the conversation in ‘AInimal Go!’ is relevant and engaging, it’s crucial to verify that the uploaded image indeed depicts an animal. This verification is handled by the <code>is_animal</code> function. def is_animal(predicted_label_id):     # Check if the predicted label ID is within the animal</p></div>
+  <p>def is_animal(predicted_label_id):
+    # Check if the predicted label ID is within the animal classes range
+    return 0 &amp;amp;lt;= predicted_label_id &amp;amp;lt;= 398The function checks if the predicted label ID from ResNet18 falls within the range of animal classes (0 to 398 in ImageNet’s classification). This simple yet effective check is essential for maintaining the app’s focus on animal interactions.</p>
+<p>Further in the script, this function is utilized to validate the detected object:</p>
+<p>if not (is_animal(label_id)):
+    st.error(&quot;Please upload image of an animal!&quot;)
+    st.stop()If the uploaded image does not depict an animal, the app prompts the user to upload an appropriate image, ensuring that the conversation remains on track.</p>
+
+</section>
+
+<section class="section" id="s4">
+  <h2>🎯 5. Initializing LLM</h2>
+  <p class="lead">The <code>init_llm</code> function initializes the Cohere LLM along with the necessary contexts for storage and service (specify llm and embed_model). It also loads the pre-indexed Wikipedia articles for about 2</p>
+  <div class="block-q"><p>The <code>init_llm</code> function initializes the Cohere LLM along with the necessary contexts for storage and service (specify llm and embed_model). It also loads the pre-indexed Wikipedia articles for about 200 animals. The function sets up the environment in which the LLM operates, preparing it for generat</p></div>
+  <p>def init_llm(api_key):
+    llm = Cohere(model=&quot;command&quot;, api_key=st.secrets[&#x27;COHERE_API_TOKEN&#x27;])</p>
+<p>service_context = ServiceContext.from_defaults(llm=llm, embed_model=&quot;local&quot;)
+    storage_context = StorageContext.from_defaults(persist_dir=&quot;storage&quot;)
+    index = load_index_from_storage(storage_context, index_id=&quot;index&quot;, service_context=service_context)</p>
+<p>return llm, service_context, storage_context, indexThis function is critical for setting up the LLM, ensuring that all necessary components are in place for the chat functionality.</p>
+
+</section>
+
+<section class="section" id="s5">
+  <h2>🔧 6. Creating the Chat Engine</h2>
+  <p class="lead">The <code>create_chat_engine</code> function takes the animal description and utilizes it to create a query engine. This engine is responsible for handling user queries and generating responses based on the iden</p>
+  <div class="block-q"><p>The <code>create_chat_engine</code> function takes the animal description and utilizes it to create a query engine. This engine is responsible for handling user queries and generating responses based on the identified animal. def create_chat_engine(img_desc, api_key):     doc = Document(text=img_desc)     qu</p></div>
+  <p>def create_chat_engine(img_desc, api_key):
+    doc = Document(text=img_desc)</p>
+<p>query_engine = CitationQueryEngine.from_args(
+        index,
+        similarity_top_k=3,
+        citation_chunk_size=512,
+        verbose=True
+    )</p>
+<p>return query_enginesystem_prompt=f&quot;&quot;&quot;
+              You are a chatbot, able to have normal interactions. Do not make up information.
+              You always answer in great detail and are polite. Your job is to roleplay as an {img_desc}.
+              Remember to make {img_desc} sounds while talking but dont overdo it.
+              &quot;&quot;&quot;</p>
+<p>response = chat_engine.query(f&quot;{system_prompt}. {user_input}&quot;)By creating a query engine specific to the identified animal, this function ensures that the conversations in the app are relevant, informative, and engaging. I have used the CitationQueryEngine to provide the future possibility of showing the sources as well, making the conversations not only engaging but also informative with credible references.</p>
+
+</section>
+
+<section class="section" id="s6">
+  <h2>💡 7. Bringing It All Together</h2>
+  <p class="lead">With all the technical components in place, ‘AInimal Go!’ combines everything into a user-friendly chat interface. Here, users can interact directly with the AI, asking questions and receiving respons</p>
+  <div class="block-q"><p>With all the technical components in place, ‘AInimal Go!’ combines everything into a user-friendly chat interface. Here, users can interact directly with the AI, asking questions and receiving responses about the identified animal. This final interaction loop, skillfully managed by Streamlit, perfec</p></div>
+  <p># Wrapping Up</p>
+<p>‘AInimal Go!’ represents an exciting fusion of vision models, language models, and Wikipedia, with LlamaIndex serving as the orchestrator that seamlessly integrates ResNet for animal identification and Cohere’s LLM for engaging conversations. This app is a stepping stone to even more innovative visual-language applications. The possibilities are boundless, and your insights can shape its future. I encourage you to explore the demo, experiment with the code, and join me in pushing the boundaries of what AI can achieve in the realm of multimodal interactions.</p>
+<p><a href="https://github.com/AI-ANK/AInimalGo-Chat-with-Animals" target="_blank">GitHub Repo</a></p>
+<p><a href="https://www.linkedin.com/in/harshadsuryawanshi/" target="_blank">Connect with Me on LinkedIn</a></p>
+<p><a href="https://www.linkedin.com/posts/harshadsuryawanshi_llamaindex-ai-deeplearning-activity-7134632983495327744-M7yy?utm_source=share&amp;amp;utm_medium=member_desktop" target="_blank">LinkedIn Post</a></p>
+
+</section>
+
+
+</div>
+
+<footer class="footer">
+  <p>LlamaIndex Blog Deep-Dive | 深度解析系列</p>
+  <div class="footer-links">
+    <a href="../">Hub 首页</a>
+    <a href="https://www.llamaindex.ai/blog/multimodal-rag-building-ainimal-go-fecf8404ed97" target="_blank">原文链接</a>
+  </div>
+</footer>
+
+</body>
+</html>

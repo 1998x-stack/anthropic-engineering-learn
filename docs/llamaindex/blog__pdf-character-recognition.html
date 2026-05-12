@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：PDF Character Recognition: How OCR Works and Where It Breaks</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafbfc;
+      --surface: #fff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --amber: #d97706;
+      --amber-light: #fbbf24;
+      --amber-dark: #92400e;
+      --purple: #6366f1;
+      --teal: #14b8a6;
+      --green: #10b981;
+      --red: #ef4444;
+      --blue: #3b82f6;
+      --pink: #ec4899;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans SC', 'Inter', sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:var(--sans); background:var(--bg); color:var(--text); line-height:1.7; }
+
+    .nav { position:sticky; top:0; background:rgba(15,23,42,.92); backdrop-filter:blur(12px); z-index:100; border-bottom:1px solid rgba(255,255,255,.08); }
+    .nav-inner { max-width:1100px; margin:0 auto; padding:12px 24px; display:flex; justify-content:space-between; align-items:center; }
+    .nav-brand { color:#fbbf24; text-decoration:none; font-weight:700; display:flex; align-items:center; gap:8px; }
+    .nav-logo { font-size:20px; }
+    .nav a:last-child { font-size:13px; color:rgba(255,255,255,.6); text-decoration:none; }
+    .nav a:last-child:hover { color:#fbbf24; }
+
+    .hero { background:linear-gradient(135deg,#0f172a 0%,#78350f 50%,#d97706 100%); color:#fff; padding:60px 24px 48px; }
+    .hero-inner { max-width:1100px; margin:0 auto; }
+    .hero-tag { display:inline-block; background:rgba(251,191,36,.15); color:#fbbf24; padding:4px 14px; border-radius:20px; font-size:13px; font-weight:500; margin-bottom:16px; letter-spacing:.5px; }
+    .hero h1 { font-size:clamp(24px,4vw,42px); font-weight:800; line-height:1.2; margin-bottom:12px; }
+    .hero p { font-size:17px; color:rgba(255,255,255,.8); max-width:700px; margin-bottom:28px; line-height:1.6; }
+    .hero-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; max-width:600px; }
+    .stat { text-align:center; }
+    .stat-num { display:block; font-size:28px; font-weight:800; color:#fbbf24; font-family:var(--mono); }
+    .stat-label { font-size:12px; color:rgba(255,255,255,.6); text-transform:uppercase; letter-spacing:.5px; }
+
+    .page { max-width:1100px; margin:0 auto; padding:32px 24px 60px; }
+
+    .toc { margin-bottom:40px; }
+    .toc-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:10px; }
+    .toc-item { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); text-decoration:none; color:var(--text); font-size:14px; font-weight:500; transition:all .2s; }
+    .toc-item:hover { border-color:var(--amber); transform:translateY(-1px); box-shadow:0 4px 12px rgba(217,119,6,.1); }
+    .toc-num { font-size:16px; }
+
+    .section { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:32px; margin-bottom:24px; }
+    .section h2 { font-size:22px; font-weight:700; margin-bottom:12px; color:var(--text); }
+    .section h3 { font-size:17px; font-weight:600; margin:20px 0 8px; color:var(--amber-dark); }
+    .lead { color:var(--text-secondary); font-size:15px; margin-bottom:16px; line-height:1.7; }
+    .section p { margin-bottom:12px; font-size:15px; line-height:1.7; }
+
+    .chart { margin:20px 0; }
+    .chart-row { display:flex; align-items:center; margin-bottom:8px; }
+    .chart-label { width:160px; font-size:13px; font-weight:500; text-align:right; padding-right:12px; color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:28px; overflow:hidden; }
+    .chart-bar { height:100%; border-radius:8px; display:flex; align-items:center; padding-left:10px; font-size:12px; font-weight:600; color:#fff; transition:width .6s ease; min-width:40px; }
+    .chart-bar.amber { background:linear-gradient(90deg,#d97706,#f59e0b); }
+    .chart-bar.purple { background:linear-gradient(90deg,#6366f1,#818cf8); }
+    .chart-bar.teal { background:linear-gradient(90deg,#0d9488,#14b8a6); }
+    .chart-bar.green { background:linear-gradient(90deg,#059669,#10b981); }
+    .chart-bar.blue { background:linear-gradient(90deg,#2563eb,#3b82f6); }
+    .chart-bar.red { background:linear-gradient(90deg,#dc2626,#ef4444); }
+
+    .timeline { position:relative; padding-left:28px; margin:20px 0; }
+    .timeline::before { content:''; position:absolute; left:8px; top:0; bottom:0; width:3px; background:linear-gradient(180deg,#d97706,#6366f1,#14b8a6); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:20px; padding-left:16px; }
+    .tl-dot { position:absolute; left:-24px; top:4px; width:14px; height:14px; border-radius:50%; border:3px solid var(--amber); background:#fff; }
+    .tl-item:nth-child(2) .tl-dot { border-color:var(--purple); }
+    .tl-item:nth-child(3) .tl-dot { border-color:var(--teal); }
+    .tl-item:nth-child(4) .tl-dot { border-color:var(--green); }
+    .tl-item:nth-child(5) .tl-dot { border-color:var(--blue); }
+    .tl-phase { font-weight:600; font-size:15px; margin-bottom:4px; }
+    .tl-desc { font-size:13px; color:var(--text-secondary); line-height:1.5; }
+
+    .compare-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin:20px 0; }
+    .compare-card { padding:16px; border-radius:var(--radius); font-size:14px; line-height:1.6; }
+    .compare-card.old { background:#fef2f2; border:1px solid #fecaca; }
+    .compare-card.new { background:#f0fdf4; border:1px solid #bbf7d0; }
+
+    .flow { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:20px 0; }
+    .flow-step { padding:10px 18px; background:#f8fafc; border:2px solid var(--border); border-radius:var(--radius); font-size:13px; font-weight:600; text-align:center; }
+    .flow-step.purple { background:#eef2ff; border-color:var(--purple); color:var(--purple); }
+    .flow-arrow { color:var(--amber); font-size:20px; font-weight:700; }
+
+    .fail-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:20px 0; }
+    .fail-grid .card { padding:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); font-size:13px; line-height:1.6; }
+
+    .block-q { margin:20px 0; padding:20px 24px; background:linear-gradient(135deg,#fffbeb,#fef3c7); border-left:4px solid var(--amber); border-radius:0 var(--radius) var(--radius) 0; font-style:italic; color:#92400e; font-size:14px; line-height:1.7; }
+
+    .tbl-wrap { overflow-x:auto; margin:20px 0; }
+    table { width:100%; border-collapse:collapse; font-size:14px; }
+    th { background:#f8fafc; padding:10px 14px; text-align:left; font-weight:600; border-bottom:2px solid var(--border); white-space:nowrap; }
+    td { padding:10px 14px; border-bottom:1px solid var(--border); }
+    tr:hover td { background:#fffbeb; }
+
+    .badge { display:inline-block; padding:3px 10px; border-radius:12px; font-size:12px; font-weight:500; }
+    .badge-amber { background:#fffbeb; color:#92400e; }
+    .badge-purple { background:#eef2ff; color:#4338ca; }
+    .badge-green { background:#f0fdf4; color:#166534; }
+
+    .footer { background:#0f172a; color:rgba(255,255,255,.6); padding:32px 24px; text-align:center; font-size:13px; }
+    .footer a { color:#fbbf24; text-decoration:none; }
+    .footer a:hover { text-decoration:underline; }
+    .footer-links { display:flex; justify-content:center; gap:24px; margin-bottom:12px; flex-wrap:wrap; }
+
+    @media(max-width:768px) {
+      .hero-stats { grid-template-columns:repeat(2,1fr); }
+      .compare-grid, .fail-grid { grid-template-columns:1fr; }
+      .chart-label { width:100px; font-size:12px; }
+      .flow { flex-direction:column; gap:6px; }
+      .flow-arrow { transform:rotate(90deg); }
+      .toc-grid { grid-template-columns:1fr; }
+      .section { padding:20px 16px; }
+      .hero { padding:40px 16px 32px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="../" class="nav-brand">
+        <span class="nav-logo">🦙</span>
+        <span>LlamaIndex Blog Hub</span>
+      </a>
+      <a href="./">← Back to Hub</a>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="hero-tag">文档处理</div>
+      <h1>PDF Character Recognition: How OCR Works and Where It Breaks</h1>
+      <p>Most PDFs look readable. You can open them, scroll through them, and see the text. But if that PDF came from a scanner, a camera, or a printed form, what you&#x27;re actually looking at is a picture. The text [is an image](https://www.llamaindex.ai/blog/ocr-for-images), and it might as well be wallpaper </p>
+      <div class="hero-stats">
+        <div class="stat"><span class="stat-num">9</span><span class="stat-label">核心章节</span></div><div class="stat"><span class="stat-num">8</span><span class="stat-label">关键概念</span></div><div class="stat"><span class="stat-num">8min</span><span class="stat-label">阅读时长</span></div><div class="stat"><span class="stat-num">2063</span><span class="stat-label">总字数</span></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc"><div class="toc-grid">
+  <a href="#s0" class="toc-item"><span class="toc-num">🔍</span>How to Tell If Your PDF Needs OCR</a>
+  <a href="#s1" class="toc-item"><span class="toc-num">💡</span>What&#x27;s Actually Happening When Software Reads a PDF</a>
+  <a href="#s2" class="toc-item"><span class="toc-num">⚙️</span>How Traditional OCR Tools Process a Scanned PDF</a>
+  <a href="#s5" class="toc-item"><span class="toc-num">🎯</span>Why Layout Complexity Breaks Character Recognition</a>
+  <a href="#s6" class="toc-item"><span class="toc-num">📋</span>Where Traditional OCR Falls Short and What Agentic PDF Parsing Changes</a>
+  <a href="#s7" class="toc-item"><span class="toc-num">🔧</span>What High-Accuracy Character Recognition Delivers</a>
+  <a href="#s8" class="toc-item"><span class="toc-num">🚀</span>Choosing the Right PDF Character Recognition Approach</a>
+</div></nav>
+
+    <section class="section" id="s0">
+  <h2>🔍 How to Tell If Your PDF Needs OCR</h2>
+  <p class="lead">Before reaching for an OCR tool, check whether your PDF file already has a text layer. The test takes ten seconds: open the PDF document in any viewer, click on a line of text, and drag to select a fe</p>
+  <p>OCR is needed if any of these apply:</p>
+  <p>You can&#x27;t select any text, and the whole page behaves like a single image You can select text, but what pastes into a text editor is garbled, out of order, or full of random characters Selecting specific words is difficult even though the text looks correct on the screen A colleague using a screen reader reports the document is unreadable</p>
+  <p>When OCR runs, it produces one of two output formats. A searchable PDF keeps the original scanned image as the visible layer but adds a hidden text layer behind it. You&#x27;re reading the original scan, but software can find and select the text underneath. An editable text PDF goes further, replacing the scanned image with rendered font characters you see directly on screen. Most workflows use the searchable variant. Editable output makes sense when you need to modify the document itself, or when the original scan is too low-resolution to read comfortably.</p>
+  <p>Both formats produce a PDF with machine-readable text. The difference is which layer your eyes land on.</p>
+<div class="chart">
+  <div class="chart-row">
+    <div class="chart-label">You can&#x27;t select any</div>
+    <div class="chart-bar-wrap">
+      <div class="chart-bar amber" style="width:95%"></div>
+    </div>
+  </div>
+  <div class="chart-row">
+    <div class="chart-label">You can select text,</div>
+    <div class="chart-bar-wrap">
+      <div class="chart-bar purple" style="width:83%"></div>
+    </div>
+  </div>
+  <div class="chart-row">
+    <div class="chart-label">Selecting specific w</div>
+    <div class="chart-bar-wrap">
+      <div class="chart-bar teal" style="width:71%"></div>
+    </div>
+  </div>
+  <div class="chart-row">
+    <div class="chart-label">A colleague using a </div>
+    <div class="chart-bar-wrap">
+      <div class="chart-bar green" style="width:59%"></div>
+    </div>
+  </div>
+</div>
+</section>
+<section class="section" id="s1">
+  <h2>💡 What&#x27;s Actually Happening When Software Reads a PDF</h2>
+  <p class="lead">PDFs fall into two distinct categories that most people don&#x27;t think about until something breaks.</p>
+  <p>A native PDF contains encoded text data. When you copy and paste from it, the text is already there because it was embedded when the file was created. A scanned PDF (or image-only PDF) is a photograph of a document. There&#x27;s no text layer. When you try to select text in a scanned PDF, nothing happens, because there&#x27;s nothing to select.</p>
+  <p>The OCR pipeline converts the second type into something that behaves like the first. The steps:</p>
+  <p>Rasterize the page: render it as a pixel image at a fixed resolution Segment the image: identify regions likely to contain text versus graphics Recognize characters: match pixel patterns against character shapes from a trained model Output encoded text: produce a text layer for searchable PDFs or a raw structured file</p>
+  <p>The result is a document where text is genuinely machine-readable: indexable by search, parseable by screen readers, and consumable by anything downstream.</p>
+  <p>This is also where the quality bar matters. A text recognition pass that produces a scrambled output isn&#x27;t meaningfully better than no OCR at all. If the reading order is wrong or columns are merged, the text technically exists but can&#x27;t be used. The distinction between &quot;readable by a human&quot; and &quot;parseable by a machine&quot; determines whether your OCR output is actually usable in production.</p>
+<div class="fail-grid">
+  <div class="card"><strong>Rasterize</strong><br>the page: render it as a pixel image at a fixed resolution</div>
+  <div class="card"><strong>Segment</strong><br>the image: identify regions likely to contain text versus graphics</div>
+  <div class="card"><strong>Recognize characters</strong><br>match pixel patterns against character shapes from a trained model</div>
+  <div class="card"><strong>Output encoded text</strong><br>produce a text layer for searchable PDFs or a raw structured file</div>
+</div>
+</section>
+<section class="section" id="s2">
+  <h2>⚙️ How Traditional OCR Tools Process a Scanned PDF</h2>
+  <p class="lead">Standard OCR tools take an image file in and produce text out using pattern-matching models trained on character shapes. The most common tools in production:</p>
+  <p>Adobe Acrobat, the most common entry point for individuals and small teams. Applying OCR in Acrobat converts a scanned PDF to a searchable PDF in a few clicks. For most people, it&#x27;s the first OCR tool they actually use, and for simple documents it&#x27;s usually enough. Tesseract, the dominant open-source OCR engine, originally developed at HP and now maintained by Google. Highly capable on clean typed text with support for over 100 languages. Gets unhappy when layout gets complex. ABBYY FineReader, a commercial tool with stronger layout handling than Tesseract, long used in enterprise document workflows. Enterprise pricing to match. AWS Textract, a cloud-based OCR tool with basic table extraction built in. Works well if you&#x27;re already in the AWS ecosystem. Less compelling if you&#x27;re not.</p>
+  <h3>When Simple OCR Is Enough</h3>
+  <p>For straightforward document types (single-column typed text, clean black-and-white scans, standard layouts) the basic pipeline holds up. Processing a stack of scanned files or archiving a library of typed forms is well within the capability of any of these tools.</p>
+  <p>Accessibility is an immediate win here. Scanned images that go through an OCR pass become compatible with screen readers, which is the foundation of making documents usable for visually impaired readers. That outcome doesn&#x27;t require high-complexity OCR. It just requires that OCR was run and that the text layer is coherent.</p>
+  <h3>Where the Wheels Come Off</h3>
+  <p>The failure modes are predictable:</p>
+  <p>Multi-column layouts get collapsed into a single disordered text stream, left-to-right, top-to-bottom, regardless of actual reading order Tables flatten into unstructured text blobs with no column or row separation preserved Charts and embedded images are skipped entirely, with no fallback or placeholder Handwriting, stamps, and mixed-language sections cause recognition failures or gibberish output</p>
+  <p>Every new document type can require retraining or manual prompt-tuning to maintain accuracy. That maintenance cost adds up fast at scale.</p>
+<div class="compare-grid">
+  <div class="compare-card old"><strong>❌</strong> , the most common entry point for individuals and small teams. Applying OCR in Acrobat converts a scanned PDF to a searchable PDF in a few clicks. For most people, it&#x27;s the first OCR tool they actually use, and for simple documents it&#x27;s usually enough.</div>
+  <div class="compare-card new"><strong>✅</strong> , the dominant open-source OCR engine, originally developed at HP and now maintained by Google. Highly capable on clean typed text with support for over 100 languages. Gets unhappy when layout gets complex.</div>
+  <div class="compare-card old"><strong>❌</strong> , a commercial tool with stronger layout handling than Tesseract, long used in enterprise document workflows. Enterprise pricing to match.</div>
+  <div class="compare-card new"><strong>✅</strong> , a cloud-based OCR tool with basic table extraction built in. Works well if you&#x27;re already in the AWS ecosystem. Less compelling if you&#x27;re not.</div>
+</div>
+</section>
+<section class="section" id="s5">
+  <h2>🎯 Why Layout Complexity Breaks Character Recognition</h2>
+  <p class="lead">Traditional OCR technology treats a page as a flat grid of characters. The model&#x27;s job is to identify what each character is, not what it means structurally or where it sits in the document&#x27;s actual h</p>
+  <p>Layout parsing is a separate problem from character recognition, and most OCR tools either merge the two or skip layout parsing entirely. For a single-column typed memo, the distinction is irrelevant. For a real-world PDF document from legal, financial, or medical domains, the distinction is everything.</p>
+  <p>Consider a financial report: multi-column body text, a data table mid-page, a chart, footnotes in smaller type, running headers at the top. Traditional OCR reads it as a flat sequence, left-to-right and top-to-bottom, and the structural information disappears. The output is technically text, but it&#x27;s not usable without extensive manual cleanup.</p>
+  <p>The core failure is that converting image files to text handles only half the job. Reconstructing meaning from layout is the other half, and standard tools don&#x27;t address it.</p>
+  <p>When individual characters are recognized correctly but reading order is wrong, the output creates real downstream problems. An invoice with rows and columns turned into a scrambled sequence of numbers and labels produces bad data, not just inconvenient data, and it flows directly into whatever system consumed it.</p>
+  <p>The ability to open a PDF and see visible text is trivial. The ability to recognize text structure and preserve it through extraction is the actual difficulty, and where most standard tools stop.</p>
+</section>
+<section class="section" id="s6">
+  <h2>📋 Where Traditional OCR Falls Short and What Agentic PDF Parsing Changes</h2>
+  <p class="lead">Traditional OCR is a single-model, one-size-fits-all pipeline. The same process handles a clean memo and a 100-page financial report. You can probably guess which one comes out better.</p>
+  <p>LlamaParse takes a different approach. Instead of running one model over the entire page, an LLM routes each page element to the best available model for that specific element: an OCR engine for clean text regions, a vision model for tables, a VLM for charts and embedded images. Layout-aware computer vision segments the page before recognition runs, so columns, headers, figures, and body text each get the appropriate treatment rather than being flattened into the same processing pass.</p>
+  <p>Multi-modal understanding is built into the pipeline: text, images, charts, and tables processed together rather than selectively ignored. No custom training is required. The system adapts to new document types without retraining every time a new format appears.</p>
+  <p>Multiple validation loops catch known OCR failure modes before output reaches downstream systems. Results come back in Markdown, JSON, or HTML with metadata that supports Human-in-the-Loop validation, including citations and confidence scores so your team can verify specific extractions without re-reading the source.</p>
+  <p>LlamaParse replaces the traditional OCR pipeline for complex documents rather than acting as a post-processing layer on top of Tesseract. The accuracy improvements are most pronounced on exactly the document types where standard tools break down.</p>
+</section>
+<section class="section" id="s7">
+  <h2>🔧 What High-Accuracy Character Recognition Delivers</h2>
+  <p class="lead">When OCR works correctly, with both characters and document structure preserved, the downstream benefits are concrete.</p>
+  <p>Accessibility: Accurate text layers are the foundation of screen reader compatibility. An OCR pass that scrambles reading order defeats the point. One that preserves structure makes documents genuinely usable for visually impaired readers who depend on those tools to navigate content.</p>
+  <p>Search and retrieval: A properly processed document becomes a searchable PDF that indexing systems can actually use. For legal, compliance, and research teams, the difference between &quot;we searched the archive&quot; and &quot;we searched and found the relevant clause&quot; often comes down to whether OCR ran correctly in the first place.</p>
+  <p>Enterprise automation: Invoice processing, contract review, and medical record extraction all require character recognition that preserves structure, not just isolated characters floating in the right approximate location. The accuracy bar for enterprise automation isn&#x27;t &quot;readable by a human&quot; but &quot;parseable by a machine without introducing errors.&quot;</p>
+  <p>AI-ready data: Downstream RAG pipelines, classification systems, and document agents are only as reliable as their input. Selectable, structured text from the parsing stage is a prerequisite for everything that depends on it. Garbage in, garbage out, and the garbage often starts at OCR.</p>
+</section>
+<section class="section" id="s8">
+  <h2>🚀 Choosing the Right PDF Character Recognition Approach</h2>
+  <p class="lead">For simple scans (single-column typed text, clean black-and-white images, standard document layouts), Tesseract, Acrobat, or any standard OCR tool works fine. No reason to add complexity where the bas</p>
+  <p>For complex documents (multi-column layouts, tables, charts, mixed content, or enterprise-scale processing), the standard OCR pipeline breaks down in the predictable ways described above. Document complexity is the real decision variable.</p>
+  <p>LlamaParse handles the complex tier without custom training, using agentic orchestration to route each page element to the right model automatically. It&#x27;s free to try with 10,000 credits on signup, which is enough to run real documents and see how it handles your actual file types before committing to anything.</p>
+  <p>If your documents are genuinely simple, use the simplest tool. No reason to add complexity where the basic pipeline holds. If you&#x27;re building something that needs to handle real-world documents reliably (the kind with tables, charts, multi-column layouts, or variable formatting), the OCR approach you choose determines whether your output is usable or whether you&#x27;re quietly shipping bad data downstream. Those are different problems, and one of them surfaces in production at the worst possible time. Start with LlamaParse and run it against the documents that are breaking your current setup. That&#x27;s the only test that actually tells you something.</p>
+</section>
+
+    
+  </div>
+
+  <footer class="footer">
+    <div class="footer-links">
+      <a href="./">LlamaIndex Blog Hub</a>
+      <a href="https://www.llamaindex.ai/blog/pdf-character-recognition" target="_blank" rel="noopener">原文链接 Original</a>
+      <a href="../">Engineering Blogs Hub</a>
+    </div>
+    <p>Generated from LlamaIndex blog content for learning purposes.</p>
+  </footer>
+</body>
+</html>

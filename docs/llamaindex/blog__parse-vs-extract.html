@@ -1,0 +1,333 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Parse vs Extract: Understanding Two Fundamental Approaches to Document Processing</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafbfc;
+      --surface: #fff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --amber: #d97706;
+      --amber-light: #fbbf24;
+      --amber-dark: #92400e;
+      --purple: #6366f1;
+      --teal: #14b8a6;
+      --green: #10b981;
+      --red: #ef4444;
+      --blue: #3b82f6;
+      --pink: #ec4899;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans SC', 'Inter', sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:var(--sans); background:var(--bg); color:var(--text); line-height:1.7; }
+
+    .nav { position:sticky; top:0; background:rgba(15,23,42,.92); backdrop-filter:blur(12px); z-index:100; border-bottom:1px solid rgba(255,255,255,.08); }
+    .nav-inner { max-width:1100px; margin:0 auto; padding:12px 24px; display:flex; justify-content:space-between; align-items:center; }
+    .nav-brand { color:#fbbf24; text-decoration:none; font-weight:700; display:flex; align-items:center; gap:8px; }
+    .nav-logo { font-size:20px; }
+    .nav a:last-child { font-size:13px; color:rgba(255,255,255,.6); text-decoration:none; }
+    .nav a:last-child:hover { color:#fbbf24; }
+
+    .hero { background:linear-gradient(135deg,#0f172a 0%,#78350f 50%,#d97706 100%); color:#fff; padding:60px 24px 48px; }
+    .hero-inner { max-width:1100px; margin:0 auto; }
+    .hero-tag { display:inline-block; background:rgba(251,191,36,.15); color:#fbbf24; padding:4px 14px; border-radius:20px; font-size:13px; font-weight:500; margin-bottom:16px; letter-spacing:.5px; }
+    .hero h1 { font-size:clamp(24px,4vw,42px); font-weight:800; line-height:1.2; margin-bottom:12px; }
+    .hero p { font-size:17px; color:rgba(255,255,255,.8); max-width:700px; margin-bottom:28px; line-height:1.6; }
+    .hero-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; max-width:600px; }
+    .stat { text-align:center; }
+    .stat-num { display:block; font-size:28px; font-weight:800; color:#fbbf24; font-family:var(--mono); }
+    .stat-label { font-size:12px; color:rgba(255,255,255,.6); text-transform:uppercase; letter-spacing:.5px; }
+
+    .page { max-width:1100px; margin:0 auto; padding:32px 24px 60px; }
+
+    .toc { margin-bottom:40px; }
+    .toc-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:10px; }
+    .toc-item { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); text-decoration:none; color:var(--text); font-size:14px; font-weight:500; transition:all .2s; }
+    .toc-item:hover { border-color:var(--amber); transform:translateY(-1px); box-shadow:0 4px 12px rgba(217,119,6,.1); }
+    .toc-num { font-size:16px; }
+
+    .section { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:32px; margin-bottom:24px; }
+    .section h2 { font-size:22px; font-weight:700; margin-bottom:12px; color:var(--text); }
+    .section h3 { font-size:17px; font-weight:600; margin:20px 0 8px; color:var(--amber-dark); }
+    .lead { color:var(--text-secondary); font-size:15px; margin-bottom:16px; line-height:1.7; }
+    .section p { margin-bottom:12px; font-size:15px; line-height:1.7; }
+
+    .chart { margin:20px 0; }
+    .chart-row { display:flex; align-items:center; margin-bottom:8px; }
+    .chart-label { width:160px; font-size:13px; font-weight:500; text-align:right; padding-right:12px; color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:28px; overflow:hidden; }
+    .chart-bar { height:100%; border-radius:8px; display:flex; align-items:center; padding-left:10px; font-size:12px; font-weight:600; color:#fff; transition:width .6s ease; min-width:40px; }
+    .chart-bar.amber { background:linear-gradient(90deg,#d97706,#f59e0b); }
+    .chart-bar.purple { background:linear-gradient(90deg,#6366f1,#818cf8); }
+    .chart-bar.teal { background:linear-gradient(90deg,#0d9488,#14b8a6); }
+    .chart-bar.green { background:linear-gradient(90deg,#059669,#10b981); }
+    .chart-bar.blue { background:linear-gradient(90deg,#2563eb,#3b82f6); }
+    .chart-bar.red { background:linear-gradient(90deg,#dc2626,#ef4444); }
+
+    .timeline { position:relative; padding-left:28px; margin:20px 0; }
+    .timeline::before { content:''; position:absolute; left:8px; top:0; bottom:0; width:3px; background:linear-gradient(180deg,#d97706,#6366f1,#14b8a6); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:20px; padding-left:16px; }
+    .tl-dot { position:absolute; left:-24px; top:4px; width:14px; height:14px; border-radius:50%; border:3px solid var(--amber); background:#fff; }
+    .tl-item:nth-child(2) .tl-dot { border-color:var(--purple); }
+    .tl-item:nth-child(3) .tl-dot { border-color:var(--teal); }
+    .tl-item:nth-child(4) .tl-dot { border-color:var(--green); }
+    .tl-item:nth-child(5) .tl-dot { border-color:var(--blue); }
+    .tl-phase { font-weight:600; font-size:15px; margin-bottom:4px; }
+    .tl-desc { font-size:13px; color:var(--text-secondary); line-height:1.5; }
+
+    .compare-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin:20px 0; }
+    .compare-card { padding:16px; border-radius:var(--radius); font-size:14px; line-height:1.6; }
+    .compare-card.old { background:#fef2f2; border:1px solid #fecaca; }
+    .compare-card.new { background:#f0fdf4; border:1px solid #bbf7d0; }
+
+    .flow { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:20px 0; }
+    .flow-step { padding:10px 18px; background:#f8fafc; border:2px solid var(--border); border-radius:var(--radius); font-size:13px; font-weight:600; text-align:center; }
+    .flow-step.purple { background:#eef2ff; border-color:var(--purple); color:var(--purple); }
+    .flow-arrow { color:var(--amber); font-size:20px; font-weight:700; }
+
+    .fail-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:20px 0; }
+    .fail-grid .card { padding:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); font-size:13px; line-height:1.6; }
+
+    .block-q { margin:20px 0; padding:20px 24px; background:linear-gradient(135deg,#fffbeb,#fef3c7); border-left:4px solid var(--amber); border-radius:0 var(--radius) var(--radius) 0; font-style:italic; color:#92400e; font-size:14px; line-height:1.7; }
+
+    .tbl-wrap { overflow-x:auto; margin:20px 0; }
+    table { width:100%; border-collapse:collapse; font-size:14px; }
+    th { background:#f8fafc; padding:10px 14px; text-align:left; font-weight:600; border-bottom:2px solid var(--border); white-space:nowrap; }
+    td { padding:10px 14px; border-bottom:1px solid var(--border); }
+    tr:hover td { background:#fffbeb; }
+
+    .badge { display:inline-block; padding:3px 10px; border-radius:12px; font-size:12px; font-weight:500; }
+    .badge-amber { background:#fffbeb; color:#92400e; }
+    .badge-purple { background:#eef2ff; color:#4338ca; }
+    .badge-green { background:#f0fdf4; color:#166534; }
+
+    .footer { background:#0f172a; color:rgba(255,255,255,.6); padding:32px 24px; text-align:center; font-size:13px; }
+    .footer a { color:#fbbf24; text-decoration:none; }
+    .footer a:hover { text-decoration:underline; }
+    .footer-links { display:flex; justify-content:center; gap:24px; margin-bottom:12px; flex-wrap:wrap; }
+
+    @media(max-width:768px) {
+      .hero-stats { grid-template-columns:repeat(2,1fr); }
+      .compare-grid, .fail-grid { grid-template-columns:1fr; }
+      .chart-label { width:100px; font-size:12px; }
+      .flow { flex-direction:column; gap:6px; }
+      .flow-arrow { transform:rotate(90deg); }
+      .toc-grid { grid-template-columns:1fr; }
+      .section { padding:20px 16px; }
+      .hero { padding:40px 16px 32px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="../" class="nav-brand">
+        <span class="nav-logo">🦙</span>
+        <span>LlamaIndex Blog Hub</span>
+      </a>
+      <a href="./">← Back to Hub</a>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="hero-tag">文档处理</div>
+      <h1>Parse vs Extract: Understanding Two Fundamental Approaches to Document Processing</h1>
+      <p>If you&#x27;re building AI applications that work with documents, you&#x27;ll inevitably face a critical decision: should you parse or extract? While these terms are often used interchangeably, they represent fundamentally different approaches to document processing, as well as different outcomes. Here&#x27;s the </p>
+      <div class="hero-stats">
+        <div class="stat"><span class="stat-num">18</span><span class="stat-label">核心章节</span></div><div class="stat"><span class="stat-num">8</span><span class="stat-label">关键概念</span></div><div class="stat"><span class="stat-num">5min</span><span class="stat-label">阅读时长</span></div><div class="stat"><span class="stat-num">1459</span><span class="stat-label">总字数</span></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc"><div class="toc-grid">
+  <a href="#s1" class="toc-item"><span class="toc-num">💡</span>The Core Difference</a>
+  <a href="#s4" class="toc-item"><span class="toc-num">🔄</span>When to Parse</a>
+  <a href="#s8" class="toc-item"><span class="toc-num">🚀</span>When to Extract</a>
+  <a href="#s12" class="toc-item"><span class="toc-num">💻</span>Understanding the Relationship: Parsing Enables Extraction</a>
+  <a href="#s13" class="toc-item"><span class="toc-num">🛡️</span>Making the Choice</a>
+  <a href="#s14" class="toc-item"><span class="toc-num">📝</span>Implementation Examples with LlamaParse</a>
+  <a href="#s17" class="toc-item"><span class="toc-num">⚡</span>The Bottom Line</a>
+</div></nav>
+
+    <section class="section" id="s1">
+  <h2>💡 The Core Difference</h2>
+  <h3>Parsing: Document Transformation</h3>
+  <p>Parsing is the process of converting complex, unstructured documents into clean, structured representations that preserve the document&#x27;s content and context while making it machine-readable.</p>
+  <p>What parsing does:</p>
+  <p>Converts various formats (PDFs, Word docs, scanned images) into text or markdown Preserves document structure: headings, paragraphs, tables, lists Maintains relationships between elements (which table belongs to which section) Handles visual elements: images, charts, diagrams, equations Creates a comprehensive representation of the entire document Optimizes output for downstream processing by AI systems</p>
+  <h3>Extraction: Targeted Data Capture</h3>
+  <p>Extraction is the process of identifying and pulling specific pieces of information from documents based on predefined schemas or patterns, outputting only the data points you&#x27;ve specified.</p>
+  <p>What extraction does:</p>
+  <p>Identifies specific fields you define (dates, amounts, names, addresses) Returns only the requested information, not the full document Validates extracted data against expected types and formats Maps unstructured text to structured data models Outputs standardized formats (typically JSON) for downstream systems Discards everything except the target information</p>
+<div class="timeline">
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Ready to get started with LlamaParse?</div>
+    <div class="tl-desc">Explore our free and paid plans today.
+
+
+ -   Learn more</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">The Core Difference</div>
+    <div class="tl-desc"></div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Parsing: Document Transformation</div>
+    <div class="tl-desc">Parsing is the process of converting complex, unstructured documents into clean, structured representations that preserv</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Extraction: Targeted Data Capture</div>
+    <div class="tl-desc">Extraction is the process of identifying and pulling specific pieces of information from documents based on predefined s</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">When to Parse</div>
+    <div class="tl-desc">Choose parsing when you need to:</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Build Search and Q&amp;A Systems</div>
+    <div class="tl-desc">You&#x27;re creating systems where users ask natural language questions about document content. Parsing ensures the full</div>
+  </div>
+</div>
+</section>
+<section class="section" id="s4">
+  <h2>🔄 When to Parse</h2>
+  <p class="lead">Choose parsing when you need to:</p>
+  <h3>Build Search and Q&amp;A Systems</h3>
+  <p>You&#x27;re creating systems where users ask natural language questions about document content. Parsing ensures the full context is available for retrieval.</p>
+  <p>Example scenario: A legal research system where lawyers search across thousands of case documents using natural language queries. The system needs access to complete documents (not just extracted fields) to find relevant passages and provide accurate answers.</p>
+  <h3>Enable RAG (Retrieval Augmented Generation)</h3>
+  <p>Your LLM needs document content as context to generate informed responses. Parsing converts documents into formats that can be embedded, indexed, and retrieved efficiently.</p>
+  <p>Example scenario: A customer support chatbot that answers questions by referencing your product documentation, support tickets, and knowledge base articles. The LLM needs full context from these documents, not just extracted metadata.</p>
+  <h3>Preserve Document Context (and layout)</h3>
+  <p>The relationships between different parts of the document matter. A table means different things depending on the section it appears in; a chart needs its caption and surrounding text to be interpretable.</p>
+  <p>Example scenario: Analyzing scientific papers where tables, figures, and surrounding text must be understood together. Parsing maintains these relationships so an AI can properly interpret &quot;as shown in Figure 3&quot; or &quot;the results in Table 2 indicate.&quot;</p>
+</section>
+<section class="section" id="s8">
+  <h2>🚀 When to Extract</h2>
+  <p class="lead">Choose extraction when you need to:</p>
+  <h3>Populate Databases and Systems</h3>
+  <p>You&#x27;re feeding structured data into databases, CRMs, ERPs, or other systems that require specific fields in specific formats.</p>
+  <p>Example scenario: Processing thousands of invoices to populate your accounts payable system. You need invoice number, vendor name, date, line items, and total, nothing more. The full invoice content isn&#x27;t useful; you need structured records.</p>
+  <p>``` { &quot;invoice_number&quot;: &quot;INV-2024-00123&quot;, &quot;vendor_name&quot;: &quot;Acme Corp&quot;, &quot;due_date&quot;: &quot;2024-03-15&quot;, &quot;total_amount&quot;: 3456.78 } ```</p>
+  <h3>Automate Business Workflows</h3>
+  <p>You&#x27;re triggering actions based on document content: routing forms, flagging exceptions, updating records, or generating reports.</p>
+  <p>Example scenario: HR application processing where resumes trigger different workflows based on extracted fields. Years of experience &gt;5 goes to senior roles, specific skills match to relevant teams, location determines office assignment.</p>
+  <h3>Process Forms and Standardized Documents</h3>
+  <p>You&#x27;re handling documents that follow similar patterns: invoices, receipts, applications, contracts, medical forms etc, where the same fields appear across many documents.</p>
+  <p>Example scenario: Insurance claims processing where each claim form has standard fields (policy number, date of incident, claim amount, description). Extraction pulls these into your claims management system.</p>
+</section>
+<section class="section" id="s12">
+  <h2>💻 Understanding the Relationship: Parsing Enables Extraction</h2>
+  <p class="lead">Here&#x27;s a critical insight that many developers miss: extraction doesn&#x27;t replace parsing, it builds on top of it. Before you can extract specific fields from a document, something needs to parse that d</p>
+  <p>Extraction is actually the more complex operation. It requires parsing to happen first (to convert the raw document into readable text), then adds an additional layer of intelligence to identify, validate, and structure the specific fields you need. Think of parsing as the foundation and extraction as the specialized structure built on top.</p>
+  <p>This means when you&#x27;re &quot;just extracting,&quot; you&#x27;re still parsing. You&#x27;re just not keeping the full parsed output. The parsing step converts your PDF or scanned image into machine-readable content, then the extraction logic identifies your invoice number, date, and total amount within that parsed content.</p>
+</section>
+<section class="section" id="s13">
+  <h2>🛡️ Making the Choice</h2>
+  <p class="lead">The decision comes down to what you&#x27;re optimizing for. Parse when you need flexibility and comprehensive understanding. Extract when you need efficiency and integration, you know exactly what fields y</p>
+  <p>Parse-only makes sense for exploratory applications where users ask open-ended questions. Extract-only (which still parses internally) works for high-volume form processing with consistent schemas. Most sophisticated systems do both: parse for intelligence, extract for integration.</p>
+</section>
+<section class="section" id="s14">
+  <h2>📝 Implementation Examples with LlamaParse</h2>
+  <p class="lead">LlamaParse provides purpose-built services for both approaches, demonstrating these concepts in practice:</p>
+  <h3>LlamaParse: Built for Parsing</h3>
+  <p>LlamaParse is a AI-native parsing service that converts complex documents into formats easily digestible by LLMs:</p>
+  <p>``` from llama_cloud_services import LlamaParse from llama_index.core import VectorStoreIndex</p>
+  <p># Parse documents for comprehensive understanding parser = LlamaParse(parse_mode=&quot;parse_page_with_agent&quot;) documents = parser.parse([&quot;report_q1.pdf&quot;, &quot;report_q2.pdf&quot;])</p>
+  <h3>LlamaExtract: Built for Extraction</h3>
+  <p>LlamaExtract is a schema-based extraction service that pulls specific fields into validated JSON. Importantly, LlamaExtract runs LlamaParse in the background first to convert your document into machine-readable content, then applies extraction logic on top of that parsed output:</p>
+  <p>``` from llama_cloud_services import LlamaExtract from pydantic import BaseModel, Field</p>
+  <p># Define exactly what you need class InvoiceSchema(BaseModel): invoice_number: str = Field(description=&quot;The unique invoice number&quot;), vendor_name: str = Field(description=&quot;The vendor name&quot;), total_amount: int = Field(description=&quot;Total amount of the invoice&quot;), due_date: str = Field(description=&quot;Due date to be paid&quot;)</p>
+</section>
+<section class="section" id="s17">
+  <h2>⚡ The Bottom Line</h2>
+  <p class="lead">Parse when you need understanding. If users can ask unpredictable questions, when context matters, when you&#x27;re enabling search and discovery: parse to preserve the full document intelligence.</p>
+  <p>Extract when you need data. When you know exactly what fields you need, when you&#x27;re feeding databases or workflows, when consistency and validation matter: extract to get structured, actionable information.</p>
+  <p>Use both when you need intelligence and integration. Most sophisticated document processing systems combine parsing for flexibility and extraction for efficiency.</p>
+  <p>The choice isn&#x27;t about which approach is &quot;better.&quot; It&#x27;s about matching your approach to your specific use case. Both are powerful tools in the document processing toolkit. Understanding when to use each is the key to building effective systems.</p>
+  <p>Ready to implement? Whether you&#x27;re building RAG applications, automating workflows, or doing both, understanding the parse vs. extract distinction will guide you toward the right architecture for your needs.</p>
+</section>
+
+    <section class="section" id="key-concepts">
+  <h2>🔑 核心概念 Key Concepts</h2>
+  <p class="lead">本文涉及的关键技术概念与术语。</p>
+<div class="flow">
+  <div class="flow-step">What parsing does:</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Primary goal:</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">What extraction does:</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Example scenario:</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step purple">Parse when you need understanding.</div>
+</div>
+</section>
+<section class="section" id="structure">
+  <h2>📊 文章结构 Article Structure</h2>
+  <p class="lead">文章各章节的组织脉络。</p>
+<div class="timeline">
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Ready to get started with LlamaParse?</div>
+    <div class="tl-desc">Explore our free and paid plans today.
+
+
+ -   Learn more</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">The Core Difference</div>
+    <div class="tl-desc"></div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Parsing: Document Transformation</div>
+    <div class="tl-desc">Parsing is the process of converting complex, unstructured documents into clean, structured representations that preserv</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Extraction: Targeted Data Capture</div>
+    <div class="tl-desc">Extraction is the process of identifying and pulling specific pieces of information from documents based on predefined s</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">When to Parse</div>
+    <div class="tl-desc">Choose parsing when you need to:</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Build Search and Q&amp;A Systems</div>
+    <div class="tl-desc">You&#x27;re creating systems where users ask natural language questions about document content. Parsing ensures the full</div>
+  </div>
+</div>
+</section>
+
+  </div>
+
+  <footer class="footer">
+    <div class="footer-links">
+      <a href="./">LlamaIndex Blog Hub</a>
+      <a href="https://www.llamaindex.ai/blog/parse-vs-extract" target="_blank" rel="noopener">原文链接 Original</a>
+      <a href="../">Engineering Blogs Hub</a>
+    </div>
+    <p>Generated from LlamaIndex blog content for learning purposes.</p>
+  </footer>
+</body>
+</html>

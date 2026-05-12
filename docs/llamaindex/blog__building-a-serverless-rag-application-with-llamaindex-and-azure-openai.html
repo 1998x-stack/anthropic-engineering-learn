@@ -1,0 +1,437 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>深度解析：Serverless RAG App Guide With Azure OpenAI | LlamaIndex</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #fafbfc;
+  --surface: #fff;
+  --text: #0f172a;
+  --text-secondary: #64748b;
+  --border: #e2e8f0;
+  --radius: 14px;
+  --amber: #d97706;
+  --amber-light: #fbbf24;
+  --amber-dark: #92400e;
+  --purple: #6366f1;
+  --teal: #14b8a6;
+  --green: #10b981;
+  --red: #ef4444;
+  --blue: #3b82f6;
+  --mono: 'JetBrains Mono', monospace;
+  --sans: 'Noto Sans SC', 'Inter', sans-serif;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:var(--sans); background:var(--bg); color:var(--text); line-height:1.7; }
+a { color:var(--amber); text-decoration:none; }
+a:hover { text-decoration:underline; }
+
+/* Nav */
+.nav {
+  position:sticky; top:0; z-index:100;
+  background:rgba(15,23,42,0.95); backdrop-filter:blur(12px);
+  padding:0 2rem; height:56px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.nav-brand { color:#fbbf24; font-weight:700; font-size:1.1rem; }
+.nav-back { color:#94a3b8; font-size:0.9rem; }
+.nav-back:hover { color:#fbbf24; }
+
+/* Hero */
+.hero {
+  background:linear-gradient(135deg,#0f172a 0%,#78350f 50%,#d97706 100%);
+  padding:4rem 2rem 3rem; color:#fff; text-align:center;
+}
+.hero-badge { display:inline-block; background:rgba(251,191,36,0.2); color:#fbbf24;
+  padding:4px 16px; border-radius:20px; font-size:0.85rem; margin-bottom:1rem; font-weight:500; }
+.hero h1 { font-size:clamp(1.5rem,4vw,2.4rem); font-weight:800; max-width:800px; margin:0 auto 1rem; line-height:1.3; }
+.hero-sub { color:rgba(255,255,255,0.8); font-size:1rem; max-width:600px; margin:0 auto 2rem; }
+.stats { display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; max-width:700px; margin:0 auto; }
+.stat-card {
+  background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12);
+  border-radius:12px; padding:1rem 0.5rem; text-align:center;
+}
+.stat-emoji { font-size:1.3rem; margin-bottom:4px; }
+.stat-val { font-size:1.4rem; font-weight:800; color:#fbbf24; }
+.stat-label { font-size:0.75rem; color:rgba(255,255,255,0.7); text-transform:uppercase; letter-spacing:0.5px; }
+.stat-desc { font-size:0.7rem; color:rgba(255,255,255,0.5); margin-top:2px; }
+
+/* Page */
+.page { max-width:900px; margin:0 auto; padding:2rem 1.5rem; }
+
+/* TOC */
+.toc { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:0.75rem; margin-bottom:3rem; }
+.toc-item {
+  display:flex; align-items:center; gap:10px;
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:10px; padding:10px 14px; font-size:0.9rem;
+  color:var(--text); transition:all 0.2s;
+}
+.toc-item:hover { border-color:var(--amber); background:#fffbeb; text-decoration:none; transform:translateY(-1px); }
+.toc-num {
+  background:linear-gradient(135deg,#d97706,#f59e0b);
+  color:#fff; font-weight:700; font-size:0.75rem;
+  width:28px; height:28px; border-radius:8px;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+
+/* Section */
+.section { margin-bottom:3rem; }
+.section h2 {
+  font-size:1.5rem; font-weight:700; margin-bottom:0.5rem;
+  padding-bottom:0.5rem; border-bottom:2px solid var(--amber);
+}
+.lead { color:var(--text-secondary); font-size:0.95rem; margin-bottom:1.2rem; }
+
+/* Cards */
+.card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius); padding:1.2rem; margin-bottom:0.8rem;
+}
+.card p { font-size:0.9rem; }
+.card-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:0.8rem; margin:1rem 0; }
+
+/* Code Block */
+.code-block {
+  background:#1e293b; border-radius:12px; overflow:hidden; margin:1rem 0;
+}
+.code-header { padding:8px 16px; background:#0f172a; display:flex; align-items:center; gap:8px; }
+.code-block pre {
+  padding:1rem 1.2rem; color:#e2e8f0; font-family:var(--mono);
+  font-size:0.82rem; line-height:1.6; overflow-x:auto; white-space:pre;
+}
+
+/* Compare */
+.compare-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin:1rem 0; }
+.compare-card {
+  background:var(--surface); border-radius:var(--radius); padding:1.2rem;
+  border:1px solid var(--border);
+}
+.compare-card.old { border-left:4px solid var(--red); }
+.compare-card.new { border-left:4px solid var(--green); }
+.compare-card h4 { font-size:0.95rem; margin-bottom:0.5rem; }
+
+/* Chart */
+.chart { margin:1rem 0; }
+.chart-row { display:flex; align-items:center; margin-bottom:8px; }
+.chart-label { width:160px; font-size:0.85rem; font-weight:500; flex-shrink:0; }
+.chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:32px; overflow:hidden; }
+.chart-bar {
+  height:100%; border-radius:8px; display:flex; align-items:center;
+  padding:0 12px; font-size:0.75rem; font-weight:600; color:#fff;
+  transition:width 0.6s ease;
+}
+.chart-bar.amber { background:linear-gradient(90deg,#d97706,#f59e0b); }
+.chart-bar.purple { background:linear-gradient(90deg,#6366f1,#818cf8); }
+.chart-bar.green { background:linear-gradient(90deg,#10b981,#34d399); }
+.chart-bar.blue { background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+.chart-bar.teal { background:linear-gradient(90deg,#14b8a6,#2dd4bf); }
+.chart-bar.red { background:linear-gradient(90deg,#ef4444,#f87171); }
+
+/* Timeline */
+.timeline { position:relative; padding-left:2rem; margin:1rem 0; }
+.timeline::before {
+  content:''; position:absolute; left:7px; top:0; bottom:0; width:3px;
+  background:linear-gradient(180deg,#d97706,#f59e0b,#fbbf24);
+  border-radius:2px;
+}
+.tl-item { position:relative; margin-bottom:1.5rem; padding-left:1rem; }
+.tl-dot {
+  position:absolute; left:-2rem; top:4px;
+  width:16px; height:16px; border-radius:50%;
+  background:#d97706; border:3px solid #fef3c7;
+}
+.tl-item:nth-child(2) .tl-dot { background:#3b82f6; border-color:#dbeafe; }
+.tl-item:nth-child(3) .tl-dot { background:#10b981; border-color:#d1fae5; }
+.tl-item:nth-child(4) .tl-dot { background:#6366f1; border-color:#e0e7ff; }
+.tl-item:nth-child(5) .tl-dot { background:#14b8a6; border-color:#ccfbf1; }
+.tl-phase { font-weight:600; font-size:0.95rem; }
+.tl-desc { color:var(--text-secondary); font-size:0.85rem; margin-top:2px; }
+
+/* Flow */
+.flow { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin:1rem 0; }
+.flow-step {
+  background:var(--surface); border:2px solid var(--border);
+  border-radius:12px; padding:10px 18px; font-weight:600; font-size:0.9rem;
+}
+.flow-step.amber { border-color:var(--amber); background:#fffbeb; }
+.flow-step.purple { border-color:var(--purple); background:#eef2ff; }
+.flow-arrow { color:var(--text-secondary); font-size:1.2rem; }
+
+/* Block Quote */
+.block-q {
+  border-left:4px solid var(--amber); background:#fffbeb;
+  padding:1.2rem 1.5rem; border-radius:0 12px 12px 0; margin:1rem 0;
+  font-style:italic; color:#78350f;
+}
+.block-q p { margin:0; font-size:0.92rem; }
+
+/* Badge */
+.badge {
+  display:inline-block; padding:3px 10px; border-radius:6px;
+  font-size:0.75rem; font-weight:600;
+}
+.badge-amber { background:#fef3c7; color:#92400e; }
+.badge-purple { background:#e0e7ff; color:#3730a3; }
+.badge-green { background:#d1fae5; color:#065f46; }
+.badge-red { background:#fee2e2; color:#991b1b; }
+.badge-blue { background:#dbeafe; color:#1e40af; }
+.badge-teal { background:#ccfbf1; color:#115e59; }
+
+/* Table */
+.tbl-wrap { overflow-x:auto; margin:1rem 0; }
+table { width:100%; border-collapse:collapse; font-size:0.85rem; }
+th { background:#f8fafc; padding:10px 12px; text-align:left; font-weight:600; border-bottom:2px solid var(--border); }
+td { padding:10px 12px; border-bottom:1px solid var(--border); }
+
+/* Footer */
+.footer {
+  background:#0f172a; color:#94a3b8; text-align:center;
+  padding:2rem; margin-top:3rem; font-size:0.85rem;
+}
+.footer a { color:#fbbf24; }
+.footer-links { display:flex; justify-content:center; gap:2rem; margin-top:0.8rem; flex-wrap:wrap; }
+
+/* Responsive */
+@media(max-width:768px) {
+  .stats { grid-template-columns:repeat(2,1fr); }
+  .toc { grid-template-columns:1fr; }
+  .compare-grid { grid-template-columns:1fr; }
+  .card-grid { grid-template-columns:1fr; }
+  .chart-label { width:120px; font-size:0.78rem; }
+  .flow { flex-direction:column; gap:8px; }
+  .flow-arrow { transform:rotate(90deg); }
+  .hero { padding:3rem 1rem 2rem; }
+  .hero h1 { font-size:1.4rem; }
+  .page { padding:1.5rem 1rem; }
+  .section h2 { font-size:1.2rem; }
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="../" class="nav-brand">LlamaIndex Blog</a>
+  <a href="../" class="nav-back">&larr; Back to Hub</a>
+</nav>
+
+<header class="hero">
+  <div class="hero-badge">RAG</div>
+  <h1>Serverless RAG App Guide With Azure OpenAI | LlamaIndex</h1>
+  <p class="hero-sub">作者：Unknown | 日期：Unknown</p>
+  <div class="stats">
+<div class="stat-card">
+  <div class="stat-emoji">📝</div>
+  <div class="stat-val">1900+</div>
+  <div class="stat-label">words</div>
+  <div class="stat-desc">文章总字数</div>
+</div>
+<div class="stat-card">
+  <div class="stat-emoji">📑</div>
+  <div class="stat-val">8</div>
+  <div class="stat-label">sections</div>
+  <div class="stat-desc">核心章节</div>
+</div>
+<div class="stat-card">
+  <div class="stat-emoji">💻</div>
+  <div class="stat-val">6</div>
+  <div class="stat-label">code blocks</div>
+  <div class="stat-desc">代码示例</div>
+</div>
+<div class="stat-card">
+  <div class="stat-emoji">🏷️</div>
+  <div class="stat-val">RAG</div>
+  <div class="stat-label">category</div>
+  <div class="stat-desc">文章分类</div>
+</div>
+
+  </div>
+</header>
+
+<div class="page">
+
+<div class="intro-section"><p>](https://www.linkedin.com/company/91154103/)
+ -  [</p>
+<p>](https://www.youtube.com/@LlamaIndex)</p>
+<p>A guide to get started creating RAG applications with LlamaIndex using Azure OpenAI and deployed on Microsoft Azure.</p>
+</div>
+
+<nav class="toc"><a href="#s0" class="toc-item"><span class="toc-num">01</span>What is RAG - Retrieval-Augmented Generation?</a>
+<a href="#s1" class="toc-item"><span class="toc-num">02</span>How does LlamaIndex implement RAG?</a>
+<a href="#s2" class="toc-item"><span class="toc-num">03</span>Practical RAG sample application</a>
+<a href="#s3" class="toc-item"><span class="toc-num">04</span>High level architecture</a>
+<a href="#s4" class="toc-item"><span class="toc-num">05</span>Example user workflows</a>
+<a href="#s5" class="toc-item"><span class="toc-num">06</span>Important packages used for the Python sample</a>
+<a href="#s6" class="toc-item"><span class="toc-num">07</span>Running the samples</a>
+<a href="#s7" class="toc-item"><span class="toc-num">08</span>What&amp;#39;s next?</a>
+</nav>
+
+
+<section class="section" id="s0">
+  <h2>🔍 What is RAG - Retrieval-Augmented Generation?</h2>
+  <p class="lead">Retrieval-Augmented Generation (RAG) is a framework that improves AI text generation by combining two key components:</p>
+  <div class="block-q"><p>Retrieval-Augmented Generation (RAG) is a framework that improves AI text generation by combining two key components: -  Retriever: This part searches a large collection of documents to find relevant information related to a given query.   -  Generator: This model uses the retrieved information to</p></div>
+  <p>-  Retriever: This part searches a large collection of documents to find relevant information related to a given query.
+  -  Generator: This model uses the retrieved information to generate a more accurate and contextually rich response.</p>
+<p>By combining these two components, RAG allows AI models to pull in external knowledge, resulting in higher quality and more relevant responses.</p>
+
+</section>
+
+<section class="section" id="s1">
+  <h2>⚡ How does LlamaIndex implement RAG?</h2>
+  <p class="lead">To implement a RAG system using LlamaIndex, you can follow these general steps, which include setting up the data ingestion, and the generation components:</p>
+  <div class="card-grid"><div class="card" style="border-left:4px solid var(--amber)"><p>Data Ingestion: Load your documents into LlamaIndex using a document loader such as SimpleDirectoryReader. This reader, for example, helps in importing data from various sources such as PDFs, APIs, or SQL databases.</p></div>
+<div class="card" style="border-left:4px solid var(--blue)"><p>Break down large documents into smaller, manageable chunks using the SentenceSplitter.</p></div>
+<div class="card" style="border-left:4px solid var(--green)"><p>Index Creation: Create a <a href="https://learn.microsoft.com/en-us/azure/search/vector-search-how-to-create-index?tabs=config-2023-11-01%2Crest-2023-11-01%2Cpush%2Cportal-check-index" target="_blank">vector index</a> of these document chunks using <a href="https://docs.llamaindex.ai/en/latest/module_guides/indexing/vector_store_index/" target="_blank">VectorStoreIndex</a>. This allows for efficient similarity searches based on embeddings.</p></div>
+<div class="card" style="border-left:4px solid var(--purple)"><p>Optionally, for complex datasets, you can use recursive retrieval techniques to manage hierarchically structured data and retrieve relevant sections based on user queries.</p></div>
+<div class="card" style="border-left:4px solid var(--teal)"><p>Query Engine Setup: Convert the vector index into a query engine using asQueryEngine with parameters such as similarityTopKto define how many top documents should be retrieved.</p></div>
+<div class="card" style="border-left:4px solid var(--red)"><p>For more advanced setups, use <a href="https://docs.llamaindex.ai/en/stable/use_cases/agents/" target="_blank">agents</a>. Create a multi-agent system where each agent is responsible for specific documents, and a top-level agent coordinates the overall retrieval process.</p></div>
+</div>
+  <p>-  Data Ingestion:
+ Load your documents into LlamaIndex using a document loader such as SimpleDirectoryReader. This reader, for example, helps in importing data from various sources such as PDFs, APIs, or SQL databases.
+  -  Break down large documents into smaller, manageable chunks using the SentenceSplitter.</p>
+<p>-  Index Creation:
+ Create a <a href="https://learn.microsoft.com/en-us/azure/search/vector-search-how-to-create-index?tabs=config-2023-11-01%2Crest-2023-11-01%2Cpush%2Cportal-check-index" target="_blank">vector index</a> of these document chunks using <a href="https://docs.llamaindex.ai/en/latest/module_guides/indexing/vector_store_index/" target="_blank">VectorStoreIndex</a>. This allows for efficient similarity searches based on embeddings.
+  -  Optionally, for complex datasets, you can use recursive retrieval techniques to manage hierarchically structured data and retrieve relevant sections based on user queries.</p>
+<p>-  Query Engine Setup:
+ Convert the vector index into a query engine using asQueryEngine with parameters such as similarityTopKto define how many top documents should be retrieved.
+  -  For more advanced setups, use <a href="https://docs.llamaindex.ai/en/stable/use_cases/agents/" target="_blank">agents</a>. Create a multi-agent system where each agent is responsible for specific documents, and a top-level agent coordinates the overall retrieval process.</p>
+<p>-  Retrieval and Generation:
+ Implement the RAG pipeline by defining an objective function that takes user queries and retrieves relevant document chunks. This function can also evaluate the retrieval chunks to ensure they match the user&amp;#39;s query.
+  -  Use the RetrieverQueryEngineto perform the actual retrieval and query processing. This can include additional post-processing steps like re-ranking the retrieved documents using tools such as CohereRerank.</p>
+<p>For a practical example, we have provided you with a sample application to demonstrate a complete RAG implementation using Azure OpenAI as the AI provider.</p>
+
+</section>
+
+<section class="section" id="s2">
+  <h2>🏗️ Practical RAG sample application</h2>
+  <p class="lead">For the remainer of this article, we&amp;#39;ll focus on the use case of building a RAG type application on Azure using LlamaIndex and Azure OpenAI. You will use one of the provided starter templates: Typ</p>
+  <div class="card-grid"><div class="card" style="border-left:4px solid var(--amber)"><p><a href="https://learn.microsoft.com/en-us/azure/developer/azure-developer-cli/" target="_blank">Azure Developer CLI, azd</a>: this is a CLI, a command line tool that can easily deploy your entire app, backend, frontend, databases etc. You can use azd with <a href="https://learn.microsoft.com/azure/developer/azure-developer-cli/azd-templates" target="_blank">extensible blueprint templates</a> that includes everything you need to get an application up and running on Azure.</p></div>
+<div class="card" style="border-left:4px solid var(--blue)"><p>Azure account: you will need an Azure account to deploy things. get an <a href="https://azure.microsoft.com/free/cognitive-search/" target="_blank">Azure account for free</a> and you&amp;#39;ll get some free Azure credits to get started</p></div>
+<div class="card" style="border-left:4px solid var(--green)"><p>Samples: we&amp;#39;ve created two samples that will deploy a RAG type application on Azure. The azd starter templates are designed to help you create a serverless RAG application with LlamaIndex and Azure OpenAI in a few simple steps. We are going to highlight two sample applications that were created based on the great <a href="https://www.llamaindex.ai/blog/create-llama-a-command-line-tool-to-generate-llamaindex-apps-8f7683021191" target="_blank">create-llama tool</a>:</p></div>
+</div>
+  <p>Requirements to run the samples</p>
+<p>First let&amp;#39;s explain what you&amp;#39;ll need:</p>
+<p>-  <a href="https://learn.microsoft.com/en-us/azure/developer/azure-developer-cli/" target="_blank">Azure Developer CLI, azd</a>: this is a CLI, a command line tool that can easily deploy your entire app, backend, frontend, databases etc. You can use azd with <a href="https://learn.microsoft.com/azure/developer/azure-developer-cli/azd-templates" target="_blank">extensible blueprint templates</a> that includes everything you need to get an application up and running on Azure.
+  -  Azure account: you will need an Azure account to deploy things. get an <a href="https://azure.microsoft.com/free/cognitive-search/" target="_blank">Azure account for free</a> and you&amp;#39;ll get some free Azure credits to get started
+  -  Samples: we&amp;#39;ve created two samples that will deploy a RAG type application on Azure. The azd starter templates are designed to help you create a serverless RAG application with LlamaIndex and Azure OpenAI in a few simple steps. We are going to highlight two sample applications that were created based on the great <a href="https://www.llamaindex.ai/blog/create-llama-a-command-line-tool-to-generate-llamaindex-apps-8f7683021191" target="_blank">create-llama tool</a>:</p>
+<p>1. For TypeScript: <a href="https://github.com/Azure-Samples/llama-index-javascript" target="_blank">https://github.com/Azure-Samples/llama-index-javascript</a></p>
+<p>2. For Python: <a href="https://github.com/Azure-Samples/llama-index-python" target="_blank">https://github.com/Azure-Samples/llama-index-python</a></p>
+
+</section>
+
+<section class="section" id="s3">
+  <h2>📊 High level architecture</h2>
+  <p class="lead">Both sample applications are built based on the same architecture:</p>
+  <div class="card-grid"><div class="card" style="border-left:4px solid var(--amber)"><p>Azure OpenAIrepresents the AI provider that we send the user&amp;#39;s queries to.</p></div>
+<div class="card" style="border-left:4px solid var(--blue)"><p>LlamaIndexis the framework that helps us ingest, transform and vectorize our content (PDF file) and create a search index from our data.</p></div>
+<div class="card" style="border-left:4px solid var(--green)"><p>Azure Container Apps is the container environment where the application is hosted.</p></div>
+<div class="card" style="border-left:4px solid var(--purple)"><p>Azure Managed Identity helps us ensure best in class security and eliminates the requirements for you as a developer to deal with credentials and API keys.</p></div>
+</div>
+  <p></p>
+<p>The architecture of the application relies on the following services and components:</p>
+<p>-  Azure OpenAIrepresents the AI provider that we send the user&amp;#39;s queries to.
+  -  LlamaIndexis the framework that helps us ingest, transform and vectorize our content (PDF file) and create a search index from our data.
+  -  Azure Container Apps is the container environment where the application is hosted.
+  -  Azure Managed Identity helps us ensure best in class security and eliminates the requirements for you as a developer to deal with credentials and API keys.</p>
+<p>To learn more about what Cloud resources get deployed on Azure, check out the <a href="https://github.com/Azure-Samples/llama-index-javascript/blob/main/infra/main.bicep" target="_blank">infra folder</a> available in all our samples.</p>
+
+</section>
+
+<section class="section" id="s4">
+  <h2>🎯 Example user workflows</h2>
+  <p class="lead">The sample application contains logic code for the following two workflows:</p>
+  <div class="card-grid"><div class="card" style="border-left:4px solid var(--amber)"><p>The <a href="https://github.com/run-llama/LlamaIndexTS/tree/main/packages/llamaindex" target="_blank">llamaindex core library</a> providing core functionality on connecting to LLMs, facilitates vector index creation and more.</p></div>
+<div class="card" style="border-left:4px solid var(--blue)"><p><a href="https://docs.llamaindex.ai/en/stable/api_reference/readers/smart_pdf_loader/" target="_blank">@llamaindex/pdf-viewer</a> is used to retrieve structured information from a PDF like tables, lists, paragraphs more and is part of the chunking process, where the data is divided into smaller strips, e.g.chunks, and each chunk is turned into vectorized form so it can be used later for semantic comparison.</p></div>
+<div class="card" style="border-left:4px solid var(--green)"><p>As discussed earlier, <a href="https://github.com/Azure/azure-sdk-for-js/blob/main/sdk/identity/identity/samples/AzureIdentityExamples.md" target="_blank">@azure/identity</a> is used to connect to Azure using Azure Managed Identity, (managed identity means Azure handles the identity for you via <a href="https://www.microsoft.com/security/business/identity-access/microsoft-entra-id" target="_blank">Microsoft EntraID</a> instead of using API keys which are considered less secure).</p></div>
+</div>
+  <p>1. Data ingestion, where data is fetched and vectorized and search indexes are created. Vector indexes are stored in the <a href="https://github.com/Azure-Samples/llama-index-javascript/tree/main/cache" target="_blank">cache sub folder</a>. The data itself lives in a <a href="https://github.com/Azure-Samples/llama-index-javascript/tree/main/data" target="_blank">data folder</a>. Should you want to add more files like additional PDFs or Word files, this is where you should add them. There are existing Vector indexes but if you need to generate new ones (if you change the content of the data folder), you can run the following command:</p>
+<p>sh</p>
+<p>``<code>
+npm run generate
+</code>``
+    This command will invoke the following code in TypeScript:</p>
+<p>typescript</p>
+<p>``<code>
+async function generateDatasource() {
+  console.log(</code>Generating storage context...<code>);
+  // Split documents, create embeddings and store them in the storage context
+  const ms = await getRuntime(async () =&gt; {
+    const storageContext = await storageContextFromDefaults({
+      persistDir: STORAGE_CACHE_DIR,
+    });
+    const documents = await getDocuments();
+    await VectorStoreIndex.fromDocuments(documents, {
+      storageContext,
+    });
+  });
+</code>``
+    or in Python:</p>
+
+</section>
+
+<section class="section" id="s5">
+  <h2>🔧 Important packages used for the Python sample</h2>
+  <p class="lead">The Python sample uses <a href="https://python-poetry.org/" target="_blank">Poetry</a> for dependency management and installation. For a detailed list of all packages used, checkout the [pyproject.toml file](https://github.com/</p>
+  <div class="card-grid"><div class="card" style="border-left:4px solid var(--amber)"><p>The <a href="https://github.com/run-llama/llama_index" target="_blank">llamaindex core Python library</a> providing core functionality on connecting to LLMs, facilitates vector index creation and more.</p></div>
+<div class="card" style="border-left:4px solid var(--blue)"><p><a href="https://www.bing.com/search?q=fastapi&amp;cvid=6e1fad60b08040f9b9661945410756c2&amp;gs_lcrp=EgZjaHJvbWUqBggAEEUYOzIGCAAQRRg7MgYIARBFGDsyBwgCEOkHGEAyBggDEAAYQDIGCAQQABhAMgYIBRAAGEAyBggGEEUYPDIGCAcQRRg9MgYICBBFGDwyCAgJEOkHGPxV0gEIMjE3NWowajmoAgCwAgE&amp;FORM=ANAB01&amp;PC=U531" target="_blank">FastAPI</a>, a Python web framework is used to create the API that takes in the user input and returns a response.</p></div>
+<div class="card" style="border-left:4px solid var(--green)"><p>The Python <a href="https://pypi.org/project/azure-identity/" target="_blank">azure-identity</a> package is used to connect to Azure using Azure Managed Identity, (managed identity means Azure handles the identity for you via <a href="https://www.microsoft.com/security/business/identity-access/microsoft-entra-id" target="_blank">Microsoft EntraID</a> instead of using API keys which are considered less secure).</p></div>
+</div>
+  <p>-  The <a href="https://github.com/run-llama/llama_index" target="_blank">llamaindex core Python library</a> providing core functionality on connecting to LLMs, facilitates vector index creation and more.
+  -  <a href="https://www.bing.com/search?q=fastapi&amp;cvid=6e1fad60b08040f9b9661945410756c2&amp;gs_lcrp=EgZjaHJvbWUqBggAEEUYOzIGCAAQRRg7MgYIARBFGDsyBwgCEOkHGEAyBggDEAAYQDIGCAQQABhAMgYIBRAAGEAyBggGEEUYPDIGCAcQRRg9MgYICBBFGDwyCAgJEOkHGPxV0gEIMjE3NWowajmoAgCwAgE&amp;FORM=ANAB01&amp;PC=U531" target="_blank">FastAPI</a>, a Python web framework is used to create the API that takes in the user input and returns a response.
+  -  The Python <a href="https://pypi.org/project/azure-identity/" target="_blank">azure-identity</a> package is used to connect to Azure using Azure Managed Identity, (managed identity means Azure handles the identity for you via <a href="https://www.microsoft.com/security/business/identity-access/microsoft-entra-id" target="_blank">Microsoft EntraID</a> instead of using API keys which are considered less secure).</p>
+
+</section>
+
+<section class="section" id="s6">
+  <h2>💡 Running the samples</h2>
+  <p class="lead">Before running any of the samples, and using Azure OpenAI, it is worth mentioning that you need to provision the necessary Azure resources.</p>
+  <div class="compare-grid">
+<div class="compare-card old"><h4>传统方法</h4><p>Before running any of the samples, and using Azure OpenAI, it is worth mentioning that you need to provision the necessary Azure resources.
+
+
+
+
+
+
+
+ You can run these templates by using GitHub Codespac</p></div>
+<div class="compare-card new"><h4>新方法</h4><p>es. Follow these links and then click &amp;quot;Create codespace&amp;quot; as shown to launch a VS Code instance in your browser (this may take a few minutes while the containers are built):
+
+  ![](https://cd</p></div>
+</div>
+  <p>You can run these templates by using GitHub Codespaces. Follow these links and then click &amp;quot;Create codespace&amp;quot; as shown to launch a VS Code instance in your browser (this may take a few minutes while the containers are built):</p>
+<p></p>
+<p>For TypeScript: <a href="https://github.com/Azure-Samples/llama-index-javascript" target="_blank">https://github.com/Azure-Samples/llama-index-javascript</a></p>
+<p>For Python: <a href="https://github.com/Azure-Samples/llama-index-python" target="_blank">https://github.com/Azure-Samples/llama-index-python</a></p>
+<p>1.Open a terminal window in your Codespaces instance.</p>
+
+</section>
+
+<section class="section" id="s7">
+  <h2>📈 What&amp;#39;s next?</h2>
+  <p class="lead">This guide has demonstrated how to build a serverless RAG (Retrieval-Augmented Generation) application using LlamaIndex and Azure OpenAI, deployed on Microsoft Azure. The key argument presented is tha</p>
+  <div class="block-q"><p>This guide has demonstrated how to build a serverless RAG (Retrieval-Augmented Generation) application using LlamaIndex and Azure OpenAI, deployed on Microsoft Azure. The key argument presented is that integrating your own business data into AI applications enhances the relevance and quality of resp</p></div>
+  <p>In this post we addressed the implementation of RAG architecture with LlamaIndex, detailing the steps from data ingestion and index creation to query engine setup and deployment on Azure. By following this guide, you can leverage Azure&amp;#39;s robust infrastructure and LlamaIndex&amp;#39;s capabilities to create powerful AI applications that provide contextually enriched responses based on your data.</p>
+<p>By deploying on Azure, you also benefit from scalability, security, and ease of management, reinforcing the practical application of the RAG model in real-world scenarios.</p>
+<p>We&amp;#39;re excited to see what you build with these sample applications. Feel free to fork them and like the GitHub repositories to receive the latest changes and new features.</p>
+
+</section>
+
+
+</div>
+
+<footer class="footer">
+  <p>LlamaIndex Blog Deep-Dive | 深度解析系列</p>
+  <div class="footer-links">
+    <a href="../">Hub 首页</a>
+    <a href="https://www.llamaindex.ai/blog/building-a-serverless-rag-application-with-llamaindex-and-azure-openai" target="_blank">原文链接</a>
+  </div>
+</footer>
+
+</body>
+</html>

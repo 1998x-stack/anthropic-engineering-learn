@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：ParseBench: The First Document Parsing Benchmark for AI Agents</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafbfc;
+      --surface: #fff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --amber: #d97706;
+      --amber-light: #fbbf24;
+      --amber-dark: #92400e;
+      --purple: #6366f1;
+      --teal: #14b8a6;
+      --green: #10b981;
+      --red: #ef4444;
+      --blue: #3b82f6;
+      --pink: #ec4899;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans SC', 'Inter', sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:var(--sans); background:var(--bg); color:var(--text); line-height:1.7; }
+
+    .nav { position:sticky; top:0; background:rgba(15,23,42,.92); backdrop-filter:blur(12px); z-index:100; border-bottom:1px solid rgba(255,255,255,.08); }
+    .nav-inner { max-width:1100px; margin:0 auto; padding:12px 24px; display:flex; justify-content:space-between; align-items:center; }
+    .nav-brand { color:#fbbf24; text-decoration:none; font-weight:700; display:flex; align-items:center; gap:8px; }
+    .nav-logo { font-size:20px; }
+    .nav a:last-child { font-size:13px; color:rgba(255,255,255,.6); text-decoration:none; }
+    .nav a:last-child:hover { color:#fbbf24; }
+
+    .hero { background:linear-gradient(135deg,#0f172a 0%,#78350f 50%,#d97706 100%); color:#fff; padding:60px 24px 48px; }
+    .hero-inner { max-width:1100px; margin:0 auto; }
+    .hero-tag { display:inline-block; background:rgba(251,191,36,.15); color:#fbbf24; padding:4px 14px; border-radius:20px; font-size:13px; font-weight:500; margin-bottom:16px; letter-spacing:.5px; }
+    .hero h1 { font-size:clamp(24px,4vw,42px); font-weight:800; line-height:1.2; margin-bottom:12px; }
+    .hero p { font-size:17px; color:rgba(255,255,255,.8); max-width:700px; margin-bottom:28px; line-height:1.6; }
+    .hero-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; max-width:600px; }
+    .stat { text-align:center; }
+    .stat-num { display:block; font-size:28px; font-weight:800; color:#fbbf24; font-family:var(--mono); }
+    .stat-label { font-size:12px; color:rgba(255,255,255,.6); text-transform:uppercase; letter-spacing:.5px; }
+
+    .page { max-width:1100px; margin:0 auto; padding:32px 24px 60px; }
+
+    .toc { margin-bottom:40px; }
+    .toc-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:10px; }
+    .toc-item { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); text-decoration:none; color:var(--text); font-size:14px; font-weight:500; transition:all .2s; }
+    .toc-item:hover { border-color:var(--amber); transform:translateY(-1px); box-shadow:0 4px 12px rgba(217,119,6,.1); }
+    .toc-num { font-size:16px; }
+
+    .section { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:32px; margin-bottom:24px; }
+    .section h2 { font-size:22px; font-weight:700; margin-bottom:12px; color:var(--text); }
+    .section h3 { font-size:17px; font-weight:600; margin:20px 0 8px; color:var(--amber-dark); }
+    .lead { color:var(--text-secondary); font-size:15px; margin-bottom:16px; line-height:1.7; }
+    .section p { margin-bottom:12px; font-size:15px; line-height:1.7; }
+
+    .chart { margin:20px 0; }
+    .chart-row { display:flex; align-items:center; margin-bottom:8px; }
+    .chart-label { width:160px; font-size:13px; font-weight:500; text-align:right; padding-right:12px; color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:28px; overflow:hidden; }
+    .chart-bar { height:100%; border-radius:8px; display:flex; align-items:center; padding-left:10px; font-size:12px; font-weight:600; color:#fff; transition:width .6s ease; min-width:40px; }
+    .chart-bar.amber { background:linear-gradient(90deg,#d97706,#f59e0b); }
+    .chart-bar.purple { background:linear-gradient(90deg,#6366f1,#818cf8); }
+    .chart-bar.teal { background:linear-gradient(90deg,#0d9488,#14b8a6); }
+    .chart-bar.green { background:linear-gradient(90deg,#059669,#10b981); }
+    .chart-bar.blue { background:linear-gradient(90deg,#2563eb,#3b82f6); }
+    .chart-bar.red { background:linear-gradient(90deg,#dc2626,#ef4444); }
+
+    .timeline { position:relative; padding-left:28px; margin:20px 0; }
+    .timeline::before { content:''; position:absolute; left:8px; top:0; bottom:0; width:3px; background:linear-gradient(180deg,#d97706,#6366f1,#14b8a6); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:20px; padding-left:16px; }
+    .tl-dot { position:absolute; left:-24px; top:4px; width:14px; height:14px; border-radius:50%; border:3px solid var(--amber); background:#fff; }
+    .tl-item:nth-child(2) .tl-dot { border-color:var(--purple); }
+    .tl-item:nth-child(3) .tl-dot { border-color:var(--teal); }
+    .tl-item:nth-child(4) .tl-dot { border-color:var(--green); }
+    .tl-item:nth-child(5) .tl-dot { border-color:var(--blue); }
+    .tl-phase { font-weight:600; font-size:15px; margin-bottom:4px; }
+    .tl-desc { font-size:13px; color:var(--text-secondary); line-height:1.5; }
+
+    .compare-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin:20px 0; }
+    .compare-card { padding:16px; border-radius:var(--radius); font-size:14px; line-height:1.6; }
+    .compare-card.old { background:#fef2f2; border:1px solid #fecaca; }
+    .compare-card.new { background:#f0fdf4; border:1px solid #bbf7d0; }
+
+    .flow { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:20px 0; }
+    .flow-step { padding:10px 18px; background:#f8fafc; border:2px solid var(--border); border-radius:var(--radius); font-size:13px; font-weight:600; text-align:center; }
+    .flow-step.purple { background:#eef2ff; border-color:var(--purple); color:var(--purple); }
+    .flow-arrow { color:var(--amber); font-size:20px; font-weight:700; }
+
+    .fail-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:20px 0; }
+    .fail-grid .card { padding:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); font-size:13px; line-height:1.6; }
+
+    .block-q { margin:20px 0; padding:20px 24px; background:linear-gradient(135deg,#fffbeb,#fef3c7); border-left:4px solid var(--amber); border-radius:0 var(--radius) var(--radius) 0; font-style:italic; color:#92400e; font-size:14px; line-height:1.7; }
+
+    .tbl-wrap { overflow-x:auto; margin:20px 0; }
+    table { width:100%; border-collapse:collapse; font-size:14px; }
+    th { background:#f8fafc; padding:10px 14px; text-align:left; font-weight:600; border-bottom:2px solid var(--border); white-space:nowrap; }
+    td { padding:10px 14px; border-bottom:1px solid var(--border); }
+    tr:hover td { background:#fffbeb; }
+
+    .badge { display:inline-block; padding:3px 10px; border-radius:12px; font-size:12px; font-weight:500; }
+    .badge-amber { background:#fffbeb; color:#92400e; }
+    .badge-purple { background:#eef2ff; color:#4338ca; }
+    .badge-green { background:#f0fdf4; color:#166534; }
+
+    .footer { background:#0f172a; color:rgba(255,255,255,.6); padding:32px 24px; text-align:center; font-size:13px; }
+    .footer a { color:#fbbf24; text-decoration:none; }
+    .footer a:hover { text-decoration:underline; }
+    .footer-links { display:flex; justify-content:center; gap:24px; margin-bottom:12px; flex-wrap:wrap; }
+
+    @media(max-width:768px) {
+      .hero-stats { grid-template-columns:repeat(2,1fr); }
+      .compare-grid, .fail-grid { grid-template-columns:1fr; }
+      .chart-label { width:100px; font-size:12px; }
+      .flow { flex-direction:column; gap:6px; }
+      .flow-arrow { transform:rotate(90deg); }
+      .toc-grid { grid-template-columns:1fr; }
+      .section { padding:20px 16px; }
+      .hero { padding:40px 16px 32px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="../" class="nav-brand">
+        <span class="nav-logo">🦙</span>
+        <span>LlamaIndex Blog Hub</span>
+      </a>
+      <a href="./">← Back to Hub</a>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="hero-tag">文档处理</div>
+      <h1>ParseBench: The First Document Parsing Benchmark for AI Agents</h1>
+      <p>Document parsing (or OCR) is the foundation of every AI agent that works with real-world files. Before an agent can approve a claim, analyze a financial report, or extract terms from a contract, it needs to *correctly* read the document. Not approximately. Not &quot;close enough.&quot; Correctly. And yet, unt</p>
+      <div class="hero-stats">
+        <div class="stat"><span class="stat-num">11</span><span class="stat-label">核心章节</span></div><div class="stat"><span class="stat-num">8</span><span class="stat-label">关键概念</span></div><div class="stat"><span class="stat-num">5min</span><span class="stat-label">阅读时长</span></div><div class="stat"><span class="stat-num">1391</span><span class="stat-label">总字数</span></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc"><div class="toc-grid">
+  <a href="#s0" class="toc-item"><span class="toc-num">🔍</span>What Existing Benchmarks Miss</a>
+  <a href="#s1" class="toc-item"><span class="toc-num">💡</span>What ParseBench Evaluates</a>
+  <a href="#s7" class="toc-item"><span class="toc-num">🔧</span>How the dataset was built</a>
+  <a href="#s8" class="toc-item"><span class="toc-num">🚀</span>ParseBench Results</a>
+  <a href="#s9" class="toc-item"><span class="toc-num">📈</span>Quality vs. cost</a>
+  <a href="#s10" class="toc-item"><span class="toc-num">🧪</span>Try it yourself</a>
+</div></nav>
+
+    <section class="section" id="s0">
+  <h2>🔍 What Existing Benchmarks Miss</h2>
+  <p class="lead">When a human reads a document, they can work around errors. A slightly misaligned table, a missing footnote reference, a chart that didn&#x27;t render. Agents can&#x27;t do that (yet). An agent approving an ins</p>
+  <p>The bar for OCR and document parsing has shifted from &quot;good enough for a human to read&quot; to &quot;reliable enough for an agent to act on.&quot; We call this semantic correctness: whether the parsed output preserves enough structure and meaning for correct downstream decisions.</p>
+  <p>Existing benchmarks don&#x27;t measure this well in two main ways:</p>
+  <p>Wrong documents. Most benchmarks draw from academic papers, web content, or narrow corpora. The enterprise documents that drive real automation (financial filings, contracts, regulatory submissions) are underrepresented. Even OmniDocBench, the most diverse benchmark available, draws 6% of its pages from enterprise content. Wrong metrics. Text-similarity metrics (BLEU, ROUGE, edit distance) penalize superficial differences like whitespace or whether you output HTML vs. Markdown, while missing critical errors like a transposed table header, a chart reduced to raw OCR text, or a strikethrough that got silently dropped.</p>
+<div class="flow">
+  <div class="flow-step">ParseBench</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Dataset:</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Code &amp;amp; evaluation:</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Paper:</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step purple">semantic correctness:</div>
+</div>
+</section>
+<section class="section" id="s1">
+  <h2>💡 What ParseBench Evaluates</h2>
+  <p class="lead">ParseBench tests five capability dimensions that mater most to end-users:</p>
+  <h3>1. Tables</h3>
+  <p>Tables are everywhere in enterprise documents, and these real-world tables aren&#x27;t the simple grids you see in academic benchmarks. Merged cells, hierarchical headers, and span across multiple pages, and multiple tables per page will trip up even the best document processing pipeline.</p>
+  <p>We introduce a new metric called TableRecordMatch that treats tables the way downstream systems actually consume them: as collections of records where each row is a set of values keyed by column headers. This means we don&#x27;t penalize harmless differences like column reordering, but we heavily penalize the critical errors like transposed headers or dropped column names.</p>
+  <h3>2. Charts</h3>
+  <p>Most parsers we tested either skip charts entirely or dump out raw OCR text, neither of which gives an agent usable data. Instead, what is needed is the actual values with their correct series names and axis labels, so that it can be processed in downstream workflows.</p>
+  <p>We annotate up to 10 spot-check data points per chart, each with a numerical value, associated labels, and a tolerance. Charts with explicit value labels must match exactly; charts where values must be read from axes get a 1% tolerance, since pixel-perfect reading is unrealistic.</p>
+  <h3>3. Content Faithfulness</h3>
+  <p>The most fundamental requirement: did the parser actually capture all the text, in the right order, without making things up? We test for three failure modes:</p>
+  <p>Omissions: dropped text at word, sentence, and digit levels Hallucinations: fabricated content that doesn&#x27;t exist in the source Reading order violations: multi-column layouts linearized incorrectly</p>
+  <p>This is evaluated through dense rule-based tests (167K+ rules across the dataset), not fuzzy text similarity. If your OCR is dropping data, you need to understand what types of documents trigger that.</p>
+  <h3>4. Semantic Formatting</h3>
+  <p>Most parsers treat formatting as cosmetic and strip it. But some formatting carries meaning:</p>
+  <p>A strikethrough price is not the current price A superscript &quot;1&quot; is a footnote reference, not the number one Bold text in a financial report often marks key aggregate values Title hierarchy determines document structure</p>
+  <p>If your agent can&#x27;t distinguish $49.99 $39.99 from &quot;$49.99 $39.99&quot;, it might quote the old price.</p>
+<div class="timeline">
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">What Existing Benchmarks Miss</div>
+    <div class="tl-desc">When a human reads a document, they can work around errors. A slightly misaligned table, a missing footnote reference, a</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">What ParseBench Evaluates</div>
+    <div class="tl-desc">ParseBenc</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">1. Tables</div>
+    <div class="tl-desc">Tables are everywhere in enterprise documents, and these real-world tables aren&#x27;t the simple grids you see in academ</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">2. Charts</div>
+    <div class="tl-desc">Most parsers we tested either skip charts entirely or dump out raw OCR text, neither of which gives an agent usable data</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">3. Content Faithfulness</div>
+    <div class="tl-desc">The most fundamental requirement: did the parser actually capture all the text, in the right order, without making thing</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">4. Semantic Formatting</div>
+    <div class="tl-desc">Most parsers treat formatting as cosmetic and strip it. But some formatting carries meaning:
+
+
+-  A strikethrough pr</div>
+  </div>
+</div>
+</section>
+<section class="section" id="s7">
+  <h2>🔧 How the dataset was built</h2>
+  <p class="lead">All ~2,000 pages come from real, publicly available enterprise documents spanning insurance (SERFF filings), finance (public financial reports), government documents, and other domains. We deliberatel</p>
+  <p>Ground truth is generated through a two-pass pipeline:</p>
+  <p>Auto-labeling: Frontier VLMs generate initial annotations Human verification: Annotators review and correct every page, with the review workflow tailored to each dimension&#x27;s ground-truth format</p>
+</section>
+<section class="section" id="s8">
+  <h2>🚀 ParseBench Results</h2>
+  <p class="lead">We tested 14 methods across three categories: general-purpose VLMs (GPT-5 Mini, Haiku 4.5, Gemini 3 Flash, Qwen 3 VL, Dots OCR 1.5), specialized document parsers (Textract, Azure Document Intelligence</p>
+  <p>Here are the headline results:</p>
+  <p>A few key takeaways:</p>
+  <p>Charts are the great divider. Only four providers exceed 50%. Most specialized parsers score below 6% since they do not extract chart data into structured tables.</p>
+  <p>Content faithfulness is mostly solved (but not quite). The best methods hit ~90%, which sounds good until you realize that means agents still encounter meaningful omissions and hallucinations on 1 in 10 pages. For high-stakes workflows, that&#x27;s not good enough. ParseBench helps us (and our users) understand which types of documents need extra care.</p>
+  <p>Formatting is widely ignored. Most parsers treat strikethrough, superscripts, and bold as cosmetic decoration and strip them. Scores range from 1.0% (Docling) to 85.2% (LlamaParse Agentic).</p>
+</section>
+<section class="section" id="s9">
+  <h2>📈 Quality vs. cost</h2>
+  <p class="lead">We also analyzed the quality-cost tradeoff. Two patterns stand out:</p>
+  <p>Throwing more compute at VLMs gives diminishing returns. Gemini gains ~5 points going from minimal to high thinking at 4x the cost. GPT-5 Mini and Haiku see even smaller gains at 3-4x the cost. LlamaParse sits on the OCR frontier. Agentic mode (~1.2¢/page, 84.9% overall) outperforms all other providers at any cost level. Cost Effective mode (&lt;0.4¢/page) is the cheapest option while remaining competitive with Gemini at minimal thinking.</p>
+</section>
+<section class="section" id="s10">
+  <h2>🧪 Try it yourself</h2>
+  <p class="lead">ParseBench is fully open source. You can evaluate any parsing tool on the benchmark:</p>
+  <p># Install uv sync --extra runners</p>
+  <p># Run the benchmark on any supported pipeline uv run parse-bench run &amp;#x3C;pipeline_name&gt;</p>
+  <p># View interactive reports uv run parse-bench serve &amp;#x3C;pipeline_name&gt; ``` The benchmark includes 90+ pre-configured pipelines and all our evaluation code. Adding your own OCR model is straightforward (and encouraged!). Be on the lookout for an official leaderboard soon as well.</p>
+  <p>Dataset: HuggingFace Code &amp; evaluation: GitHub Paper: arXiv</p>
+<div class="compare-grid">
+  <div class="compare-card old"><strong>❌</strong> [HuggingFace](https://huggingface.co/datasets/llamaindex/ParseBench)</div>
+  <div class="compare-card new"><strong>✅</strong> [GitHub](https://github.com/run-llama/ParseBench)</div>
+  <div class="compare-card old"><strong>❌</strong> [arXiv](https://arxiv.org/abs/2604.08538)</div>
+</div>
+</section>
+
+    
+  </div>
+
+  <footer class="footer">
+    <div class="footer-links">
+      <a href="./">LlamaIndex Blog Hub</a>
+      <a href="https://www.llamaindex.ai/blog/parsebench" target="_blank" rel="noopener">原文链接 Original</a>
+      <a href="../">Engineering Blogs Hub</a>
+    </div>
+    <p>Generated from LlamaIndex blog content for learning purposes.</p>
+  </footer>
+</body>
+</html>

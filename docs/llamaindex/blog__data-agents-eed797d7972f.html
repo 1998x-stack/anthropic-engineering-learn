@@ -1,0 +1,534 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>深度解析：Data Agents: Build LLM-Powered Tools &amp;amp; Workflows | LlamaIndex</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #fafbfc;
+            --surface: #fff;
+            --text: #0f172a;
+            --text-secondary: #64748b;
+            --border: #e2e8f0;
+            --radius: 14px;
+            --amber: #d97706;
+            --amber-light: #fbbf24;
+            --amber-dark: #78350f;
+            --green: #10b981;
+            --red: #ef4444;
+            --blue: #3b82f6;
+            --purple: #6366f1;
+            --teal: #14b8a6;
+            --mono: 'JetBrains Mono', monospace;
+            --sans: 'Noto Sans SC', 'Inter', sans-serif;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family: var(--sans); background: var(--bg); color: var(--text); line-height: 1.7; }
+        a { color: var(--amber); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        /* Nav */
+        .nav {
+            position: sticky; top: 0; z-index: 100;
+            background: rgba(15,23,42,0.95);
+            backdrop-filter: blur(12px);
+            padding: 0 2rem; height: 56px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .nav-brand { color: #fbbf24; font-weight: 700; font-size: 1.1rem; }
+        .nav-back { color: #94a3b8; font-size: 0.9rem; }
+        .nav-back:hover { color: #fbbf24; text-decoration: none; }
+
+        /* Hero */
+        .hero {
+            background: linear-gradient(135deg, #0f172a 0%, #78350f 50%, #d97706 100%);
+            padding: 4rem 2rem 3rem;
+            color: #fff;
+        }
+        .hero-inner { max-width: 900px; margin: 0 auto; }
+        .hero h1 { font-size: 2rem; font-weight: 800; margin-bottom: 0.75rem; line-height: 1.3; }
+        .hero-desc { color: #fde68a; font-size: 1.05rem; margin-bottom: 2rem; }
+        .hero-meta { color: #d4a06a; font-size: 0.85rem; margin-bottom: 1.5rem; }
+        .stat-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem;
+        }
+        .stat-card {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: var(--radius);
+            padding: 1.2rem; text-align: center;
+            backdrop-filter: blur(6px);
+        }
+        .stat-value { font-size: 1.8rem; font-weight: 800; color: #fbbf24; }
+        .stat-label { font-size: 0.8rem; color: #fde68a; text-transform: uppercase; letter-spacing: 0.05em; }
+        .stat-desc { font-size: 0.75rem; color: #d4a06a; margin-top: 2px; }
+
+        /* Page */
+        .page { max-width: 900px; margin: 0 auto; padding: 2rem; }
+
+        /* TOC */
+        .toc {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 0.5rem; margin-bottom: 3rem;
+        }
+        .toc-item {
+            display: flex; align-items: center; gap: 8px;
+            padding: 0.6rem 1rem; border-radius: 8px;
+            background: var(--surface); border: 1px solid var(--border);
+            font-size: 0.85rem; color: var(--text); transition: all 0.2s;
+        }
+        .toc-item:hover { border-color: var(--amber); color: var(--amber); text-decoration: none; transform: translateY(-1px); }
+        .toc-num { font-family: var(--mono); font-weight: 700; color: var(--amber); font-size: 0.75rem; }
+
+        /* Section */
+        .section {
+            margin-bottom: 3rem;
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 2rem;
+            border: 1px solid var(--border);
+        }
+        .section h2 {
+            font-size: 1.4rem; font-weight: 700; margin-bottom: 0.5rem;
+            color: var(--text);
+        }
+        .lead { color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 1.5rem; }
+        .content-body { font-size: 0.95rem; }
+        .content-body p { margin-bottom: 1rem; }
+        .content-body ul { padding-left: 1.5rem; margin-bottom: 1rem; }
+        .content-body li { margin-bottom: 0.4rem; }
+        .content-body h3 { font-size: 1.1rem; font-weight: 600; margin: 1.5rem 0 0.75rem; color: var(--amber-dark); }
+        .content-body strong { color: var(--text); }
+
+        /* Code */
+        .code-block {
+            background: #1e293b; color: #e2e8f0; padding: 1rem 1.2rem;
+            border-radius: 8px; overflow-x: auto; font-family: var(--mono);
+            font-size: 0.82rem; line-height: 1.6; margin: 1rem 0;
+        }
+        .inline-code {
+            background: #f1f5f9; color: #b45309; padding: 2px 6px;
+            border-radius: 4px; font-family: var(--mono); font-size: 0.85em;
+        }
+
+        /* Visualizations */
+        .viz-block { margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
+        .viz-title { font-size: 0.9rem; color: var(--amber-dark); margin-bottom: 1rem; font-weight: 600; }
+
+        /* Chart */
+        .chart { display: flex; flex-direction: column; gap: 0.6rem; }
+        .chart-row { display: flex; align-items: center; gap: 0.75rem; }
+        .chart-label { width: 140px; font-size: 0.8rem; color: var(--text-secondary); text-align: right; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .chart-bar-wrap { flex: 1; background: #f1f5f9; border-radius: 6px; height: 28px; overflow: hidden; }
+        .chart-bar {
+            height: 100%; border-radius: 6px; display: flex; align-items: center;
+            padding: 0 10px; font-size: 0.75rem; font-weight: 600; color: #fff;
+            transition: width 0.8s ease;
+        }
+        .chart-bar.amber { background: linear-gradient(90deg, #d97706, #fbbf24); }
+        .chart-bar.green { background: linear-gradient(90deg, #059669, #10b981); }
+        .chart-bar.blue { background: linear-gradient(90deg, #2563eb, #3b82f6); }
+        .chart-bar.purple { background: linear-gradient(90deg, #4f46e5, #6366f1); }
+        .chart-bar.teal { background: linear-gradient(90deg, #0d9488, #14b8a6); }
+        .chart-bar.red { background: linear-gradient(90deg, #dc2626, #ef4444); }
+
+        /* Flow */
+        .flow {
+            display: flex; align-items: center; gap: 0.5rem;
+            flex-wrap: wrap; justify-content: center;
+        }
+        .flow-step {
+            background: #fffbeb; border: 2px solid #fbbf24;
+            padding: 0.6rem 1rem; border-radius: 10px;
+            font-size: 0.82rem; font-weight: 600; color: #78350f;
+            white-space: nowrap;
+        }
+        .flow-step.amber { background: #fef3c7; border-color: #d97706; }
+        .flow-arrow { color: #d97706; font-size: 1.2rem; font-weight: 700; }
+
+        /* Concept grid */
+        .concept-grid {
+            display: flex; flex-wrap: wrap; gap: 0.5rem;
+        }
+        .concept-card {
+            background: #fffbeb; border: 1px solid #fde68a;
+            border-radius: 8px; padding: 0.5rem 0.75rem;
+        }
+
+        /* Badge */
+        .badge {
+            display: inline-block; padding: 3px 10px; border-radius: 20px;
+            font-size: 0.75rem; font-weight: 600;
+        }
+        .badge-amber { background: #fef3c7; color: #92400e; }
+        .badge-green { background: #d1fae5; color: #065f46; }
+        .badge-blue { background: #dbeafe; color: #1e40af; }
+        .badge-purple { background: #e0e7ff; color: #3730a3; }
+        .badge-teal { background: #ccfbf1; color: #115e59; }
+        .badge-red { background: #fee2e2; color: #991b1b; }
+
+        /* Block quote */
+        .block-q {
+            border-left: 4px solid #fbbf24;
+            background: #fffbeb; padding: 1rem 1.5rem;
+            border-radius: 0 8px 8px 0; margin: 1rem 0;
+            font-style: italic; color: #78350f;
+        }
+
+        /* Footer */
+        .footer {
+            background: #0f172a; color: #94a3b8; padding: 2rem;
+            text-align: center; font-size: 0.85rem;
+        }
+        .footer a { color: #fbbf24; }
+        .footer-links { margin-top: 0.5rem; }
+        .footer-links a { margin: 0 1rem; }
+
+        /* Responsive */
+        @media(max-width:768px) {
+            .hero h1 { font-size: 1.4rem; }
+            .stat-grid { grid-template-columns: repeat(2, 1fr); }
+            .toc { grid-template-columns: 1fr; }
+            .flow { flex-direction: column; gap: 8px; }
+            .flow-arrow { transform: rotate(90deg); }
+            .chart-label { width: 100px; font-size: 0.72rem; }
+            .section { padding: 1.2rem; }
+            .nav { padding: 0 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <a href="../" class="nav-brand">LlamaIndex 深度解析</a>
+        <a href="../" class="nav-back">&larr; Back to Hub</a>
+    </nav>
+
+    <header class="hero">
+        <div class="hero-inner">
+            <div class="hero-meta"> &middot; LlamaIndex Blog</div>
+            <h1>Data Agents: Build LLM-Powered Tools &amp;amp; Workflows | LlamaIndex</h1>
+            <p class="hero-desc">探索 AI Agent 架构与实现，了解如何构建智能自主系统</p>
+            <div class="stat-grid">
+                <div class="stat-card">
+                <div class="stat-value">6</div>
+                <div class="stat-label">Sections</div>
+                <div class="stat-desc">章节</div>
+            </div>
+<div class="stat-card">
+                <div class="stat-value">2</div>
+                <div class="stat-label">Code</div>
+                <div class="stat-desc">代码块</div>
+            </div>
+<div class="stat-card">
+                <div class="stat-value">3300+</div>
+                <div class="stat-label">Words</div>
+                <div class="stat-desc">字数</div>
+            </div>
+<div class="stat-card">
+                <div class="stat-value">14</div>
+                <div class="stat-label">Tech</div>
+                <div class="stat-desc">技术栈</div>
+            </div>
+
+            </div>
+        </div>
+    </header>
+
+    <div class="page">
+        <nav class="toc">
+            <a href="#s1" class="toc-item"><span class="toc-num">01</span>Overview</a>
+<a href="#s2" class="toc-item"><span class="toc-num">02</span>Agent Abstraction + Reasoning </a>
+<a href="#s3" class="toc-item"><span class="toc-num">03</span>Tool Abstractions</a>
+<a href="#s4" class="toc-item"><span class="toc-num">04</span>Example Walkthrough</a>
+<a href="#s5" class="toc-item"><span class="toc-num">05</span>Utility Tools</a>
+<a href="#s6" class="toc-item"><span class="toc-num">06</span>Resources</a>
+        </nav>
+
+        
+    <section class="section" id="s1">
+        <h2>📋 Overview</h2>
+        <p class="lead">Today we’re incredibly excited to announce the launch of a big new capability within LlamaIndex: Data Agents</p>
+        <div class="content-body">
+            <p>Today we’re incredibly excited to announce the launch of a big new capability within LlamaIndex: <strong>Data Agents</strong>.</p>
+        </div>
+        
+            <div class="viz-block">
+                <h4 class="viz-title">文章结构流程</h4>
+                <div class="flow"><div class="flow-step">Overview</div>
+<div class="flow-arrow">&#8594;</div>
+<div class="flow-step amber">Agent Abstraction + </div>
+<div class="flow-arrow">&#8594;</div>
+<div class="flow-step">Tool Abstractions</div>
+<div class="flow-arrow">&#8594;</div>
+<div class="flow-step amber">Example Walkthrough</div>
+<div class="flow-arrow">&#8594;</div>
+<div class="flow-step">Utility Tools</div></div>
+            </div>
+    </section>
+    <section class="section" id="s2">
+        <h2>🤖 Agent Abstraction + Reasoning Loop</h2>
+        <p class="lead">We have support for the following agents:
+
+- OpenAI Function agent (built on top of the OpenAI Function API)
+- a ReAct agent (which works across an...</p>
+        <div class="content-body">
+            <p>We have support for the following agents:
+<ul><li>OpenAI Function agent (built on top of the OpenAI Function API)</li>
+<li>a ReAct agent (which works across any chat/text completion endpoint).</li></p>
+</ul>You can use them as the following:
+<p>from llama_index.agent import OpenAIAgent, ReActAgent
+from llama_index.llms import OpenAI</p>
+<p># import and define tools
+...
+# initialize llm
+llm = OpenAI(model="gpt-3.5-turbo-0613")
+# initialize openai agent
+agent = OpenAIAgent.from_tools(tools, llm=llm, verbose=True)
+# initialize ReAct agent
+agent = ReActAgent.from_tools(tools, llm=llm, verbose=True)
+# use agent
+response = agent.chat("What is (121 * 3) + 42?")Each agent takes in a set of Tools. The details behind our tool abstractions are provided below. Each agent also supports two main methods for taking in an input task — <code class="inline-code">chat</code> and <code class="inline-code">query</code>. Note that these are the core methods used in our <code class="inline-code">ChatEngine</code> and <code class="inline-code">QueryEngine</code> respectively. In fact that our base agent class (<code class="inline-code">BaseAgent</code>) simply inherits from <code class="inline-code">BaseChatEngine</code> and <code class="inline-code">BaseQueryEngine</code>. <code class="inline-code">chat</code> allows the agent to utilize previously stored conversation history, whereas <code class="inline-code">query</code> is a stateless call - history/state is not preserved over time.</p>
+<p>The reasoning loop depends on the type of agent. The OpenAI agent calls the OpenAI function API in a while loop, since the tool decision logic is baked into the function API. Given an input prompt and previous chat history (which includes previous function calls), the function API will decide whether to make another function call (pick a Tool), or return an assistant message. If the API returns a function call, then we are responsible for executing the function and passing in a function message in the chat history. If the API returns an assistant message, then the loop is complete (we assume the task is solved).</p>
+<p>The ReAct agent uses general text completion endpoints, so it can be used with any LLM. A text completion endpoint has a simple input str → output str format, which means that the reasoning logic must be encoded in the prompt. The ReAct agent uses an input prompt inspired by the ReAct paper (and adapted into other versions), in order to decide which tool to pick. It looks something like this:</p>
+<p>...
+You have access to the following tools:
+{tool_desc}</p>
+<p>To answer the question, please use the following format.</p>
+<pre class="code-block"><code>Thought: I need to use a tool to help me answer the question.
+Action: tool name (one of {tool_names})
+Action Input: the input to the tool, in a JSON format representing the kwargs (e.g. {{"text": "hello world", "num_beams": 5}})
+</code></pre>
+Please use a valid JSON format for the action input. Do NOT do this {{'text': 'hello world', 'num_beams': 5}}.
+<p>If this format is used, you will receive a response in the following format:</p>
+<pre class="code-block"><code>Observation: tool response
+</code></pre>
+...We implement ReAct natively over chat prompts; the reasoning loop is implemented as an alternating series of assistant and user messages. The Thought/Action/Action Input section is represented as an assistant message, and the Observation section is implemented as a user message.
+<strong>Note:</strong> the ReAct prompt expects not only the name of the tool to pick, but also the parameters to fill in the tool in a JSON format. This makes the output not dissimilar from the output of the OpenAI Function API — the main difference is that in the case of the function API, the tool-picking logic is baked into the API itself (through a finetuned model), whereas here it is elicited through explicit prompting.
+        </div>
+        
+            <div class="viz-block">
+                <h4 class="viz-title">内容深度分析</h4>
+                <div class="chart"><div class="chart-row">
+            <div class="chart-label">Overview</div>
+            <div class="chart-bar-wrap"><div class="chart-bar amber" style="width:10%">10%</div></div>
+        </div>
+<div class="chart-row">
+            <div class="chart-label">Agent Abstraction </div>
+            <div class="chart-bar-wrap"><div class="chart-bar green" style="width:100%">100%</div></div>
+        </div>
+<div class="chart-row">
+            <div class="chart-label">Tool Abstractions</div>
+            <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:100%">100%</div></div>
+        </div>
+<div class="chart-row">
+            <div class="chart-label">Example Walkthroug</div>
+            <div class="chart-bar-wrap"><div class="chart-bar purple" style="width:33%">33%</div></div>
+        </div>
+<div class="chart-row">
+            <div class="chart-label">Utility Tools</div>
+            <div class="chart-bar-wrap"><div class="chart-bar teal" style="width:100%">100%</div></div>
+        </div>
+<div class="chart-row">
+            <div class="chart-label">Resources</div>
+            <div class="chart-bar-wrap"><div class="chart-bar red" style="width:16%">16%</div></div>
+        </div></div>
+            </div>
+    </section>
+    <section class="section" id="s3">
+        <h2>📌 Tool Abstractions</h2>
+        <p class="lead">Having proper tool abstractions is at the core of building data agents. Defining a set of Tools is similar to defining any API interface, with the ...</p>
+        <div class="content-body">
+            <p>Having proper tool abstractions is at the core of building data agents. Defining a set of Tools is similar to defining any API interface, with the exception that these Tools are meant for agent rather than human use. We allow users to define both a single Tool as well as a “ToolSpec” containing a series of functions under the hood.</p>
+<p>We describe the base tool abstraction, as well as how you can easily define tools over existing query engines, other tools.</p>
+<strong>Base Tool Abstraction</strong>
+<p>The base tool defines a very generic interface. The <code class="inline-code">__call__</code> function can take in any series of arguments, and return a generic <code class="inline-code">ToolOutput</code> container that can capture any response. A tool also has metadata containing its name, description, and function schema.</p>
+<p>@dataclass
+class ToolMetadata:
+    description: str
+    name: Optional[str] = None
+    fn_schema: Optional[Type[BaseModel]] = DefaultToolFnSchema</p>
+<p>class BaseTool:
+    @property
+    @abstractmethod
+    def metadata(self) -&amp;gt; ToolMetadata:
+        pass
+    @abstractmethod
+    def __call__(self, input: Any) -&amp;gt; ToolOutput:
+        pass<strong>Function Tool</strong></p>
+<p>A function tool allows users to easily convert any function into a Tool. It takes in a user-defined function (that can take in any inputs/outputs), and wraps it into a tool interface. It can also “auto-infer” the function schema if it isn’t specified beforehand.</p>
+<p>Our <code class="inline-code">ToolSpec</code> classes make use of this <code class="inline-code">FunctionTool</code> abstraction to convert functions defined in the tool spec into a set of agent tools (see below).</p>
+<p>Here’s a trivial example of defining a FunctionTool.</p>
+<p>from llama_index.tools.function_tool import FunctionTool</p>
+<p>def multiply(a: int, b: int) -&amp;gt; int:
+    """Multiple two integers and returns the result integer"""
+    return a * b
+multiply_tool = FunctionTool.from_defaults(fn=multiply)<strong>QueryEngineTool</strong></p>
+<p>Of course, we also provide Tool abstractions to wrap our existing query engines. This provides a seamless transition from working on query engines to working on agents. Our query engines can be thought of “constrained” agents meant for the read/write setting and centered around retrieval purposes. These query engines can be used in an overall agent setting.</p>
+<p>from llama_index.tools import QueryEngineTool</p>
+<p>query_engine_tools = [
+    QueryEngineTool(
+        query_engine=query_engine,
+        metadata=ToolMetadata(
+            name='&amp;lt;tool_name&amp;gt;',
+            description="Queries over X data source."
+        )
+    ),
+ ...
+]<strong>Tool Specs</strong></p>
+<p>A <strong>tool spec</strong> is a Python class that represents a full API specification that an agent can interact with, and a tool spec can be converted into a list of tools that an agent can be initialized with.</p>
+<p>This class allows users to define entire services, not just single tools that perform individual tasks. Each tool spec may contain read/write endpoints that allow an agent to interact with a service in meaningful ways. For instance, a Slack tool spec could allow the user to both read existing messages and channels (<code class="inline-code">load_data</code>, <code class="inline-code">fetch_channels</code>) as well as write messages (<code class="inline-code">send_message</code>). It would be roughly defined as the following:</p>
+<p>class SlackToolSpec(BaseToolSpec):
+    """Slack tool spec."""
+    spec_functions = ["load_data", "send_message", "fetch_channels"]</p>
+<p>def load_data(
+          self,
+          channel_ids: List[str],
+          reverse_chronological: bool = True,
+      ) -&amp;gt; List[Document]:
+          """Load data from the input directory."""
+          ...
+      def send_message(
+          self,
+          channel_id: str,
+          message: str,
+      ) -&amp;gt; None:
+          """Send a message to a channel given the channel ID."""
+          ...
+      def fetch_channels(
+          self,
+      ) -&amp;gt; List[str]:
+          """Fetch a list of relevant channels."""
+          ...If a tool spec is initialized, it can be converted into a list of tools that can be fed into an agent with <code class="inline-code">to_tool_list</code>. For instance,</p>
+<p>tool_spec = SlackToolSpec()
+# initialize openai agent
+agent = OpenAIAgent.from_tools(tool_spec.to_tool_list(), llm=llm, verbose=True)Defining a tool spec is not that different than defining a Python class. Each function becomes converted into a tool, and by default the docstring for each function gets used as the tool description (though you can customize names/description in <code class="inline-code">to_tool_list(func_to_metadata_mapping=...)</code>.</p>
+<p>We also made the intentional choice that the input arguments and return types can be anything. The primary reason is to preserve the generality of the tool interface for subsequent iterations of agents. Even if current iterations of agents expect tool outputs to be in string format, that may change in the future, and we didn’t want to arbitrarily restrict the types of tool interface.</p>
+<p># LlamaHub Tool Repository</p>
+<p>A huge component of our launch is a brand-new addition to <a href="https://llamahub.ai/" target="_blank">LlamaHub</a>: a Tool Repository. The Tool Repository consists of <strong>15+ Tool Specs</strong> that an agent can use. These tool specs represent an initial curated list of services that an agent can interact with and enrich its capability to perform different actions.</p>
+<p>Among others, they include the following specs:
+<ul><li>Gmail Spec</li>
+<li>Zapier Spec</li>
+<li>Google Calendar Spec</li>
+<li>OpenAPI Spec</li>
+<li>SQL + Vector Database Spec</li></p>
+</ul>We also provide a list of <strong>utility tools</strong> that help to abstract away pain points when designing agents to interact with different API services that return large amounts of data.
+<p>For instance, our Gmail Tool Spec allows an agent to search existing emails, create drafts, update drafts, and send emails. Our Zapier Spec allows an agent to perform any natural language query to Zapier through their <a href="https://nla.zapier.com/start/" target="_blank">Natural Language Actions</a> interface.</p>
+<p>Best of all, you don’t need to spend a lot of time figuring out how to use these tools — we have [<strong>10+ notebooks</strong>showing how you can build agents for each service, or even build agents that use a combination of services (e.g. Gmail, Google Calendar, and Search).</p>
+        </div>
+        
+            <div class="viz-block">
+                <h4 class="viz-title">核心技术概念</h4>
+                <div class="concept-grid"><div class="concept-card"><span class="badge badge-amber">API</span></div>
+<div class="concept-card"><span class="badge badge-green">Agent</span></div>
+<div class="concept-card"><span class="badge badge-blue">Context Window</span></div>
+<div class="concept-card"><span class="badge badge-purple">Data Agent</span></div>
+<div class="concept-card"><span class="badge badge-teal">Document</span></div>
+<div class="concept-card"><span class="badge badge-red">Index</span></div></div>
+            </div>
+    </section>
+    <section class="section" id="s4">
+        <h2>🧪 Example Walkthrough</h2>
+        <p class="lead">Let’s take a look at a few examples. We initialize an OpenAIAgent with the Gmail Spec</p>
+        <div class="content-body">
+            <p>Let’s take a look at a few examples! We initialize an OpenAIAgent with the Gmail Spec. As mentioned above, the spec consists of tools to search emails, create/update drafts, and send emails.</p>
+<p>Now let’s give the agent a sequence of commands so that it can create an email draft, make a few edits to it, and then send it off.</p>
+<p>First, let’s create an initial email draft. Note that the agent chooses the <code class="inline-code">create_draft</code> tool, which takes in the “to”, “subject”, and “message” parameters. The agent is able to infer the parameters simultaneously while picking the tool.</p>
+<p>Next, let’s update the draft with a slight modification:</p>
+<p>Next, let’s show the current state of the draft.</p>
+<p>Finally, let’s send the email!</p>
+<p>This is a good start, but this is just the beginning. We are actively working on contributing more tools to this repository, and we’re also opening this up to community contributions. If you’re interested in contributing a Tool to LlamaHub, please feel free to open a PR in this repo.</p>
+        </div>
+        
+    </section>
+    <section class="section" id="s5">
+        <h2>📌 Utility Tools</h2>
+        <p class="lead">Oftentimes, directly querying an API can return a massive volume of data, which on its own may overflow the context window of the LLM (or at the ve...</p>
+        <div class="content-body">
+            <p>Oftentimes, directly querying an API can return a massive volume of data, which on its own may overflow the context window of the LLM (or at the very least unnecessarily increase the number of tokens that you are using).</p>
+<p>To tackle this, we’ve provided an initial set of “utility tools” in the core LlamaIndex repo — utility tools are not conceptually tied to a given service (e.g. Gmail, Notion), but rather can augment the capabilities of existing Tools. In this particular case, utility tools help to abstract away common patterns of needing to cache/index and query data that’s returned from any API request.</p>
+<p>Let’s walk through our two main utility tools below.</p>
+<strong>OnDemandLoaderTool</strong>
+<p>This tool turns any existing LlamaIndex data loader ( <code class="inline-code">BaseReader</code> class) into a tool that an agent can use. The tool can be called with all the parameters needed to trigger <code class="inline-code">load_data</code> from the data loader, along with a natural language query string. During execution, we first load data from the data loader, index it (for instance with a vector store), and then query it “on-demand”. All three of these steps happen in a single tool call.</p>
+<p>Oftentimes this can be preferable to figuring out how to load and index API data yourself. While this may allow for data reusability, oftentimes users just need an ad-hoc index to abstract away prompt window limitations for any API call.</p>
+<p>A usage example is given below:</p>
+<p>from llama_hub.wikipedia.base import WikipediaReader
+from llama_index.tools.on_demand_loader_tool import OnDemandLoaderTool</p>
+<p>tool = OnDemandLoaderTool.from_defaults(
+ reader,
+ name="Wikipedia Tool",
+ description="A tool for loading data and querying articles from Wikipedia"
+)<strong>LoadAndSearchToolSpec</strong></p>
+<p>The LoadAndSearchToolSpec takes in any existing Tool as input. As a tool spec, it implements <code class="inline-code">to_tool_list</code> , and when that function is called, two tools are returned: a <code class="inline-code">load</code> tool and then a <code class="inline-code">search</code> tool.</p>
+<p>The <code class="inline-code">load</code> Tool execution would call the underlying Tool, and the index the output (by default with a vector index). The <code class="inline-code">search</code> Tool execution would take in a query string as input and call the underlying index.</p>
+<p>This is helpful for any API endpoint that will by default return large volumes of data — for instance our WikipediaToolSpec will by default return entire Wikipedia pages, which will easily overflow most LLM context windows.</p>
+<p>Example usage is shown below:</p>
+<p>from llama_hub.tools.wikipedia.base import WikipediaToolSpec
+from llama_index.tools.tool_spec.load_and_search.base import LoadAndSearchToolSpec</p>
+<p>wiki_spec = WikipediaToolSpec()
+# Get the search wikipedia tool
+tool = wiki_spec.to_tool_list()[1]
+# Create the Agent with load/search tools
+agent = OpenAIAgent.from_tools(
+ LoadAndSearchToolSpec.from_defaults(
+    tool
+ ).to_tool_list(), verbose=True
+)This is the output when we run an input prompt</p>
+<p>agent.chat('what is the capital of poland')Output:</p>
+<p>=== Calling Function ===
+Calling function: search_data with args: {
+  "query": "capital of Poland"
+}
+Got output: Content loaded! You can now search the information using read_search_data
+========================
+=== Calling Function ===
+Calling function: read_search_data with args: {
+  "query": "What is the capital of Poland?"
+}
+Got output:
+The capital of Poland is Warsaw.
+========================
+AgentChatResponse(response='The capital of Poland is Warsaw.', sources=[])Note that the agent figures out that it first needs to first call the “load” tool (denoted by the original name of the tool, “search_data”). This load tool will load the Wikipedia page and index under the hood. The output just mentions that the “content is loaded, and tells the agent that the next step is to use <code class="inline-code">read_search_data</code>. The agent then reasons that it needs to call the <code class="inline-code">read_search_data</code> tool, which will query the index for the right answer.</p>
+<p># FAQ</p>
+<strong>Should I use Data Agents for search and retrieval, or continue to use Query Engines?</strong>
+<p>Short answer: both are possible. Query engines give you the ability to define your own workflows over your data, in both a constrained reasoning fashion as well as unconstrained fashion. For instance, you may want to define a specific workflow over text-to-SQL with our <code class="inline-code">NLStructStoreQueryEngine</code> (constrained), or a router module to decide between semantic search or summarization (less constrained), or use our <code class="inline-code">SubQuestionQueryEngine</code> to decompose a question among sub-documents (even less constrained).</p>
+<p>By default, agent loops are unconstrained, and can theoretically reason over any set of tools that you give them. This means that you can get out-of-the-box advanced search/retrieval capabilities — for instance, in our OpenAI cookbook we show that you can get joint text-to-SQL capabilities by simply providing a SQL query engine and Vector Store Query engine as tools. But on the other hand, agents built in this fashion can be quite unreliable (see our blog post for more insights). If you are using agents for search/retrieval, be mindful of the 1) LLM you pick, and the 2) set of tools you pick too.</p>
+<strong>How are LlamaIndex data agents different than existing agent frameworks (LangChain, Hugging Face, etc.)?</strong>
+<p>Most of these core concepts are not new. Our overall design has taken inspiration from popular tools and frameworks for building agents. But in our “data agents” design, we’ve tried our best to answer the following key questions well:
+<ul><li>How do we effectively index/query and retrieve data beforehand?</li>
+<li>How do we effectively index/query and retrieve data on the fly?</li>
+<li>How do we design API interfaces for read/writes that are simultaneously rich (can take in structured inputs), but also easy for agents to understand?</li>
+<li>How do we properly get sources in citations?</li></p>
+</ul>Our goal with data agents is to create automated knowledge workers that can reason over and interact with data. Our core toolkit provides the foundations for properly indexing, retrieving, and querying data — these can be easily integrated as tools. We provide some additional tool abstractions to handle the cases where you want to “cache” API outputs on the fly (see above). Finally, we provide principled tool abstractions and design principles so that agents can interface with external services in a structured manner.
+<p>**Can I use Tools with LangChain agents?
+**You can easily use any of our tools with LangChain agents as well.</p>
+<p>tools = tool_spec.to_tool_list()
+langchain_tools = [t.to_langchain_tool() for t in tools]See our <a href="https://gpt-index.readthedocs.io/en/latest/core_modules/agent_modules/tools/usage_pattern.html#using-with-langchain" target="_blank">tools usage guide</a> for more details!</p>
+<p># Conclusion</p>
+<p>In summary, today we launched two key items: Data Agent components (incl. agent reasoning loop and tool abstractions) and the LlamaHub Tool repository.</p>
+        </div>
+        
+    </section>
+    <section class="section" id="s6">
+        <h2>📌 Resources</h2>
+        <p class="lead">We’ve written a comprehensive section in the docs — take a look here: https://gpt-index. readthedocs</p>
+        <div class="content-body">
+            <p>We’ve written a comprehensive section in the docs — take a look here: <a href="https://gpt-index.readthedocs.io/en/latest/core_modules/agent_modules/agents/root.html" target="_blank">https://gpt-index.readthedocs.io/en/latest/core_modules/agent_modules/agents/root.html</a></p>
+<p>Take a look at our LlamaHub Tools section: <a href="https://llamahub.ai/" target="_blank">https://llamahub.ai/</a></p>
+<p>Notebook Tutorials for LlamaHub Tools: <a href="https://discord.gg/dGcwcsnxhU" target="_blank"> you have questions, please hop on our Discord: [https://discord.gg/dGcwcsnxhU</a></p>
+        </div>
+        
+    </section>
+    </div>
+
+    <footer class="footer">
+        <div>LlamaIndex Blog 深度解析系列</div>
+        <div class="footer-links">
+            <a href="../">返回 Hub</a>
+            <a href="https://www.llamaindex.ai/blog/data-agents-eed797d7972f" target="_blank">阅读原文</a>
+        </div>
+    </footer>
+</body>
+</html>

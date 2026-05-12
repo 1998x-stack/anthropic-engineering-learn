@@ -1,0 +1,322 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：AI Document Classification: A Practical Guide</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafbfc;
+      --surface: #fff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --amber: #d97706;
+      --amber-light: #fbbf24;
+      --amber-dark: #92400e;
+      --purple: #6366f1;
+      --teal: #14b8a6;
+      --green: #10b981;
+      --red: #ef4444;
+      --blue: #3b82f6;
+      --pink: #ec4899;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans SC', 'Inter', sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:var(--sans); background:var(--bg); color:var(--text); line-height:1.7; }
+
+    .nav { position:sticky; top:0; background:rgba(15,23,42,.92); backdrop-filter:blur(12px); z-index:100; border-bottom:1px solid rgba(255,255,255,.08); }
+    .nav-inner { max-width:1100px; margin:0 auto; padding:12px 24px; display:flex; justify-content:space-between; align-items:center; }
+    .nav-brand { color:#fbbf24; text-decoration:none; font-weight:700; display:flex; align-items:center; gap:8px; }
+    .nav-logo { font-size:20px; }
+    .nav a:last-child { font-size:13px; color:rgba(255,255,255,.6); text-decoration:none; }
+    .nav a:last-child:hover { color:#fbbf24; }
+
+    .hero { background:linear-gradient(135deg,#0f172a 0%,#78350f 50%,#d97706 100%); color:#fff; padding:60px 24px 48px; }
+    .hero-inner { max-width:1100px; margin:0 auto; }
+    .hero-tag { display:inline-block; background:rgba(251,191,36,.15); color:#fbbf24; padding:4px 14px; border-radius:20px; font-size:13px; font-weight:500; margin-bottom:16px; letter-spacing:.5px; }
+    .hero h1 { font-size:clamp(24px,4vw,42px); font-weight:800; line-height:1.2; margin-bottom:12px; }
+    .hero p { font-size:17px; color:rgba(255,255,255,.8); max-width:700px; margin-bottom:28px; line-height:1.6; }
+    .hero-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; max-width:600px; }
+    .stat { text-align:center; }
+    .stat-num { display:block; font-size:28px; font-weight:800; color:#fbbf24; font-family:var(--mono); }
+    .stat-label { font-size:12px; color:rgba(255,255,255,.6); text-transform:uppercase; letter-spacing:.5px; }
+
+    .page { max-width:1100px; margin:0 auto; padding:32px 24px 60px; }
+
+    .toc { margin-bottom:40px; }
+    .toc-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:10px; }
+    .toc-item { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); text-decoration:none; color:var(--text); font-size:14px; font-weight:500; transition:all .2s; }
+    .toc-item:hover { border-color:var(--amber); transform:translateY(-1px); box-shadow:0 4px 12px rgba(217,119,6,.1); }
+    .toc-num { font-size:16px; }
+
+    .section { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:32px; margin-bottom:24px; }
+    .section h2 { font-size:22px; font-weight:700; margin-bottom:12px; color:var(--text); }
+    .section h3 { font-size:17px; font-weight:600; margin:20px 0 8px; color:var(--amber-dark); }
+    .lead { color:var(--text-secondary); font-size:15px; margin-bottom:16px; line-height:1.7; }
+    .section p { margin-bottom:12px; font-size:15px; line-height:1.7; }
+
+    .chart { margin:20px 0; }
+    .chart-row { display:flex; align-items:center; margin-bottom:8px; }
+    .chart-label { width:160px; font-size:13px; font-weight:500; text-align:right; padding-right:12px; color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:28px; overflow:hidden; }
+    .chart-bar { height:100%; border-radius:8px; display:flex; align-items:center; padding-left:10px; font-size:12px; font-weight:600; color:#fff; transition:width .6s ease; min-width:40px; }
+    .chart-bar.amber { background:linear-gradient(90deg,#d97706,#f59e0b); }
+    .chart-bar.purple { background:linear-gradient(90deg,#6366f1,#818cf8); }
+    .chart-bar.teal { background:linear-gradient(90deg,#0d9488,#14b8a6); }
+    .chart-bar.green { background:linear-gradient(90deg,#059669,#10b981); }
+    .chart-bar.blue { background:linear-gradient(90deg,#2563eb,#3b82f6); }
+    .chart-bar.red { background:linear-gradient(90deg,#dc2626,#ef4444); }
+
+    .timeline { position:relative; padding-left:28px; margin:20px 0; }
+    .timeline::before { content:''; position:absolute; left:8px; top:0; bottom:0; width:3px; background:linear-gradient(180deg,#d97706,#6366f1,#14b8a6); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:20px; padding-left:16px; }
+    .tl-dot { position:absolute; left:-24px; top:4px; width:14px; height:14px; border-radius:50%; border:3px solid var(--amber); background:#fff; }
+    .tl-item:nth-child(2) .tl-dot { border-color:var(--purple); }
+    .tl-item:nth-child(3) .tl-dot { border-color:var(--teal); }
+    .tl-item:nth-child(4) .tl-dot { border-color:var(--green); }
+    .tl-item:nth-child(5) .tl-dot { border-color:var(--blue); }
+    .tl-phase { font-weight:600; font-size:15px; margin-bottom:4px; }
+    .tl-desc { font-size:13px; color:var(--text-secondary); line-height:1.5; }
+
+    .compare-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin:20px 0; }
+    .compare-card { padding:16px; border-radius:var(--radius); font-size:14px; line-height:1.6; }
+    .compare-card.old { background:#fef2f2; border:1px solid #fecaca; }
+    .compare-card.new { background:#f0fdf4; border:1px solid #bbf7d0; }
+
+    .flow { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:20px 0; }
+    .flow-step { padding:10px 18px; background:#f8fafc; border:2px solid var(--border); border-radius:var(--radius); font-size:13px; font-weight:600; text-align:center; }
+    .flow-step.purple { background:#eef2ff; border-color:var(--purple); color:var(--purple); }
+    .flow-arrow { color:var(--amber); font-size:20px; font-weight:700; }
+
+    .fail-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:20px 0; }
+    .fail-grid .card { padding:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); font-size:13px; line-height:1.6; }
+
+    .block-q { margin:20px 0; padding:20px 24px; background:linear-gradient(135deg,#fffbeb,#fef3c7); border-left:4px solid var(--amber); border-radius:0 var(--radius) var(--radius) 0; font-style:italic; color:#92400e; font-size:14px; line-height:1.7; }
+
+    .tbl-wrap { overflow-x:auto; margin:20px 0; }
+    table { width:100%; border-collapse:collapse; font-size:14px; }
+    th { background:#f8fafc; padding:10px 14px; text-align:left; font-weight:600; border-bottom:2px solid var(--border); white-space:nowrap; }
+    td { padding:10px 14px; border-bottom:1px solid var(--border); }
+    tr:hover td { background:#fffbeb; }
+
+    .badge { display:inline-block; padding:3px 10px; border-radius:12px; font-size:12px; font-weight:500; }
+    .badge-amber { background:#fffbeb; color:#92400e; }
+    .badge-purple { background:#eef2ff; color:#4338ca; }
+    .badge-green { background:#f0fdf4; color:#166534; }
+
+    .footer { background:#0f172a; color:rgba(255,255,255,.6); padding:32px 24px; text-align:center; font-size:13px; }
+    .footer a { color:#fbbf24; text-decoration:none; }
+    .footer a:hover { text-decoration:underline; }
+    .footer-links { display:flex; justify-content:center; gap:24px; margin-bottom:12px; flex-wrap:wrap; }
+
+    @media(max-width:768px) {
+      .hero-stats { grid-template-columns:repeat(2,1fr); }
+      .compare-grid, .fail-grid { grid-template-columns:1fr; }
+      .chart-label { width:100px; font-size:12px; }
+      .flow { flex-direction:column; gap:6px; }
+      .flow-arrow { transform:rotate(90deg); }
+      .toc-grid { grid-template-columns:1fr; }
+      .section { padding:20px 16px; }
+      .hero { padding:40px 16px 32px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="../" class="nav-brand">
+        <span class="nav-logo">🦙</span>
+        <span>LlamaIndex Blog Hub</span>
+      </a>
+      <a href="./">← Back to Hub</a>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="hero-tag">文档处理</div>
+      <h1>AI Document Classification: A Practical Guide</h1>
+      <p>Most organizations have a document problem they don&#x27;t fully account for. It&#x27;s not that documents don&#x27;t get processed. It&#x27;s that before any processing can happen, someone has to figure out what kind of document it is, where it should go, and what should happen to it next. At low volume, that&#x27;s a cler</p>
+      <div class="hero-stats">
+        <div class="stat"><span class="stat-num">30</span><span class="stat-label">核心章节</span></div><div class="stat"><span class="stat-num">4</span><span class="stat-label">关键概念</span></div><div class="stat"><span class="stat-num">13min</span><span class="stat-label">阅读时长</span></div><div class="stat"><span class="stat-num">3313</span><span class="stat-label">总字数</span></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc"><div class="toc-grid">
+  <a href="#s0" class="toc-item"><span class="toc-num">🔍</span>What Is AI Document Classification?</a>
+  <a href="#s1" class="toc-item"><span class="toc-num">💡</span>How AI Document Classification Works</a>
+  <a href="#s7" class="toc-item"><span class="toc-num">🔧</span>Types of AI Document Classification</a>
+  <a href="#s13" class="toc-item"><span class="toc-num">🛡️</span>High-Value Use Cases</a>
+  <a href="#s14" class="toc-item"><span class="toc-num">📝</span>Traditional ML vs. Large Language Models for Document Classification</a>
+  <a href="#s17" class="toc-item"><span class="toc-num">⚡</span>What to Look for in an AI Document Classification System</a>
+  <a href="#s23" class="toc-item"><span class="toc-num">🔬</span>How to Implement AI Document Classification: A Practical Starting Point</a>
+  <a href="#s29" class="toc-item"><span class="toc-num">🎯</span>Conclusion</a>
+</div></nav>
+
+    <section class="section" id="s0">
+  <h2>🔍 What Is AI Document Classification?</h2>
+  <p class="lead">AI document classification is the use of trained models to automatically categorize and tag documents based on their content, structure, and context. A classification system reads an incoming document</p>
+  <p>These two functions are related but distinct. Classification is typically about routing: this is an invoice, this is a contract, this is a patient intake form. Tagging adds richer metadata: this contract contains an indemnity clause, this invoice is flagged for three-way matching, this medical record is associated with a specific procedure code. Together they give document workflows the structured information they need to operate without manual intervention.</p>
+  <p>The difference between AI classification and older approaches like keyword search or rules-based routing is significant. A keyword search finds documents that contain certain terms. A rules engine routes documents based on predetermined conditions. Neither understands what a document is actually about. An AI classification system reads the document the way a human would, understands its meaning in context, and makes a judgment call about where it belongs.</p>
+<div class="flow">
+  <div class="flow-step">legal</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">finance</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Healthcare</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step purple">HR onboarding and customer operations</div>
+</div>
+</section>
+<section class="section" id="s1">
+  <h2>💡 How AI Document Classification Works</h2>
+  <p class="lead">Understanding the mechanics matters if you&#x27;re evaluating systems or designing a pipeline. The process has five stages, and what happens at each one determines how well the system performs on real docu</p>
+  <h3>Stage 1: Ingestion and Pre-Processing</h3>
+  <p>Before any classification can happen, the document needs to be readable. For native digital files this is straightforward. For scanned paper documents, images, or mixed-content PDFs, it requires converting visual content into machine-readable text and structure.</p>
+  <p>This is where agentic document parsing comes in. A system like LlamaParse doesn&#x27;t just run optical character recognition and return raw text. It uses layout-aware computer vision to detect page structure, routes different content types to the appropriate models, and reconstructs the document in a clean, structured format before classification even starts. The quality of this pre-processing step directly determines classification accuracy downstream. Garbage in, garbage out applies here more than anywhere else.</p>
+  <h3>Stage 2: Feature Extraction</h3>
+  <p>Once the document is in a readable format, the model extracts features: what the document says, how it&#x27;s structured, what types of fields it contains, and what the relationships between sections look like. Traditional machine learning systems extract statistical features from text. Large language models read the full content and reason about meaning, which is a fundamentally different capability.</p>
+  <p>Layout matters as much as content for many document types. An invoice doesn&#x27;t look like a contract. A medical record doesn&#x27;t look like an insurance claim. A system that understands layout can use structural cues to inform classification before it even processes the text in detail.</p>
+  <h3>Stage 3: Classification Using Trained Models</h3>
+  <p>The classification model takes the extracted features and assigns the document to one or more categories. How this works depends on the type of model being used.</p>
+  <p>Traditional machine learning classifiers require a training dataset of labeled examples. You provide thousands of pre-labeled documents, the model learns the patterns, and it applies those patterns to new documents. This works well for stable, well-defined categories at high volume.</p>
+  <p>Large language models operate differently. They can classify documents zero-shot, meaning they understand category descriptions in plain language and apply them to new documents without needing labeled training data. This is a significant practical advantage when you&#x27;re dealing with variable document types or when categories change frequently.</p>
+  <h3>Stage 4: Tagging and Confidence Scoring</h3>
+  <p>After classification, the system applies tags based on what it found in the document. Tags might be functional (requires approval, contains personal data, flagged for review), content-based (contains indemnity clause, references PO number, includes signature), or metadata-based (vendor name, document date, department).</p>
+  <p>Confidence scoring is what makes this usable in production. Every classification and tag should come with a score indicating how certain the model is. High-confidence outputs flow straight through. Low-confidence outputs get routed for human review. Without confidence scoring, you&#x27;re either reviewing everything or trusting everything, neither of which is a workable approach at scale.</p>
+<div class="timeline">
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">What Is AI Document Classification?</div>
+    <div class="tl-desc">AI document classification is the use of trained models to automatically categorize and tag documents based on their con</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">How AI Document Classification Works</div>
+    <div class="tl-desc">Understanding the mechanics matters if you&#x27;re evaluating systems or designing a pipeline. The process has five stage</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Stage 1: Ingestion and Pre-Processing</div>
+    <div class="tl-desc">Before any classification can happen, the document needs to be readable. For native digital files this is straightforwar</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Stage 2: Feature Extraction</div>
+    <div class="tl-desc">Once the document is in a readable format, the model extracts features: what the document says, how it&#x27;s structured,</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Stage 3: Classification Using Trained Models</div>
+    <div class="tl-desc">The classification model takes the extracted features and assigns the document to one or more categories. How this works</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Stage 4: Tagging and Confidence Scoring</div>
+    <div class="tl-desc">After classification, the system applies tags based on what it found in the document. Tags might be functional (requires</div>
+  </div>
+</div>
+</section>
+<section class="section" id="s7">
+  <h2>🔧 Types of AI Document Classification</h2>
+  <p class="lead">Not all classification is the same. Depending on what you&#x27;re trying to accomplish, different approaches apply.</p>
+  <h3>By Content</h3>
+  <p>Content-based classification sorts documents by what they say. This is the most common approach: invoice, contract, tax form, medical record, insurance claim. The model reads the document and decides which category it belongs to based on the substance of its content.</p>
+  <h3>By Structure</h3>
+  <p>Structure-based classification uses layout and format as the primary signal. Some document types have distinctive structural signatures even before you read a word of the content. A W-2 form looks like a W-2 form. A bill of lading has a recognizable structure. Layout-aware systems use these structural cues to inform classification, which improves accuracy especially on scanned or degraded documents where text extraction is imperfect.</p>
+  <h3>By Intent</h3>
+  <p>Intent-based classification is about what action the document requires rather than what type of document it is. A contract might require legal review, signature collection, or storage depending on its status. An invoice might require approval, payment, or dispute resolution. Intent classification gives downstream systems the information they need to route documents to the right action, not just the right folder.</p>
+  <h3>Single-Label vs. Multi-Label Classification</h3>
+  <p>Single-label classification assigns each document to exactly one category. Multi-label classification allows multiple categories to apply simultaneously. A document can be both an invoice and a dispute notice. A contract can be both a service agreement and a non-disclosure agreement. Multi-label classification is more complex but more accurate to how real documents actually work.</p>
+</section>
+<section class="section" id="s13">
+  <h2>🛡️ High-Value Use Cases</h2>
+  <p class="lead">AI document classification creates real operational value in document-heavy industries, and the pattern is consistent across all of them: documents that used to require manual sorting before any subst</p>
+  <p>In legal, that means contracts get sorted by type (service agreements, NDAs, licensing agreements, employment contracts) automatically at intake, filings route to the appropriate matter, and documents get tagged with the key clause types present before a paralegal ever opens them.</p>
+  <p>In finance, invoices, receipts, purchase orders, and credit notes from hundreds of different vendors get identified, tagged, and routed to the right processing workflow without a human deciding where each one goes. Combined with extraction, that enables straight-through processing for routine documents and surfaces only the exceptions for review.</p>
+  <p>Healthcare is where the stakes are highest. Patient records, lab results, imaging reports, insurance claims, and referral letters all need to reach the right system and the right person quickly. Misclassification here is not just inefficient, it creates patient safety risk. Getting classification right at intake removes that risk before it reaches the workflow.</p>
+  <p>HR onboarding and customer operations follow the same logic. Onboarding packets contain applications, identity documents, tax forms, and compliance acknowledgments, each of which needs to trigger a different process. Inbound customer documents arrive in every format and represent every possible request type. In both cases, classification handles the routing automatically so the people involved can focus on the work that actually requires human judgment.</p>
+</section>
+<section class="section" id="s14">
+  <h2>📝 Traditional ML vs. Large Language Models for Document Classification</h2>
+  <p class="lead">This is the question that comes up most often when organizations are evaluating classification systems, and the honest answer is that both approaches have legitimate use cases. The choice depends on y</p>
+  <p>Dimension Traditional ML Classification LLM-Based Classification</p>
+  <p>Setup requirement Labeled training dataset of thousands of examples Works zero-shot or few-shot out of the box</p>
+  <p>New categories Requires retraining the model from scratch Add a description in plain language, done</p>
+  <p>Document types Optimized for specific pre-defined formats Handles novel formats without reconfiguration</p>
+  <p>Accuracy on edge cases Degrades on documents outside training distribution Reasons through unfamiliar content contextually</p>
+  <h3>Where Traditional ML Still Makes Sense</h3>
+  <p>If you have a large, stable, well-labeled document corpus and your categories don&#x27;t change often, traditional ML classifiers are fast, cost-effective, and well-understood. They run efficiently at high volume and don&#x27;t require the computational overhead of large language model inference on every document.</p>
+  <p>The ceiling is real though. Traditional classifiers are trained on a fixed distribution. When documents arrive that look different from the training data, accuracy degrades and you find out about it from downstream errors rather than confidence scores. Maintaining a labeled training dataset is an ongoing operational cost that compounds as document variety increases.</p>
+  <h3>Where Large Language Models Change the Equation</h3>
+  <p>Large language models don&#x27;t need labeled training data to classify documents. They understand language well enough to read a category description and apply it to new documents intelligently. This matters because most organizations don&#x27;t have clean, labeled document datasets ready to go, and most document corpora are more varied than they appear upfront.</p>
+  <p>The other advantage is handling edge cases. A traditional ML classifier sees a document that doesn&#x27;t match its training distribution and either assigns it to the wrong category confidently or passes it to a catch-all category. A large language model reasons about the document content and makes a judgment call, which is usually more useful than a wrong confident answer.</p>
+  <p>The practical implication is that for most real-world document classification problems, large language models are now the better starting point. The zero-shot capability alone removes a significant implementation barrier, and the ability to add new categories without retraining makes the system continuously improving rather than periodically degrading.</p>
+</section>
+<section class="section" id="s17">
+  <h2>⚡ What to Look for in an AI Document Classification System</h2>
+  <p class="lead">Not all classification systems perform equally on real documents. Here are the things that actually matter when evaluating options.</p>
+  <h3>Accuracy on Your Documents, Not Benchmark Datasets</h3>
+  <p>Vendor accuracy numbers are measured on controlled datasets that may look nothing like your document corpus. Before committing to any system, run it on a representative sample of your actual documents and compare outputs against ground truth. A system that performs well in a demo on clean PDFs may perform significantly worse on your scanned, variable-format, real-world intake.</p>
+  <h3>Format Flexibility</h3>
+  <p>Your documents arrive in formats you don&#x27;t fully control. PDFs, scanned images, Word documents, mixed-content files with embedded tables and charts. A classification system that works well on clean PDFs but struggles on scanned documents or image-heavy files is not production-ready for most organizations. The pre-processing layer needs to handle format variability before classification even starts.</p>
+  <p>LlamaParse handles this through agentic document parsing. The system uses layout-aware computer vision and multimodal processing to convert documents in any format into structured, AI-ready content before classification. Charts, tables, and images are processed by the appropriate models rather than being ignored or producing extraction errors.</p>
+  <h3>Zero-Shot Capability</h3>
+  <p>The ability to define new categories in plain language, without labeled examples and without retraining, is practically significant. Document corpora evolve. New document types appear. Regulatory requirements change. A system that requires a full retraining cycle every time a new category is needed creates a bottleneck that limits how quickly you can adapt your workflows.</p>
+  <h3>Confidence Scoring for Human-in-the-Loop Validation</h3>
+  <p>Production classification systems need to know when they don&#x27;t know. Field-level confidence scores let you set thresholds: high-confidence outputs process automatically, low-confidence outputs route for human review. LlamaParse surfaces confidence scores and source citations at the output level, so reviewers can verify a specific flagged classification in seconds rather than reviewing the entire document.</p>
+</section>
+<section class="section" id="s23">
+  <h2>🔬 How to Implement AI Document Classification: A Practical Starting Point</h2>
+  <p class="lead">Implementation doesn&#x27;t have to be complex. The biggest mistake organizations make is trying to classify everything at once. Start narrow, validate, and expand.</p>
+  <h3>Step 1: Audit Your Document Types</h3>
+  <p>Before building anything, map your actual document corpus. What document types come in? What volumes? What downstream systems do they need to reach? Where does manual sorting currently create the most delay or error? The answers tell you where classification creates the most immediate value and give you a clear scope for your pilot.</p>
+  <h3>Step 2: Define Your Taxonomy</h3>
+  <p>Decide on your categories and tags before you configure anything. What are the top-level document types? What tags does each type need to carry downstream? What confidence threshold separates automatic processing from human review? Getting these definitions clear upfront prevents the most common implementation problem, which is building a classification system and then realizing the categories don&#x27;t match what downstream systems actually need.</p>
+  <h3>Step 3: Choose Your Approach</h3>
+  <p>For most organizations starting in 2026, zero-shot classification using large language models is the right default. It removes the labeled data requirement, handles new document types without retraining, and is continuously improving as the underlying models improve. Pre-trained models on a custom training dataset make sense when you have high volumes of a specific, stable document type where the incremental accuracy gain justifies the training overhead.</p>
+  <p>LlamaParse supports both approaches. For most teams, the zero-shot route is where to start. The 10,000 free credits on signup is enough to run your actual document types through the pipeline and validate whether the output accuracy meets your threshold before committing to anything.</p>
+  <h3>Step 4: Pilot on One Document Type</h3>
+  <p>Start with the document type that creates the most bottleneck today. Run the classification system on a sample, compare against ground truth, and measure field-level accuracy on the classifications and tags that matter most. Validate that confidence scoring is calibrated well enough to separate automatic processing from review queues.</p>
+  <p>Once one document type is working reliably in production, the pattern for expanding to others is established. The hard part is the first one.</p>
+</section>
+<section class="section" id="s29">
+  <h2>🎯 Conclusion</h2>
+  <p class="lead">AI document classification is where document automation starts. Before you can process a document, extract data from it, or route it to the right workflow, you need to know what it is. Getting that ri</p>
+  <p>The technology is ready. Large language models handle zero-shot classification well enough that the labeled training data requirement that used to make classification projects expensive and slow to start no longer applies to most use cases. And the pre-processing step that used to require custom engineering for every document type is handled by agentic document parsing platforms like LlamaParse, which converts documents in any format into clean, structured, AI-ready content before classification even begins. Scanned invoices, mixed-content PDFs, image-heavy files, documents with embedded tables and charts: LlamaParse processes all of it without format-specific configuration, which means classification accuracy is not limited by what the pre-processing layer can handle.</p>
+  <p>The organizations moving on this now are building a structural advantage. Every document that gets classified and routed automatically is a document that doesn’t require manual handling. At scale, that compounds into real operational efficiency and faster decision-making across every document-heavy workflow in the business. LlamaParse is free to try with 10,000 credits on signup, which is enough to run your actual document types through the pipeline and see the output before committing to anything.</p>
+</section>
+
+    <section class="section" id="key-concepts">
+  <h2>🔑 核心概念 Key Concepts</h2>
+  <p class="lead">本文涉及的关键技术概念与术语。</p>
+<div class="flow">
+  <div class="flow-step">legal</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">finance</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Healthcare</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step purple">HR onboarding and customer operations</div>
+</div>
+</section>
+
+  </div>
+
+  <footer class="footer">
+    <div class="footer-links">
+      <a href="./">LlamaIndex Blog Hub</a>
+      <a href="https://www.llamaindex.ai/blog/ai-document-classification" target="_blank" rel="noopener">原文链接 Original</a>
+      <a href="../">Engineering Blogs Hub</a>
+    </div>
+    <p>Generated from LlamaIndex blog content for learning purposes.</p>
+  </footer>
+</body>
+</html>

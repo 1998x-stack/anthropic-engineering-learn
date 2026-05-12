@@ -1,0 +1,284 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：SEC Filing Data Extraction Guide With LlamaExtract | LlamaIndex</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafbfc;
+      --surface: #fff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --amber: #d97706;
+      --amber-light: #fbbf24;
+      --amber-dark: #92400e;
+      --purple: #6366f1;
+      --teal: #14b8a6;
+      --green: #10b981;
+      --red: #ef4444;
+      --blue: #3b82f6;
+      --pink: #ec4899;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans SC', 'Inter', sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:var(--sans); background:var(--bg); color:var(--text); line-height:1.7; }
+
+    .nav { position:sticky; top:0; background:rgba(15,23,42,.92); backdrop-filter:blur(12px); z-index:100; border-bottom:1px solid rgba(255,255,255,.08); }
+    .nav-inner { max-width:1100px; margin:0 auto; padding:12px 24px; display:flex; justify-content:space-between; align-items:center; }
+    .nav-brand { color:#fbbf24; text-decoration:none; font-weight:700; display:flex; align-items:center; gap:8px; }
+    .nav-logo { font-size:20px; }
+    .nav a:last-child { font-size:13px; color:rgba(255,255,255,.6); text-decoration:none; }
+    .nav a:last-child:hover { color:#fbbf24; }
+
+    .hero { background:linear-gradient(135deg,#0f172a 0%,#78350f 50%,#d97706 100%); color:#fff; padding:60px 24px 48px; }
+    .hero-inner { max-width:1100px; margin:0 auto; }
+    .hero-tag { display:inline-block; background:rgba(251,191,36,.15); color:#fbbf24; padding:4px 14px; border-radius:20px; font-size:13px; font-weight:500; margin-bottom:16px; letter-spacing:.5px; }
+    .hero h1 { font-size:clamp(24px,4vw,42px); font-weight:800; line-height:1.2; margin-bottom:12px; }
+    .hero p { font-size:17px; color:rgba(255,255,255,.8); max-width:700px; margin-bottom:28px; line-height:1.6; }
+    .hero-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; max-width:600px; }
+    .stat { text-align:center; }
+    .stat-num { display:block; font-size:28px; font-weight:800; color:#fbbf24; font-family:var(--mono); }
+    .stat-label { font-size:12px; color:rgba(255,255,255,.6); text-transform:uppercase; letter-spacing:.5px; }
+
+    .page { max-width:1100px; margin:0 auto; padding:32px 24px 60px; }
+
+    .toc { margin-bottom:40px; }
+    .toc-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:10px; }
+    .toc-item { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); text-decoration:none; color:var(--text); font-size:14px; font-weight:500; transition:all .2s; }
+    .toc-item:hover { border-color:var(--amber); transform:translateY(-1px); box-shadow:0 4px 12px rgba(217,119,6,.1); }
+    .toc-num { font-size:16px; }
+
+    .section { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:32px; margin-bottom:24px; }
+    .section h2 { font-size:22px; font-weight:700; margin-bottom:12px; color:var(--text); }
+    .section h3 { font-size:17px; font-weight:600; margin:20px 0 8px; color:var(--amber-dark); }
+    .lead { color:var(--text-secondary); font-size:15px; margin-bottom:16px; line-height:1.7; }
+    .section p { margin-bottom:12px; font-size:15px; line-height:1.7; }
+
+    .chart { margin:20px 0; }
+    .chart-row { display:flex; align-items:center; margin-bottom:8px; }
+    .chart-label { width:160px; font-size:13px; font-weight:500; text-align:right; padding-right:12px; color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:28px; overflow:hidden; }
+    .chart-bar { height:100%; border-radius:8px; display:flex; align-items:center; padding-left:10px; font-size:12px; font-weight:600; color:#fff; transition:width .6s ease; min-width:40px; }
+    .chart-bar.amber { background:linear-gradient(90deg,#d97706,#f59e0b); }
+    .chart-bar.purple { background:linear-gradient(90deg,#6366f1,#818cf8); }
+    .chart-bar.teal { background:linear-gradient(90deg,#0d9488,#14b8a6); }
+    .chart-bar.green { background:linear-gradient(90deg,#059669,#10b981); }
+    .chart-bar.blue { background:linear-gradient(90deg,#2563eb,#3b82f6); }
+    .chart-bar.red { background:linear-gradient(90deg,#dc2626,#ef4444); }
+
+    .timeline { position:relative; padding-left:28px; margin:20px 0; }
+    .timeline::before { content:''; position:absolute; left:8px; top:0; bottom:0; width:3px; background:linear-gradient(180deg,#d97706,#6366f1,#14b8a6); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:20px; padding-left:16px; }
+    .tl-dot { position:absolute; left:-24px; top:4px; width:14px; height:14px; border-radius:50%; border:3px solid var(--amber); background:#fff; }
+    .tl-item:nth-child(2) .tl-dot { border-color:var(--purple); }
+    .tl-item:nth-child(3) .tl-dot { border-color:var(--teal); }
+    .tl-item:nth-child(4) .tl-dot { border-color:var(--green); }
+    .tl-item:nth-child(5) .tl-dot { border-color:var(--blue); }
+    .tl-phase { font-weight:600; font-size:15px; margin-bottom:4px; }
+    .tl-desc { font-size:13px; color:var(--text-secondary); line-height:1.5; }
+
+    .compare-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin:20px 0; }
+    .compare-card { padding:16px; border-radius:var(--radius); font-size:14px; line-height:1.6; }
+    .compare-card.old { background:#fef2f2; border:1px solid #fecaca; }
+    .compare-card.new { background:#f0fdf4; border:1px solid #bbf7d0; }
+
+    .flow { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:20px 0; }
+    .flow-step { padding:10px 18px; background:#f8fafc; border:2px solid var(--border); border-radius:var(--radius); font-size:13px; font-weight:600; text-align:center; }
+    .flow-step.purple { background:#eef2ff; border-color:var(--purple); color:var(--purple); }
+    .flow-arrow { color:var(--amber); font-size:20px; font-weight:700; }
+
+    .fail-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:20px 0; }
+    .fail-grid .card { padding:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); font-size:13px; line-height:1.6; }
+
+    .block-q { margin:20px 0; padding:20px 24px; background:linear-gradient(135deg,#fffbeb,#fef3c7); border-left:4px solid var(--amber); border-radius:0 var(--radius) var(--radius) 0; font-style:italic; color:#92400e; font-size:14px; line-height:1.7; }
+
+    .tbl-wrap { overflow-x:auto; margin:20px 0; }
+    table { width:100%; border-collapse:collapse; font-size:14px; }
+    th { background:#f8fafc; padding:10px 14px; text-align:left; font-weight:600; border-bottom:2px solid var(--border); white-space:nowrap; }
+    td { padding:10px 14px; border-bottom:1px solid var(--border); }
+    tr:hover td { background:#fffbeb; }
+
+    .badge { display:inline-block; padding:3px 10px; border-radius:12px; font-size:12px; font-weight:500; }
+    .badge-amber { background:#fffbeb; color:#92400e; }
+    .badge-purple { background:#eef2ff; color:#4338ca; }
+    .badge-green { background:#f0fdf4; color:#166534; }
+
+    .footer { background:#0f172a; color:rgba(255,255,255,.6); padding:32px 24px; text-align:center; font-size:13px; }
+    .footer a { color:#fbbf24; text-decoration:none; }
+    .footer a:hover { text-decoration:underline; }
+    .footer-links { display:flex; justify-content:center; gap:24px; margin-bottom:12px; flex-wrap:wrap; }
+
+    @media(max-width:768px) {
+      .hero-stats { grid-template-columns:repeat(2,1fr); }
+      .compare-grid, .fail-grid { grid-template-columns:1fr; }
+      .chart-label { width:100px; font-size:12px; }
+      .flow { flex-direction:column; gap:6px; }
+      .flow-arrow { transform:rotate(90deg); }
+      .toc-grid { grid-template-columns:1fr; }
+      .section { padding:20px 16px; }
+      .hero { padding:40px 16px 32px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="../" class="nav-brand">
+        <span class="nav-logo">🦙</span>
+        <span>LlamaIndex Blog Hub</span>
+      </a>
+      <a href="./">← Back to Hub</a>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="hero-tag">文档处理</div>
+      <h1>SEC Filing Data Extraction Guide With LlamaExtract | LlamaIndex</h1>
+      <p>Extracting structured information from lengthy documents is a common need we hear from customers. Whether you are analyzing SEC filings, legal contracts, research papers, or technical documentation, LlamaExtract can help you transform complex, long-form documents into structured, actionable data tha</p>
+      <div class="hero-stats">
+        <div class="stat"><span class="stat-num">7</span><span class="stat-label">核心章节</span></div><div class="stat"><span class="stat-num">8</span><span class="stat-label">关键概念</span></div><div class="stat"><span class="stat-num">5min</span><span class="stat-label">阅读时长</span></div><div class="stat"><span class="stat-num">1390</span><span class="stat-label">总字数</span></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc"><div class="toc-grid">
+  <a href="#s1" class="toc-item"><span class="toc-num">💡</span>Why Extract Structured data from 10-Ks</a>
+  <a href="#s2" class="toc-item"><span class="toc-num">⚙️</span>Challenges of Extraction from 10-K/Q Filings</a>
+  <a href="#s3" class="toc-item"><span class="toc-num">📊</span>Building an Effective Extraction Schema</a>
+  <a href="#s5" class="toc-item"><span class="toc-num">🎯</span>Assessing Extraction Results</a>
+</div></nav>
+
+    <section class="section" id="s1">
+  <h2>💡 Why Extract Structured data from 10-Ks</h2>
+  <p class="lead">In working with our financial services customers, we have come across several use cases where structured data extraction from 10Ks would be valuable. Some examples are</p>
+  <p>Financial Analysis and Benchmarking: Structured data extraction enables analysts and investors to systematically evaluate a company&#x27;s financial health by organizing key metrics such as revenue, operating income, and net income Risk Assessment and Management: By extracting and structuring information on risk factors disclosed in 10-K reports, organizations can identify and monitor potential risks more effectively Investment Decision-Making: Investors rely on structured data from 10-K reports to assess the viability and potential returns of investment opportunities. Organizing financial statements, management discussions, and market analyses into structured formats enables more accurate evaluations and comparisons, aiding in sound investment decisions.</p>
+<div class="chart">
+  <div class="chart-row">
+    <div class="chart-label">Financial Analysis and Benchmarking:</div>
+    <div class="chart-bar-wrap">
+      <div class="chart-bar amber" style="width:95%"></div>
+    </div>
+  </div>
+  <div class="chart-row">
+    <div class="chart-label">Risk Assessment and Management:</div>
+    <div class="chart-bar-wrap">
+      <div class="chart-bar purple" style="width:83%"></div>
+    </div>
+  </div>
+  <div class="chart-row">
+    <div class="chart-label">Investment Decision-Making:</div>
+    <div class="chart-bar-wrap">
+      <div class="chart-bar teal" style="width:71%"></div>
+    </div>
+  </div>
+</div>
+</section>
+<section class="section" id="s2">
+  <h2>⚙️ Challenges of Extraction from 10-K/Q Filings</h2>
+  <p class="lead">While extracting structured data from SEC 10-K/Q filings is high value, it exemplifies the challenges of long-form document extraction.</p>
+  <p>These reports often exceed 100 pages and contain densely packed information across multiple sections with varying structures. Traditional extraction methods typically fail because they can&#x27;t maintain context across distant sections of a document or struggle with extraction from tabular data. These documents have a loosely defined structure and the reported metrics and sections may differ based on the company&#x27;s operations. We ideally want to capture fields that are common across different companies while still allowing for individual variation in reporting metrics and fields.</p>
+  <p>For reference, here is Nvidia’s 2024 10-K filing with the SEC. We will be using this as an example in this post. To follow along, you can clone the notebook from our examples folder. Let&#x27;s see how LlamaExtract addresses the challenges of converting these documents into a structured well-typed format.</p>
+</section>
+<section class="section" id="s3">
+  <h2>📊 Building an Effective Extraction Schema</h2>
+  <p class="lead">The foundation of successful extraction is a well-designed schema. A well-designed schema is one that captures your information of interest and generalizes to your target documents, i.e. documents hav</p>
+  <p>For SEC filings, we create a comprehensive schema that captures filing information, company profile, financial highlights, business segments, geographic data, risk factors, and management discussions.</p>
+  <p>1. Using Python SDK with Pydantic for Schema Specification</p>
+  <p>We can use our Python SDK to build the schema, which looks like the following. Refer to the notebook for additional classes for extracting financial highlights, information from different financial statements, management discussions, etc.</p>
+  <p>``` from typing import Literal, Optional, List from pydantic import BaseModel, Field</p>
+  <p>class FilingInfo(BaseModel): &quot;&quot;&quot;Basic information about the SEC filing&quot;&quot;&quot; filing_type: Literal[&quot;10-K&quot;, &quot;10-Q&quot;, &quot;10-K/A&quot;, &quot;10-Q/A&quot;] = Field( description=&quot;Type of SEC filing&quot; ) filing_date: str = Field(description=&quot;Date when filing was submitted to SEC&quot;) reporting_period_end: str = Field(description=&quot;End date of reporting period&quot;) fiscal_year: int = Field(description=&quot;Fiscal year&quot;) fiscal_quarter: int = Field(description=&quot;Fiscal quarter (if 10-Q)&quot;, ge=1, le=4)</p>
+  <h3>Tips for Long-Form Document Extraction Schema Design</h3>
+  <p>When working with extensive documents like SEC filings, consider these specialized schema design principles:</p>
+  <p>1. Strategic Field Optionality</p>
+  <p>For long documents with varying content across different companies or document instances, be strategic about which fields are required versus optional:</p>
+</section>
+<section class="section" id="s5">
+  <h2>🎯 Assessing Extraction Results</h2>
+  <p class="lead">Here&#x27;s the relevant section on financial highlights that was extracted. Take a look at the notebook to see the detailed extraction results.</p>
+  <p>``` { &#x27;financial_highlights&#x27;: { &#x27;period_end&#x27;: &#x27;2025-01-26&#x27;, &#x27;comparison_period_end&#x27;: &#x27;2024-01-28&#x27;, &#x27;currency&#x27;: &#x27;USD&#x27;, &#x27;unit&#x27;: &#x27;thousands&#x27;, &#x27;revenue&#x27;: 130497.0, &#x27;revenue_prior_period&#x27;: 60922.0, &#x27;revenue_growth&#x27;: 114.23, &#x27;gross_profit&#x27;: 97858.0, &#x27;gross_margin&#x27;: 75.0, &#x27;operating_income&#x27;: 81453.0, &#x27;operating_margin&#x27;: None, &#x27;net_income&#x27;: 72880.0, &#x27;net_margin&#x27;: 55.8, &#x27;eps&#x27;: None, &#x27;diluted_eps&#x27;: None, &#x27;ebitda&#x27;: None, &#x27;free_cash_flow&#x27;: None, &#x27;page_numbers&#x27;: [40, 41, 55, 56, 68] }, } ```</p>
+  <p>The gross margin of 75% was extracted from page 40 below and the revenue figures and are from page 41 in the document. You can verify that the geographic breakdown of revenue is extracted from page 79 correctly.</p>
+  <h3>LlamaExtract is Available in Public Beta!</h3>
+  <p>LlamaExtract is now available for you to try out. It provides a comprehensive solution for structured data extraction workflows:</p>
+  <p>Schema Iteration using the Web UI: We have a Web UI with a schema builder that can help you define your schema and iterate on different documents. We have a 10-K/Q schema for you to get started with if you are interested in trying this out. Start small and build from there! Refer to the tips above. Try your schema on different documents to see whether it generalizes to the target documents. Citations: For long-form document extraction, you can ask the extraction agent to provide page numbers for key figures extracted. This will help you quickly navigate to the relevant section of the document and verify the veracity of the information extracted. We are working on a more robust and convenient citation feature! Run scalable batch jobs: Once you have confidence that the extraction agent is working well, you can use your agent via our Python SDK to run scalable batch jobs.</p>
+  <p>Get started today! Sign up for LlamaParse with LlamaExtract.</p>
+</section>
+
+    <section class="section" id="key-concepts">
+  <h2>🔑 核心概念 Key Concepts</h2>
+  <p class="lead">本文涉及的关键技术概念与术语。</p>
+<div class="flow">
+  <div class="flow-step">Financial Analysis and Benchmarking:</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Risk Assessment and Management:</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Investment Decision-Making:</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">1. Using Python SDK with Pydantic for Schema Specification</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step purple">2. Using the Web UI</div>
+</div>
+</section>
+<section class="section" id="structure">
+  <h2>📊 文章结构 Article Structure</h2>
+  <p class="lead">文章各章节的组织脉络。</p>
+<div class="timeline">
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Ready to get started with LlamaParse?</div>
+    <div class="tl-desc">Explore our free and paid plans today.
+
+
+ -   Learn more</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Why Extract Structured data from 10-Ks</div>
+    <div class="tl-desc">In working with our financial services customers, we have come across several use cases where structured data extraction</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Challenges of Extraction from 10-K/Q Filings</div>
+    <div class="tl-desc">While extracting structured data from SEC 10-K/Q filings is high value, it exemplifies the challenges of long-form docum</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Building an Effective Extraction Schema</div>
+    <div class="tl-desc">The foundation of successful extraction is a well-designed schema. A well-designed schema is one that captures your info</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Tips for Long-Form Document Extraction Schema Design</div>
+    <div class="tl-desc">When working with extensive documents like SEC filings, consider these specialized schema design principles:
+
+
+
+ **1. St</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Assessing Extraction Results</div>
+    <div class="tl-desc">Here&#x27;s the relevant section on financial highlights that was extracted. Take a look at the [notebook](https://github</div>
+  </div>
+</div>
+</section>
+
+  </div>
+
+  <footer class="footer">
+    <div class="footer-links">
+      <a href="./">LlamaIndex Blog Hub</a>
+      <a href="https://www.llamaindex.ai/blog/mining-financial-data-from-sec-filings-with-llamaextract" target="_blank" rel="noopener">原文链接 Original</a>
+      <a href="../">Engineering Blogs Hub</a>
+    </div>
+    <p>Generated from LlamaIndex blog content for learning purposes.</p>
+  </footer>
+</body>
+</html>

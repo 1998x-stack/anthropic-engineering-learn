@@ -1,0 +1,419 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>深度解析：Llama-Index-Networks: How to Query RAG Networks | LlamaIndex</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #fafbfc;
+  --surface: #fff;
+  --text: #0f172a;
+  --text-secondary: #64748b;
+  --border: #e2e8f0;
+  --radius: 14px;
+  --amber: #d97706;
+  --amber-light: #fbbf24;
+  --amber-dark: #92400e;
+  --purple: #6366f1;
+  --teal: #14b8a6;
+  --green: #10b981;
+  --red: #ef4444;
+  --blue: #3b82f6;
+  --mono: 'JetBrains Mono', monospace;
+  --sans: 'Noto Sans SC', 'Inter', sans-serif;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:var(--sans); background:var(--bg); color:var(--text); line-height:1.7; }
+a { color:var(--amber); text-decoration:none; }
+a:hover { text-decoration:underline; }
+
+/* Nav */
+.nav {
+  position:sticky; top:0; z-index:100;
+  background:rgba(15,23,42,0.95); backdrop-filter:blur(12px);
+  padding:0 2rem; height:56px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.nav-brand { color:#fbbf24; font-weight:700; font-size:1.1rem; }
+.nav-back { color:#94a3b8; font-size:0.9rem; }
+.nav-back:hover { color:#fbbf24; }
+
+/* Hero */
+.hero {
+  background:linear-gradient(135deg,#0f172a 0%,#78350f 50%,#d97706 100%);
+  padding:4rem 2rem 3rem; color:#fff; text-align:center;
+}
+.hero-badge { display:inline-block; background:rgba(251,191,36,0.2); color:#fbbf24;
+  padding:4px 16px; border-radius:20px; font-size:0.85rem; margin-bottom:1rem; font-weight:500; }
+.hero h1 { font-size:clamp(1.5rem,4vw,2.4rem); font-weight:800; max-width:800px; margin:0 auto 1rem; line-height:1.3; }
+.hero-sub { color:rgba(255,255,255,0.8); font-size:1rem; max-width:600px; margin:0 auto 2rem; }
+.stats { display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; max-width:700px; margin:0 auto; }
+.stat-card {
+  background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12);
+  border-radius:12px; padding:1rem 0.5rem; text-align:center;
+}
+.stat-emoji { font-size:1.3rem; margin-bottom:4px; }
+.stat-val { font-size:1.4rem; font-weight:800; color:#fbbf24; }
+.stat-label { font-size:0.75rem; color:rgba(255,255,255,0.7); text-transform:uppercase; letter-spacing:0.5px; }
+.stat-desc { font-size:0.7rem; color:rgba(255,255,255,0.5); margin-top:2px; }
+
+/* Page */
+.page { max-width:900px; margin:0 auto; padding:2rem 1.5rem; }
+
+/* TOC */
+.toc { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:0.75rem; margin-bottom:3rem; }
+.toc-item {
+  display:flex; align-items:center; gap:10px;
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:10px; padding:10px 14px; font-size:0.9rem;
+  color:var(--text); transition:all 0.2s;
+}
+.toc-item:hover { border-color:var(--amber); background:#fffbeb; text-decoration:none; transform:translateY(-1px); }
+.toc-num {
+  background:linear-gradient(135deg,#d97706,#f59e0b);
+  color:#fff; font-weight:700; font-size:0.75rem;
+  width:28px; height:28px; border-radius:8px;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+
+/* Section */
+.section { margin-bottom:3rem; }
+.section h2 {
+  font-size:1.5rem; font-weight:700; margin-bottom:0.5rem;
+  padding-bottom:0.5rem; border-bottom:2px solid var(--amber);
+}
+.lead { color:var(--text-secondary); font-size:0.95rem; margin-bottom:1.2rem; }
+
+/* Cards */
+.card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius); padding:1.2rem; margin-bottom:0.8rem;
+}
+.card p { font-size:0.9rem; }
+.card-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:0.8rem; margin:1rem 0; }
+
+/* Code Block */
+.code-block {
+  background:#1e293b; border-radius:12px; overflow:hidden; margin:1rem 0;
+}
+.code-header { padding:8px 16px; background:#0f172a; display:flex; align-items:center; gap:8px; }
+.code-block pre {
+  padding:1rem 1.2rem; color:#e2e8f0; font-family:var(--mono);
+  font-size:0.82rem; line-height:1.6; overflow-x:auto; white-space:pre;
+}
+
+/* Compare */
+.compare-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin:1rem 0; }
+.compare-card {
+  background:var(--surface); border-radius:var(--radius); padding:1.2rem;
+  border:1px solid var(--border);
+}
+.compare-card.old { border-left:4px solid var(--red); }
+.compare-card.new { border-left:4px solid var(--green); }
+.compare-card h4 { font-size:0.95rem; margin-bottom:0.5rem; }
+
+/* Chart */
+.chart { margin:1rem 0; }
+.chart-row { display:flex; align-items:center; margin-bottom:8px; }
+.chart-label { width:160px; font-size:0.85rem; font-weight:500; flex-shrink:0; }
+.chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:32px; overflow:hidden; }
+.chart-bar {
+  height:100%; border-radius:8px; display:flex; align-items:center;
+  padding:0 12px; font-size:0.75rem; font-weight:600; color:#fff;
+  transition:width 0.6s ease;
+}
+.chart-bar.amber { background:linear-gradient(90deg,#d97706,#f59e0b); }
+.chart-bar.purple { background:linear-gradient(90deg,#6366f1,#818cf8); }
+.chart-bar.green { background:linear-gradient(90deg,#10b981,#34d399); }
+.chart-bar.blue { background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+.chart-bar.teal { background:linear-gradient(90deg,#14b8a6,#2dd4bf); }
+.chart-bar.red { background:linear-gradient(90deg,#ef4444,#f87171); }
+
+/* Timeline */
+.timeline { position:relative; padding-left:2rem; margin:1rem 0; }
+.timeline::before {
+  content:''; position:absolute; left:7px; top:0; bottom:0; width:3px;
+  background:linear-gradient(180deg,#d97706,#f59e0b,#fbbf24);
+  border-radius:2px;
+}
+.tl-item { position:relative; margin-bottom:1.5rem; padding-left:1rem; }
+.tl-dot {
+  position:absolute; left:-2rem; top:4px;
+  width:16px; height:16px; border-radius:50%;
+  background:#d97706; border:3px solid #fef3c7;
+}
+.tl-item:nth-child(2) .tl-dot { background:#3b82f6; border-color:#dbeafe; }
+.tl-item:nth-child(3) .tl-dot { background:#10b981; border-color:#d1fae5; }
+.tl-item:nth-child(4) .tl-dot { background:#6366f1; border-color:#e0e7ff; }
+.tl-item:nth-child(5) .tl-dot { background:#14b8a6; border-color:#ccfbf1; }
+.tl-phase { font-weight:600; font-size:0.95rem; }
+.tl-desc { color:var(--text-secondary); font-size:0.85rem; margin-top:2px; }
+
+/* Flow */
+.flow { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin:1rem 0; }
+.flow-step {
+  background:var(--surface); border:2px solid var(--border);
+  border-radius:12px; padding:10px 18px; font-weight:600; font-size:0.9rem;
+}
+.flow-step.amber { border-color:var(--amber); background:#fffbeb; }
+.flow-step.purple { border-color:var(--purple); background:#eef2ff; }
+.flow-arrow { color:var(--text-secondary); font-size:1.2rem; }
+
+/* Block Quote */
+.block-q {
+  border-left:4px solid var(--amber); background:#fffbeb;
+  padding:1.2rem 1.5rem; border-radius:0 12px 12px 0; margin:1rem 0;
+  font-style:italic; color:#78350f;
+}
+.block-q p { margin:0; font-size:0.92rem; }
+
+/* Badge */
+.badge {
+  display:inline-block; padding:3px 10px; border-radius:6px;
+  font-size:0.75rem; font-weight:600;
+}
+.badge-amber { background:#fef3c7; color:#92400e; }
+.badge-purple { background:#e0e7ff; color:#3730a3; }
+.badge-green { background:#d1fae5; color:#065f46; }
+.badge-red { background:#fee2e2; color:#991b1b; }
+.badge-blue { background:#dbeafe; color:#1e40af; }
+.badge-teal { background:#ccfbf1; color:#115e59; }
+
+/* Table */
+.tbl-wrap { overflow-x:auto; margin:1rem 0; }
+table { width:100%; border-collapse:collapse; font-size:0.85rem; }
+th { background:#f8fafc; padding:10px 12px; text-align:left; font-weight:600; border-bottom:2px solid var(--border); }
+td { padding:10px 12px; border-bottom:1px solid var(--border); }
+
+/* Footer */
+.footer {
+  background:#0f172a; color:#94a3b8; text-align:center;
+  padding:2rem; margin-top:3rem; font-size:0.85rem;
+}
+.footer a { color:#fbbf24; }
+.footer-links { display:flex; justify-content:center; gap:2rem; margin-top:0.8rem; flex-wrap:wrap; }
+
+/* Responsive */
+@media(max-width:768px) {
+  .stats { grid-template-columns:repeat(2,1fr); }
+  .toc { grid-template-columns:1fr; }
+  .compare-grid { grid-template-columns:1fr; }
+  .card-grid { grid-template-columns:1fr; }
+  .chart-label { width:120px; font-size:0.78rem; }
+  .flow { flex-direction:column; gap:8px; }
+  .flow-arrow { transform:rotate(90deg); }
+  .hero { padding:3rem 1rem 2rem; }
+  .hero h1 { font-size:1.4rem; }
+  .page { padding:1.5rem 1rem; }
+  .section h2 { font-size:1.2rem; }
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="../" class="nav-brand">LlamaIndex Blog</a>
+  <a href="../" class="nav-back">&larr; Back to Hub</a>
+</nav>
+
+<header class="hero">
+  <div class="hero-badge">LlamaIndex Core</div>
+  <h1>Llama-Index-Networks: How to Query RAG Networks | LlamaIndex</h1>
+  <p class="hero-sub">作者：Unknown | 日期：Unknown</p>
+  <div class="stats">
+<div class="stat-card">
+  <div class="stat-emoji">📝</div>
+  <div class="stat-val">1400+</div>
+  <div class="stat-label">words</div>
+  <div class="stat-desc">文章总字数</div>
+</div>
+<div class="stat-card">
+  <div class="stat-emoji">📑</div>
+  <div class="stat-val">6</div>
+  <div class="stat-label">sections</div>
+  <div class="stat-desc">核心章节</div>
+</div>
+<div class="stat-card">
+  <div class="stat-emoji">💻</div>
+  <div class="stat-val">2</div>
+  <div class="stat-label">code blocks</div>
+  <div class="stat-desc">代码示例</div>
+</div>
+<div class="stat-card">
+  <div class="stat-emoji">🏷️</div>
+  <div class="stat-val">LlamaIndex Core</div>
+  <div class="stat-label">category</div>
+  <div class="stat-desc">文章分类</div>
+</div>
+
+  </div>
+</header>
+
+<div class="page">
+
+<div class="intro-section"><p>](https://www.linkedin.com/company/91154103/)
+ -  [</p>
+<p>](https://www.youtube.com/@LlamaIndex)</p>
+<p>The main premise behind RAG is the injection of context (or knowledge) to the LLM in order to yield more accurate responses from it. As such, a crucial component to a RAG system is the data source from which it gets its knowledge. It’s intuitive then to reason that the more knowledge that the RAG system can tap into, the better it would ultimately become (in terms of answering queries of potentially both depth and breadth). The spirit of this concept is not so different from that found in basically every other data-driven discipline — access to more (good) data, that is subsequently and effectively used, usually leads to better outcomes.</p>
+</div>
+
+<nav class="toc"><a href="#s0" class="toc-item"><span class="toc-num">01</span>The story of Alex, Beth, and Bob</a>
+<a href="#s1" class="toc-item"><span class="toc-num">02</span>Bob and Beth build a web service over their RAGs</a>
+<a href="#s2" class="toc-item"><span class="toc-num">03</span>Alex builds a NetworkQueryEngine</a>
+<a href="#s3" class="toc-item"><span class="toc-num">04</span>A new world of data supply and consumption</a>
+<a href="#s4" class="toc-item"><span class="toc-num">05</span>Internal networks: another potential use case</a>
+<a href="#s5" class="toc-item"><span class="toc-num">06</span>A quick note on privacy</a>
+</nav>
+
+
+<section class="section" id="s0">
+  <h2>🔍 The story of Alex, Beth, and Bob</h2>
+  <p class="lead"> An illustrative example of actors in a network and their problem statements.</p>
+  <div class="card-grid"><div class="card" style="border-left:4px solid var(--amber)"><p>Both Bob and Beth each have their own set of documents and both have already built quite the outstanding RAG systems over them (using llama-index of course!)</p></div>
+<div class="card" style="border-left:4px solid var(--blue)"><p>Alex has heard about these insightful documents that both Bob and Beth have and would like to be able to query the individual RAGs built over the both of them.</p></div>
+<div class="card" style="border-left:4px solid var(--green)"><p>Bob and Beth, being as kind as they are (or, perhaps they were paid some undisclosed dollar amount), agree to give access to Alex to their RAG systems.</p></div>
+</div>
+  <p>To illustrate how the llama-index-networks package can be used, we consider three made-up characters, Alex, Bob, and Beth, and the following scenario:</p>
+<p>-  Both Bob and Beth each have their own set of documents and both have already built quite the outstanding RAG systems over them (using llama-index of course!)
+  -  Alex has heard about these insightful documents that both Bob and Beth have and would like to be able to query the individual RAGs built over the both of them.
+  -  Bob and Beth, being as kind as they are (or, perhaps they were paid some undisclosed dollar amount), agree to give access to Alex to their RAG systems.</p>
+<p>To facilitate this new fashion of knowledge exchange, they agree to setup a network of RAGs that Alex can query.</p>
+
+</section>
+
+<section class="section" id="s1">
+  <h2>⚡ Bob and Beth build a web service over their RAGs</h2>
+  <p class="lead"> ContributorService is built around a QueryEngine.</p>
+  <div class="code-block">
+<div class="code-header"><span class="badge badge-amber">code</span></div>
+<pre>&quot;&quot;&quot;Beth&#x27;s contributor service file.
+
+Beth builds her QueryEngine and exposes it behind the standard
+LlamaIndex Network Contributor Service.
+
+NOTE: Bob would probably make use of Docker and cloud
+compute services to make this production grade.
+&quot;&quot;&quot;
+
+from llama_index.networks.contributor import ContributorService
+import uvicorn
+
+beth_query_engine = ...
+beth_contributor_service = ContributorService.from_config_file(
+    &quot;.env.contributor&quot;,  # settings/secrets for the service
+    beth_query_engine
+)
+
+if __name__ == &quot;__main__:
+    uvicorn.run(beth_contributor_service.app, port=8000)</pre>
+</div>
+  <p>With the <code>llama-index-networks</code>  package, Bob and Beth can make their respective <code>QueryEngine</code> ’s ready to participate in the network with only a few lines of code.</p>
+<p>python</p>
+<p>```
+&quot;&quot;&quot;Beth&#x27;s contributor service file.</p>
+<p>Beth builds her QueryEngine and exposes it behind the standard
+LlamaIndex Network Contributor Service.</p>
+<p>NOTE: Bob would probably make use of Docker and cloud
+compute services to make this production grade.
+&quot;&quot;&quot;</p>
+
+</section>
+
+<section class="section" id="s2">
+  <h2>🏗️ Alex builds a NetworkQueryEngine</h2>
+  <p class="lead"> Alex builds a NetworkQueryEngine that connects to Beth and Bob’s individual ContributorSer</p>
+  <div class="code-block">
+<div class="code-header"><span class="badge badge-amber">code</span></div>
+<pre>&quot;&quot;&quot;Alex&#x27;s network query engine.
+
+Alex builds a NetworkQueryEngine to connect to a
+list of ContributorService’s.
+&quot;&quot;&quot;
+
+from llama_index.networks.contributor import ContributorClient
+from llama_index.networks.query_engine import NetworkQueryEngine
+from llama_index.llms.groq import Groq
+
+# Use ContributorClient to connect to a ContributorService
+beth_client = ContributorClient.from_config_file(
+    env_file=&quot;.env.beth_contributor.client&quot;
+)
+bob_client = ContributorClient.from_config_file(
+    env_file=&quot;.env.bob_contributor.client&quot;
+)
+contributors = [beth_client, bob_client]
+
+# NetworkQueryEngine
+llm = Groq()
+network_query_engine = NetworkQueryEngine.from_args(
+    contributors=contributors,
+    llm=llm
+)
+
+# Can query it like any other query engine
+network_query_engine.query(&quot;Why is the sky blue?&quot;)</pre>
+</div>
+  <p>For Alex’s part, he uses the <code>NetworkQueryEngine</code>  class of the <code>llama-index-networks</code>  extension to be able to connect to both Beth and Bob’s <code>ContributorService</code> ’s.</p>
+<p>python</p>
+<p>```
+&quot;&quot;&quot;Alex&#x27;s network query engine.</p>
+<p>Alex builds a NetworkQueryEngine to connect to a
+list of ContributorService’s.
+&quot;&quot;&quot;</p>
+<p>from llama_index.networks.contributor import ContributorClient
+from llama_index.networks.query_engine import NetworkQueryEngine
+from llama_index.llms.groq import Groq</p>
+
+</section>
+
+<section class="section" id="s3">
+  <h2>📊 A new world of data supply and consumption</h2>
+  <p class="lead"> RAG marketplaces is a use case that can be made possible with llama-index[networks].</p>
+  <div class="compare-grid">
+<div class="compare-card old"><h4>传统方法</h4><p> RAG marketplaces is a use case that can be made possible with llama-index[networks].
+
+ One</p></div>
+<div class="compare-card new"><h4>新方法</h4><p>possible world that could easily be powered by <code>llama-index[networks]</code>  are marketplaces for RAG. A place where data suppliers package their data in the form of RAGs to data consumers look to expand</p></div>
+</div>
+  <p>One possible world that could easily be powered by <code>llama-index[networks]</code>  are marketplaces for RAG. A place where data suppliers package their data in the form of RAGs to data consumers look to expand their own query system’s knowledge. Potential RAG (data) suppliers could be your local newspaper, book publishing companies, etc.</p>
+<p>In this new data supply and consumption model, there is more onus on the data supplier to prepare the data in a fashion that makes it easier to consume — specifically, the suppliers own the building of the query engine. This should benefit the data consumer greatly since, with a standard interface that is provided by the likes of a <code>ContributorService</code>  (that encapsulates a <code>QueryEngine</code> ), they can get access to the knowledge they seek from the data easier than ever before (i.e., in relation to traditional data marketplaces that exchange raw data).</p>
+<p>It is with this kind of vision that we’ve built <code>llama-index[networks]</code>  to make it: (i) easier for data suppliers to supply the knowledge contained in their data in new and arguably more effective ways, and (ii) easier for data consumers to connect to these new forms of external knowledge.</p>
+
+</section>
+
+<section class="section" id="s4">
+  <h2>🎯 Internal networks: another potential use case</h2>
+  <p class="lead">In addition to powering RAG marketplaces, we foresee the need of connecting RAGs that an overarching company may own, but not necessarily manage. More concretely, a franchise may have the rights to th</p>
+  <div class="block-q"><p>In addition to powering RAG marketplaces, we foresee the need of connecting RAGs that an overarching company may own, but not necessarily manage. More concretely, a franchise may have the rights to the data across all of its operations. And, while they could build a “central”, monolithic RAG over th</p></div>
+  <p>The idea of exchanging information to build better, more knowledgeable systems is not new. However, the idea of using RAGs to facilitate that exchange may be (to our knowledge, it is), and we believe that both existing and new use cases requiring such collaboration can benefit from concept.</p>
+
+</section>
+
+<section class="section" id="s5">
+  <h2>🔧 A quick note on privacy</h2>
+  <p class="lead">An important consideration in the collaboration of data is privacy and security. It bears mentioning that the examples above assume that the data that is being shared across the network is in complian</p>
+  <div class="compare-grid">
+<div class="compare-card old"><h4>传统方法</h4><p>An important consideration in the collaboration of data is privacy and security. It bears mentioning that the examples above assume that the data that is being shared across the network is in complian</p></div>
+<div class="compare-card new"><h4>新方法</h4><p>ce with data privacy and security laws and regulations. It is our belief that as this technology grows, that the necessary features and capabilities will be developed and incorporated to facilitate in</p></div>
+</div>
+  <p>Check out the demo to learn more!</p>
+<p>To see an actual demo of a network connecting to a set of contributors, check out the Github repository <a href="https://github.com/run-llama/llama_index/tree/main/llama-index-networks" target="_blank">code</a> for <code>llama-index-networks</code>  and navigate to the <code>examples/demo</code>  subfolder.</p>
+
+</section>
+
+
+</div>
+
+<footer class="footer">
+  <p>LlamaIndex Blog Deep-Dive | 深度解析系列</p>
+  <div class="footer-links">
+    <a href="../">Hub 首页</a>
+    <a href="https://www.llamaindex.ai/blog/querying-a-network-of-knowledge-with-llama-index-networks-d784b4c3006f" target="_blank">原文链接</a>
+  </div>
+</footer>
+
+</body>
+</html>

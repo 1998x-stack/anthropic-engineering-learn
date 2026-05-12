@@ -1,0 +1,492 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>深度解析：Workflows Beta: Build Complex AI Apps | LlamaIndex</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #fafbfc;
+            --surface: #fff;
+            --text: #0f172a;
+            --text-secondary: #64748b;
+            --border: #e2e8f0;
+            --radius: 14px;
+            --amber: #d97706;
+            --amber-light: #fbbf24;
+            --amber-dark: #78350f;
+            --green: #10b981;
+            --red: #ef4444;
+            --blue: #3b82f6;
+            --purple: #6366f1;
+            --teal: #14b8a6;
+            --mono: 'JetBrains Mono', monospace;
+            --sans: 'Noto Sans SC', 'Inter', sans-serif;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family: var(--sans); background: var(--bg); color: var(--text); line-height: 1.7; }
+        a { color: var(--amber); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        /* Nav */
+        .nav {
+            position: sticky; top: 0; z-index: 100;
+            background: rgba(15,23,42,0.95);
+            backdrop-filter: blur(12px);
+            padding: 0 2rem; height: 56px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .nav-brand { color: #fbbf24; font-weight: 700; font-size: 1.1rem; }
+        .nav-back { color: #94a3b8; font-size: 0.9rem; }
+        .nav-back:hover { color: #fbbf24; text-decoration: none; }
+
+        /* Hero */
+        .hero {
+            background: linear-gradient(135deg, #0f172a 0%, #78350f 50%, #d97706 100%);
+            padding: 4rem 2rem 3rem;
+            color: #fff;
+        }
+        .hero-inner { max-width: 900px; margin: 0 auto; }
+        .hero h1 { font-size: 2rem; font-weight: 800; margin-bottom: 0.75rem; line-height: 1.3; }
+        .hero-desc { color: #fde68a; font-size: 1.05rem; margin-bottom: 2rem; }
+        .hero-meta { color: #d4a06a; font-size: 0.85rem; margin-bottom: 1.5rem; }
+        .stat-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem;
+        }
+        .stat-card {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: var(--radius);
+            padding: 1.2rem; text-align: center;
+            backdrop-filter: blur(6px);
+        }
+        .stat-value { font-size: 1.8rem; font-weight: 800; color: #fbbf24; }
+        .stat-label { font-size: 0.8rem; color: #fde68a; text-transform: uppercase; letter-spacing: 0.05em; }
+        .stat-desc { font-size: 0.75rem; color: #d4a06a; margin-top: 2px; }
+
+        /* Page */
+        .page { max-width: 900px; margin: 0 auto; padding: 2rem; }
+
+        /* TOC */
+        .toc {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 0.5rem; margin-bottom: 3rem;
+        }
+        .toc-item {
+            display: flex; align-items: center; gap: 8px;
+            padding: 0.6rem 1rem; border-radius: 8px;
+            background: var(--surface); border: 1px solid var(--border);
+            font-size: 0.85rem; color: var(--text); transition: all 0.2s;
+        }
+        .toc-item:hover { border-color: var(--amber); color: var(--amber); text-decoration: none; transform: translateY(-1px); }
+        .toc-num { font-family: var(--mono); font-weight: 700; color: var(--amber); font-size: 0.75rem; }
+
+        /* Section */
+        .section {
+            margin-bottom: 3rem;
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 2rem;
+            border: 1px solid var(--border);
+        }
+        .section h2 {
+            font-size: 1.4rem; font-weight: 700; margin-bottom: 0.5rem;
+            color: var(--text);
+        }
+        .lead { color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 1.5rem; }
+        .content-body { font-size: 0.95rem; }
+        .content-body p { margin-bottom: 1rem; }
+        .content-body ul { padding-left: 1.5rem; margin-bottom: 1rem; }
+        .content-body li { margin-bottom: 0.4rem; }
+        .content-body h3 { font-size: 1.1rem; font-weight: 600; margin: 1.5rem 0 0.75rem; color: var(--amber-dark); }
+        .content-body strong { color: var(--text); }
+
+        /* Code */
+        .code-block {
+            background: #1e293b; color: #e2e8f0; padding: 1rem 1.2rem;
+            border-radius: 8px; overflow-x: auto; font-family: var(--mono);
+            font-size: 0.82rem; line-height: 1.6; margin: 1rem 0;
+        }
+        .inline-code {
+            background: #f1f5f9; color: #b45309; padding: 2px 6px;
+            border-radius: 4px; font-family: var(--mono); font-size: 0.85em;
+        }
+
+        /* Visualizations */
+        .viz-block { margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
+        .viz-title { font-size: 0.9rem; color: var(--amber-dark); margin-bottom: 1rem; font-weight: 600; }
+
+        /* Chart */
+        .chart { display: flex; flex-direction: column; gap: 0.6rem; }
+        .chart-row { display: flex; align-items: center; gap: 0.75rem; }
+        .chart-label { width: 140px; font-size: 0.8rem; color: var(--text-secondary); text-align: right; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .chart-bar-wrap { flex: 1; background: #f1f5f9; border-radius: 6px; height: 28px; overflow: hidden; }
+        .chart-bar {
+            height: 100%; border-radius: 6px; display: flex; align-items: center;
+            padding: 0 10px; font-size: 0.75rem; font-weight: 600; color: #fff;
+            transition: width 0.8s ease;
+        }
+        .chart-bar.amber { background: linear-gradient(90deg, #d97706, #fbbf24); }
+        .chart-bar.green { background: linear-gradient(90deg, #059669, #10b981); }
+        .chart-bar.blue { background: linear-gradient(90deg, #2563eb, #3b82f6); }
+        .chart-bar.purple { background: linear-gradient(90deg, #4f46e5, #6366f1); }
+        .chart-bar.teal { background: linear-gradient(90deg, #0d9488, #14b8a6); }
+        .chart-bar.red { background: linear-gradient(90deg, #dc2626, #ef4444); }
+
+        /* Flow */
+        .flow {
+            display: flex; align-items: center; gap: 0.5rem;
+            flex-wrap: wrap; justify-content: center;
+        }
+        .flow-step {
+            background: #fffbeb; border: 2px solid #fbbf24;
+            padding: 0.6rem 1rem; border-radius: 10px;
+            font-size: 0.82rem; font-weight: 600; color: #78350f;
+            white-space: nowrap;
+        }
+        .flow-step.amber { background: #fef3c7; border-color: #d97706; }
+        .flow-arrow { color: #d97706; font-size: 1.2rem; font-weight: 700; }
+
+        /* Concept grid */
+        .concept-grid {
+            display: flex; flex-wrap: wrap; gap: 0.5rem;
+        }
+        .concept-card {
+            background: #fffbeb; border: 1px solid #fde68a;
+            border-radius: 8px; padding: 0.5rem 0.75rem;
+        }
+
+        /* Badge */
+        .badge {
+            display: inline-block; padding: 3px 10px; border-radius: 20px;
+            font-size: 0.75rem; font-weight: 600;
+        }
+        .badge-amber { background: #fef3c7; color: #92400e; }
+        .badge-green { background: #d1fae5; color: #065f46; }
+        .badge-blue { background: #dbeafe; color: #1e40af; }
+        .badge-purple { background: #e0e7ff; color: #3730a3; }
+        .badge-teal { background: #ccfbf1; color: #115e59; }
+        .badge-red { background: #fee2e2; color: #991b1b; }
+
+        /* Block quote */
+        .block-q {
+            border-left: 4px solid #fbbf24;
+            background: #fffbeb; padding: 1rem 1.5rem;
+            border-radius: 0 8px 8px 0; margin: 1rem 0;
+            font-style: italic; color: #78350f;
+        }
+
+        /* Footer */
+        .footer {
+            background: #0f172a; color: #94a3b8; padding: 2rem;
+            text-align: center; font-size: 0.85rem;
+        }
+        .footer a { color: #fbbf24; }
+        .footer-links { margin-top: 0.5rem; }
+        .footer-links a { margin: 0 1rem; }
+
+        /* Responsive */
+        @media(max-width:768px) {
+            .hero h1 { font-size: 1.4rem; }
+            .stat-grid { grid-template-columns: repeat(2, 1fr); }
+            .toc { grid-template-columns: 1fr; }
+            .flow { flex-direction: column; gap: 8px; }
+            .flow-arrow { transform: rotate(90deg); }
+            .chart-label { width: 100px; font-size: 0.72rem; }
+            .section { padding: 1.2rem; }
+            .nav { padding: 0 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <a href="../" class="nav-brand">LlamaIndex 深度解析</a>
+        <a href="../" class="nav-back">&larr; Back to Hub</a>
+    </nav>
+
+    <header class="hero">
+        <div class="hero-inner">
+            <div class="hero-meta"> &middot; LlamaIndex Blog</div>
+            <h1>Workflows Beta: Build Complex AI Apps | LlamaIndex</h1>
+            <p class="hero-desc">深入理解 LlamaIndex Workflow 系统的设计原理与应用模式</p>
+            <div class="stat-grid">
+                <div class="stat-card">
+                <div class="stat-value">6</div>
+                <div class="stat-label">Sections</div>
+                <div class="stat-desc">章节</div>
+            </div>
+<div class="stat-card">
+                <div class="stat-value">4</div>
+                <div class="stat-label">Code</div>
+                <div class="stat-desc">代码块</div>
+            </div>
+<div class="stat-card">
+                <div class="stat-value">1800+</div>
+                <div class="stat-label">Words</div>
+                <div class="stat-desc">字数</div>
+            </div>
+<div class="stat-card">
+                <div class="stat-value">12</div>
+                <div class="stat-label">Tech</div>
+                <div class="stat-desc">技术栈</div>
+            </div>
+
+            </div>
+        </div>
+    </header>
+
+    <div class="page">
+        <nav class="toc">
+            <a href="#s1" class="toc-item"><span class="toc-num">01</span>Overview</a>
+<a href="#s2" class="toc-item"><span class="toc-num">02</span>Limitations of a Graph-based U</a>
+<a href="#s3" class="toc-item"><span class="toc-num">03</span>From Graphs to EDA: go event-d</a>
+<a href="#s4" class="toc-item"><span class="toc-num">04</span>A workflow primer</a>
+<a href="#s5" class="toc-item"><span class="toc-num">05</span>Why you should use workflows t</a>
+<a href="#s6" class="toc-item"><span class="toc-num">06</span>Resources</a>
+        </nav>
+
+        
+    <section class="section" id="s1">
+        <h2>📋 Overview</h2>
+        <p class="lead">We’re pleased to be introducing a brand-new beta feature of LlamaIndex: workflows, a mechanism for orchestrating actions in the increasingly-comple...</p>
+        <div class="content-body">
+            <p>We’re pleased to be introducing a brand-new beta feature of LlamaIndex: workflows, a mechanism for orchestrating actions in the increasingly-complex AI application we see our users building.</p>
+<p>What started as a trend with the advent of LLMs is now a de-facto standard: AI applications are made of multiple tasks implemented by different components. Open source frameworks in the market strive to make the life of AI engineers easier by providing easy-to-use abstractions for foundational components like data loaders, LLMs, vector databases, and rerankers, all the way up to external services. Meanwhile, all of those frameworks are also on a quest to find what’s the best abstraction to orchestrate such components, researching what’s most intuitive and efficient for an AI developer in order to implement the logic that keeps together a compound AI system.</p>
+<p>Two of those potential orchestration patterns are chains and pipelines, both of which are implementations of the same Directed Acyclic Graph (DAG) abstraction. We took a stab at this with our <a href="https://www.llamaindex.ai/blog/introducing-query-pipelines-025dc2bb0537" target="_blank">Query Pipelines</a> release at the beginning of the year - it was a declarative API that let you orchestrate simple-to-advanced query workflows over your data for different use cases, like QA, structured extraction, and agentic automation. But as we tried to build upon it and experimented with adding cycles to better support more complex workflows, we noticed several issues, causing us to reflect on why a DAG may not be the right fit for an agentic landscape, and what alternatives we could introduce in the framework.</p>
+        </div>
+        
+            <div class="viz-block">
+                <h4 class="viz-title">文章结构流程</h4>
+                <div class="flow"><div class="flow-step">Overview</div>
+<div class="flow-arrow">&#8594;</div>
+<div class="flow-step amber">Limitations of a Gra</div>
+<div class="flow-arrow">&#8594;</div>
+<div class="flow-step">From Graphs to EDA: </div>
+<div class="flow-arrow">&#8594;</div>
+<div class="flow-step amber">A workflow primer</div>
+<div class="flow-arrow">&#8594;</div>
+<div class="flow-step">Why you should use w</div></div>
+            </div>
+    </section>
+    <section class="section" id="s2">
+        <h2>📚 Limitations of a Graph-based UX</h2>
+        <p class="lead">A fundamental aspect of DAGs is the “A” in DAGs: they are acyclic, meaning there are no loops. But in a world that’s more and more agentic, the ina...</p>
+        <div class="content-body">
+            <p>A fundamental aspect of DAGs is the “A” in DAGs: they are acyclic, meaning there are no loops. But in a world that’s more and more agentic, the inability to perform loops in an AI application’s logic is simply unacceptable. For example, if one component provides bad results, an AI developer should have a way to tell the system to self-correct and try again.</p>
+<p>Even without adding cycles and loops to a DAG, the query pipeline suffered from a few noticeable issues:
+<ul><li>hard to debug when things go wrong</li>
+<li>they obscure how components and modules are being executed</li>
+<li>our pipeline orchestrator became increasingly extremely complex and had to handle a ton of different edge cases</li>
+<li>they were hard to read for complex pipelines</li></p>
+</ul>Once we added cycles to query pipelines, these developer UX issues around graphs were amplified. We experienced first-hand developer pain in areas like:
+<ul><li>A lot of core orchestration logic like <code class="inline-code">if-else</code>  statements and <code class="inline-code">while</code>  loops get baked into the edges of the graph. Defining these edges becomes cumbersome and verbose.</li>
+<li>It became hard to handle edge cases around optional and default values. It was hard for us as a framework to figure out whether a parameter would get passed from upstream nodes.</li>
+<li>Defining graphs with cycles didn’t always feel as natural to developers building agents. An agent encapsulates a general LLM-powered entity that can take in observations and generate responses. Here the graph UX enforced that “agent” node had the incoming edges and outgoing edges explicitly defined, forcing users to define verbose communication patterns with other nodes.</li>
+</ul>We asked: are graphs really the only abstraction we can use to orchestrate components in a compound AI system?
+        </div>
+        
+            <div class="viz-block">
+                <h4 class="viz-title">内容深度分析</h4>
+                <div class="chart"><div class="chart-row">
+            <div class="chart-label">Overview</div>
+            <div class="chart-bar-wrap"><div class="chart-bar amber" style="width:54%">54%</div></div>
+        </div>
+<div class="chart-row">
+            <div class="chart-label">Limitations of a G</div>
+            <div class="chart-bar-wrap"><div class="chart-bar green" style="width:58%">58%</div></div>
+        </div>
+<div class="chart-row">
+            <div class="chart-label">From Graphs to EDA</div>
+            <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:34%">34%</div></div>
+        </div>
+<div class="chart-row">
+            <div class="chart-label">A workflow primer</div>
+            <div class="chart-bar-wrap"><div class="chart-bar purple" style="width:100%">100%</div></div>
+        </div>
+<div class="chart-row">
+            <div class="chart-label">Why you should use</div>
+            <div class="chart-bar-wrap"><div class="chart-bar teal" style="width:22%">22%</div></div>
+        </div>
+<div class="chart-row">
+            <div class="chart-label">Resources</div>
+            <div class="chart-bar-wrap"><div class="chart-bar red" style="width:15%">15%</div></div>
+        </div></div>
+            </div>
+    </section>
+    <section class="section" id="s3">
+        <h2>📚 From Graphs to EDA: go event-driven</h2>
+        <p class="lead">A compound AI system can be implemented with a LlamaIndex workflow. The workflow dispatches events back and forth through a collection of Python fu...</p>
+        <div class="content-body">
+            <p>A compound AI system can be implemented with a LlamaIndex <em>workflow</em>. The workflow dispatches events back and forth through a collection of Python functions called <em>steps</em>. Each step can be seen as one component of your system: one to process a query, one to talk with an LLM, one to load data from a vector database and so on. Every step receives one or more events to process and can optionally send back events that will be relayed to other components if needed.</p>
+<p>Moving to an event-driven architecture causes a fundamental shift in design. In many graph implementations the graph traversal algorithm is responsible for determining what component should run next and what data should be passed. In an event-driven architecture, the component subscribes to a certain types of events and it’s ultimately responsible for deciding what to do based on the data it received.</p>
+<p>In an event-driven system, concepts like optionality of inputs and default values are sorted out at the component level, dramatically simplifying the orchestration code.</p>
+        </div>
+        
+            <div class="viz-block">
+                <h4 class="viz-title">核心技术概念</h4>
+                <div class="concept-grid"><div class="concept-card"><span class="badge badge-amber">API</span></div>
+<div class="concept-card"><span class="badge badge-green">Agent</span></div>
+<div class="concept-card"><span class="badge badge-blue">Async</span></div>
+<div class="concept-card"><span class="badge badge-purple">Document</span></div>
+<div class="concept-card"><span class="badge badge-teal">Function Calling</span></div>
+<div class="concept-card"><span class="badge badge-red">Index</span></div></div>
+            </div>
+    </section>
+    <section class="section" id="s4">
+        <h2>🤖 A workflow primer</h2>
+        <p class="lead">To help clarify this idea, let’s look at an example. A minimal LlamaIndex workflow looks like this:
+
+python
+
+
+from llamaindex</p>
+        <div class="content-body">
+            <p>To help clarify this idea, let’s look at an example. A minimal LlamaIndex workflow looks like this:</p>
+<p>python</p>
+<pre class="code-block"><code>from llama_index.core.workflow import (
+    StartEvent,
+    StopEvent,
+    Workflow,
+    step,
+)
+<p>from llama_index.llms.openai import OpenAI</p>
+<p>class OpenAIGenerator(Workflow):
+    @step()
+    async def generate(self, ev: StartEvent) -&gt; StopEvent:
+        query = ev.get("query")
+        llm = OpenAI()
+        response = await llm.acomplete(query)
+        return StopEvent(result=str(response))</p>
+<p>w = OpenAIGenerator(timeout=10, verbose=False)
+result = await w.run(query="What's LlamaIndex?")
+print(result)
+</code></pre>
+    The <code class="inline-code">generate</code>  function is marked as a workflow step using the <code class="inline-code">@step</code>  decorator and it declares which events it wants to receive and which events it will send back using the method signature with proper typing annotations. In order to run a workflow, we create an instance of the <code class="inline-code">OpenAIGenerator</code>  class passing some configuration parameters like the desired timeout and we then call the <code class="inline-code">run</code>  method. Any keyword argument passed to <code class="inline-code">run</code>  will be packed into a special event of type <code class="inline-code">StartEvent</code>  that will be relayed to the steps that requested it (in this case, only the <code class="inline-code">generate</code>  step). The <code class="inline-code">generate</code>  step returns a special event of type <code class="inline-code">StopEvent</code>  that will signal the workflow to gracefully halt its execution. A <code class="inline-code">StopEvent</code>  carries any data that we want to return to the caller as the workflow result, in this case the LLM response.</p>
+<h3>Workflows can loop</h3>
+<p>In event-driven architectures, loops have to do with communication rather than topology. Any step can decide to call another step multiple times by crafting and sending the proper event. Let’s see a self-correction loop for example (check the <a href="https://docs.llamaindex.ai/en/latest/examples/workflow/reflection/" target="_blank">notebook</a> for the full code):</p>
+<p>python</p>
+<pre class="code-block"><code>class ExtractionDone(Event):
+    output: str
+    passage: str
+<p>class ValidationErrorEvent(Event):
+    error: str
+    wrong_output: str
+    passage: str</p>
+<p>class ReflectionWorkflow(Workflow):
+    @step()
+    async def extract(
+        self, ev: StartEvent | ValidationErrorEvent
+    ) -&gt; StopEvent | ExtractionDone:
+        if isinstance(ev, StartEvent):
+            passage = ev.get("passage")
+            if not passage:
+                return StopEvent(result="Please provide some text in input")
+            reflection_prompt = ""
+        elif isinstance(ev, ValidationErrorEvent):
+            passage = ev.passage
+            reflection_prompt = REFLECTION_PROMPT.format(
+                wrong_answer=ev.wrong_output, error=ev.error
+            )</p>
+<p>llm = Ollama(model="llama3", request_timeout=30)
+        prompt = EXTRACTION_PROMPT.format(
+            passage=passage, schema=CarCollection.schema_json()
+        )
+        if reflection_prompt:
+            prompt += reflection_prompt</p>
+<p>output = await llm.acomplete(prompt)</p>
+<p>return ExtractionDone(output=str(output), passage=passage)</p>
+<p>@step()
+    async def validate(
+        self, ev: ExtractionDone
+    ) -&gt; StopEvent | ValidationErrorEvent:
+        try:
+            json.loads(ev.output)
+        except Exception as e:
+            print("Validation failed, retrying...")
+            return ValidationErrorEvent(
+                error=str(e), wrong_output=ev.output, passage=ev.passage
+            )</p>
+<p>return StopEvent(result=ev.output)</p>
+<p>w = ReflectionWorkflow(timeout=60, verbose=True)
+result = await w.run(
+    passage="There are two cars available: a Fiat Panda with 45Hp and a Honda Civic with 330Hp."
+)
+print(result)
+</code></pre>
+    In this example, the <code class="inline-code">validate</code>  step receives the result of the tentative schema extraction as an event and it can decide to try again by returning a <code class="inline-code">ValidationErrorEvent</code>  that will be eventually delivered to the <code class="inline-code">extract</code>  step which will perform another attempt. Note that in this example the workflow might time out if this extract/validate loop keeps providing poor results for too long, but another strategy might be giving up after a precise number of attempts, just to give an example.</p>
+<h3>Workflows keep state</h3>
+<p>Workflows keep a global state during the execution, and this state can be shared and propagated to its steps upon request. This shared state is implemented as a <code class="inline-code">Context</code>  object and can be used by steps to store data in between iterations but also as an alternative form of communication among different steps. Let’s see an excerpt from a more complex RAG example as an example showing how to use the global context (check <a href="https://docs.llamaindex.ai/en/latest/examples/workflow/rag/" target="_blank">notebook</a> for full code):</p>
+<p>python</p>
+<pre class="code-block"><code>class RAGWorkflow(Workflow):
+    @step(pass_context=True)
+    async def ingest(self, ctx: Context, ev: StartEvent) -&gt; Optional[StopEvent]:
+        dataset_name = ev.get("dataset")
+        _, documents = download_llama_dataset(dsname, "./data")
+        ctx.data["INDEX"] = VectorStoreIndex.from_documents(documents=documents)
+        return StopEvent(result=f"Indexed {len(documents)} documents.")
+<p>...
+</code></pre>
+    In this case the <code class="inline-code">ingest</code>  step creates an index, and it wants to make it available to any other step that might needed it later during workflow execution. The idiomatic way of doing that in a LlamaIndex workflow is to declare the step requires an instance of the global context (<code class="inline-code">@step(pass_context=True)</code>  does the trick) and store the index in the context itself with a predefined key that other steps might access later.</p>
+<h3>Workflows can be customized</h3>
+<p>Alongside Workflows, we’ll be releasing a set of predefined workflows so that the most common use cases can be implemented with a single line of code. Using these predefined flows, users still might want to just <em>slightly</em> change a predefined workflow to introduce some custom behavior without having to rewrite a whole workflow from scratch. Let’s say you want to customize a RAG workflow and use a custom re-ranking step, all you would need to do is subclass a hypothetical built-in <code class="inline-code">RAGWorkflow</code>  class and override the <code class="inline-code">rerank</code>  step like this:</p>
+<p>python</p>
+<pre class="code-block"><code>class MyWorkflow(RAGWorkflow):
+    @step(pass_context=True)
+    def rerank(
+        self, ctx: Context, ev: Union[RetrieverEvent, StartEvent]
+    ) -&gt; Optional[QueryResult]:
+        # my custom reranking logic here
+<p>w = MyWorkflow(timeout=60, verbose=True)
+result = await w.run(query="Who is Paul Graham?")
+</code></pre></p>
+<h3>Workflows can be debugged</h3>
+<p>The complexity of your workflows will grow with the complexity of your application logic, and sometimes it can be hard to understand how events will flow during execution by just looking at the Python code. To ease the understanding of complex workflows and to support the debugging of workflow executions, LlamaIndex provides two functions:
+<ul><li><code class="inline-code">draw_all_possible_flows</code>  produces a picture showing all the steps in a workflow and how events will possibly flow</li>
+<li><code class="inline-code">draw_most_recent_execution</code>  produces a similar picture, showing only the events that were actually sent during the last workflow execution</li></p>
+</ul>On top of that, workflows can be executed manually, by calling <code class="inline-code">run_step()</code>  multiple times until all the steps have completed. After each <code class="inline-code">run_step</code>  call, the workflow can be inspected, examining any intermediate results or debug logs.
+        </div>
+        
+    </section>
+    <section class="section" id="s5">
+        <h2>🤖 Why you should use workflows today</h2>
+        <p class="lead">Despite being at an early stage of development, LlamaIndex workflows already represent a step forward compared to query pipelines, extending their ...</p>
+        <div class="content-body">
+            <p>Despite being at an early stage of development, LlamaIndex workflows already represent a step forward compared to query pipelines, extending their functionalities and adding more flexibility. On top of that, workflows come with a set of features that you would normally expect from a much more mature software:
+<ul><li>Fully async with streaming support</li>
+<li>Instrumented by default, providing one-click observability with the supported integrations</li>
+<li>Step-by-step execution for easier debugging</li>
+<li>Validation and visualization of the event-driven dependencies</li>
+<li>Events are implemented as pydantic models to ease customization and further developments of new features</li></ul></p>
+        </div>
+        
+    </section>
+    <section class="section" id="s6">
+        <h2>📌 Resources</h2>
+        <p class="lead">Check out our workflow documentation and our examplesincluding:
+
+-  [RAG
+  -  Reflection
+  -  Function calling
+  -  ReAct agent</p>
+        <div class="content-body">
+            <p>Check out our <a href="https://docs.llamaindex.ai/en/latest/module_guides/workflow/" target="_blank">workflow documentation</a> and our <a href="https://docs.llamaindex.ai/en/latest/examples/workflow/rag/" target="_blank">examplesincluding:
+<ul><li>[RAG</a></li>
+<li><a href="https://docs.llamaindex.ai/en/latest/examples/workflow/reflection/" target="_blank">Reflection</a></li>
+<li><a href="https://docs.llamaindex.ai/en/latest/examples/workflow/function_calling_agent/" target="_blank">Function calling</a></li>
+<li><a href="https://docs.llamaindex.ai/en/latest/examples/workflow/react_agent/" target="_blank">ReAct agent</a></li></ul></p>
+        </div>
+        
+    </section>
+    </div>
+
+    <footer class="footer">
+        <div>LlamaIndex Blog 深度解析系列</div>
+        <div class="footer-links">
+            <a href="../">返回 Hub</a>
+            <a href="https://www.llamaindex.ai/blog/introducing-workflows-beta-a-new-way-to-create-complex-ai-applications-with-llamaindex" target="_blank">阅读原文</a>
+        </div>
+    </footer>
+</body>
+</html>

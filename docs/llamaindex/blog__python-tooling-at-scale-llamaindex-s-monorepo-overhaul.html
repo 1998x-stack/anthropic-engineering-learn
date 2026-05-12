@@ -1,0 +1,435 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>深度解析：Python Monorepo Tooling Overhaul Guide | LlamaIndex</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #fafbfc;
+  --surface: #fff;
+  --text: #0f172a;
+  --text-secondary: #64748b;
+  --border: #e2e8f0;
+  --radius: 14px;
+  --amber: #d97706;
+  --amber-light: #fbbf24;
+  --amber-dark: #92400e;
+  --purple: #6366f1;
+  --teal: #14b8a6;
+  --green: #10b981;
+  --red: #ef4444;
+  --blue: #3b82f6;
+  --mono: 'JetBrains Mono', monospace;
+  --sans: 'Noto Sans SC', 'Inter', sans-serif;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:var(--sans); background:var(--bg); color:var(--text); line-height:1.7; }
+a { color:var(--amber); text-decoration:none; }
+a:hover { text-decoration:underline; }
+
+/* Nav */
+.nav {
+  position:sticky; top:0; z-index:100;
+  background:rgba(15,23,42,0.95); backdrop-filter:blur(12px);
+  padding:0 2rem; height:56px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.nav-brand { color:#fbbf24; font-weight:700; font-size:1.1rem; }
+.nav-back { color:#94a3b8; font-size:0.9rem; }
+.nav-back:hover { color:#fbbf24; }
+
+/* Hero */
+.hero {
+  background:linear-gradient(135deg,#0f172a 0%,#78350f 50%,#d97706 100%);
+  padding:4rem 2rem 3rem; color:#fff; text-align:center;
+}
+.hero-badge { display:inline-block; background:rgba(251,191,36,0.2); color:#fbbf24;
+  padding:4px 16px; border-radius:20px; font-size:0.85rem; margin-bottom:1rem; font-weight:500; }
+.hero h1 { font-size:clamp(1.5rem,4vw,2.4rem); font-weight:800; max-width:800px; margin:0 auto 1rem; line-height:1.3; }
+.hero-sub { color:rgba(255,255,255,0.8); font-size:1rem; max-width:600px; margin:0 auto 2rem; }
+.stats { display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; max-width:700px; margin:0 auto; }
+.stat-card {
+  background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12);
+  border-radius:12px; padding:1rem 0.5rem; text-align:center;
+}
+.stat-emoji { font-size:1.3rem; margin-bottom:4px; }
+.stat-val { font-size:1.4rem; font-weight:800; color:#fbbf24; }
+.stat-label { font-size:0.75rem; color:rgba(255,255,255,0.7); text-transform:uppercase; letter-spacing:0.5px; }
+.stat-desc { font-size:0.7rem; color:rgba(255,255,255,0.5); margin-top:2px; }
+
+/* Page */
+.page { max-width:900px; margin:0 auto; padding:2rem 1.5rem; }
+
+/* TOC */
+.toc { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:0.75rem; margin-bottom:3rem; }
+.toc-item {
+  display:flex; align-items:center; gap:10px;
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:10px; padding:10px 14px; font-size:0.9rem;
+  color:var(--text); transition:all 0.2s;
+}
+.toc-item:hover { border-color:var(--amber); background:#fffbeb; text-decoration:none; transform:translateY(-1px); }
+.toc-num {
+  background:linear-gradient(135deg,#d97706,#f59e0b);
+  color:#fff; font-weight:700; font-size:0.75rem;
+  width:28px; height:28px; border-radius:8px;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+
+/* Section */
+.section { margin-bottom:3rem; }
+.section h2 {
+  font-size:1.5rem; font-weight:700; margin-bottom:0.5rem;
+  padding-bottom:0.5rem; border-bottom:2px solid var(--amber);
+}
+.lead { color:var(--text-secondary); font-size:0.95rem; margin-bottom:1.2rem; }
+
+/* Cards */
+.card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius); padding:1.2rem; margin-bottom:0.8rem;
+}
+.card p { font-size:0.9rem; }
+.card-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:0.8rem; margin:1rem 0; }
+
+/* Code Block */
+.code-block {
+  background:#1e293b; border-radius:12px; overflow:hidden; margin:1rem 0;
+}
+.code-header { padding:8px 16px; background:#0f172a; display:flex; align-items:center; gap:8px; }
+.code-block pre {
+  padding:1rem 1.2rem; color:#e2e8f0; font-family:var(--mono);
+  font-size:0.82rem; line-height:1.6; overflow-x:auto; white-space:pre;
+}
+
+/* Compare */
+.compare-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin:1rem 0; }
+.compare-card {
+  background:var(--surface); border-radius:var(--radius); padding:1.2rem;
+  border:1px solid var(--border);
+}
+.compare-card.old { border-left:4px solid var(--red); }
+.compare-card.new { border-left:4px solid var(--green); }
+.compare-card h4 { font-size:0.95rem; margin-bottom:0.5rem; }
+
+/* Chart */
+.chart { margin:1rem 0; }
+.chart-row { display:flex; align-items:center; margin-bottom:8px; }
+.chart-label { width:160px; font-size:0.85rem; font-weight:500; flex-shrink:0; }
+.chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:32px; overflow:hidden; }
+.chart-bar {
+  height:100%; border-radius:8px; display:flex; align-items:center;
+  padding:0 12px; font-size:0.75rem; font-weight:600; color:#fff;
+  transition:width 0.6s ease;
+}
+.chart-bar.amber { background:linear-gradient(90deg,#d97706,#f59e0b); }
+.chart-bar.purple { background:linear-gradient(90deg,#6366f1,#818cf8); }
+.chart-bar.green { background:linear-gradient(90deg,#10b981,#34d399); }
+.chart-bar.blue { background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+.chart-bar.teal { background:linear-gradient(90deg,#14b8a6,#2dd4bf); }
+.chart-bar.red { background:linear-gradient(90deg,#ef4444,#f87171); }
+
+/* Timeline */
+.timeline { position:relative; padding-left:2rem; margin:1rem 0; }
+.timeline::before {
+  content:''; position:absolute; left:7px; top:0; bottom:0; width:3px;
+  background:linear-gradient(180deg,#d97706,#f59e0b,#fbbf24);
+  border-radius:2px;
+}
+.tl-item { position:relative; margin-bottom:1.5rem; padding-left:1rem; }
+.tl-dot {
+  position:absolute; left:-2rem; top:4px;
+  width:16px; height:16px; border-radius:50%;
+  background:#d97706; border:3px solid #fef3c7;
+}
+.tl-item:nth-child(2) .tl-dot { background:#3b82f6; border-color:#dbeafe; }
+.tl-item:nth-child(3) .tl-dot { background:#10b981; border-color:#d1fae5; }
+.tl-item:nth-child(4) .tl-dot { background:#6366f1; border-color:#e0e7ff; }
+.tl-item:nth-child(5) .tl-dot { background:#14b8a6; border-color:#ccfbf1; }
+.tl-phase { font-weight:600; font-size:0.95rem; }
+.tl-desc { color:var(--text-secondary); font-size:0.85rem; margin-top:2px; }
+
+/* Flow */
+.flow { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin:1rem 0; }
+.flow-step {
+  background:var(--surface); border:2px solid var(--border);
+  border-radius:12px; padding:10px 18px; font-weight:600; font-size:0.9rem;
+}
+.flow-step.amber { border-color:var(--amber); background:#fffbeb; }
+.flow-step.purple { border-color:var(--purple); background:#eef2ff; }
+.flow-arrow { color:var(--text-secondary); font-size:1.2rem; }
+
+/* Block Quote */
+.block-q {
+  border-left:4px solid var(--amber); background:#fffbeb;
+  padding:1.2rem 1.5rem; border-radius:0 12px 12px 0; margin:1rem 0;
+  font-style:italic; color:#78350f;
+}
+.block-q p { margin:0; font-size:0.92rem; }
+
+/* Badge */
+.badge {
+  display:inline-block; padding:3px 10px; border-radius:6px;
+  font-size:0.75rem; font-weight:600;
+}
+.badge-amber { background:#fef3c7; color:#92400e; }
+.badge-purple { background:#e0e7ff; color:#3730a3; }
+.badge-green { background:#d1fae5; color:#065f46; }
+.badge-red { background:#fee2e2; color:#991b1b; }
+.badge-blue { background:#dbeafe; color:#1e40af; }
+.badge-teal { background:#ccfbf1; color:#115e59; }
+
+/* Table */
+.tbl-wrap { overflow-x:auto; margin:1rem 0; }
+table { width:100%; border-collapse:collapse; font-size:0.85rem; }
+th { background:#f8fafc; padding:10px 12px; text-align:left; font-weight:600; border-bottom:2px solid var(--border); }
+td { padding:10px 12px; border-bottom:1px solid var(--border); }
+
+/* Footer */
+.footer {
+  background:#0f172a; color:#94a3b8; text-align:center;
+  padding:2rem; margin-top:3rem; font-size:0.85rem;
+}
+.footer a { color:#fbbf24; }
+.footer-links { display:flex; justify-content:center; gap:2rem; margin-top:0.8rem; flex-wrap:wrap; }
+
+/* Responsive */
+@media(max-width:768px) {
+  .stats { grid-template-columns:repeat(2,1fr); }
+  .toc { grid-template-columns:1fr; }
+  .compare-grid { grid-template-columns:1fr; }
+  .card-grid { grid-template-columns:1fr; }
+  .chart-label { width:120px; font-size:0.78rem; }
+  .flow { flex-direction:column; gap:8px; }
+  .flow-arrow { transform:rotate(90deg); }
+  .hero { padding:3rem 1rem 2rem; }
+  .hero h1 { font-size:1.4rem; }
+  .page { padding:1.5rem 1rem; }
+  .section h2 { font-size:1.2rem; }
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="../" class="nav-brand">LlamaIndex Blog</a>
+  <a href="../" class="nav-back">&larr; Back to Hub</a>
+</nav>
+
+<header class="hero">
+  <div class="hero-badge">Tools &amp; Integrations</div>
+  <h1>Python Monorepo Tooling Overhaul Guide | LlamaIndex</h1>
+  <p class="hero-sub">作者：Unknown | 日期：Unknown</p>
+  <div class="stats">
+<div class="stat-card">
+  <div class="stat-emoji">📝</div>
+  <div class="stat-val">2300+</div>
+  <div class="stat-label">words</div>
+  <div class="stat-desc">文章总字数</div>
+</div>
+<div class="stat-card">
+  <div class="stat-emoji">📑</div>
+  <div class="stat-val">13</div>
+  <div class="stat-label">sections</div>
+  <div class="stat-desc">核心章节</div>
+</div>
+<div class="stat-card">
+  <div class="stat-emoji">📌</div>
+  <div class="stat-val">37</div>
+  <div class="stat-label">key points</div>
+  <div class="stat-desc">关键要点</div>
+</div>
+<div class="stat-card">
+  <div class="stat-emoji">🏷️</div>
+  <div class="stat-val">Tools &amp; Integrations</div>
+  <div class="stat-label">category</div>
+  <div class="stat-desc">文章分类</div>
+</div>
+
+  </div>
+</header>
+
+<div class="page">
+
+<div class="intro-section"><p>](https://www.linkedin.com/company/91154103/)
+ -  [</p>
+<p>](https://www.youtube.com/@LlamaIndex)</p>
+<p>When we talk about LlamaIndex, we’re actually referring to an ecosystem consisting of more than 650 Python packages, mostly <a href="https://docs.llamaindex.ai/en/stable/community/integrations/" target="_blank">Integrations</a> and <a href="https://docs.llamaindex.ai/en/stable/community/llama_packs/" target="_blank">Packs</a>. All these packages share a single GitHub repository, what engineers fondly call a “monorepo”. In this article, we’re going to introduce <code>LlamaDev</code> , our new tool for managing monorepos at scale, and explain the challenges we ran into with existing tooling to get us to this point.</p>
+</div>
+
+<nav class="toc"><a href="#s0" class="toc-item"><span class="toc-num">01</span>The challenge: 650+ dependency trees</a>
+<a href="#s1" class="toc-item"><span class="toc-num">02</span>Developing is easy(ish)</a>
+<a href="#s2" class="toc-item"><span class="toc-num">03</span>Maintaining is hard</a>
+<a href="#s3" class="toc-item"><span class="toc-num">04</span>First iteration: Poetry for individual packages</a>
+<a href="#s4" class="toc-item"><span class="toc-num">05</span>First iteration: Pants for build management</a>
+<a href="#s5" class="toc-item"><span class="toc-num">06</span>Version 1.0 worked for a year</a>
+<a href="#s6" class="toc-item"><span class="toc-num">07</span>Problems of scale: build speeds and caching servers</a>
+<a href="#s7" class="toc-item"><span class="toc-num">08</span>Problems of control: logging, inconsistency and more</a>
+<a href="#s8" class="toc-item"><span class="toc-num">09</span>Why we needed version 2.0</a>
+<a href="#s9" class="toc-item"><span class="toc-num">10</span>Migrating projects to uv from Poetry</a>
+<a href="#s10" class="toc-item"><span class="toc-num">11</span>How to manage builds in 2.0?</a>
+<a href="#s11" class="toc-item"><span class="toc-num">12</span>Introducing LlamaDev</a>
+<a href="#s12" class="toc-item"><span class="toc-num">13</span>Now you can easily work on LlamaIndex and LlamaDev</a>
+</nav>
+
+
+<section class="section" id="s0">
+  <h2>🔍 The challenge: 650+ dependency trees</h2>
+  <p class="lead">Each Python package in the monorepo is published on <a href="https://pypi.org/" target="_blank">PyPI</a> and comes with its own <code>pyproject.toml</code>  file. For those not familiar with the ecosystem, a <code>pyproject.toml</code>  file for a m</p>
+  <div class="block-q"><p>Each Python package in the monorepo is published on <a href="https://pypi.org/" target="_blank">PyPI</a> and comes with its own <code>pyproject.toml</code>  file. For those not familiar with the ecosystem, a <code>pyproject.toml</code>  file for a modern Python package is a one stop shop defining several aspects of the package lifecycle: its depen</p></div>
+  <p>Integrations and Packs have some code in common, shipped through a foundational package called <code>llama-index-core</code>  that pretty much every package in the ecosystem depends on. Additionally, they can depend on each other, for example <code>llama-index-llms-azure-openai</code>  requires <code>llama-index-llms-openai</code>  to work. As you can imagine, this has a few implications for the testing strategy, such as:</p>
+<p>-  If we touch <code>llama-index-core</code>  in a pull request, tests for most of the packages in the monorepo need to be triggered to ensure they keep working after that change
+  -  If we touch something like <code>llama-index-llms-openai</code> , we need to find which are the packages depending on it and test them to ensure they still work</p>
+
+</section>
+
+<section class="section" id="s1">
+  <h2>⚡ Developing is easy(ish)</h2>
+  <p class="lead">The experience of developing in one of these packages varies. Sometimes we work on a single, self-contained Integration with no additional LlamaIndex dependencies other than <code>llama-index-core</code> . That’</p>
+  <div class="block-q"><p>The experience of developing in one of these packages varies. Sometimes we work on a single, self-contained Integration with no additional LlamaIndex dependencies other than <code>llama-index-core</code> . That’s the happy path, where we test our code against a certain version of the core package and if it wor</p></div>
+  <p>Sometimes we work on a package that has dependents in the monorepo. In this case, we need to ensure our changes work for the package itself without disrupting other packages. Sometimes we work on the core package, where we need to be extra careful not to introduce breaking changes that might impact the whole monorepo.</p>
+<p>Last but not least, we do our best to support multiple Python and operating system versions in our packages, which for the vast majority means Python 3.9 all the way up to 3.12+ on three operating systems: Windows, Mac and Linux.</p>
+
+</section>
+
+<section class="section" id="s2">
+  <h2>🏗️ Maintaining is hard</h2>
+  <p class="lead">The first thing you want in a monorepo is consistency. Even a slight difference in the way tests are executed or packages are built can complicate cross-platform support and turn batch operations acro</p>
+  <div class="compare-grid">
+<div class="compare-card old"><h4>传统方法</h4><p>The first thing you want in a monorepo is consistency. Even a slight difference in the way tests are executed or packages are built can complicate cross-platform support and turn batch operations acro</p></div>
+<div class="compare-card new"><h4>新方法</h4><p>ss the monorepo into a nightmare. The risk of ending up with 650+ <em>slightly</em> different packages is very high, specially in the Python ecosystem, so the first tool we brought in was a Python project ma</p></div>
+</div>
+  <p>A Python project manager usually relies on the <code>pyproject.toml</code>  file to provide features like building and publishing a package, managing dependencies and lockfiles, defining scripts and automation tasks, preparing virtual environments to work on the code in isolation with different version of Python.</p>
+
+</section>
+
+<section class="section" id="s3">
+  <h2>📊 First iteration: Poetry for individual packages</h2>
+  <p class="lead">Our tool of choice was <a href="https://python-poetry.org/" target="_blank">Poetry</a>: feature complete, very well established in the Python community, it served us well for [over than a year](https://github.com/run-llama/llam</p>
+  <div class="block-q"><p>Our tool of choice was <a href="https://python-poetry.org/" target="_blank">Poetry</a>: feature complete, very well established in the Python community, it served us well for <a href="https://github.com/run-llama/llama_index/pull/8049" target="_blank">over than a year</a>. Working with Poetry on a single package is a breeze: with its expressive command</p></div>
+  <p>While Poetry is great to work in isolation on a single package, it doesn’t really know about package dependencies. For example, it cannot know that a certain package depending on us actually sits in a sibling directory of the same git repository. Being in the same repository, we could easily trigger the tests to verify that our changes upstream didn’t break the dependents, but Poetry just doesn’t have the information to do this.</p>
+
+</section>
+
+<section class="section" id="s4">
+  <h2>🎯 First iteration: Pants for build management</h2>
+  <p class="lead">And thus we had to introduce another tool: we needed a build system, preferably designed to explicitly work within a monorepo. A build system is a piece of software that automates the process of build</p>
+  <div class="block-q"><p>And thus we had to introduce another tool: we needed a build system, preferably designed to explicitly work within a monorepo. A build system is a piece of software that automates the process of building source code into artifacts, taking care of all the intermediate steps. For a Python codebase, th</p></div>
+  <p>We chose <a href="https://www.pantsbuild.org/" target="_blank">Pants</a> for the job, and again it served us well for <a href="https://github.com/run-llama/llama_index/pull/10537" target="_blank">more than one year</a>. Pants explicitly supports Python projects and is particularly smart in detecting which tests to trigger across multiple packages in the monorepo when the upstream has changed. It also comes with a powerful caching system that can sensibly speed up the setup of each build environment.</p>
+
+</section>
+
+<section class="section" id="s5">
+  <h2>🔧 Version 1.0 worked for a year</h2>
+  <p class="lead">To recap, for well over a year this was the tech stack used in the LlamaIndex monorepo:</p>
+  <div class="card-grid"><div class="card" style="border-left:4px solid var(--amber)"><p>Poetry to manage the single Python projects.</p></div>
+<div class="card" style="border-left:4px solid var(--blue)"><p>Pants to orchestrate testing across different packages (we didn’t use the build features).</p></div>
+<div class="card" style="border-left:4px solid var(--green)"><p>Github actions to automate Pants and Poetry runs on pull requests and git pushes.</p></div>
+</div>
+  <p>-  Poetry to manage the single Python projects.
+  -  Pants to orchestrate testing across different packages (we didn’t use the build features).
+  -  Github actions to automate Pants and Poetry runs on pull requests and git pushes.</p>
+<p>Our setup was working, but admittedly had a few minor flaws. The problem with minor flaws is that they tend to become less and less minor as the system scales. A one-second operation on a single package doesn’t seem much, until you have to repeat it 650 times and now an automated job takes 10 minutes.</p>
+
+</section>
+
+<section class="section" id="s6">
+  <h2>💡 Problems of scale: build speeds and caching servers</h2>
+  <p class="lead">Let’s start with Poetry. The tool works pretty well and we could express sophisticated dependency requirements, but the dependency solver can be very slow at times. Add it to the fact that <code>pip</code>  is t</p>
+  <div class="block-q"><p>Let’s start with Poetry. The tool works pretty well and we could express sophisticated dependency requirements, but the dependency solver can be very slow at times. Add it to the fact that <code>pip</code>  is the only installer available, and the overhead working on a package can be measured in seconds. Again</p></div>
+  <p>Speaking of Pants, it came with its own set of flaws. The first one we encountered was setup: while defining targets and dependencies is a hell of a task, but at least something you do once then profit, the caching system was more demanding. We had to host a service on AWS behind a public address so it could be used from Github workflows. And the caching server is not something you deploy once and forget. We had to scale it up a couple of times, add two redundant instances behind a load balancer, resize storage a couple of times. Sometimes Github workflows failed with weird errors, only to find out later that the caching server was unresponsive or behaving erratically. All understandable, but given the size of our team, it was expensive to maintain in terms of resources and money.</p>
+
+</section>
+
+<section class="section" id="s7">
+  <h2>📈 Problems of control: logging, inconsistency and more</h2>
+  <p class="lead">And that’s not all: Pants’ sophisticated caching comes with an additional price. The Python virtual environments used during a build are managed by Pants internally with <code>pip</code> . You don’t have much co</p>
+  <div class="card-grid"><div class="card" style="border-left:4px solid var(--amber)"><p>First of all, Pants understands and can rely on Poetry configurations, but it doesn’t invoke it directly. This means a test run in the CI is different from a test run invoked locally with Poetry.</p></div>
+<div class="card" style="border-left:4px solid var(--blue)"><p>Second, Pants logging is really verbose, and messages related to installation or dependency problems are not easy to find and debug. Depending on the type of the error, at times even tests failures can be hard to find in the logs.</p></div>
+<div class="card" style="border-left:4px solid var(--green)"><p>Lastly, running Pants locally is not easy and we don’t ask contributors to do that, but this means sometimes pull requests show failures that cannot be reproduced locally, making the developer experience quite poor.</p></div>
+</div>
+  <p>-  First of all, Pants understands and can rely on Poetry configurations, but it doesn’t invoke it directly. This means a test run in the CI is different from a test run invoked locally with Poetry.
+  -  Second, Pants logging is really verbose, and messages related to installation or dependency problems are not easy to find and debug. Depending on the type of the error, at times even tests failures can be hard to find in the logs.
+  -  Lastly, running Pants locally is not easy and we don’t ask contributors to do that, but this means sometimes pull requests show failures that cannot be reproduced locally, making the developer experience quite poor.</p>
+
+</section>
+
+<section class="section" id="s8">
+  <h2>🧩 Why we needed version 2.0</h2>
+  <p class="lead">To recap, these are the problems we were facing as the size of the monorepo increased:</p>
+  <div class="card-grid"><div class="card" style="border-left:4px solid var(--amber)"><p>Slow iterations due to dependency management struggles.</p></div>
+<div class="card" style="border-left:4px solid var(--blue)"><p>Maintaining the build system was a burden.</p></div>
+<div class="card" style="border-left:4px solid var(--green)"><p>Debugging CI runs was hard.</p></div>
+<div class="card" style="border-left:4px solid var(--purple)"><p>Contributing to the project was hard.</p></div>
+</div>
+  <p>-  Slow iterations due to dependency management struggles.
+  -  Maintaining the build system was a burden.
+  -  Debugging CI runs was hard.
+  -  Contributing to the project was hard.</p>
+<p>Looking back at our past Slack conversations, it’s been a while since we started fiddling with the idea of replacing <code>pip</code>  with <code>uv</code>  to take advantage of its huge speedups at install time, but we only recently had time available to make a serious attempt. Here’s what happened.</p>
+
+</section>
+
+<section class="section" id="s9">
+  <h2>🔑 Migrating projects to uv from Poetry</h2>
+  <p class="lead">The original task was quite vague, it essentially read something like “use <code>uv</code>  everywhere so we can to shorten the CI feedback loop”. We didn’t want to get rid of existing tooling, just introduce a </p>
+  <div class="block-q"><p>The original task was quite vague, it essentially read something like “use <code>uv</code>  everywhere so we can to shorten the CI feedback loop”. We didn’t want to get rid of existing tooling, just introduce a new one that looked promising.  Pants has a section in the docs [mentioning uv](https://www.pants</p></div>
+  <p>Pants has a section in the docs <a href="https://www.pantsbuild.org/dev/reference/targets/uv_requirements" target="_blank">mentioning uv</a>, so we were optimistic there could be a way to make the two coexist. That optimism lasted about a hour, the time needed to go through the docs, browse some threads in the Pants Discord server and realize that no, Pants cannot use <code>uv</code>  instead of <code>pip</code>  internally. There’s a third-party <a href="https://github.com/TechnologyBrewery/pants-uv-lifecycle-plugin" target="_blank">plugin</a> that does that, but we didn’t want to add another layer of complexity on something that we already barely controlled, so we canned that idea.</p>
+<p>Plan B: we could still call <code>uv</code>  within the Poetry projects, so at least we would speed up local development, no? No. <a href="https://github.com/python-poetry/poetry/issues/8978" target="_blank">Poetry doesn’t support uv</a> and it won’t in the foreseeable future. Luckily uv is much more than a replacement for <code>pip</code> , it’s actually a very powerful Python project manager. So we took it for a spin and migrated a few packages to see what changes would be required. This got off to a very good start. If you have uv installed, migrating a package is literally one command you run on the folder containing the <code>pyproject.toml</code>  file:</p>
+<p>uvx migrate-to-uv</p>
+<p>We won’t say we were impressed by how fast it was to install dependencies for a package, because that was expected. What we fell in love with was everything else: uv is simple, tidy, expressive. <code>uv run --</code>  is so powerful you won’t need to <code>activate</code>  a virtual environment in your life ever again. Some of us, Homebrew hardcore users, let a Python project manager tool install a Python distribution for the first time ever. It didn’t take us very long to make the call and say goodbye to Poetry. If the developer experience was so good for us, contributors would certainly appreciate.</p>
+
+</section>
+
+<section class="section" id="s10">
+  <h2>🌐 How to manage builds in 2.0?</h2>
+  <p class="lead">Still we weren’t happy. The CI still wouldn&amp;#39;t benefit from uv and contributors would still have to struggle with cryptic failures in pull request checks. Something was itching, and you don’t work </p>
+  <div class="block-q"><p>Still we weren’t happy. The CI still wouldn&amp;#39;t benefit from uv and contributors would still have to struggle with cryptic failures in pull request checks. Something was itching, and you don’t work on something like LlamaIndex if you don’t scratch. So we scratched.  We are not so crazy to think</p></div>
+  <p>We are not so crazy to think we could rewrite something like Pants and replace it, but we were only using about 20% of Pants features, and we definitely are more than 20% crazy. So we rewrote the code detecting the dependency graphs of all the packages in the monorepo, relying on the <code>pyproject.toml</code>  files alone. On top of that, we added some code to detect what packages should be tested in every pull request, given the files that were changed. Then some code to invoke <code>pytest</code>  and grab only the logs that matter. Then some logic to avoid failing the CI jobs with untestable packages or unrelated failures. Then we decided all this code <a href="https://github.com/run-llama/llama_index/pull/18615" target="_blank">could be turned into a custom made tool</a>.</p>
+
+</section>
+
+<section class="section" id="s11">
+  <h2>📋 Introducing LlamaDev</h2>
+  <p class="lead">We’ve called our new tool LlamaDev and any contributor can run it from a clone of the monorepo with <code>uv run llama-dev</code> .</p>
+  <div class="card-grid"><div class="card" style="border-left:4px solid var(--amber)"><p>Average time for a complete test run (without computing coverage) of all 600+ packages is about 20% faster, corresponding to about 6 minutes less.</p></div>
+<div class="card" style="border-left:4px solid var(--blue)"><p>Depending on the specific package, partial test runs are even faster. For example, changing an integration with many dependants like <code>llama-index-llms-openai</code>  went from about <a href="https://github.com/run-llama/llama_index/actions/runs/14499185118" target="_blank">11 minutes</a> down <a href="https://github.com/run-llama/llama_index/actions/runs/15098703255" target="_blank">to 4</a>.</p></div>
+<div class="card" style="border-left:4px solid var(--green)"><p>Logs are much clearer now, and contributors can see exactly what happened if a check failed.</p></div>
+<div class="card" style="border-left:4px solid var(--purple)"><p>Contributors can run <code>llama-dev</code>  locally and reproduce exactly what was done in the CI system if some debugging is needed.</p></div>
+<div class="card" style="border-left:4px solid var(--teal)"><p>Lockfiles are now checked into the repository for better build reproducibility.</p></div>
+<div class="card" style="border-left:4px solid var(--red)"><p>We don’t rely anymore on external resources, all the computing needed is on Github actions.</p></div>
+</div>
+  <p>The list of improvements we introduced since <a href="https://github.com/run-llama/llama_index/pull/18524" target="_blank">we switched from Poetry+Pants to uv+LlamaDev</a> is long:</p>
+<p>-  Average time for a complete test run (without computing coverage) of all 600+ packages is about 20% faster, corresponding to about 6 minutes less.
+  -  Depending on the specific package, partial test runs are even faster. For example, changing an integration with many dependants like <code>llama-index-llms-openai</code>  went from about <a href="https://github.com/run-llama/llama_index/actions/runs/14499185118" target="_blank">11 minutes</a> down <a href="https://github.com/run-llama/llama_index/actions/runs/15098703255" target="_blank">to 4</a>.
+  -  Logs are much clearer now, and contributors can see exactly what happened if a check failed.
+  -  Contributors can run <code>llama-dev</code>  locally and reproduce exactly what was done in the CI system if some debugging is needed.
+  -  Lockfiles are now checked into the repository for better build reproducibility.
+  -  We don’t rely anymore on external resources, all the computing needed is on Github actions.</p>
+<p>And this obviously goes on top of everything uv does to improve the day-to-day when working on any Python project.</p>
+
+</section>
+
+<section class="section" id="s12">
+  <h2>🚀 Now you can easily work on LlamaIndex and LlamaDev</h2>
+  <p class="lead">Since we switched to uv+LlamaDev, we introduced a few optimizations like <a href="https://github.com/run-llama/llama_index/blob/main/.github/workflows/unit_test.yml#L30" target="_blank">using a uv cache</a> and added several [n</p>
+  <div class="block-q"><p>Since we switched to uv+LlamaDev, we introduced a few optimizations like <a href="https://github.com/run-llama/llama_index/blob/main/.github/workflows/unit_test.yml#L30" target="_blank">using a uv cache</a> and added several <a href="https://github.com/run-llama/llama_index/pull/18734" target="_blank">new features</a> to LlamaDev, but we can do much mo</p></div>
+  
+</section>
+
+
+</div>
+
+<footer class="footer">
+  <p>LlamaIndex Blog Deep-Dive | 深度解析系列</p>
+  <div class="footer-links">
+    <a href="../">Hub 首页</a>
+    <a href="https://www.llamaindex.ai/blog/python-tooling-at-scale-llamaindex-s-monorepo-overhaul" target="_blank">原文链接</a>
+  </div>
+</footer>
+
+</body>
+</html>

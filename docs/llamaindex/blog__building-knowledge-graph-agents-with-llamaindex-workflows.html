@@ -1,0 +1,311 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Building knowledge graph agents with LlamaIndex Workflows</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafbfc;
+      --surface: #fff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --amber: #d97706;
+      --amber-light: #fbbf24;
+      --amber-dark: #92400e;
+      --purple: #6366f1;
+      --teal: #14b8a6;
+      --green: #10b981;
+      --red: #ef4444;
+      --blue: #3b82f6;
+      --pink: #ec4899;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans SC', 'Inter', sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:var(--sans); background:var(--bg); color:var(--text); line-height:1.7; }
+
+    .nav { position:sticky; top:0; background:rgba(15,23,42,.92); backdrop-filter:blur(12px); z-index:100; border-bottom:1px solid rgba(255,255,255,.08); }
+    .nav-inner { max-width:1100px; margin:0 auto; padding:12px 24px; display:flex; justify-content:space-between; align-items:center; }
+    .nav-brand { color:#fbbf24; text-decoration:none; font-weight:700; display:flex; align-items:center; gap:8px; }
+    .nav-logo { font-size:20px; }
+    .nav a:last-child { font-size:13px; color:rgba(255,255,255,.6); text-decoration:none; }
+    .nav a:last-child:hover { color:#fbbf24; }
+
+    .hero { background:linear-gradient(135deg,#0f172a 0%,#78350f 50%,#d97706 100%); color:#fff; padding:60px 24px 48px; }
+    .hero-inner { max-width:1100px; margin:0 auto; }
+    .hero-tag { display:inline-block; background:rgba(251,191,36,.15); color:#fbbf24; padding:4px 14px; border-radius:20px; font-size:13px; font-weight:500; margin-bottom:16px; letter-spacing:.5px; }
+    .hero h1 { font-size:clamp(24px,4vw,42px); font-weight:800; line-height:1.2; margin-bottom:12px; }
+    .hero p { font-size:17px; color:rgba(255,255,255,.8); max-width:700px; margin-bottom:28px; line-height:1.6; }
+    .hero-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; max-width:600px; }
+    .stat { text-align:center; }
+    .stat-num { display:block; font-size:28px; font-weight:800; color:#fbbf24; font-family:var(--mono); }
+    .stat-label { font-size:12px; color:rgba(255,255,255,.6); text-transform:uppercase; letter-spacing:.5px; }
+
+    .page { max-width:1100px; margin:0 auto; padding:32px 24px 60px; }
+
+    .toc { margin-bottom:40px; }
+    .toc-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:10px; }
+    .toc-item { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); text-decoration:none; color:var(--text); font-size:14px; font-weight:500; transition:all .2s; }
+    .toc-item:hover { border-color:var(--amber); transform:translateY(-1px); box-shadow:0 4px 12px rgba(217,119,6,.1); }
+    .toc-num { font-size:16px; }
+
+    .section { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:32px; margin-bottom:24px; }
+    .section h2 { font-size:22px; font-weight:700; margin-bottom:12px; color:var(--text); }
+    .section h3 { font-size:17px; font-weight:600; margin:20px 0 8px; color:var(--amber-dark); }
+    .lead { color:var(--text-secondary); font-size:15px; margin-bottom:16px; line-height:1.7; }
+    .section p { margin-bottom:12px; font-size:15px; line-height:1.7; }
+
+    .chart { margin:20px 0; }
+    .chart-row { display:flex; align-items:center; margin-bottom:8px; }
+    .chart-label { width:160px; font-size:13px; font-weight:500; text-align:right; padding-right:12px; color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:28px; overflow:hidden; }
+    .chart-bar { height:100%; border-radius:8px; display:flex; align-items:center; padding-left:10px; font-size:12px; font-weight:600; color:#fff; transition:width .6s ease; min-width:40px; }
+    .chart-bar.amber { background:linear-gradient(90deg,#d97706,#f59e0b); }
+    .chart-bar.purple { background:linear-gradient(90deg,#6366f1,#818cf8); }
+    .chart-bar.teal { background:linear-gradient(90deg,#0d9488,#14b8a6); }
+    .chart-bar.green { background:linear-gradient(90deg,#059669,#10b981); }
+    .chart-bar.blue { background:linear-gradient(90deg,#2563eb,#3b82f6); }
+    .chart-bar.red { background:linear-gradient(90deg,#dc2626,#ef4444); }
+
+    .timeline { position:relative; padding-left:28px; margin:20px 0; }
+    .timeline::before { content:''; position:absolute; left:8px; top:0; bottom:0; width:3px; background:linear-gradient(180deg,#d97706,#6366f1,#14b8a6); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:20px; padding-left:16px; }
+    .tl-dot { position:absolute; left:-24px; top:4px; width:14px; height:14px; border-radius:50%; border:3px solid var(--amber); background:#fff; }
+    .tl-item:nth-child(2) .tl-dot { border-color:var(--purple); }
+    .tl-item:nth-child(3) .tl-dot { border-color:var(--teal); }
+    .tl-item:nth-child(4) .tl-dot { border-color:var(--green); }
+    .tl-item:nth-child(5) .tl-dot { border-color:var(--blue); }
+    .tl-phase { font-weight:600; font-size:15px; margin-bottom:4px; }
+    .tl-desc { font-size:13px; color:var(--text-secondary); line-height:1.5; }
+
+    .compare-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin:20px 0; }
+    .compare-card { padding:16px; border-radius:var(--radius); font-size:14px; line-height:1.6; }
+    .compare-card.old { background:#fef2f2; border:1px solid #fecaca; }
+    .compare-card.new { background:#f0fdf4; border:1px solid #bbf7d0; }
+
+    .flow { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:20px 0; }
+    .flow-step { padding:10px 18px; background:#f8fafc; border:2px solid var(--border); border-radius:var(--radius); font-size:13px; font-weight:600; text-align:center; }
+    .flow-step.purple { background:#eef2ff; border-color:var(--purple); color:var(--purple); }
+    .flow-arrow { color:var(--amber); font-size:20px; font-weight:700; }
+
+    .fail-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:20px 0; }
+    .fail-grid .card { padding:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); font-size:13px; line-height:1.6; }
+
+    .block-q { margin:20px 0; padding:20px 24px; background:linear-gradient(135deg,#fffbeb,#fef3c7); border-left:4px solid var(--amber); border-radius:0 var(--radius) var(--radius) 0; font-style:italic; color:#92400e; font-size:14px; line-height:1.7; }
+
+    .tbl-wrap { overflow-x:auto; margin:20px 0; }
+    table { width:100%; border-collapse:collapse; font-size:14px; }
+    th { background:#f8fafc; padding:10px 14px; text-align:left; font-weight:600; border-bottom:2px solid var(--border); white-space:nowrap; }
+    td { padding:10px 14px; border-bottom:1px solid var(--border); }
+    tr:hover td { background:#fffbeb; }
+
+    .badge { display:inline-block; padding:3px 10px; border-radius:12px; font-size:12px; font-weight:500; }
+    .badge-amber { background:#fffbeb; color:#92400e; }
+    .badge-purple { background:#eef2ff; color:#4338ca; }
+    .badge-green { background:#f0fdf4; color:#166534; }
+
+    .footer { background:#0f172a; color:rgba(255,255,255,.6); padding:32px 24px; text-align:center; font-size:13px; }
+    .footer a { color:#fbbf24; text-decoration:none; }
+    .footer a:hover { text-decoration:underline; }
+    .footer-links { display:flex; justify-content:center; gap:24px; margin-bottom:12px; flex-wrap:wrap; }
+
+    @media(max-width:768px) {
+      .hero-stats { grid-template-columns:repeat(2,1fr); }
+      .compare-grid, .fail-grid { grid-template-columns:1fr; }
+      .chart-label { width:100px; font-size:12px; }
+      .flow { flex-direction:column; gap:6px; }
+      .flow-arrow { transform:rotate(90deg); }
+      .toc-grid { grid-template-columns:1fr; }
+      .section { padding:20px 16px; }
+      .hero { padding:40px 16px 32px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="../" class="nav-brand">
+        <span class="nav-logo">🦙</span>
+        <span>LlamaIndex Blog Hub</span>
+      </a>
+      <a href="./">← Back to Hub</a>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="hero-tag">案例研究</div>
+      <h1>Building knowledge graph agents with LlamaIndex Workflows</h1>
+      <p>Retrieval-augmented generation (RAG) is here to stay, and for good reason. It’s a powerful framework that blends advanced language models with targeted information retrieval techniques, enabling quicker access to relevant data and producing more accurate, context-aware responses. While RAG applicati</p>
+      <div class="hero-stats">
+        <div class="stat"><span class="stat-num">9</span><span class="stat-label">核心章节</span></div><div class="stat"><span class="stat-num">8</span><span class="stat-label">关键概念</span></div><div class="stat"><span class="stat-num">13min</span><span class="stat-label">阅读时长</span></div><div class="stat"><span class="stat-num">3440</span><span class="stat-label">总字数</span></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc"><div class="toc-grid">
+  <a href="#s1" class="toc-item"><span class="toc-num">💡</span>LlamaIndex Workflows</a>
+  <a href="#s3" class="toc-item"><span class="toc-num">📊</span>Naive text2cypher with retry flow</a>
+  <a href="#s6" class="toc-item"><span class="toc-num">📋</span>Benchmarking</a>
+  <a href="#s7" class="toc-item"><span class="toc-num">🔧</span>Learnings and going to production</a>
+  <a href="#s8" class="toc-item"><span class="toc-num">🚀</span>Summary</a>
+</div></nav>
+
+    <section class="section" id="s1">
+  <h2>💡 LlamaIndex Workflows</h2>
+  <p class="lead">LlamaIndex Workflows are a practical way to organize multi-step AI processes by connecting different operations through an event-driven system. They help break down complex tasks into smaller, managea</p>
+  <h3>Naive text2cypher flow</h3>
+  <p>The naive text2cypher architecture is a streamlined approach to converting natural language questions into Cypher queries for Neo4j graph databases. It operates through a three-stage workflow: first, it generates a Cypher query from the input question using few-shot learning with similar examples stored in a vector database. The system then executes the generated Cypher query against the graph database. Finally, it processes the database results through a language model to generate a natural language response that directly answers the original question. This architecture maintains a simple yet effective pipeline, leveraging vector similarity search for example fewshot retrieval and LLM for both Cypher query generation and response formatting.</p>
+  <p>Here is the visualized naive text2cypher workflow.</p>
+  <p>Naive text2cypher flow.</p>
+<div class="timeline">
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Ready to get started with LlamaParse?</div>
+    <div class="tl-desc">Explore our free and paid plans today.
+
+
+ -   Learn more</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">LlamaIndex Workflows</div>
+    <div class="tl-desc">LlamaIndex Workflows are a practical way to organize mul</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Naive text2cypher flow</div>
+    <div class="tl-desc">The naive text2cypher architecture is a streamlined approach to converting natural language questions into Cypher querie</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Naive text2cypher with retry flow</div>
+    <div class="tl-desc">This enhanced version of text2cypher with retry builds upon the original architecture by adding a self-correction mechan</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Naive text2cypher with retry and evaluation flow</div>
+    <div class="tl-desc">Building on the naive text2cypher with retry flow, this enhanced version adds an evaluation phase that checks if</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Iterative planner flow</div>
+    <div class="tl-desc">The final flow is the most complex, and coincidentally, the one I ambitiously designed first. I’ve kept it in the code s</div>
+  </div>
+</div>
+</section>
+<section class="section" id="s3">
+  <h2>📊 Naive text2cypher with retry flow</h2>
+  <p class="lead">This enhanced version of text2cypher with retry builds upon the original architecture by adding a self-correction mechanism. When a generated Cypher query fails to execute, instead of failing outright</p>
+  <p>Here is the visualized naive text2cypher with retry workflow.</p>
+  <p>Naive text2cypher with retry flow.</p>
+  <p>Let’s take a look at the `ExecuteCypherEvent`  .</p>
+  <p>``` @step async def execute_query( self, ctx: Context, ev: ExecuteCypherEvent ) -&gt; SummarizeEvent | CorrectCypherEvent: # Get global var retries = await ctx.get(&quot;retries&quot;) try: database_output = str(graph_store.structured_query(ev.cypher)) except Exception as e: database_output = str(e) # Retry if retries &amp;#x3C; self.max_retries: await ctx.set(&quot;retries&quot;, retries + 1) return CorrectCypherEvent( question=ev.question, cypher=ev.cypher, error=database_output )</p>
+  <p>return SummarizeEvent( question=ev.question, cypher=ev.cypher, context=database_output ) ``` The execute function first attempts to run the query, and if successful, passes the results forward for summarization. However, if something goes wrong, it doesn’t give up immediately — instead, it checks if it has any retry attempts left and, if so, sends the query back for correction along with information about what went wrong. This creates a more forgiving system that can learn from its mistakes, much like how we might revise our approach after receiving feedback. You can inspect the whole code and prompts here.</p>
+  <h3>Naive text2cypher with retry and evaluation flow</h3>
+  <p>Building on the naive text2cypher with retry flow, this enhanced version adds an evaluation phase that checks if the query results are sufficient to answer the user’s question. If the results are deemed inadequate, the system sends the query back for correction with information on how to improve it. If the results are acceptable, the flow proceeds to the final summarization step. This extra layer of validation further bolsters the resilience of the pipeline, ensuring that the user ultimately receives the most accurate and complete answer possible.</p>
+  <p>Naive text2cypher with retry and evaluation flow.</p>
+  <p>The additional evaluation step is implemented in the following manner:</p>
+  <h3>Iterative planner flow</h3>
+  <p>The final flow is the most complex, and coincidentally, the one I ambitiously designed first. I’ve kept it in the code so you can learn from my exploration.</p>
+  <p>The iterative planner flow introduces a more sophisticated approach by implementing an iterative planning system. Instead of directly generating a Cypher query, it first creates a plan of sub-queries, validates each subquery Cypher statement before execution, and includes an information checking mechanism that can modify the plan if the initial results are insufficient. The system can make up to three iterations of information gathering, each time refining its approach based on previous results. This creates a more thorough question-answering system that can handle complex queries by breaking them down into manageable steps and validating the information at each stage.</p>
+  <p>Here is the visualized iterative planner workflow.</p>
+</section>
+<section class="section" id="s6">
+  <h2>📋 Benchmarking</h2>
+  <p class="lead">Creating a benchmark dataset for evaluating text2ypher agents in the LlamaIndex workflow architecture feels like an exciting step forward.</p>
+  <p>We sought an alternative to traditional one-shot Cypher execution metrics, such as ExactMatch mentioned in the beginning, which often fall short in capturing the full potential of workflows like iterative planning. In these workflows, multiple steps are employed to refine queries and retrieve relevant information, making single-step execution metrics inadequate.</p>
+  <p>That’s why we chose to use answer_relevancy from RAGAS — it feels more aligned with what we want to measure. Here, we use an LLM to generate the answer, and then use LLM as a judge to compare it with ground truth. We’ve prepared a custom dataset of about 50 samples, carefully designed to avoid generating overwhelming outputs, meaning database results that are excessively large or detailed. Such outputs can make it difficult for an LLM judge to evaluate relevance effectively, so keeping results short ensures a fair and focused comparison of single- and multi-step workflows.</p>
+  <p>Here are the results.</p>
+  <p>Benchmark results.</p>
+  <p>Sonnet 3.5, Deepsek-v3, and GPT-4o emerge as the top three models in terms of answer relevancy, each scoring above 0.80. The NaiveText2CypherRetryCheckFlow tends to produce the highest relevancy overall, while the IterativePlanningFlow consistently ranks lower (dropping as low as 0.163).</p>
+</section>
+<section class="section" id="s7">
+  <h2>🔧 Learnings and going to production</h2>
+  <p class="lead">This was a two-month project where I learned a lot along the way. One highlight of the project was achieving 84% relevancy in a test benchmark, which is a significant achievement. However, does that m</p>
+  <p>Production environments bring their own set of challenges — real-world data is often noisier, more diverse, and less structured than benchmark datasets. Something we haven’t discussed yet, but you’ll see in practice with real applications and users, is the need for production-ready steps. This means not just focusing on achieving high accuracy in controlled benchmarks but ensuring the system is reliable, adaptable, and delivers consistent results in real-world conditions.</p>
+  <p>In these settings, you’d need to implement some kind of guardrails to stop unrelated questions from going through the text-to-Cypher pipeline.</p>
+  <p>Unrelated question.</p>
+  <p>We have an example guardrails implementation here. Beyond simply rerouting irrelevant questions, the initial guardrails step can also be used to help educate users by guiding them toward the types of questions they can ask, showcasing the available tools, and demonstrating how to use them effectively.</p>
+  <p>In the following example, we also highlight the importance of adding a process to map values from user input to the database. This step is crucial for ensuring that user-provided information aligns with the database schema, enabling accurate query execution and minimizing errors caused by mismatched or ambiguous data.</p>
+</section>
+<section class="section" id="s8">
+  <h2>🚀 Summary</h2>
+  <p class="lead">Agents can be incredibly useful, but it’s best to start simple and avoid diving into overly complex implementations from the beginning. Focus on establishing a solid benchmark to effectively evaluate </p>
+  <p>I would love to see some of the implementations you can come up with! Additionally, you can connect the project to your Neo4j database and start experimenting.</p>
+  <p>Check this code out on GitHub And try out the web UI</p>
+</section>
+
+    <section class="section" id="key-concepts">
+  <h2>🔑 核心概念 Key Concepts</h2>
+  <p class="lead">本文涉及的关键技术概念与术语。</p>
+<div class="flow">
+  <div class="flow-step">unstructured data</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">structured data</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">text2cypher</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">naive text2cypher with retry</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step purple">evaluation</div>
+</div>
+</section>
+<section class="section" id="structure">
+  <h2>📊 文章结构 Article Structure</h2>
+  <p class="lead">文章各章节的组织脉络。</p>
+<div class="timeline">
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Ready to get started with LlamaParse?</div>
+    <div class="tl-desc">Explore our free and paid plans today.
+
+
+ -   Learn more</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">LlamaIndex Workflows</div>
+    <div class="tl-desc">LlamaIndex Workflows are a practical way to organize mul</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Naive text2cypher flow</div>
+    <div class="tl-desc">The naive text2cypher architecture is a streamlined approach to converting natural language questions into Cypher querie</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Naive text2cypher with retry flow</div>
+    <div class="tl-desc">This enhanced version of text2cypher with retry builds upon the original architecture by adding a self-correction mechan</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Naive text2cypher with retry and evaluation flow</div>
+    <div class="tl-desc">Building on the naive text2cypher with retry flow, this enhanced version adds an evaluation phase that checks if</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Iterative planner flow</div>
+    <div class="tl-desc">The final flow is the most complex, and coincidentally, the one I ambitiously designed first. I’ve kept it in the code s</div>
+  </div>
+</div>
+</section>
+
+  </div>
+
+  <footer class="footer">
+    <div class="footer-links">
+      <a href="./">LlamaIndex Blog Hub</a>
+      <a href="https://www.llamaindex.ai/blog/building-knowledge-graph-agents-with-llamaindex-workflows" target="_blank" rel="noopener">原文链接 Original</a>
+      <a href="../">Engineering Blogs Hub</a>
+    </div>
+    <p>Generated from LlamaIndex blog content for learning purposes.</p>
+  </footer>
+</body>
+</html>

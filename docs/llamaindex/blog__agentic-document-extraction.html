@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：How Agentic Document Extraction Improves Accuracy and Automation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafbfc;
+      --surface: #fff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --amber: #d97706;
+      --amber-light: #fbbf24;
+      --amber-dark: #92400e;
+      --purple: #6366f1;
+      --teal: #14b8a6;
+      --green: #10b981;
+      --red: #ef4444;
+      --blue: #3b82f6;
+      --pink: #ec4899;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans SC', 'Inter', sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:var(--sans); background:var(--bg); color:var(--text); line-height:1.7; }
+
+    .nav { position:sticky; top:0; background:rgba(15,23,42,.92); backdrop-filter:blur(12px); z-index:100; border-bottom:1px solid rgba(255,255,255,.08); }
+    .nav-inner { max-width:1100px; margin:0 auto; padding:12px 24px; display:flex; justify-content:space-between; align-items:center; }
+    .nav-brand { color:#fbbf24; text-decoration:none; font-weight:700; display:flex; align-items:center; gap:8px; }
+    .nav-logo { font-size:20px; }
+    .nav a:last-child { font-size:13px; color:rgba(255,255,255,.6); text-decoration:none; }
+    .nav a:last-child:hover { color:#fbbf24; }
+
+    .hero { background:linear-gradient(135deg,#0f172a 0%,#78350f 50%,#d97706 100%); color:#fff; padding:60px 24px 48px; }
+    .hero-inner { max-width:1100px; margin:0 auto; }
+    .hero-tag { display:inline-block; background:rgba(251,191,36,.15); color:#fbbf24; padding:4px 14px; border-radius:20px; font-size:13px; font-weight:500; margin-bottom:16px; letter-spacing:.5px; }
+    .hero h1 { font-size:clamp(24px,4vw,42px); font-weight:800; line-height:1.2; margin-bottom:12px; }
+    .hero p { font-size:17px; color:rgba(255,255,255,.8); max-width:700px; margin-bottom:28px; line-height:1.6; }
+    .hero-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; max-width:600px; }
+    .stat { text-align:center; }
+    .stat-num { display:block; font-size:28px; font-weight:800; color:#fbbf24; font-family:var(--mono); }
+    .stat-label { font-size:12px; color:rgba(255,255,255,.6); text-transform:uppercase; letter-spacing:.5px; }
+
+    .page { max-width:1100px; margin:0 auto; padding:32px 24px 60px; }
+
+    .toc { margin-bottom:40px; }
+    .toc-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:10px; }
+    .toc-item { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); text-decoration:none; color:var(--text); font-size:14px; font-weight:500; transition:all .2s; }
+    .toc-item:hover { border-color:var(--amber); transform:translateY(-1px); box-shadow:0 4px 12px rgba(217,119,6,.1); }
+    .toc-num { font-size:16px; }
+
+    .section { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:32px; margin-bottom:24px; }
+    .section h2 { font-size:22px; font-weight:700; margin-bottom:12px; color:var(--text); }
+    .section h3 { font-size:17px; font-weight:600; margin:20px 0 8px; color:var(--amber-dark); }
+    .lead { color:var(--text-secondary); font-size:15px; margin-bottom:16px; line-height:1.7; }
+    .section p { margin-bottom:12px; font-size:15px; line-height:1.7; }
+
+    .chart { margin:20px 0; }
+    .chart-row { display:flex; align-items:center; margin-bottom:8px; }
+    .chart-label { width:160px; font-size:13px; font-weight:500; text-align:right; padding-right:12px; color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:28px; overflow:hidden; }
+    .chart-bar { height:100%; border-radius:8px; display:flex; align-items:center; padding-left:10px; font-size:12px; font-weight:600; color:#fff; transition:width .6s ease; min-width:40px; }
+    .chart-bar.amber { background:linear-gradient(90deg,#d97706,#f59e0b); }
+    .chart-bar.purple { background:linear-gradient(90deg,#6366f1,#818cf8); }
+    .chart-bar.teal { background:linear-gradient(90deg,#0d9488,#14b8a6); }
+    .chart-bar.green { background:linear-gradient(90deg,#059669,#10b981); }
+    .chart-bar.blue { background:linear-gradient(90deg,#2563eb,#3b82f6); }
+    .chart-bar.red { background:linear-gradient(90deg,#dc2626,#ef4444); }
+
+    .timeline { position:relative; padding-left:28px; margin:20px 0; }
+    .timeline::before { content:''; position:absolute; left:8px; top:0; bottom:0; width:3px; background:linear-gradient(180deg,#d97706,#6366f1,#14b8a6); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:20px; padding-left:16px; }
+    .tl-dot { position:absolute; left:-24px; top:4px; width:14px; height:14px; border-radius:50%; border:3px solid var(--amber); background:#fff; }
+    .tl-item:nth-child(2) .tl-dot { border-color:var(--purple); }
+    .tl-item:nth-child(3) .tl-dot { border-color:var(--teal); }
+    .tl-item:nth-child(4) .tl-dot { border-color:var(--green); }
+    .tl-item:nth-child(5) .tl-dot { border-color:var(--blue); }
+    .tl-phase { font-weight:600; font-size:15px; margin-bottom:4px; }
+    .tl-desc { font-size:13px; color:var(--text-secondary); line-height:1.5; }
+
+    .compare-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin:20px 0; }
+    .compare-card { padding:16px; border-radius:var(--radius); font-size:14px; line-height:1.6; }
+    .compare-card.old { background:#fef2f2; border:1px solid #fecaca; }
+    .compare-card.new { background:#f0fdf4; border:1px solid #bbf7d0; }
+
+    .flow { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:20px 0; }
+    .flow-step { padding:10px 18px; background:#f8fafc; border:2px solid var(--border); border-radius:var(--radius); font-size:13px; font-weight:600; text-align:center; }
+    .flow-step.purple { background:#eef2ff; border-color:var(--purple); color:var(--purple); }
+    .flow-arrow { color:var(--amber); font-size:20px; font-weight:700; }
+
+    .fail-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:20px 0; }
+    .fail-grid .card { padding:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); font-size:13px; line-height:1.6; }
+
+    .block-q { margin:20px 0; padding:20px 24px; background:linear-gradient(135deg,#fffbeb,#fef3c7); border-left:4px solid var(--amber); border-radius:0 var(--radius) var(--radius) 0; font-style:italic; color:#92400e; font-size:14px; line-height:1.7; }
+
+    .tbl-wrap { overflow-x:auto; margin:20px 0; }
+    table { width:100%; border-collapse:collapse; font-size:14px; }
+    th { background:#f8fafc; padding:10px 14px; text-align:left; font-weight:600; border-bottom:2px solid var(--border); white-space:nowrap; }
+    td { padding:10px 14px; border-bottom:1px solid var(--border); }
+    tr:hover td { background:#fffbeb; }
+
+    .badge { display:inline-block; padding:3px 10px; border-radius:12px; font-size:12px; font-weight:500; }
+    .badge-amber { background:#fffbeb; color:#92400e; }
+    .badge-purple { background:#eef2ff; color:#4338ca; }
+    .badge-green { background:#f0fdf4; color:#166534; }
+
+    .footer { background:#0f172a; color:rgba(255,255,255,.6); padding:32px 24px; text-align:center; font-size:13px; }
+    .footer a { color:#fbbf24; text-decoration:none; }
+    .footer a:hover { text-decoration:underline; }
+    .footer-links { display:flex; justify-content:center; gap:24px; margin-bottom:12px; flex-wrap:wrap; }
+
+    @media(max-width:768px) {
+      .hero-stats { grid-template-columns:repeat(2,1fr); }
+      .compare-grid, .fail-grid { grid-template-columns:1fr; }
+      .chart-label { width:100px; font-size:12px; }
+      .flow { flex-direction:column; gap:6px; }
+      .flow-arrow { transform:rotate(90deg); }
+      .toc-grid { grid-template-columns:1fr; }
+      .section { padding:20px 16px; }
+      .hero { padding:40px 16px 32px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="../" class="nav-brand">
+        <span class="nav-logo">🦙</span>
+        <span>LlamaIndex Blog Hub</span>
+      </a>
+      <a href="./">← Back to Hub</a>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="hero-tag">文档处理</div>
+      <h1>How Agentic Document Extraction Improves Accuracy and Automation</h1>
+      <p>Every enterprise running document automation eventually hits the same wall. The template worked fine for six months. Then the vendor changed their invoice format, or the form was scanned at a slightly different angle, or someone handwrote a note in the margin. The pipeline breaks, exceptions pile up</p>
+      <div class="hero-stats">
+        <div class="stat"><span class="stat-num">7</span><span class="stat-label">核心章节</span></div><div class="stat"><span class="stat-num">8</span><span class="stat-label">关键概念</span></div><div class="stat"><span class="stat-num">7min</span><span class="stat-label">阅读时长</span></div><div class="stat"><span class="stat-num">1892</span><span class="stat-label">总字数</span></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc"><div class="toc-grid">
+  <a href="#s0" class="toc-item"><span class="toc-num">🔍</span>What is an agentic document workflow?</a>
+  <a href="#s1" class="toc-item"><span class="toc-num">💡</span>Visual grounding and bounding boxes</a>
+  <a href="#s2" class="toc-item"><span class="toc-num">⚙️</span>Solving the hard problems: text tables and complex layouts</a>
+  <a href="#s3" class="toc-item"><span class="toc-num">📊</span>High-stakes use case: medical forms</a>
+  <a href="#s4" class="toc-item"><span class="toc-num">🔄</span>Why agentic AI wins on ROI</a>
+  <a href="#s5" class="toc-item"><span class="toc-num">🎯</span>Best practices for implementation</a>
+  <a href="#s6" class="toc-item"><span class="toc-num">📋</span>Where this leaves traditional OCR</a>
+</div></nav>
+
+    <section class="section" id="s0">
+  <h2>🔍 What is an agentic document workflow?</h2>
+  <p class="lead">Standard OCR operates as a pure transcription layer: it reads a page and outputs a string of text. What it doesn&#x27;t do is ask why the text is there, what relationship it has to the fields around it, or</p>
+  <p>The practical model is a plan-act-verify loop. Before extracting data, the agent identifies the document type and its logical structure: which regions are headers, which are data fields, where the relevant information actually lives on the page. It then extracts data from those regions, rather than sweeping left-to-right across the full text stream. After extraction, it checks its own output. If a date field contains something that doesn&#x27;t parse as a valid date, or a dosage value falls outside a plausible range, the agent flags it or attempts a correction rather than silently passing bad data downstream.</p>
+  <p>This is very different from adding a confidence score to OCR output. Confidence scores tell you the OCR engine wasn&#x27;t sure about a character. The agentic loop catches errors the OCR engine was completely confident about, because the value looked like text but didn&#x27;t make sense as data. That self-correction is what makes agentic workflows viable for high-stakes document processing where silent errors are expensive.</p>
+<div class="flow">
+  <div class="flow-step">Agentic document extraction</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">plan-act-verify loop</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Visual grounding</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">bounding box</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step purple">hierarchical document understanding</div>
+</div>
+</section>
+<section class="section" id="s1">
+  <h2>💡 Visual grounding and bounding boxes</h2>
+  <p class="lead">When most people think about OCR accuracy problems, they think about illegible characters or poor scan quality. These are real issues, but not the main failure mode for modern document automation. The</p>
+  <p>Visual grounding solves this by linking extracted text to its physical location on the document. Rather than reading a page as a flat stream of characters, a visually grounded model perceives the document as a two-dimensional object with spatial relationships.</p>
+  <p>A bounding box around each detected region tells the model not just what text it found, but exactly where that text sits: its coordinates on the page, its relationship to neighboring elements, and what region type it belongs to.</p>
+  <p>The practical impact shows up immediately in any document where layout carries meaning. On a vendor invoice, the total amount due appears in a specific position relative to a label. That position distinguishes it from line item subtotals that might have identical numeric formatting. On a form with multiple date fields, bounding box coordinates are what separate the date of service from the date of birth from the date of signature. Without spatial awareness, the system guesses these values. With visual grounding, it knows.</p>
+  <p>LlamaParse applies this multimodal reasoning to every document it processes. Both the visual layout and the semantic content have to agree before an extraction is finalized.</p>
+<div class="timeline">
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">What is an agentic document workflow?</div>
+    <div class="tl-desc">Standard OCR operates as a pure transcription layer: it reads a page and outputs a string of text. What it doesn&#x27;t d</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Visual grounding and bounding boxes</div>
+    <div class="tl-desc">When most people think about OCR accuracy problems, they think about illegible characters or poor scan quality. These ar</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Solving the hard problems: text tables and complex layouts</div>
+    <div class="tl-desc">Tables are the most reliable way to break a traditional OCR pipeline. The core issue is that table structure is visual:</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">High-stakes use case: medical forms</div>
+    <div class="tl-desc">Medical forms are the hardest category of document extraction, and not just because of scan quality. The structural comp</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Why agentic AI wins on ROI</div>
+    <div class="tl-desc">The ROI case for agentic document extraction isn&#x27;t primarily about speed. Most document-heavy workflows aren&#x27;t b</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Best practices for implementation</div>
+    <div class="tl-desc">Start with scan quality. Visual grounding and bounding box detection work best when the source document is clear. Ag</div>
+  </div>
+</div>
+</section>
+<section class="section" id="s2">
+  <h2>⚙️ Solving the hard problems: text tables and complex layouts</h2>
+  <p class="lead">Tables are the most reliable way to break a traditional OCR pipeline. The core issue is that table structure is visual: columns are defined by alignment, rows by proximity, and header relationships by</p>
+  <p>Template-based systems handle this by recording the pixel coordinates of every column boundary in every known document format. This works until the table changes: a column gets added, cell padding shifts, the vendor switches from a bordered table to a borderless one. Any of those changes break the template, and the pipeline produces wrong data without alerting anyone.</p>
+  <p>An agentic approach treats header-row relationships as something to be inferred dynamically rather than hard-coded. The agent identifies table regions via visual grounding, reads column headers, and walks down each row, assigning values to headers based on spatial and semantic context. A column labeled &quot;Unit Price&quot; that contains numbers formatted as currency is still identifiable even if its left edge shifted by twenty pixels between this invoice and the last one.</p>
+  <p>The same logic applies to variable document layouts across multiple vendors. Rather than building and maintaining separate templates for 500 different invoice formats, an agentic system reasons about each document independently. No manual configuration required.</p>
+</section>
+<section class="section" id="s3">
+  <h2>📊 High-stakes use case: medical forms</h2>
+  <p class="lead">Medical forms are the hardest category of document extraction, and not just because of scan quality. The structural complexity is the real challenge: a single patient intake form might contain hierarc</p>
+  <p>And the failure modes matter in a way they don&#x27;t for invoice processing. A misread line item on an invoice gets caught in reconciliation. A misread dosage, an incorrect ICD-10 code, or a missed allergy notation carries real consequences.</p>
+  <p>Agentic document extraction handles medical forms through hierarchical document understanding combined with multi-modal processing. The agent identifies the document&#x27;s logical sections first, then processes each section according to its structural type. Checkboxes get different handling than free-text fields, which get different handling than printed labels sitting next to handwritten values. Visual grounding anchors every extracted value to its precise location on the page, supporting downstream clinical review: a clinician validating extracted data can see exactly where on the original document each value came from.</p>
+  <p>The self-correction loop also matters more in healthcare. An agent that flags an improbable value (a birth year of 1823 or a dosage three orders of magnitude outside normal range) before it reaches the downstream system is doing something traditional OCR fundamentally can&#x27;t do.</p>
+</section>
+<section class="section" id="s4">
+  <h2>🔄 Why agentic AI wins on ROI</h2>
+  <p class="lead">The ROI case for agentic document extraction isn&#x27;t primarily about speed. Most document-heavy workflows aren&#x27;t bottlenecked by how fast OCR runs. The real cost is the manual review queue: the team of </p>
+  <p>Agentic systems reduce that queue two ways. First, they produce fewer errors on complex documents. Not by being more careful about individual characters, but by understanding document structure and validating extracted values against context. Second, they require no template maintenance. A traditional OCR setup for 50 vendor invoice formats requires 50 templates, ongoing updates when formats change, and someone responsible for monitoring pipeline health. An agentic system reasons about each document rather than matching it against a pattern, so that maintenance burden disappears.</p>
+  <p>Deployment time reflects this too. Template-based extraction for a new document type typically requires weeks of annotation, training, and validation work. LlamaParse processes new document types without a training phase. The same model handles any document type, because document understanding generalizes in a way that template matching doesn&#x27;t.</p>
+  <p>When you acquire a new vendor, enter a new market, or encounter a document format you haven&#x27;t seen before, an agentic pipeline handles it without a manual intervention spike. The pipeline degrades gracefully instead of breaking entirely.</p>
+</section>
+<section class="section" id="s5">
+  <h2>🎯 Best practices for implementation</h2>
+  <p class="lead">Start with scan quality. Visual grounding and bounding box detection work best when the source document is clear. Agentic systems handle imperfect scans better than template-based OCR, but low-resolut</p>
+  <p>Define your output schema explicitly. An agentic system needs to know what fields to extract and what data types to expect. Providing a structured JSON schema gives the agent specific extraction targets and gives the self-correction loop something concrete to validate against. Vague extraction targets produce vague results.</p>
+  <p>Set confidence thresholds that match your risk tolerance. Not all extracted fields carry the same consequences. A vendor name on an invoice can tolerate a lower confidence threshold than a patient dosage on a prescription form. LlamaParse returns confidence scores and supports human-in-the-loop validation, so you can route low-confidence extractions to manual review without stopping the entire pipeline. The goal is calibrating those thresholds so reviewers are only looking at cases where their judgment actually matters.</p>
+</section>
+<section class="section" id="s6">
+  <h2>📋 Where this leaves traditional OCR</h2>
+  <p class="lead">Template-based OCR had a long run. For high-volume processing of stable, predictable documents, it was a reasonable bet. But most enterprises don&#x27;t actually process stable, predictable documents. They</p>
+  <p>Agentic document extraction is a better fit for that reality. By combining visual grounding with reasoning and self-correction, it handles document variation that would require constant template maintenance to address any other way. The accuracy gains on complex documents are categorical rather than incremental, because the failure modes of a template-based system don&#x27;t apply to a system that actually understands what it&#x27;s reading.</p>
+  <p>LlamaParse brings this to document processing pipelines without a training phase or a fleet of custom templates. It processes documents across formats and layouts using the same model, validates its own output, and returns results with the confidence scores and spatial metadata that reviewers need. If your pipeline has a manual review queue that&#x27;s grown too large to ignore, that&#x27;s usually a signal that your extraction layer is producing more uncertainty than your team can absorb. LlamaParse is free to try. Start with 10,000 credits and run it against your hardest documents.</p>
+</section>
+
+    <section class="section" id="key-concepts">
+  <h2>🔑 核心概念 Key Concepts</h2>
+  <p class="lead">本文涉及的关键技术概念与术语。</p>
+<div class="flow">
+  <div class="flow-step">Agentic document extraction</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">plan-act-verify loop</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Visual grounding</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">bounding box</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step purple">hierarchical document understanding</div>
+</div>
+</section>
+
+  </div>
+
+  <footer class="footer">
+    <div class="footer-links">
+      <a href="./">LlamaIndex Blog Hub</a>
+      <a href="https://www.llamaindex.ai/blog/agentic-document-extraction" target="_blank" rel="noopener">原文链接 Original</a>
+      <a href="../">Engineering Blogs Hub</a>
+    </div>
+    <p>Generated from LlamaIndex blog content for learning purposes.</p>
+  </footer>
+</body>
+</html>

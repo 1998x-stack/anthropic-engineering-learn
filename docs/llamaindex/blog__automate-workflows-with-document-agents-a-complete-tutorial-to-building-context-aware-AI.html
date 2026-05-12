@@ -1,0 +1,354 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Document Agents Workflow Automation Guide | LlamaIndex</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafbfc;
+      --surface: #fff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --amber: #d97706;
+      --amber-light: #fbbf24;
+      --amber-dark: #92400e;
+      --purple: #6366f1;
+      --teal: #14b8a6;
+      --green: #10b981;
+      --red: #ef4444;
+      --blue: #3b82f6;
+      --pink: #ec4899;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans SC', 'Inter', sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:var(--sans); background:var(--bg); color:var(--text); line-height:1.7; }
+
+    .nav { position:sticky; top:0; background:rgba(15,23,42,.92); backdrop-filter:blur(12px); z-index:100; border-bottom:1px solid rgba(255,255,255,.08); }
+    .nav-inner { max-width:1100px; margin:0 auto; padding:12px 24px; display:flex; justify-content:space-between; align-items:center; }
+    .nav-brand { color:#fbbf24; text-decoration:none; font-weight:700; display:flex; align-items:center; gap:8px; }
+    .nav-logo { font-size:20px; }
+    .nav a:last-child { font-size:13px; color:rgba(255,255,255,.6); text-decoration:none; }
+    .nav a:last-child:hover { color:#fbbf24; }
+
+    .hero { background:linear-gradient(135deg,#0f172a 0%,#78350f 50%,#d97706 100%); color:#fff; padding:60px 24px 48px; }
+    .hero-inner { max-width:1100px; margin:0 auto; }
+    .hero-tag { display:inline-block; background:rgba(251,191,36,.15); color:#fbbf24; padding:4px 14px; border-radius:20px; font-size:13px; font-weight:500; margin-bottom:16px; letter-spacing:.5px; }
+    .hero h1 { font-size:clamp(24px,4vw,42px); font-weight:800; line-height:1.2; margin-bottom:12px; }
+    .hero p { font-size:17px; color:rgba(255,255,255,.8); max-width:700px; margin-bottom:28px; line-height:1.6; }
+    .hero-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; max-width:600px; }
+    .stat { text-align:center; }
+    .stat-num { display:block; font-size:28px; font-weight:800; color:#fbbf24; font-family:var(--mono); }
+    .stat-label { font-size:12px; color:rgba(255,255,255,.6); text-transform:uppercase; letter-spacing:.5px; }
+
+    .page { max-width:1100px; margin:0 auto; padding:32px 24px 60px; }
+
+    .toc { margin-bottom:40px; }
+    .toc-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:10px; }
+    .toc-item { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); text-decoration:none; color:var(--text); font-size:14px; font-weight:500; transition:all .2s; }
+    .toc-item:hover { border-color:var(--amber); transform:translateY(-1px); box-shadow:0 4px 12px rgba(217,119,6,.1); }
+    .toc-num { font-size:16px; }
+
+    .section { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:32px; margin-bottom:24px; }
+    .section h2 { font-size:22px; font-weight:700; margin-bottom:12px; color:var(--text); }
+    .section h3 { font-size:17px; font-weight:600; margin:20px 0 8px; color:var(--amber-dark); }
+    .lead { color:var(--text-secondary); font-size:15px; margin-bottom:16px; line-height:1.7; }
+    .section p { margin-bottom:12px; font-size:15px; line-height:1.7; }
+
+    .chart { margin:20px 0; }
+    .chart-row { display:flex; align-items:center; margin-bottom:8px; }
+    .chart-label { width:160px; font-size:13px; font-weight:500; text-align:right; padding-right:12px; color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:28px; overflow:hidden; }
+    .chart-bar { height:100%; border-radius:8px; display:flex; align-items:center; padding-left:10px; font-size:12px; font-weight:600; color:#fff; transition:width .6s ease; min-width:40px; }
+    .chart-bar.amber { background:linear-gradient(90deg,#d97706,#f59e0b); }
+    .chart-bar.purple { background:linear-gradient(90deg,#6366f1,#818cf8); }
+    .chart-bar.teal { background:linear-gradient(90deg,#0d9488,#14b8a6); }
+    .chart-bar.green { background:linear-gradient(90deg,#059669,#10b981); }
+    .chart-bar.blue { background:linear-gradient(90deg,#2563eb,#3b82f6); }
+    .chart-bar.red { background:linear-gradient(90deg,#dc2626,#ef4444); }
+
+    .timeline { position:relative; padding-left:28px; margin:20px 0; }
+    .timeline::before { content:''; position:absolute; left:8px; top:0; bottom:0; width:3px; background:linear-gradient(180deg,#d97706,#6366f1,#14b8a6); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:20px; padding-left:16px; }
+    .tl-dot { position:absolute; left:-24px; top:4px; width:14px; height:14px; border-radius:50%; border:3px solid var(--amber); background:#fff; }
+    .tl-item:nth-child(2) .tl-dot { border-color:var(--purple); }
+    .tl-item:nth-child(3) .tl-dot { border-color:var(--teal); }
+    .tl-item:nth-child(4) .tl-dot { border-color:var(--green); }
+    .tl-item:nth-child(5) .tl-dot { border-color:var(--blue); }
+    .tl-phase { font-weight:600; font-size:15px; margin-bottom:4px; }
+    .tl-desc { font-size:13px; color:var(--text-secondary); line-height:1.5; }
+
+    .compare-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin:20px 0; }
+    .compare-card { padding:16px; border-radius:var(--radius); font-size:14px; line-height:1.6; }
+    .compare-card.old { background:#fef2f2; border:1px solid #fecaca; }
+    .compare-card.new { background:#f0fdf4; border:1px solid #bbf7d0; }
+
+    .flow { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:20px 0; }
+    .flow-step { padding:10px 18px; background:#f8fafc; border:2px solid var(--border); border-radius:var(--radius); font-size:13px; font-weight:600; text-align:center; }
+    .flow-step.purple { background:#eef2ff; border-color:var(--purple); color:var(--purple); }
+    .flow-arrow { color:var(--amber); font-size:20px; font-weight:700; }
+
+    .fail-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:20px 0; }
+    .fail-grid .card { padding:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); font-size:13px; line-height:1.6; }
+
+    .block-q { margin:20px 0; padding:20px 24px; background:linear-gradient(135deg,#fffbeb,#fef3c7); border-left:4px solid var(--amber); border-radius:0 var(--radius) var(--radius) 0; font-style:italic; color:#92400e; font-size:14px; line-height:1.7; }
+
+    .tbl-wrap { overflow-x:auto; margin:20px 0; }
+    table { width:100%; border-collapse:collapse; font-size:14px; }
+    th { background:#f8fafc; padding:10px 14px; text-align:left; font-weight:600; border-bottom:2px solid var(--border); white-space:nowrap; }
+    td { padding:10px 14px; border-bottom:1px solid var(--border); }
+    tr:hover td { background:#fffbeb; }
+
+    .badge { display:inline-block; padding:3px 10px; border-radius:12px; font-size:12px; font-weight:500; }
+    .badge-amber { background:#fffbeb; color:#92400e; }
+    .badge-purple { background:#eef2ff; color:#4338ca; }
+    .badge-green { background:#f0fdf4; color:#166534; }
+
+    .footer { background:#0f172a; color:rgba(255,255,255,.6); padding:32px 24px; text-align:center; font-size:13px; }
+    .footer a { color:#fbbf24; text-decoration:none; }
+    .footer a:hover { text-decoration:underline; }
+    .footer-links { display:flex; justify-content:center; gap:24px; margin-bottom:12px; flex-wrap:wrap; }
+
+    @media(max-width:768px) {
+      .hero-stats { grid-template-columns:repeat(2,1fr); }
+      .compare-grid, .fail-grid { grid-template-columns:1fr; }
+      .chart-label { width:100px; font-size:12px; }
+      .flow { flex-direction:column; gap:6px; }
+      .flow-arrow { transform:rotate(90deg); }
+      .toc-grid { grid-template-columns:1fr; }
+      .section { padding:20px 16px; }
+      .hero { padding:40px 16px 32px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="../" class="nav-brand">
+        <span class="nav-logo">🦙</span>
+        <span>LlamaIndex Blog Hub</span>
+      </a>
+      <a href="./">← Back to Hub</a>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="hero-tag">文档处理</div>
+      <h1>Document Agents Workflow Automation Guide | LlamaIndex</h1>
+      <p>Enterprise documents—like bank statements, contracts, and disclosures—are dense, complex, and often packed with valuable information that&#x27;s difficult to access at scale. Traditional document processing tools struggle to go beyond basic extraction. With LlamaParse Index, we&#x27;re enabling a new paradigm</p>
+      <div class="hero-stats">
+        <div class="stat"><span class="stat-num">11</span><span class="stat-label">核心章节</span></div><div class="stat"><span class="stat-num">8</span><span class="stat-label">关键概念</span></div><div class="stat"><span class="stat-num">4min</span><span class="stat-label">阅读时长</span></div><div class="stat"><span class="stat-num">1120</span><span class="stat-label">总字数</span></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc"><div class="toc-grid">
+  <a href="#s1" class="toc-item"><span class="toc-num">💡</span>**Step 1: Install Dependencies and Set Up API Keys**</a>
+  <a href="#s2" class="toc-item"><span class="toc-num">⚙️</span>**Step 2: Create and Connect to Your LlamaParse Index**</a>
+  <a href="#s3" class="toc-item"><span class="toc-num">📊</span>**Step 3: Test Your Index with Basic Retrieval**</a>
+  <a href="#s4" class="toc-item"><span class="toc-num">🔄</span>**Step 4: Add an LLM and Create a Query Engine**</a>
+  <a href="#s5" class="toc-item"><span class="toc-num">🎯</span>**Step 5: Build Tools for Your Agent**</a>
+  <a href="#s6" class="toc-item"><span class="toc-num">📋</span>**Step 5: Build Tools for Your Agent**</a>
+  <a href="#s7" class="toc-item"><span class="toc-num">🔧</span>**Step 6: Create Your Agent with Workflows**</a>
+  <a href="#s8" class="toc-item"><span class="toc-num">🚀</span>**Step 7: Test with a Complex, Real-World Question**</a>
+  <a href="#s9" class="toc-item"><span class="toc-num">📈</span>**Key Features Demonstrated**</a>
+  <a href="#s10" class="toc-item"><span class="toc-num">🧪</span>**Conclusion: From Static PDFs to Intelligent Agents**</a>
+</div></nav>
+
+    <section class="section" id="s1">
+  <h2>💡 **Step 1: Install Dependencies and Set Up API Keys**</h2>
+  <p class="lead">Start by installing the required dependencies:</p>
+  <p>``` !pip install llama-index-indices-managed-llama-cloud llama-index-llms-anthropic llama-index-core ``` You&#x27;ll need two API keys to get started:</p>
+  <p>LLAMACLOUD_API_KEY - to access your LlamaParse index ANTHROPIC_API_KEY - to access Claude for powering your agent</p>
+<div class="timeline">
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Ready to get started with LlamaParse?</div>
+    <div class="tl-desc">Explore our free and paid plans today.
+
+
+ -   Learn more</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">**Step 1: Install Dependencies and Set Up API Keys**</div>
+    <div class="tl-desc">Start by installing the required dependencies:
+
+
+
+sh
+
+
+
+
+
+
+```
+!pip install llama-index-indices-managed-llama-cloud llam</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">**Step 2: Create and Connect to Your LlamaParse Index**</div>
+    <div class="tl-desc">First, create your index in the LlamaParse dashboard by uploading your documents (Chase account PDFs in this case). Then</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">**Step 3: Test Your Index with Basic Retrieval**</div>
+    <div class="tl-desc">Verify that your index is working by running a basic retrieval test:
+
+
+
+python
+
+
+
+
+
+
+```
+query = &quot;What is the monthly se</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">**Step 4: Add an LLM and Create a Query Engine**</div>
+    <div class="tl-desc">Integrate Claude Sonnet 4 as your language model:
+
+
+
+python
+
+
+
+
+
+
+```
+from llama_index.llms.anthropic import Anthropic</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">**Step 5: Build Tools for Your Agent**</div>
+    <div class="tl-desc">Create tools that your agent can use:
+
+
+
+ 1. A simple calculator tool:
+
+
+
+python
+
+
+
+
+
+
+```
+Output:
+
+&gt; The monthly se</div>
+  </div>
+</div>
+  <div class="block-q"><p>"The monthly service fee for Chase Total Checking is $12 (increasing to $15, effective August 24, 2025)."</p></div>
+</section>
+<section class="section" id="s2">
+  <h2>⚙️ **Step 2: Create and Connect to Your LlamaParse Index**</h2>
+  <p class="lead">First, create your index in the LlamaParse dashboard by uploading your documents (Chase account PDFs in this case). Then connect to it using the LlamaIndex SDK:</p>
+  <p>``` from llama_index.indices.managed.llama_cloud import LlamaParseIndex</p>
+  <p>index = LlamaParseIndex( name=&quot;demo-video-index-1&quot;, project_name=&quot;Demo Project&quot;, organization_id=&quot;your-organization-id&quot;, api_key=LLAMACLOUD_API_KEY ) ```</p>
+</section>
+<section class="section" id="s3">
+  <h2>📊 **Step 3: Test Your Index with Basic Retrieval**</h2>
+  <p class="lead">Verify that your index is working by running a basic retrieval test:</p>
+  <p>``` query = &quot;What is the monthly service fee for Chase Total Checking&quot; nodes = index.as_retriever().retrieve(query)</p>
+  <p>print(&quot;Found &quot; + str(len(nodes)) + &quot; nodes&quot;) for node in nodes: print(f&quot;Node ID: {node.node.id_}&quot;) print(f&quot;Score: {node.score}&quot;) print(f&quot;File Name: {node.node.metadata.get(&#x27;file_name&#x27;)}&quot;) print(f&quot;Page Label: {node.node.metadata.get(&#x27;page_label&#x27;)}&quot;) print(&quot;-&quot;  20) ``` This returns raw nodes*—chunks of document text from relevant pages—but no final answer yet. To get actual answers, we need to integrate an LLM.</p>
+</section>
+<section class="section" id="s4">
+  <h2>🔄 **Step 4: Add an LLM and Create a Query Engine**</h2>
+  <p class="lead">Integrate Claude Sonnet 4 as your language model:</p>
+  <p>``` from llama_index.llms.anthropic import Anthropic</p>
+  <p>llm = Anthropic( api_key=ANTHROPIC_API_KEY, model=&quot;claude-sonnet-4-20250514&quot;, ) ``` Create a query engine and ask the same question:</p>
+  <p>``` engine = index.as_query_engine(llm=llm) response = engine.query(query) print(response) ``` Output:</p>
+  <p>&gt;  The monthly service fee for Chase Total Checking is $12 (increasing to $15, effective August 24, 2025).</p>
+  <p>This is basic RAG (retrieval-augmented generation). Now let&#x27;s build a more sophisticated agent.</p>
+</section>
+<section class="section" id="s5">
+  <h2>🎯 **Step 5: Build Tools for Your Agent**</h2>
+  <p class="lead">Create tools that your agent can use:</p>
+  <p>1. A simple calculator tool:</p>
+  <p>``` Output:</p>
+  <p>&gt; The monthly service fee for Chase Total Checking is $12 (increasing to $15, effective August 24, 2025). &gt;</p>
+  <p>This is basic RAG (retrieval-augmented generation). Now let&#x27;s build a more sophisticated agent.</p>
+</section>
+<section class="section" id="s6">
+  <h2>📋 **Step 5: Build Tools for Your Agent**</h2>
+  <p class="lead">Create tools that your agent can use:</p>
+  <p>1. A simple calculator tool: ``` 2. A query tool for the Chase documents:</p>
+  <p>``` from llama_index.core.tools import QueryEngineTool</p>
+  <p>jpmorgan = QueryEngineTool.from_defaults( query_engine=engine, name=&quot;JPMorganChaseTool&quot;, description=&quot;Query documents about JP Morgan Chase bank rates, fees and procedures&quot;, ) ```</p>
+</section>
+<section class="section" id="s7">
+  <h2>🔧 **Step 6: Create Your Agent with Workflows**</h2>
+  <p class="lead">Use LlamaIndex&#x27;s FunctionAgent with the Workflows abstraction:</p>
+  <p>``` from llama_index.core.agent.workflow import FunctionAgent</p>
+  <p>workflow = FunctionAgent( tools=[add, jpmorgan], llm=llm, system_prompt=&quot;You are an expert in JP Morgan Chase banking fees and procedures&quot; ) ```</p>
+</section>
+<section class="section" id="s8">
+  <h2>🚀 **Step 7: Test with a Complex, Real-World Question**</h2>
+  <p class="lead">Now test the agent with a compound scenario that requires multiple document lookups and calculations:</p>
+  <p>``` from llama_index.core.agent.workflow import ( AgentOutput, ToolCallResult, )</p>
+  <p>handler = workflow.run(&quot;&quot;&quot;You have a Chase Total Checking account with $25 in your balance on Monday morning. Throughout Monday, you make a $15 grocery purchase (debit card), write a $20 check that gets cashed, and have a $25 automatic utility bill payment (ACH) that processes. On Tuesday, you request a rush replacement for your lost debit card and place a stop payment on another check over the phone with a banker. What is the total amount in fees you would be charged, and when would each fee be assessed?&quot;&quot;&quot;)</p>
+  <p># Stream the agent&#x27;s reasoning process async for event in handler.stream_events(): if isinstance(event, AgentOutput): for tool_call in event.tool_calls: print(&quot;-&quot;  20) print(&quot;Tool called: &quot; + tool_call.tool_name) print(&quot;Tool arguments:&quot;) for key, value in tool_call.tool_kwargs.items(): print(f&quot;  {key}: {value}&quot;) print(&quot;-&quot;  10) elif isinstance(event, ToolCallResult): print(&quot;Tool output: &quot;, event.tool_output)</p>
+  <p>print(str(await handler)) ``` The agent intelligently:</p>
+  <p>Queries overdraft policies to understand when fees apply Looks up replacement card fees for rush delivery Finds stop payment fees for phone requests Calculates total fees using the add tool Provides a detailed breakdown with timing</p>
+<div class="fail-grid">
+  <div class="card"><strong>Queries overdraft policies</strong><br>to understand when fees apply</div>
+  <div class="card"><strong>Looks up replacement card fees</strong><br>for rush delivery</div>
+  <div class="card"><strong>Finds stop payment fees</strong><br>for phone requests</div>
+  <div class="card"><strong>Calculates total fees</strong><br>using the add tool</div>
+  <div class="card"><strong>Provides a detailed breakdown</strong><br>with timing</div>
+</div>
+</section>
+<section class="section" id="s9">
+  <h2>📈 **Key Features Demonstrated**</h2>
+  <p class="lead">Smart Document Retrieval: The agent doesn&#x27;t just search—it understands context and retrieves relevant information from multiple document sections.</p>
+  <p>Multi-Step Reasoning: It breaks down complex scenarios into component parts, querying different aspects of the banking policies.</p>
+  <p>Tool Integration: Seamlessly combines document retrieval with calculations and business logic.</p>
+  <p>Streaming Execution: You can observe the agent&#x27;s thought process in real-time, seeing each tool call and reasoning step.</p>
+</section>
+<section class="section" id="s10">
+  <h2>🧪 **Conclusion: From Static PDFs to Intelligent Agents**</h2>
+  <p class="lead">This tutorial demonstrates how LlamaParse and LlamaIndex transform dense, unstructured documents into actionable insights automatically. By indexing real-world data and connecting it to an event-drive</p>
+  <p>The result is a system that can:</p>
+  <p>Reason across multiple document sections Calculate complex scenarios with precision Adapt its queries based on context Explain its reasoning transparently</p>
+  <p>This approach works for any domain with complex documents—legal contracts, technical manuals, regulatory filings, medical records, and more.</p>
+  <p>💡 Want to try it yourself?</p>
+  <p>Check out the complete documentation and video walkthrough.</p>
+<div class="compare-grid">
+  <div class="compare-card old"><strong>❌</strong> across multiple document sections</div>
+  <div class="compare-card new"><strong>✅</strong> complex scenarios with precision</div>
+  <div class="compare-card old"><strong>❌</strong> its queries based on context</div>
+  <div class="compare-card new"><strong>✅</strong> its reasoning transparently</div>
+</div>
+</section>
+
+    
+  </div>
+
+  <footer class="footer">
+    <div class="footer-links">
+      <a href="./">LlamaIndex Blog Hub</a>
+      <a href="https://www.llamaindex.ai/blog/automate-workflows-with-document-agents-a-complete-tutorial-to-building-context-aware-AI" target="_blank" rel="noopener">原文链接 Original</a>
+      <a href="../">Engineering Blogs Hub</a>
+    </div>
+    <p>Generated from LlamaIndex blog content for learning purposes.</p>
+  </footer>
+</body>
+</html>

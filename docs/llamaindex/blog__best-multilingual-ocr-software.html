@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Best Multilingual OCR Software in 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafbfc;
+      --surface: #fff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --amber: #d97706;
+      --amber-light: #fbbf24;
+      --amber-dark: #92400e;
+      --purple: #6366f1;
+      --teal: #14b8a6;
+      --green: #10b981;
+      --red: #ef4444;
+      --blue: #3b82f6;
+      --pink: #ec4899;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans SC', 'Inter', sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:var(--sans); background:var(--bg); color:var(--text); line-height:1.7; }
+
+    .nav { position:sticky; top:0; background:rgba(15,23,42,.92); backdrop-filter:blur(12px); z-index:100; border-bottom:1px solid rgba(255,255,255,.08); }
+    .nav-inner { max-width:1100px; margin:0 auto; padding:12px 24px; display:flex; justify-content:space-between; align-items:center; }
+    .nav-brand { color:#fbbf24; text-decoration:none; font-weight:700; display:flex; align-items:center; gap:8px; }
+    .nav-logo { font-size:20px; }
+    .nav a:last-child { font-size:13px; color:rgba(255,255,255,.6); text-decoration:none; }
+    .nav a:last-child:hover { color:#fbbf24; }
+
+    .hero { background:linear-gradient(135deg,#0f172a 0%,#78350f 50%,#d97706 100%); color:#fff; padding:60px 24px 48px; }
+    .hero-inner { max-width:1100px; margin:0 auto; }
+    .hero-tag { display:inline-block; background:rgba(251,191,36,.15); color:#fbbf24; padding:4px 14px; border-radius:20px; font-size:13px; font-weight:500; margin-bottom:16px; letter-spacing:.5px; }
+    .hero h1 { font-size:clamp(24px,4vw,42px); font-weight:800; line-height:1.2; margin-bottom:12px; }
+    .hero p { font-size:17px; color:rgba(255,255,255,.8); max-width:700px; margin-bottom:28px; line-height:1.6; }
+    .hero-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; max-width:600px; }
+    .stat { text-align:center; }
+    .stat-num { display:block; font-size:28px; font-weight:800; color:#fbbf24; font-family:var(--mono); }
+    .stat-label { font-size:12px; color:rgba(255,255,255,.6); text-transform:uppercase; letter-spacing:.5px; }
+
+    .page { max-width:1100px; margin:0 auto; padding:32px 24px 60px; }
+
+    .toc { margin-bottom:40px; }
+    .toc-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:10px; }
+    .toc-item { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); text-decoration:none; color:var(--text); font-size:14px; font-weight:500; transition:all .2s; }
+    .toc-item:hover { border-color:var(--amber); transform:translateY(-1px); box-shadow:0 4px 12px rgba(217,119,6,.1); }
+    .toc-num { font-size:16px; }
+
+    .section { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:32px; margin-bottom:24px; }
+    .section h2 { font-size:22px; font-weight:700; margin-bottom:12px; color:var(--text); }
+    .section h3 { font-size:17px; font-weight:600; margin:20px 0 8px; color:var(--amber-dark); }
+    .lead { color:var(--text-secondary); font-size:15px; margin-bottom:16px; line-height:1.7; }
+    .section p { margin-bottom:12px; font-size:15px; line-height:1.7; }
+
+    .chart { margin:20px 0; }
+    .chart-row { display:flex; align-items:center; margin-bottom:8px; }
+    .chart-label { width:160px; font-size:13px; font-weight:500; text-align:right; padding-right:12px; color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:28px; overflow:hidden; }
+    .chart-bar { height:100%; border-radius:8px; display:flex; align-items:center; padding-left:10px; font-size:12px; font-weight:600; color:#fff; transition:width .6s ease; min-width:40px; }
+    .chart-bar.amber { background:linear-gradient(90deg,#d97706,#f59e0b); }
+    .chart-bar.purple { background:linear-gradient(90deg,#6366f1,#818cf8); }
+    .chart-bar.teal { background:linear-gradient(90deg,#0d9488,#14b8a6); }
+    .chart-bar.green { background:linear-gradient(90deg,#059669,#10b981); }
+    .chart-bar.blue { background:linear-gradient(90deg,#2563eb,#3b82f6); }
+    .chart-bar.red { background:linear-gradient(90deg,#dc2626,#ef4444); }
+
+    .timeline { position:relative; padding-left:28px; margin:20px 0; }
+    .timeline::before { content:''; position:absolute; left:8px; top:0; bottom:0; width:3px; background:linear-gradient(180deg,#d97706,#6366f1,#14b8a6); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:20px; padding-left:16px; }
+    .tl-dot { position:absolute; left:-24px; top:4px; width:14px; height:14px; border-radius:50%; border:3px solid var(--amber); background:#fff; }
+    .tl-item:nth-child(2) .tl-dot { border-color:var(--purple); }
+    .tl-item:nth-child(3) .tl-dot { border-color:var(--teal); }
+    .tl-item:nth-child(4) .tl-dot { border-color:var(--green); }
+    .tl-item:nth-child(5) .tl-dot { border-color:var(--blue); }
+    .tl-phase { font-weight:600; font-size:15px; margin-bottom:4px; }
+    .tl-desc { font-size:13px; color:var(--text-secondary); line-height:1.5; }
+
+    .compare-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin:20px 0; }
+    .compare-card { padding:16px; border-radius:var(--radius); font-size:14px; line-height:1.6; }
+    .compare-card.old { background:#fef2f2; border:1px solid #fecaca; }
+    .compare-card.new { background:#f0fdf4; border:1px solid #bbf7d0; }
+
+    .flow { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:20px 0; }
+    .flow-step { padding:10px 18px; background:#f8fafc; border:2px solid var(--border); border-radius:var(--radius); font-size:13px; font-weight:600; text-align:center; }
+    .flow-step.purple { background:#eef2ff; border-color:var(--purple); color:var(--purple); }
+    .flow-arrow { color:var(--amber); font-size:20px; font-weight:700; }
+
+    .fail-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:20px 0; }
+    .fail-grid .card { padding:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); font-size:13px; line-height:1.6; }
+
+    .block-q { margin:20px 0; padding:20px 24px; background:linear-gradient(135deg,#fffbeb,#fef3c7); border-left:4px solid var(--amber); border-radius:0 var(--radius) var(--radius) 0; font-style:italic; color:#92400e; font-size:14px; line-height:1.7; }
+
+    .tbl-wrap { overflow-x:auto; margin:20px 0; }
+    table { width:100%; border-collapse:collapse; font-size:14px; }
+    th { background:#f8fafc; padding:10px 14px; text-align:left; font-weight:600; border-bottom:2px solid var(--border); white-space:nowrap; }
+    td { padding:10px 14px; border-bottom:1px solid var(--border); }
+    tr:hover td { background:#fffbeb; }
+
+    .badge { display:inline-block; padding:3px 10px; border-radius:12px; font-size:12px; font-weight:500; }
+    .badge-amber { background:#fffbeb; color:#92400e; }
+    .badge-purple { background:#eef2ff; color:#4338ca; }
+    .badge-green { background:#f0fdf4; color:#166534; }
+
+    .footer { background:#0f172a; color:rgba(255,255,255,.6); padding:32px 24px; text-align:center; font-size:13px; }
+    .footer a { color:#fbbf24; text-decoration:none; }
+    .footer a:hover { text-decoration:underline; }
+    .footer-links { display:flex; justify-content:center; gap:24px; margin-bottom:12px; flex-wrap:wrap; }
+
+    @media(max-width:768px) {
+      .hero-stats { grid-template-columns:repeat(2,1fr); }
+      .compare-grid, .fail-grid { grid-template-columns:1fr; }
+      .chart-label { width:100px; font-size:12px; }
+      .flow { flex-direction:column; gap:6px; }
+      .flow-arrow { transform:rotate(90deg); }
+      .toc-grid { grid-template-columns:1fr; }
+      .section { padding:20px 16px; }
+      .hero { padding:40px 16px 32px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="../" class="nav-brand">
+        <span class="nav-logo">🦙</span>
+        <span>LlamaIndex Blog Hub</span>
+      </a>
+      <a href="./">← Back to Hub</a>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="hero-tag">文档处理</div>
+      <h1>Best Multilingual OCR Software in 2026</h1>
+      <p>Most optical character recognition software is built and benchmarked on English documents. It is just where the training data is most abundant and where most early enterprise use cases were concentrated. The practical consequence is that accuracy numbers vendors publish often reflect performance on </p>
+      <div class="hero-stats">
+        <div class="stat"><span class="stat-num">21</span><span class="stat-label">核心章节</span></div><div class="stat"><span class="stat-num">5</span><span class="stat-label">关键概念</span></div><div class="stat"><span class="stat-num">11min</span><span class="stat-label">阅读时长</span></div><div class="stat"><span class="stat-num">2793</span><span class="stat-label">总字数</span></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc"><div class="toc-grid">
+  <a href="#s0" class="toc-item"><span class="toc-num">🔍</span>What Makes OCR Multilingual? And Why It Is Harder Than It Looks</a>
+  <a href="#s5" class="toc-item"><span class="toc-num">🎯</span>Key Features to Look for in Multilingual OCR Software</a>
+  <a href="#s12" class="toc-item"><span class="toc-num">💻</span>The Best Multilingual OCR Tools in 2026</a>
+  <a href="#s18" class="toc-item"><span class="toc-num">🔑</span>Multilingual OCR Software: Head-to-Head Comparison</a>
+  <a href="#s19" class="toc-item"><span class="toc-num">📦</span>Where Multilingual OCR Creates the Most Value</a>
+  <a href="#s20" class="toc-item"><span class="toc-num">🤖</span>How LlamaParse Handles Multilingual Documents</a>
+</div></nav>
+
+    <section class="section" id="s0">
+  <h2>🔍 What Makes OCR Multilingual? And Why It Is Harder Than It Looks</h2>
+  <p class="lead">Supporting multiple languages is not the same as performing well on them. Most tools will list a language count on their feature page. What that count does not tell you is whether the model was traine</p>
+  <p>The technical challenges compound quickly once you move beyond Latin-script documents.</p>
+  <h3>Script Diversity</h3>
+  <p>Latin-script languages share a common character set and reading direction. The OCR problem, while not trivial, is at least consistent. Move to Arabic or Hebrew and the reading direction reverses. Move to Chinese, Japanese, or Korean and you are dealing with thousands of distinct characters rather than a small alphabet, plus the possibility of vertical text orientation. Move to Thai or Devanagari and you encounter stacking characters and diacritical marks that modify the characters they attach to. Each of these requires fundamentally different recognition models, not just a different character lookup table.</p>
+  <h3>The Ligature Problem</h3>
+  <p>Arabic is a particularly instructive example. Arabic letters change shape depending on their position within a word: the same letter has a different form at the beginning, middle, and end of a word, and yet another form when it appears in isolation. Correctly recognizing Arabic text requires the model to understand these contextual letterforms, not just identify isolated characters. Systems that were not built with this in mind produce consistently garbled output on Arabic documents regardless of how good their English accuracy is.</p>
+  <h3>Mixed-Language Documents</h3>
+  <p>Real-world documents do not always stay in one language. An international contract might have English headers and clause titles with French body text. A product specification might contain English brand names embedded in Japanese content. A medical record from a multilingual healthcare system might switch languages mid-page. Processing these correctly requires a system that can detect language boundaries at a granular level and apply the appropriate recognition model to each section, not one that picks a single language for the whole document and applies it uniformly.</p>
+  <h3>The Training Data Problem</h3>
+  <p>Major world languages have abundant training data available. English, Chinese, Spanish, French, German, Arabic, Japanese are all well-represented in the datasets used to train modern OCR and vision models. As you move to lower-resource languages, regional language variants, or minority scripts, training data becomes sparse and model performance degrades. A system claiming to support 100 languages may perform at 99% accuracy on English and 78% on a less-represented language in its portfolio. The only way to know is to test on your actual documents.</p>
+<div class="flow">
+  <div class="flow-step">LlamaParse</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Broad, VLM-powered</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Excellent</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Yes, per-element routing</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step purple">Complex, variable, high-stakes documents</div>
+</div>
+</section>
+<section class="section" id="s5">
+  <h2>🎯 Key Features to Look for in Multilingual OCR Software</h2>
+  <p class="lead">When evaluating tools for multilingual document processing, these are the capabilities that actually determine whether a system holds up in production.</p>
+  <h3>Genuine Multi-Script Support</h3>
+  <p>There is a meaningful difference between a system built for multilingual processing from the ground up and a Latin-script system with language detection added as a layer. The former uses models trained on diverse scripts and typographic conventions. The latter runs language detection and then tries to apply a recognition engine that was not designed for the detected script. Ask vendors specifically how their models handle RTL scripts, CJK characters, and mixed-direction documents, not just how many languages they support.</p>
+  <h3>Layout Awareness Across Document Conventions</h3>
+  <p>Document layout conventions differ by language and culture. Arabic and Hebrew documents read right-to-left, which affects not just text direction but column ordering, table structure, and page layout logic. Japanese documents can run vertically. Mixed-language documents may have sections with different reading directions on the same page. A layout-aware system detects these structural conventions and processes each section appropriately. A system that treats the page as a uniform text grid produces incorrect reading order on documents that do not follow left-to-right, top-to-bottom conventions.</p>
+  <h3>Handling of Mixed-Language Documents</h3>
+  <p>This is the feature that separates tools built for global use cases from tools that happen to support multiple languages. Processing a document that contains two or three languages requires detecting language boundaries at the element level, applying the appropriate recognition model to each element, and reconstructing the output in a coherent structure that preserves the relationships between sections. Most tools handle this poorly. It is worth testing specifically on your mixed-language documents before committing to any system.</p>
+  <h3>Accuracy on Your Actual Languages</h3>
+  <p>Benchmark accuracy numbers are measured on controlled datasets. Run any tool you are evaluating on a representative sample of your actual documents in your actual languages. The performance difference between benchmark and production conditions is often larger for non-English languages than for English, because the benchmark datasets tend to be cleaner and more representative for major languages than for regional or lower-resource ones.</p>
+</section>
+<section class="section" id="s12">
+  <h2>💻 The Best Multilingual OCR Tools in 2026</h2>
+  <p class="lead">Here is an assessment of the main options, including where each one works well and where it falls short.</p>
+  <h3>LlamaParse</h3>
+  <p>LlamaParse is an agentic document parsing platform rather than a traditional OCR tool. The distinction matters for multilingual use cases because the architecture is fundamentally different. Instead of routing every document through a single recognition engine, LlamaParse uses an LLM orchestration layer that delegates each element of a document to the appropriate model. For multilingual documents, this means text in different scripts gets routed to models that were trained and optimized for those scripts, rather than being processed by a single model trying to handle everything.</p>
+  <p>The practical consequence is strong performance on complex multilingual documents, mixed-language pages, and documents with non-standard layouts. Charts, tables, and images embedded in non-English documents are processed by vision models rather than being ignored. Layout-aware computer vision handles RTL scripts and mixed-direction documents correctly. Multiple validation loops catch recognition errors before they reach the output.</p>
+  <p>The output is structured and AI-ready in Markdown, JSON, or HTML, with confidence scores and source citations at the field level. For organizations building document workflows rather than just extracting text, this matters: the output connects directly to downstream automation without requiring custom parsing.</p>
+  <h3>Google Document AI</h3>
+  <p>Google Document AI has strong language coverage and reliable accuracy on standard document types. It handles over 60 languages well, scales without infrastructure management, and integrates cleanly into existing Google Cloud workflows. For organizations already in the Google ecosystem processing standard forms, invoices, and identity documents in major world languages, it is a solid choice.</p>
+  <p>The limitations show up on complex layouts and genuinely mixed-language documents. Performance on lower-resource languages is less consistent than on major world languages. Customization options are limited when you need to tune the system for specific document types or language variants that fall outside the standard training distribution.</p>
+  <h3>Azure AI Document Intelligence</h3>
+  <p>Azure Document Intelligence covers over 100 languages and performs reliably on structured, form-type documents across a broad range of scripts. The integration into the Microsoft enterprise ecosystem is a practical advantage for organizations already running on Azure. It handles standard document types well and the prebuilt models for common formats like invoices and identity documents reduce implementation time.</p>
+  <p>Complex, unstructured documents and genuinely novel layouts are where accuracy becomes less consistent. Like Google, customization for specific language variants or document types outside the standard training distribution requires significant additional engineering.</p>
+  <h3>PaddleOCR</h3>
+  <p>PaddleOCR is the strongest open source option for organizations with significant Chinese, Japanese, or Korean document volumes. It was developed by Baidu and reflects that origin in the depth of its CJK script support. Accuracy on Asian language documents is meaningfully better than Tesseract and competitive with some commercial offerings for those specific script types.</p>
+  <p>Outside CJK scripts, PaddleOCR&#x27;s advantages are less pronounced. It is a solid open source choice for privacy-first deployments processing Asian language documents on controlled hardware. For diverse multilingual corpora or complex mixed-language documents, the ceiling becomes visible.</p>
+</section>
+<section class="section" id="s18">
+  <h2>🔑 Multilingual OCR Software: Head-to-Head Comparison</h2>
+  <p class="lead">Here is how the main options compare across the dimensions that matter for multilingual document processing:</p>
+  <p>Tool Script Coverage Complex Layouts Mixed Language Best For</p>
+  <p>LlamaParse Broad, VLM-powered Excellent Yes, per-element routing Complex, variable, high-stakes documents</p>
+  <p>Google Document AI Strong, 60+ languages Good Partial Scalable standard document processing</p>
+  <p>Azure Document Intelligence Broad, 100+ languages Good Partial Enterprise forms and structured documents</p>
+  <p>PaddleOCR Strong on CJK scripts Moderate Limited Asian language documents, privacy-first</p>
+</section>
+<section class="section" id="s19">
+  <h2>📦 Where Multilingual OCR Creates the Most Value</h2>
+  <p class="lead">The use cases where multilingual document processing creates real operational value follow a consistent pattern: organizations operating across multiple jurisdictions, dealing with document intake the</p>
+  <p>In global finance and compliance, international vendors submit invoices in their local languages. Regulatory filings come from subsidiaries in local formats. Processing these accurately, extracting the right fields regardless of what language they are written in, and routing them to the correct approval workflow is the baseline requirement for any finance team operating internationally. Errors in this context are not just inefficient, they create reconciliation problems and compliance risk.</p>
+  <p>Legal and contracts work across jurisdictions means dealing with documents governed by different legal systems, written in different languages, using jurisdiction-specific clause structures and terminology. Extracting key dates, obligations, and clause types from a French contract requires understanding French legal language, not just French words. The same applies to contracts in German, Spanish, Japanese, or any other language relevant to your operations.</p>
+  <p>Healthcare is where the stakes are highest. Patient records, clinical notes, lab results, and insurance documents in multilingual healthcare systems need to be correctly identified and accurately processed regardless of language. Extraction errors on clinical documents create patient safety risk, not just operational inefficiency. The accuracy bar is higher and the tolerance for errors is lower.</p>
+  <p>Government and identity documents present a specific challenge because the format diversity is enormous. Passports, national ID cards, driving licenses, and official forms vary by country in layout, script, and field structure. A system processing identity documents for KYC or onboarding needs to handle this variety correctly across dozens or hundreds of source countries.</p>
+  <p>Customer operations in global businesses receive inbound documents in every language their customers use. Classification, routing, and data extraction all need to work regardless of what language the incoming document is written in. A system that handles English perfectly and struggles on everything else creates a two-tier operation where international customers receive slower, less accurate service.</p>
+</section>
+<section class="section" id="s20">
+  <h2>🤖 How LlamaParse Handles Multilingual Documents</h2>
+  <p class="lead">It is worth being specific about what makes agentic document parsing different from traditional multilingual OCR, because the architectural difference is what produces better results on the documents </p>
+  <p>Traditional OCR approaches multilingual processing by running language detection and then applying a recognition model trained on that language. This works reasonably well when the document is entirely in one well-supported language and the layout is clean. It breaks down in three common situations: mixed-language documents, complex layouts in non-Latin scripts, and documents where visual elements like tables and charts carry information that the text-only recognition engine cannot read.</p>
+  <p>LlamaParse handles this differently. An LLM orchestration layer analyzes each element of the document and delegates it to the appropriate model. Text in Arabic goes to a model trained on Arabic. A table embedded in a Japanese document gets processed by a table-aware extraction model that understands Japanese. A chart in a French financial report gets interpreted by a vision model. The outputs from these specialized models are then validated through correction loops and reconstructed into a single coherent structured output.</p>
+  <p>For RTL scripts, layout-aware computer vision detects the reading direction and processes column ordering, table structure, and text flow accordingly. For mixed-language documents, the per-element routing means each section is processed by the right model rather than a compromise model that handles everything adequately and nothing perfectly.</p>
+  <p>The output includes confidence scores at the field level across languages. This matters because performance variance between languages is real even in a strong multilingual system. Knowing which fields were extracted with high confidence and which need verification lets you build a workflow that processes automatically where confidence is high and routes for review where it is not. That is a more honest and more useful approach than a system that returns confident-looking output regardless of how uncertain it actually is.</p>
+  <p>The practical starting point: LlamaParse includes 10,000 free credits on signup. That is enough to process a representative sample of your actual multilingual documents and compare extraction accuracy against what your current system produces. Testing on your real documents in your real languages is the only evaluation that tells you what you need to know.</p>
+</section>
+
+    <section class="section" id="key-concepts">
+  <h2>🔑 核心概念 Key Concepts</h2>
+  <p class="lead">本文涉及的关键技术概念与术语。</p>
+<div class="flow">
+  <div class="flow-step">LlamaParse</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Broad, VLM-powered</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Excellent</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Yes, per-element routing</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step purple">Complex, variable, high-stakes documents</div>
+</div>
+</section>
+<section class="section" id="structure">
+  <h2>📊 文章结构 Article Structure</h2>
+  <p class="lead">文章各章节的组织脉络。</p>
+<div class="timeline">
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">What Makes OCR Multilingual? And Why It Is Harder Than It Looks</div>
+    <div class="tl-desc">Supporting multiple languages is not the same as performing well on them. Most tools will list a language count on their</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Script Diversity</div>
+    <div class="tl-desc">Latin-script languages share a common character set and reading direction. The OCR problem, while not trivial, is at lea</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">The Ligature Problem</div>
+    <div class="tl-desc">Arabic is a particularly instructive example. Arabic letters change shape depending on their position within a word: the</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Mixed-Language Documents</div>
+    <div class="tl-desc">Real-world documents do not always stay in one language. An international contract might have English headers and clause</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">The Training Data Problem</div>
+    <div class="tl-desc">Major world languages have abundant training data available. English, Chinese, Spanish, French, German, Arabic, Japanese</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Key Features to Look for in Multilingual OCR Software</div>
+    <div class="tl-desc">When evaluating tools for multilingual document processing, these are the capabilities that actually determine whether a</div>
+  </div>
+</div>
+</section>
+
+  </div>
+
+  <footer class="footer">
+    <div class="footer-links">
+      <a href="./">LlamaIndex Blog Hub</a>
+      <a href="https://www.llamaindex.ai/blog/best-multilingual-ocr-software" target="_blank" rel="noopener">原文链接 Original</a>
+      <a href="../">Engineering Blogs Hub</a>
+    </div>
+    <p>Generated from LlamaIndex blog content for learning purposes.</p>
+  </footer>
+</body>
+</html>

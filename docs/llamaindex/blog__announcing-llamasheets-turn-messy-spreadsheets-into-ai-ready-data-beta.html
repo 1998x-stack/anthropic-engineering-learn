@@ -1,0 +1,279 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：LlamaSheets: Turn Messy Spreadsheets Into AI-Ready Data | LlamaIndex</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafbfc;
+      --surface: #fff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --amber: #d97706;
+      --amber-light: #fbbf24;
+      --amber-dark: #92400e;
+      --purple: #6366f1;
+      --teal: #14b8a6;
+      --green: #10b981;
+      --red: #ef4444;
+      --blue: #3b82f6;
+      --pink: #ec4899;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans SC', 'Inter', sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:var(--sans); background:var(--bg); color:var(--text); line-height:1.7; }
+
+    .nav { position:sticky; top:0; background:rgba(15,23,42,.92); backdrop-filter:blur(12px); z-index:100; border-bottom:1px solid rgba(255,255,255,.08); }
+    .nav-inner { max-width:1100px; margin:0 auto; padding:12px 24px; display:flex; justify-content:space-between; align-items:center; }
+    .nav-brand { color:#fbbf24; text-decoration:none; font-weight:700; display:flex; align-items:center; gap:8px; }
+    .nav-logo { font-size:20px; }
+    .nav a:last-child { font-size:13px; color:rgba(255,255,255,.6); text-decoration:none; }
+    .nav a:last-child:hover { color:#fbbf24; }
+
+    .hero { background:linear-gradient(135deg,#0f172a 0%,#78350f 50%,#d97706 100%); color:#fff; padding:60px 24px 48px; }
+    .hero-inner { max-width:1100px; margin:0 auto; }
+    .hero-tag { display:inline-block; background:rgba(251,191,36,.15); color:#fbbf24; padding:4px 14px; border-radius:20px; font-size:13px; font-weight:500; margin-bottom:16px; letter-spacing:.5px; }
+    .hero h1 { font-size:clamp(24px,4vw,42px); font-weight:800; line-height:1.2; margin-bottom:12px; }
+    .hero p { font-size:17px; color:rgba(255,255,255,.8); max-width:700px; margin-bottom:28px; line-height:1.6; }
+    .hero-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; max-width:600px; }
+    .stat { text-align:center; }
+    .stat-num { display:block; font-size:28px; font-weight:800; color:#fbbf24; font-family:var(--mono); }
+    .stat-label { font-size:12px; color:rgba(255,255,255,.6); text-transform:uppercase; letter-spacing:.5px; }
+
+    .page { max-width:1100px; margin:0 auto; padding:32px 24px 60px; }
+
+    .toc { margin-bottom:40px; }
+    .toc-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:10px; }
+    .toc-item { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); text-decoration:none; color:var(--text); font-size:14px; font-weight:500; transition:all .2s; }
+    .toc-item:hover { border-color:var(--amber); transform:translateY(-1px); box-shadow:0 4px 12px rgba(217,119,6,.1); }
+    .toc-num { font-size:16px; }
+
+    .section { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:32px; margin-bottom:24px; }
+    .section h2 { font-size:22px; font-weight:700; margin-bottom:12px; color:var(--text); }
+    .section h3 { font-size:17px; font-weight:600; margin:20px 0 8px; color:var(--amber-dark); }
+    .lead { color:var(--text-secondary); font-size:15px; margin-bottom:16px; line-height:1.7; }
+    .section p { margin-bottom:12px; font-size:15px; line-height:1.7; }
+
+    .chart { margin:20px 0; }
+    .chart-row { display:flex; align-items:center; margin-bottom:8px; }
+    .chart-label { width:160px; font-size:13px; font-weight:500; text-align:right; padding-right:12px; color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:28px; overflow:hidden; }
+    .chart-bar { height:100%; border-radius:8px; display:flex; align-items:center; padding-left:10px; font-size:12px; font-weight:600; color:#fff; transition:width .6s ease; min-width:40px; }
+    .chart-bar.amber { background:linear-gradient(90deg,#d97706,#f59e0b); }
+    .chart-bar.purple { background:linear-gradient(90deg,#6366f1,#818cf8); }
+    .chart-bar.teal { background:linear-gradient(90deg,#0d9488,#14b8a6); }
+    .chart-bar.green { background:linear-gradient(90deg,#059669,#10b981); }
+    .chart-bar.blue { background:linear-gradient(90deg,#2563eb,#3b82f6); }
+    .chart-bar.red { background:linear-gradient(90deg,#dc2626,#ef4444); }
+
+    .timeline { position:relative; padding-left:28px; margin:20px 0; }
+    .timeline::before { content:''; position:absolute; left:8px; top:0; bottom:0; width:3px; background:linear-gradient(180deg,#d97706,#6366f1,#14b8a6); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:20px; padding-left:16px; }
+    .tl-dot { position:absolute; left:-24px; top:4px; width:14px; height:14px; border-radius:50%; border:3px solid var(--amber); background:#fff; }
+    .tl-item:nth-child(2) .tl-dot { border-color:var(--purple); }
+    .tl-item:nth-child(3) .tl-dot { border-color:var(--teal); }
+    .tl-item:nth-child(4) .tl-dot { border-color:var(--green); }
+    .tl-item:nth-child(5) .tl-dot { border-color:var(--blue); }
+    .tl-phase { font-weight:600; font-size:15px; margin-bottom:4px; }
+    .tl-desc { font-size:13px; color:var(--text-secondary); line-height:1.5; }
+
+    .compare-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin:20px 0; }
+    .compare-card { padding:16px; border-radius:var(--radius); font-size:14px; line-height:1.6; }
+    .compare-card.old { background:#fef2f2; border:1px solid #fecaca; }
+    .compare-card.new { background:#f0fdf4; border:1px solid #bbf7d0; }
+
+    .flow { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:20px 0; }
+    .flow-step { padding:10px 18px; background:#f8fafc; border:2px solid var(--border); border-radius:var(--radius); font-size:13px; font-weight:600; text-align:center; }
+    .flow-step.purple { background:#eef2ff; border-color:var(--purple); color:var(--purple); }
+    .flow-arrow { color:var(--amber); font-size:20px; font-weight:700; }
+
+    .fail-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:20px 0; }
+    .fail-grid .card { padding:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); font-size:13px; line-height:1.6; }
+
+    .block-q { margin:20px 0; padding:20px 24px; background:linear-gradient(135deg,#fffbeb,#fef3c7); border-left:4px solid var(--amber); border-radius:0 var(--radius) var(--radius) 0; font-style:italic; color:#92400e; font-size:14px; line-height:1.7; }
+
+    .tbl-wrap { overflow-x:auto; margin:20px 0; }
+    table { width:100%; border-collapse:collapse; font-size:14px; }
+    th { background:#f8fafc; padding:10px 14px; text-align:left; font-weight:600; border-bottom:2px solid var(--border); white-space:nowrap; }
+    td { padding:10px 14px; border-bottom:1px solid var(--border); }
+    tr:hover td { background:#fffbeb; }
+
+    .badge { display:inline-block; padding:3px 10px; border-radius:12px; font-size:12px; font-weight:500; }
+    .badge-amber { background:#fffbeb; color:#92400e; }
+    .badge-purple { background:#eef2ff; color:#4338ca; }
+    .badge-green { background:#f0fdf4; color:#166534; }
+
+    .footer { background:#0f172a; color:rgba(255,255,255,.6); padding:32px 24px; text-align:center; font-size:13px; }
+    .footer a { color:#fbbf24; text-decoration:none; }
+    .footer a:hover { text-decoration:underline; }
+    .footer-links { display:flex; justify-content:center; gap:24px; margin-bottom:12px; flex-wrap:wrap; }
+
+    @media(max-width:768px) {
+      .hero-stats { grid-template-columns:repeat(2,1fr); }
+      .compare-grid, .fail-grid { grid-template-columns:1fr; }
+      .chart-label { width:100px; font-size:12px; }
+      .flow { flex-direction:column; gap:6px; }
+      .flow-arrow { transform:rotate(90deg); }
+      .toc-grid { grid-template-columns:1fr; }
+      .section { padding:20px 16px; }
+      .hero { padding:40px 16px 32px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="../" class="nav-brand">
+        <span class="nav-logo">🦙</span>
+        <span>LlamaIndex Blog Hub</span>
+      </a>
+      <a href="./">← Back to Hub</a>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="hero-tag">综合技术</div>
+      <h1>LlamaSheets: Turn Messy Spreadsheets Into AI-Ready Data | LlamaIndex</h1>
+      <p>Today, we are announcing the first of our dedicated API&#x27;s for handling spreadsheets, available today in Beta for free! -  [LlamaParse Sign-up/Sign-in](http://cloud.llamaindex.ai) -  [LlamaSheets Docs](https://developers.llamaindex.ai/python/cloud/llamasheets/getting_started/)</p>
+      <div class="hero-stats">
+        <div class="stat"><span class="stat-num">8</span><span class="stat-label">核心章节</span></div><div class="stat"><span class="stat-num">8</span><span class="stat-label">关键概念</span></div><div class="stat"><span class="stat-num">3min</span><span class="stat-label">阅读时长</span></div><div class="stat"><span class="stat-num">826</span><span class="stat-label">总字数</span></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc"><div class="toc-grid">
+  <a href="#s1" class="toc-item"><span class="toc-num">💡</span>Introducing LlamaSheets</a>
+  <a href="#s6" class="toc-item"><span class="toc-num">📋</span>**Available now in beta**</a>
+  <a href="#s7" class="toc-item"><span class="toc-num">🔧</span>**What&#x27;s Next**</a>
+</div></nav>
+
+    <section class="section" id="s1">
+  <h2>💡 Introducing LlamaSheets</h2>
+  <p class="lead">Spreadsheets are everywhere. From financial models, product catalogs, and operational reports, spreadsheets exist across a wide range of formats and levels of organization.</p>
+  <p>Unlike typical unstructured documents, spreadsheets contain highly structured numerical data, complex formatting, and visual hierarchies that traditional text parsing cannot capture. LLMs and agents need to understand not just the raw cell values, but the semantic relationships, formatting patterns, and hierarchical structure encoded in these documents.</p>
+  <p>The challenge is that &quot;messy&quot; spreadsheets often use visual formatting (bold headers, colored cells, merged regions) to convey meaning rather than explicit data structures. Before any AI automation can happen, this normalization step,extracting structured data while preserving semantic context, is critical. That is why we’re so excited today to announce our newest product to LlamaParse, LlamaSheets!</p>
+  <p>LlamaSheets is a new LlamaParse API that automatically structures complex spreadsheets into AI-ready data using semantic understanding. The input is any `.xlsx`  file, and the output is parquet files that can be used in any agent or downstream application.</p>
+  <h3>**Technical Approach**</h3>
+  <p>Our processing algorithm implements a sophisticated multi-stage pipeline:</p>
+  <p>Feature Extraction &amp; Clustering - 40+ features per cell are extracted (position, formatting, etc.) and are then featurized for clustering Intelligent Region Classification - Clusters are then classified into specific types of regions are classified using a combination of traditional ML techniques and agent-based processing Adaptive Table Segmentation - A scoring system evaluates boundary quality between regions and iteratively refines boundaries Hierarchical Structure Preservation - ****Intelligent extraction within each table is applied that preserves multi-level headers and complex table structures and preserves types where possible (dates, numbers, booleans, text)</p>
+  <h3>**Output Contents and Format**</h3>
+  <p>LlamaSheets produces multiple types of outputs, mostly as parquet files:</p>
+  <p>Table data: Clean, typed DataFrames with preserved data types (dates, numbers, strings, booleans). Column names are intelligently extracted from header rows. Extra data: Data in your spreadsheet that doesn&#x27;t explicitly belong in a structured data table (notes, titles, etc.) Cell metadata: 40+ features per cell including formatting (`font_bold` , `background_color_rgb` ), position (`row_number` , `coordinate` ), data types (`is_date_like` , `is_percentage` ), and layout (`is_merged_cell` , `horizontal_alignment` ) Sheet context: Optional LLM-generated titles and descriptions for each worksheet and extracted table region</p>
+  <h3>**Use Cases**</h3>
+  <p>LlamaSheets enables AI automation across diverse spreadsheet workflows. Here&#x27;s just a few examples:</p>
+  <p>Financial Analysis: Extract quarterly revenue tables from complex financial reports with merged headers and calculate KPIs automatically Multi-Region Data Consolidation: Parse and combine sales data from dozens of regional spreadsheets with inconsistent formatting Budget Parsing with Metadata: Use background colors and bold formatting to identify department groupings and category hierarchies in budget files Automated Weekly Reports: Build end-to-end pipelines that extract, validate, analyze, and generate reports from recurring spreadsheet uploads Custom Agent Integrations: Load extracted Parquet files into AI Agent frameworks (like LlamaIndex) for interactive data exploration, script generation, and more</p>
+  <h3>**Example: Extract and Analyze in 5 Lines**</h3>
+  <p>``` from llama_cloud_services.beta.sheets import LlamaSheets</p>
+  <p>client = LlamaSheets(api_key=&quot;llx-...&quot;) results = await client.aextract_regions(&quot;budget.xlsx&quot;)</p>
+  <p># Download as pandas DataFrame df = await client.adownload_region_as_dataframe( results.job_id, results.regions[0].region_id, result_type=regions[0].region_type )</p>
+<div class="timeline">
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Ready to get started with LlamaParse?</div>
+    <div class="tl-desc">Explore our free and paid plans today.
+
+
+ -   Learn more</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Introducing LlamaSheets</div>
+    <div class="tl-desc">Spreadsheets are everywhere. From financial models, product catalogs, and operational reports, spreadsheets exist across</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">**Technical Approach**</div>
+    <div class="tl-desc">Our processing algorithm implements a sophisticated multi-stage pipeline:
+
+
+-  Feature Extraction &amp; Clustering -</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">**Output Contents and Format**</div>
+    <div class="tl-desc">LlamaSheets produces multiple types of outputs, mostly as parquet files:
+
+
+-  Table data: Clean, typed DataFrames wi</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">**Use Cases**</div>
+    <div class="tl-desc">LlamaSheets enables AI automation across diverse spreadsheet workflows. Here&#x27;s just a few examples:
+
+
+-  [Financial</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">**Example: Extract and Analyze in 5 Lines**</div>
+    <div class="tl-desc">python
+
+
+
+
+
+
+```
+from llama_cloud_services.beta.sheets import LlamaSheets
+
+client = LlamaSheets(api_key=&quot;llx-...&quot;)
+resul</div>
+  </div>
+</div>
+</section>
+<section class="section" id="s6">
+  <h2>📋 **Available now in beta**</h2>
+  <p class="lead">LlamaSheets is available today in beta through multiple interfaces:</p>
+  <p>🧩 Playground UI: Experiment with sample spreadsheets directly in the browser at cloud.llamaindex.ai 💻 Python SDK: The llama-cloud-services package provides async/sync methods for uploading files, creating extraction jobs, polling for completion, and downloading Parquet results as pandas DataFrames or raw bytes 🌐 REST API: Four-step workflow via `/api/v1/beta/sheets/`  endpoints: (1) Upload file → (2) Create job with parsing config → (3) Poll for completion → (4) Download Parquet files via presigned URLs 📘 Build Agents Integrate with any agent framework (LlamaIndex, Claude Code, Cursor, etc.) by loading extracted Parquet files and cell metadata into your agent&#x27;s context</p>
+<div class="fail-grid">
+  <div class="card">🧩 **Playground UI:** Experiment with sample spreadsheets directly in the browser at [cloud.llamaindex.ai](http://cloud.llamaindex.ai)</div>
+  <div class="card">💻 **Python SDK:** The [llama-cloud-services](https://github.com/run-llama/llama_cloud_services) package provides async/sync methods for uploading files, creating extraction jobs, polling for completion, and downloading Parquet results as pandas DataFrames or raw bytes</div>
+  <div class="card">🌐 **REST API:** [Four-step workflow](https://developers.llamaindex.ai/python/cloud/llamasheets/getting_started/#lower-level-usage) via `/api/v1/beta/sheets/`  endpoints: (1) Upload file → (2) Create job with parsing config → (3) Poll for completion → (4) Download Parquet files via presigned URLs</div>
+  <div class="card">📘 **Build Agents** Integrate with any agent framework (LlamaIndex, Claude Code, Cursor, etc.) by loading extracted Parquet files and cell metadata into your agent&#x27;s context</div>
+</div>
+</section>
+<section class="section" id="s7">
+  <h2>🔧 **What&#x27;s Next**</h2>
+  <p class="lead">During the beta period, we&#x27;re focused on performance optimization, enhanced accuracy, additional output formats, and future API’s that build on the region and table extraction to provide more end-to-e</p>
+  <p>We encourage users to try the API, provide feedback on extraction quality, and help us prioritize features for the full release!</p>
+  <p>Let us know what you think:</p>
+  <p>X LinkedIn LlamaParse Sign-up/Sign-in LlamaSheets Docs</p>
+</section>
+
+    <section class="section" id="key-concepts">
+  <h2>🔑 核心概念 Key Concepts</h2>
+  <p class="lead">本文涉及的关键技术概念与术语。</p>
+<div class="flow">
+  <div class="flow-step">LlamaSheets</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">LlamaParse API</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Technical Approach</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Feature Extraction &amp;amp; Clustering</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step purple">Intelligent Region Classification</div>
+</div>
+</section>
+
+  </div>
+
+  <footer class="footer">
+    <div class="footer-links">
+      <a href="./">LlamaIndex Blog Hub</a>
+      <a href="https://www.llamaindex.ai/blog/announcing-llamasheets-turn-messy-spreadsheets-into-ai-ready-data-beta" target="_blank" rel="noopener">原文链接 Original</a>
+      <a href="../">Engineering Blogs Hub</a>
+    </div>
+    <p>Generated from LlamaIndex blog content for learning purposes.</p>
+  </footer>
+</body>
+</html>

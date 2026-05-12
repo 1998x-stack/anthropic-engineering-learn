@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Best OCR Libraries for Developers in 2026</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafbfc;
+      --surface: #fff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --amber: #d97706;
+      --amber-light: #fbbf24;
+      --amber-dark: #92400e;
+      --purple: #6366f1;
+      --teal: #14b8a6;
+      --green: #10b981;
+      --red: #ef4444;
+      --blue: #3b82f6;
+      --pink: #ec4899;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans SC', 'Inter', sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:var(--sans); background:var(--bg); color:var(--text); line-height:1.7; }
+
+    .nav { position:sticky; top:0; background:rgba(15,23,42,.92); backdrop-filter:blur(12px); z-index:100; border-bottom:1px solid rgba(255,255,255,.08); }
+    .nav-inner { max-width:1100px; margin:0 auto; padding:12px 24px; display:flex; justify-content:space-between; align-items:center; }
+    .nav-brand { color:#fbbf24; text-decoration:none; font-weight:700; display:flex; align-items:center; gap:8px; }
+    .nav-logo { font-size:20px; }
+    .nav a:last-child { font-size:13px; color:rgba(255,255,255,.6); text-decoration:none; }
+    .nav a:last-child:hover { color:#fbbf24; }
+
+    .hero { background:linear-gradient(135deg,#0f172a 0%,#78350f 50%,#d97706 100%); color:#fff; padding:60px 24px 48px; }
+    .hero-inner { max-width:1100px; margin:0 auto; }
+    .hero-tag { display:inline-block; background:rgba(251,191,36,.15); color:#fbbf24; padding:4px 14px; border-radius:20px; font-size:13px; font-weight:500; margin-bottom:16px; letter-spacing:.5px; }
+    .hero h1 { font-size:clamp(24px,4vw,42px); font-weight:800; line-height:1.2; margin-bottom:12px; }
+    .hero p { font-size:17px; color:rgba(255,255,255,.8); max-width:700px; margin-bottom:28px; line-height:1.6; }
+    .hero-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; max-width:600px; }
+    .stat { text-align:center; }
+    .stat-num { display:block; font-size:28px; font-weight:800; color:#fbbf24; font-family:var(--mono); }
+    .stat-label { font-size:12px; color:rgba(255,255,255,.6); text-transform:uppercase; letter-spacing:.5px; }
+
+    .page { max-width:1100px; margin:0 auto; padding:32px 24px 60px; }
+
+    .toc { margin-bottom:40px; }
+    .toc-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:10px; }
+    .toc-item { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); text-decoration:none; color:var(--text); font-size:14px; font-weight:500; transition:all .2s; }
+    .toc-item:hover { border-color:var(--amber); transform:translateY(-1px); box-shadow:0 4px 12px rgba(217,119,6,.1); }
+    .toc-num { font-size:16px; }
+
+    .section { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:32px; margin-bottom:24px; }
+    .section h2 { font-size:22px; font-weight:700; margin-bottom:12px; color:var(--text); }
+    .section h3 { font-size:17px; font-weight:600; margin:20px 0 8px; color:var(--amber-dark); }
+    .lead { color:var(--text-secondary); font-size:15px; margin-bottom:16px; line-height:1.7; }
+    .section p { margin-bottom:12px; font-size:15px; line-height:1.7; }
+
+    .chart { margin:20px 0; }
+    .chart-row { display:flex; align-items:center; margin-bottom:8px; }
+    .chart-label { width:160px; font-size:13px; font-weight:500; text-align:right; padding-right:12px; color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:28px; overflow:hidden; }
+    .chart-bar { height:100%; border-radius:8px; display:flex; align-items:center; padding-left:10px; font-size:12px; font-weight:600; color:#fff; transition:width .6s ease; min-width:40px; }
+    .chart-bar.amber { background:linear-gradient(90deg,#d97706,#f59e0b); }
+    .chart-bar.purple { background:linear-gradient(90deg,#6366f1,#818cf8); }
+    .chart-bar.teal { background:linear-gradient(90deg,#0d9488,#14b8a6); }
+    .chart-bar.green { background:linear-gradient(90deg,#059669,#10b981); }
+    .chart-bar.blue { background:linear-gradient(90deg,#2563eb,#3b82f6); }
+    .chart-bar.red { background:linear-gradient(90deg,#dc2626,#ef4444); }
+
+    .timeline { position:relative; padding-left:28px; margin:20px 0; }
+    .timeline::before { content:''; position:absolute; left:8px; top:0; bottom:0; width:3px; background:linear-gradient(180deg,#d97706,#6366f1,#14b8a6); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:20px; padding-left:16px; }
+    .tl-dot { position:absolute; left:-24px; top:4px; width:14px; height:14px; border-radius:50%; border:3px solid var(--amber); background:#fff; }
+    .tl-item:nth-child(2) .tl-dot { border-color:var(--purple); }
+    .tl-item:nth-child(3) .tl-dot { border-color:var(--teal); }
+    .tl-item:nth-child(4) .tl-dot { border-color:var(--green); }
+    .tl-item:nth-child(5) .tl-dot { border-color:var(--blue); }
+    .tl-phase { font-weight:600; font-size:15px; margin-bottom:4px; }
+    .tl-desc { font-size:13px; color:var(--text-secondary); line-height:1.5; }
+
+    .compare-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin:20px 0; }
+    .compare-card { padding:16px; border-radius:var(--radius); font-size:14px; line-height:1.6; }
+    .compare-card.old { background:#fef2f2; border:1px solid #fecaca; }
+    .compare-card.new { background:#f0fdf4; border:1px solid #bbf7d0; }
+
+    .flow { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:20px 0; }
+    .flow-step { padding:10px 18px; background:#f8fafc; border:2px solid var(--border); border-radius:var(--radius); font-size:13px; font-weight:600; text-align:center; }
+    .flow-step.purple { background:#eef2ff; border-color:var(--purple); color:var(--purple); }
+    .flow-arrow { color:var(--amber); font-size:20px; font-weight:700; }
+
+    .fail-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:20px 0; }
+    .fail-grid .card { padding:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); font-size:13px; line-height:1.6; }
+
+    .block-q { margin:20px 0; padding:20px 24px; background:linear-gradient(135deg,#fffbeb,#fef3c7); border-left:4px solid var(--amber); border-radius:0 var(--radius) var(--radius) 0; font-style:italic; color:#92400e; font-size:14px; line-height:1.7; }
+
+    .tbl-wrap { overflow-x:auto; margin:20px 0; }
+    table { width:100%; border-collapse:collapse; font-size:14px; }
+    th { background:#f8fafc; padding:10px 14px; text-align:left; font-weight:600; border-bottom:2px solid var(--border); white-space:nowrap; }
+    td { padding:10px 14px; border-bottom:1px solid var(--border); }
+    tr:hover td { background:#fffbeb; }
+
+    .badge { display:inline-block; padding:3px 10px; border-radius:12px; font-size:12px; font-weight:500; }
+    .badge-amber { background:#fffbeb; color:#92400e; }
+    .badge-purple { background:#eef2ff; color:#4338ca; }
+    .badge-green { background:#f0fdf4; color:#166534; }
+
+    .footer { background:#0f172a; color:rgba(255,255,255,.6); padding:32px 24px; text-align:center; font-size:13px; }
+    .footer a { color:#fbbf24; text-decoration:none; }
+    .footer a:hover { text-decoration:underline; }
+    .footer-links { display:flex; justify-content:center; gap:24px; margin-bottom:12px; flex-wrap:wrap; }
+
+    @media(max-width:768px) {
+      .hero-stats { grid-template-columns:repeat(2,1fr); }
+      .compare-grid, .fail-grid { grid-template-columns:1fr; }
+      .chart-label { width:100px; font-size:12px; }
+      .flow { flex-direction:column; gap:6px; }
+      .flow-arrow { transform:rotate(90deg); }
+      .toc-grid { grid-template-columns:1fr; }
+      .section { padding:20px 16px; }
+      .hero { padding:40px 16px 32px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="../" class="nav-brand">
+        <span class="nav-logo">🦙</span>
+        <span>LlamaIndex Blog Hub</span>
+      </a>
+      <a href="./">← Back to Hub</a>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="hero-tag">文档处理</div>
+      <h1>Best OCR Libraries for Developers in 2026</h1>
+      <p>If you&#x27;re picking an OCR library in 2026, you have a different problem than you did five years ago. Traditional engines like Tesseract still work. Deep learning models like PaddleOCR and Surya have matured. And a new category of LLM-based tools, including Mistral OCR, olmOCR, and Qwen2.5-VL, can rea</p>
+      <div class="hero-stats">
+        <div class="stat"><span class="stat-num">11</span><span class="stat-label">核心章节</span></div><div class="stat"><span class="stat-num">6</span><span class="stat-label">关键概念</span></div><div class="stat"><span class="stat-num">8min</span><span class="stat-label">阅读时长</span></div><div class="stat"><span class="stat-num">2001</span><span class="stat-label">总字数</span></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc"><div class="toc-grid">
+  <a href="#s0" class="toc-item"><span class="toc-num">🔍</span>Best OCR Libraries for Developers: At a Glance</a>
+  <a href="#s1" class="toc-item"><span class="toc-num">💡</span>What the Standard Library Comparisons Get Wrong</a>
+  <a href="#s2" class="toc-item"><span class="toc-num">⚙️</span>The Libraries Worth Using in 2026</a>
+  <a href="#s7" class="toc-item"><span class="toc-num">🔧</span>Where Benchmark Results Actually Hold Up</a>
+  <a href="#s8" class="toc-item"><span class="toc-num">🚀</span>The Production Problem Nobody&#x27;s Solving with a Library</a>
+  <a href="#s9" class="toc-item"><span class="toc-num">📈</span>Why Agentic OCR Is a Different Category</a>
+  <a href="#s10" class="toc-item"><span class="toc-num">🧪</span>Picking the Right Tool</a>
+</div></nav>
+
+    <section class="section" id="s0">
+  <h2>🔍 Best OCR Libraries for Developers: At a Glance</h2>
+  <p class="lead">Library Type License Best For Where It Breaks</p>
+  <p>Tesseract Traditional OCR Apache 2.0 Clean typed docs, high volume Noisy scans, tables, handwriting</p>
+  <p>PaddleOCR Deep Learning Apache 2.0 Multilingual, complex layouts GPU dependency, integration complexity</p>
+  <p>Surya Deep Learning GPL 3.0 Layout analysis, tables Commercial licensing, speed</p>
+  <p>EasyOCR Deep Learning Apache 2.0 Quick prototyping, 80+ languages Accuracy ceiling on production workloads</p>
+  <p>docTR Deep Learning Apache 2.0 Balanced accuracy/setup Smaller community, fewer integrations</p>
+<div class="flow">
+  <div class="flow-step">Surya</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">EasyOCR</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">docTR</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Clean typed documents, controlled quality, high volume:</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step purple">Complex layouts, multilingual, need better accuracy:</div>
+</div>
+</section>
+<section class="section" id="s1">
+  <h2>💡 What the Standard Library Comparisons Get Wrong</h2>
+  <p class="lead">Most OCR comparisons rank libraries by accuracy on clean documents. That&#x27;s roughly the equivalent of benchmarking a database on a single-table schema. Real developer decisions involve scanned document</p>
+  <p>Three evaluation axes actually matter: accuracy on real-world inputs (not high-quality digital PDFs), integration complexity (the preprocessing burden is part of the cost, not just the pip install), and what happens when the library fails. Text recognition benchmarks almost always use clean source material. The gap between those results and what you&#x27;ll see on production documents is where projects break. The libraries below are evaluated against those production-realistic criteria.</p>
+<div class="timeline">
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Best OCR Libraries for Developers: At a Glance</div>
+    <div class="tl-desc">Library
+      Type
+      License
+      Best For
+      Where It Breaks
+
+
+
+
+      Tesseract
+      Traditional OCR
+      Ap</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">What the Standard Library Comparisons Get Wrong</div>
+    <div class="tl-desc">Most OCR comparisons rank libraries by accuracy on clean documents. That&#x27;s roughly the equivalent of benchmarking a</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">The Libraries Worth Using in 2026</div>
+    <div class="tl-desc">Open source OCR libraries now split into two categories: traditional character-recognition engines and newer vision-lang</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Tesseract: Still the Baseline, Still Has the Same Ceiling</div>
+    <div class="tl-desc">Tesseract is community-maintained (not an active Google engineering project, despite the common claim that it&#x27;s &amp;quo</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">PaddleOCR: Better Accuracy, Heavier Dependency</div>
+    <div class="tl-desc">PaddleOCR is built on deep learning and is genuinely stronger on complex layouts and non-Latin scripts than Tesseract. I</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Surya, EasyOCR, and docTR: The Middle Tier</div>
+    <div class="tl-desc">Surya has the strongest layout analysis in this group. It handles document types with tables and multi-column text b</div>
+  </div>
+</div>
+</section>
+<section class="section" id="s2">
+  <h2>⚙️ The Libraries Worth Using in 2026</h2>
+  <p class="lead">Open source OCR libraries now split into two categories: traditional character-recognition engines and newer vision-language model approaches. Comparing them on the same axis is misleading as they&#x27;re </p>
+  <h3>Tesseract: Still the Baseline, Still Has the Same Ceiling</h3>
+  <p>Tesseract is community-maintained (not an active Google engineering project, despite the common claim that it&#x27;s &quot;maintained by Google&quot;), supports over 100 languages, and produces solid accuracy on clean print text. For straightforward typed documents where you control the input quality, it remains the default choice for high volume processing where simplicity and cost matter most. Its CLI is dead simple, the Python bindings (pytesseract) just work, and the Apache 2.0 license means no commercial headaches.</p>
+  <p>The catch: scanned documents require deskewing, denoising, and binarization before Tesseract produces usable output, and that preprocessing pipeline is entirely on you. If you&#x27;re ingesting documents from the wild with varying quality, Tesseract&#x27;s accuracy drops fast and you&#x27;ll spend more time building image preprocessing than on the OCR itself. Tesseract also has no built-in layout analysis worth mentioning, so multi-column pages and tables come back as jumbled text.</p>
+  <h3>PaddleOCR: Better Accuracy, Heavier Dependency</h3>
+  <p>PaddleOCR is built on deep learning and is genuinely stronger on complex layouts and non-Latin scripts than Tesseract. Its text detection is what sets it apart on multi-column documents, forms, and anything with mixed layout elements. The PP-OCRv4 model handles Chinese, Japanese, Korean, and Arabic scripts with accuracy that Tesseract can&#x27;t match, which matters if your document workflows involve multilingual content.</p>
+  <p>The trade-off: GPU dependency, a larger model footprint, and a more involved integration than Tesseract&#x27;s simple CLI. PaddlePaddle as a framework dependency isn&#x27;t small, and debugging model loading issues across different environments adds friction. If you need multilingual OCR or your documents have layouts that consistently trip up Tesseract, PaddleOCR is worth the heavier setup. Otherwise, you&#x27;re adding complexity for little gain.</p>
+  <h3>Surya, EasyOCR, and docTR: The Middle Tier</h3>
+  <p>Surya has the strongest layout analysis in this group. It handles document types with tables and multi-column text better than EasyOCR, with 90+ language support, and its line-level text detection is noticeably more accurate on dense pages.</p>
+  <p>EasyOCR is the fastest path to a working prototype (PyTorch-based, 80+ languages), but its accuracy ceiling is lower for sustained production workloads. It&#x27;s a good OCR tool for hackathons and MVPs, less so for processing thousands of documents daily.</p>
+  <p>docTR combines deep learning detection and recognition in a single pipeline, handling complex layouts better than Tesseract with less setup than PaddleOCR. It runs on either TensorFlow or PyTorch, which gives you flexibility depending on your existing stack.</p>
+  <h3>LLM-Based Entrants: Different Category, Different Trade-offs</h3>
+  <p>Mistral OCR, olmOCR (Allen AI, built on Qwen-2-VL), and Qwen2.5-VL bring vision-language model understanding to document parsing. They read documents contextually, understanding what a table header means rather than just recognizing its characters.</p>
+  <p>But there are trade-offs. Hallucination risk on structured data is the big one: an insurance table total &quot;corrected&quot; by a model that inferred a pattern is a bug, not a feature. Non-deterministic output also complicates compliance workflows where you need reproducible results. These open source OCR models are improving fast, though. olmOCR and Qwen2.5-VL showed strong table preservation in independent benchmarks, and they&#x27;re worth testing against your specific document types.</p>
+</section>
+<section class="section" id="s7">
+  <h2>🔧 Where Benchmark Results Actually Hold Up</h2>
+  <p class="lead">Independent testing across five document types (insurance plan tables, loan application checkboxes, bank statements, receipts, and handwritten text) shows where accuracy claims hold up and where they </p>
+  <p>Text detection accuracy diverges most on tables and forms, which are the document types most common in finance, legal, and healthcare. EasyOCR and Tesseract output garbled text on complex insurance tables, merging columns and misaligning rows in ways that make the extracted data unusable without manual correction. Surya and PaddleOCR do much better at preserving table structure. olmOCR and Qwen preserve markdown table structure but introduce hallucination risk on numerical fields, occasionally &quot;correcting&quot; totals to match inferred patterns. For financial data, that&#x27;s a non-starter without a human review step.</p>
+  <p>Handwritten text remains a weak point for all traditional open source OCR engines. Only the LLM-based OCR tools handle it at all, and even then accuracy varies with document quality and handwriting legibility. If handwriting recognition is a core requirement, you&#x27;re limited to the VLM-based options or a commercial solution. There&#x27;s no open source library today that reliably extracts handwritten notes from scanned documents.</p>
+  <p>The practical takeaway: test on your documents, not the library&#x27;s example PDFs. The gap between demo performance and production performance is larger than most developers expect, and it&#x27;s widest on exactly the document types that matter most in enterprise workflows.</p>
+</section>
+<section class="section" id="s8">
+  <h2>🚀 The Production Problem Nobody&#x27;s Solving with a Library</h2>
+  <p class="lead">A library processes an image and returns text. It has no concept of whether the output is correct, no ability to route different document elements to different models, and no error correction. That&#x27;s </p>
+  <p>The real cost of open-source OCR in production isn&#x27;t the library itself, but the preprocessing pipelines that break when document formats change, the error handling for failed extractions, and the manual review queues for anything the library couldn&#x27;t parse reliably. Every new document type your system encounters means another round of tuning, another edge case to handle, another failure mode to account for. You end up building a document engineering system, not integrating an OCR library.</p>
+  <p>Consider the math: for a team processing 10,000 invoices a month, the difference between 90% and 99% field-level accuracy is 1,000 documents requiring manual review every month. That accuracy gap directly hits straight-through processing rates, the metric operations teams actually care about. At scale, it&#x27;s the difference between a process that runs on its own and one that still needs a human checking every output. The library itself might be free, but the engineering time to extract text reliably from messy real-world documents is where the actual cost lives.</p>
+</section>
+<section class="section" id="s9">
+  <h2>📈 Why Agentic OCR Is a Different Category</h2>
+  <p class="lead">Traditional OCR tools, even the LLM-based ones listed above, are stateless. Each document is processed independently with no orchestration, validation, or self-correction. Optical character recognitio</p>
+  <p>LlamaParse takes a different architectural approach than adding a preprocessing layer on top of Tesseract. Its agentic orchestration selects the best combination of traditional OCR, vision models, and correction loops per document element, with verifiable outputs and confidence scores. Having processed over half a billion pages across 50+ file formats, LlamaParse handles document types with mixed content without requiring retraining or a custom pipeline for each new document format. A page with a paragraph of text, an embedded chart, and a footnote table gets each element routed to the right model automatically.</p>
+  <p>Where open source OCR libraries require developers to build around their limitations (preprocessing, error handling, table extraction logic), agentic OCR handles that orchestration automatically. Multiple validation loops catch errors that a single-pass library would miss, and the output includes citations and confidence scores for human-in-the-loop validation when compliance requires it. The output comes back as structured markdown, JSON, or HTML with metadata, rather than raw text you need to parse yourself.</p>
+</section>
+<section class="section" id="s10">
+  <h2>🧪 Picking the Right Tool</h2>
+  <p class="lead">The short version:</p>
+  <p>Clean typed documents, controlled quality, high volume: Tesseract or PaddleOCR Complex layouts, multilingual, need better accuracy: Surya or PaddleOCR Irregular layouts, forms, need contextual understanding: LLM-based (olmOCR, Qwen, Mistral OCR) Production documents with tables, charts, mixed content, compliance requirements: LlamaParse</p>
+  <p>For simple documents, open-source wins on cost, control, and avoiding vendor lock-in. If your documents are mostly clean and typed, Tesseract or PaddleOCR will extract text reliably and you should use them. The open source OCR libraries listed above aren&#x27;t going anywhere, and for the right workloads they&#x27;re the right call.</p>
+  <p>But document processing in production tends to get more complex over time, not less. New document types show up, quality varies, and the edge cases multiply. If your documents are pushing past what these libraries handle cleanly (tables, charts, mixed content, handwriting), LlamaParse is worth benchmarking directly against your actual documents. It&#x27;s free to try with 10k credits on signup.</p>
+<div class="compare-grid">
+  <div class="compare-card old"><strong>❌</strong> Tesseract or PaddleOCR</div>
+  <div class="compare-card new"><strong>✅</strong> Surya or PaddleOCR</div>
+  <div class="compare-card old"><strong>❌</strong> LLM-based (olmOCR, Qwen, Mistral OCR)</div>
+  <div class="compare-card new"><strong>✅</strong> LlamaParse</div>
+</div>
+</section>
+
+    
+  </div>
+
+  <footer class="footer">
+    <div class="footer-links">
+      <a href="./">LlamaIndex Blog Hub</a>
+      <a href="https://www.llamaindex.ai/blog/best-ocr-libraries-for-developers" target="_blank" rel="noopener">原文链接 Original</a>
+      <a href="../">Engineering Blogs Hub</a>
+    </div>
+    <p>Generated from LlamaIndex blog content for learning purposes.</p>
+  </footer>
+</body>
+</html>

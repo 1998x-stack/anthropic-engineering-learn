@@ -1,0 +1,315 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：LLM APIs Aren’t Complete Document Parsers: Why | LlamaIndex</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafbfc;
+      --surface: #fff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --amber: #d97706;
+      --amber-light: #fbbf24;
+      --amber-dark: #92400e;
+      --purple: #6366f1;
+      --teal: #14b8a6;
+      --green: #10b981;
+      --red: #ef4444;
+      --blue: #3b82f6;
+      --pink: #ec4899;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans SC', 'Inter', sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:var(--sans); background:var(--bg); color:var(--text); line-height:1.7; }
+
+    .nav { position:sticky; top:0; background:rgba(15,23,42,.92); backdrop-filter:blur(12px); z-index:100; border-bottom:1px solid rgba(255,255,255,.08); }
+    .nav-inner { max-width:1100px; margin:0 auto; padding:12px 24px; display:flex; justify-content:space-between; align-items:center; }
+    .nav-brand { color:#fbbf24; text-decoration:none; font-weight:700; display:flex; align-items:center; gap:8px; }
+    .nav-logo { font-size:20px; }
+    .nav a:last-child { font-size:13px; color:rgba(255,255,255,.6); text-decoration:none; }
+    .nav a:last-child:hover { color:#fbbf24; }
+
+    .hero { background:linear-gradient(135deg,#0f172a 0%,#78350f 50%,#d97706 100%); color:#fff; padding:60px 24px 48px; }
+    .hero-inner { max-width:1100px; margin:0 auto; }
+    .hero-tag { display:inline-block; background:rgba(251,191,36,.15); color:#fbbf24; padding:4px 14px; border-radius:20px; font-size:13px; font-weight:500; margin-bottom:16px; letter-spacing:.5px; }
+    .hero h1 { font-size:clamp(24px,4vw,42px); font-weight:800; line-height:1.2; margin-bottom:12px; }
+    .hero p { font-size:17px; color:rgba(255,255,255,.8); max-width:700px; margin-bottom:28px; line-height:1.6; }
+    .hero-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; max-width:600px; }
+    .stat { text-align:center; }
+    .stat-num { display:block; font-size:28px; font-weight:800; color:#fbbf24; font-family:var(--mono); }
+    .stat-label { font-size:12px; color:rgba(255,255,255,.6); text-transform:uppercase; letter-spacing:.5px; }
+
+    .page { max-width:1100px; margin:0 auto; padding:32px 24px 60px; }
+
+    .toc { margin-bottom:40px; }
+    .toc-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:10px; }
+    .toc-item { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); text-decoration:none; color:var(--text); font-size:14px; font-weight:500; transition:all .2s; }
+    .toc-item:hover { border-color:var(--amber); transform:translateY(-1px); box-shadow:0 4px 12px rgba(217,119,6,.1); }
+    .toc-num { font-size:16px; }
+
+    .section { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:32px; margin-bottom:24px; }
+    .section h2 { font-size:22px; font-weight:700; margin-bottom:12px; color:var(--text); }
+    .section h3 { font-size:17px; font-weight:600; margin:20px 0 8px; color:var(--amber-dark); }
+    .lead { color:var(--text-secondary); font-size:15px; margin-bottom:16px; line-height:1.7; }
+    .section p { margin-bottom:12px; font-size:15px; line-height:1.7; }
+
+    .chart { margin:20px 0; }
+    .chart-row { display:flex; align-items:center; margin-bottom:8px; }
+    .chart-label { width:160px; font-size:13px; font-weight:500; text-align:right; padding-right:12px; color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:28px; overflow:hidden; }
+    .chart-bar { height:100%; border-radius:8px; display:flex; align-items:center; padding-left:10px; font-size:12px; font-weight:600; color:#fff; transition:width .6s ease; min-width:40px; }
+    .chart-bar.amber { background:linear-gradient(90deg,#d97706,#f59e0b); }
+    .chart-bar.purple { background:linear-gradient(90deg,#6366f1,#818cf8); }
+    .chart-bar.teal { background:linear-gradient(90deg,#0d9488,#14b8a6); }
+    .chart-bar.green { background:linear-gradient(90deg,#059669,#10b981); }
+    .chart-bar.blue { background:linear-gradient(90deg,#2563eb,#3b82f6); }
+    .chart-bar.red { background:linear-gradient(90deg,#dc2626,#ef4444); }
+
+    .timeline { position:relative; padding-left:28px; margin:20px 0; }
+    .timeline::before { content:''; position:absolute; left:8px; top:0; bottom:0; width:3px; background:linear-gradient(180deg,#d97706,#6366f1,#14b8a6); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:20px; padding-left:16px; }
+    .tl-dot { position:absolute; left:-24px; top:4px; width:14px; height:14px; border-radius:50%; border:3px solid var(--amber); background:#fff; }
+    .tl-item:nth-child(2) .tl-dot { border-color:var(--purple); }
+    .tl-item:nth-child(3) .tl-dot { border-color:var(--teal); }
+    .tl-item:nth-child(4) .tl-dot { border-color:var(--green); }
+    .tl-item:nth-child(5) .tl-dot { border-color:var(--blue); }
+    .tl-phase { font-weight:600; font-size:15px; margin-bottom:4px; }
+    .tl-desc { font-size:13px; color:var(--text-secondary); line-height:1.5; }
+
+    .compare-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin:20px 0; }
+    .compare-card { padding:16px; border-radius:var(--radius); font-size:14px; line-height:1.6; }
+    .compare-card.old { background:#fef2f2; border:1px solid #fecaca; }
+    .compare-card.new { background:#f0fdf4; border:1px solid #bbf7d0; }
+
+    .flow { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:20px 0; }
+    .flow-step { padding:10px 18px; background:#f8fafc; border:2px solid var(--border); border-radius:var(--radius); font-size:13px; font-weight:600; text-align:center; }
+    .flow-step.purple { background:#eef2ff; border-color:var(--purple); color:var(--purple); }
+    .flow-arrow { color:var(--amber); font-size:20px; font-weight:700; }
+
+    .fail-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:20px 0; }
+    .fail-grid .card { padding:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); font-size:13px; line-height:1.6; }
+
+    .block-q { margin:20px 0; padding:20px 24px; background:linear-gradient(135deg,#fffbeb,#fef3c7); border-left:4px solid var(--amber); border-radius:0 var(--radius) var(--radius) 0; font-style:italic; color:#92400e; font-size:14px; line-height:1.7; }
+
+    .tbl-wrap { overflow-x:auto; margin:20px 0; }
+    table { width:100%; border-collapse:collapse; font-size:14px; }
+    th { background:#f8fafc; padding:10px 14px; text-align:left; font-weight:600; border-bottom:2px solid var(--border); white-space:nowrap; }
+    td { padding:10px 14px; border-bottom:1px solid var(--border); }
+    tr:hover td { background:#fffbeb; }
+
+    .badge { display:inline-block; padding:3px 10px; border-radius:12px; font-size:12px; font-weight:500; }
+    .badge-amber { background:#fffbeb; color:#92400e; }
+    .badge-purple { background:#eef2ff; color:#4338ca; }
+    .badge-green { background:#f0fdf4; color:#166534; }
+
+    .footer { background:#0f172a; color:rgba(255,255,255,.6); padding:32px 24px; text-align:center; font-size:13px; }
+    .footer a { color:#fbbf24; text-decoration:none; }
+    .footer a:hover { text-decoration:underline; }
+    .footer-links { display:flex; justify-content:center; gap:24px; margin-bottom:12px; flex-wrap:wrap; }
+
+    @media(max-width:768px) {
+      .hero-stats { grid-template-columns:repeat(2,1fr); }
+      .compare-grid, .fail-grid { grid-template-columns:1fr; }
+      .chart-label { width:100px; font-size:12px; }
+      .flow { flex-direction:column; gap:6px; }
+      .flow-arrow { transform:rotate(90deg); }
+      .toc-grid { grid-template-columns:1fr; }
+      .section { padding:20px 16px; }
+      .hero { padding:40px 16px 32px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="../" class="nav-brand">
+        <span class="nav-logo">🦙</span>
+        <span>LlamaIndex Blog Hub</span>
+      </a>
+      <a href="./">← Back to Hub</a>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="hero-tag">文档处理</div>
+      <h1>LLM APIs Aren’t Complete Document Parsers: Why | LlamaIndex</h1>
+      <p>There&#x27;s been a lot of excitement about whether frontier LLMs can replace existing document processing solutions altogether. We think about this a lot! TLDR: -  **Accuracy gaps remain**: Screenshot-only LLM parsing still hallucinates values and misses complex structures, especially in dense documents</p>
+      <div class="hero-stats">
+        <div class="stat"><span class="stat-num">10</span><span class="stat-label">核心章节</span></div><div class="stat"><span class="stat-num">8</span><span class="stat-label">关键概念</span></div><div class="stat"><span class="stat-num">7min</span><span class="stat-label">阅读时长</span></div><div class="stat"><span class="stat-num">1771</span><span class="stat-label">总字数</span></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc"><div class="toc-grid">
+  <a href="#s1" class="toc-item"><span class="toc-num">💡</span>Can we just rely on screenshots?</a>
+  <a href="#s2" class="toc-item"><span class="toc-num">⚙️</span>1. Frontier Models are good, but remain cost-prohibitive</a>
+  <a href="#s3" class="toc-item"><span class="toc-num">📊</span>2. You&#x27;re Missing Enterprise-Critical Metadata</a>
+  <a href="#s4" class="toc-item"><span class="toc-num">🔄</span>3. Do you really want to Context Engineer a Document Parser?</a>
+  <a href="#s7" class="toc-item"><span class="toc-num">🔧</span>4. Operational Challenges That Break at Scale</a>
+  <a href="#s8" class="toc-item"><span class="toc-num">🚀</span>The LlamaParse Approach: Best of Both Worlds</a>
+  <a href="#s9" class="toc-item"><span class="toc-num">📈</span>The Bottom Line</a>
+</div></nav>
+
+    <section class="section" id="s1">
+  <h2>💡 Can we just rely on screenshots?</h2>
+  <p class="lead">The baseline approach sounds simple: screenshot the page, feed it to your favorite LLM API (OpenAI, Claude, Gemini), and voilà! With models like Gemini 2.5 Pro and Claude Sonnet 4.0 showing impressive</p>
+  <p>Traditional OCR solutions are certainly becoming obsolete because LLMs are dramatically better. But no, relying on raw LLM APIs alone won&#x27;t get you a production-ready document processing pipeline that you can deploy across enterprise use cases:</p>
+  <p>There’s still lots of accuracy problems The price per performance is not good enough There’s a lot of useful metadata, from confidence scores to bounding boxes, that will be missing. There’s a huge human cost to maintaining prompts/context and ensuring it generalizes to more use cases.</p>
+  <p>You still need a dedicated parsing solution, beyond basic LLM API calls, if you want high-quality context for any production AI agent use case - whether that’s a deep researcher or an automated workflow.</p>
+<div class="chart">
+  <div class="chart-row">
+    <div class="chart-label">There’s still lots o</div>
+    <div class="chart-bar-wrap">
+      <div class="chart-bar amber" style="width:95%"></div>
+    </div>
+  </div>
+  <div class="chart-row">
+    <div class="chart-label">The price per perfor</div>
+    <div class="chart-bar-wrap">
+      <div class="chart-bar purple" style="width:83%"></div>
+    </div>
+  </div>
+  <div class="chart-row">
+    <div class="chart-label">There’s a lot of use</div>
+    <div class="chart-bar-wrap">
+      <div class="chart-bar teal" style="width:71%"></div>
+    </div>
+  </div>
+  <div class="chart-row">
+    <div class="chart-label">There’s a huge human</div>
+    <div class="chart-bar-wrap">
+      <div class="chart-bar green" style="width:59%"></div>
+    </div>
+  </div>
+</div>
+</section>
+<section class="section" id="s2">
+  <h2>⚙️ 1. Frontier Models are good, but remain cost-prohibitive</h2>
+  <p class="lead">The baseline of one-shot document parsing through screenshotting using the latest models has gotten much better in the past year, particularly over “standard” documents. However, they still fall short</p>
+  <p>Screenshotting Loses Critical Information: Vision models working from page screenshots miss layered text, embedded metadata, and complex structures that are directly accessible in the file binary. Even the most advanced models struggle with complex charts where the values are directly within the file binary, complex tables with merged cells, and small text.</p>
+  <p>Check out the example below, specifically a screenshot of a graph from an equity research report. When we screenshot this and feed it into Claude Sonnet 4.0 to “parse this document into markdown”, it makes a best-effort attempt but still hallucinates the values (an easy giveaway: there are no negative numbers in the Claude-parsed table). In contrast, when we still use Sonnet models but combine it with existing text-based parsing techniques, we get much better results - this is what is enabled under LlamaParse Premium mode!</p>
+  <p>Amazon Equity Research Report, 2019    Markdown Output from Prompting Claude directly with the screenshot    Results from LlamaParse</p>
+  <p>In general, the content density of your document matters. When you screenshot a very information-dense page, for instance one with a lot of embedded diagrams, visuals, and tables, LLMs/LVMs will often struggle to give you back the full information. This is both because most Chat UIs will natively resize the image to a lower resolution but also because LVMs will still drop content over high-resolution images.</p>
+  <p>LlamaParse lets you integrate with frontier models while solving both accuracy and cost concerns:</p>
+</section>
+<section class="section" id="s3">
+  <h2>📊 2. You&#x27;re Missing Enterprise-Critical Metadata</h2>
+  <p class="lead">If all you get from an LLM API is a markdown blob or basic JSON, that might work for a toy demo. But for enterprise workflows where humans review outputs or decisions flow downstream, metadata is esse</p>
+  <p>Screenshot-only approaches give you none of this. And if you&#x27;ve ever tried reverse-engineering bounding boxes or confidence scores from raw Claude or Gemini outputs, you know it&#x27;s a fragile, vendor-specific mess.</p>
+  <p>Confidence Scores and Quality Indicators: Production systems need to know how confident the model is about each extracted piece of information. This enables human-in-the-loop workflows where low-confidence extractions get manual review, quality control in automated pipelines, and performance monitoring over time.</p>
+  <p>Bounding Boxes and Source Citations: Enterprise applications need pixel-level bounding boxes for each extracted field, page references and exact text matches for audit trails, and visual citations that users can verify against the original document.</p>
+  <p>Structured Layout and Reasoning Information: Beyond just extracting text, enterprise applications need document hierarchy and section organization, table structures with preserved relationships, and reasoning explanations for each extracted field.</p>
+  <p>LlamaParse comes with a lot of this information out of the box:</p>
+</section>
+<section class="section" id="s4">
+  <h2>🔄 3. Do you really want to Context Engineer a Document Parser?</h2>
+  <p class="lead">The hottest new AI Engineering skill to learn these days is context engineering. Any LLM is only as good as the prompt/context/workflow you give it. One of the biggest issues with the &quot;DIY Parsing thr</p>
+  <h3>You&#x27;re Building a Parser Anyway</h3>
+  <p>Even if your screenshot-to-LLM method works for one document type, what happens when you need to handle 10 new document types with different layouts? Schema changes that break your existing prompts? New teams that need different output formats?</p>
+  <p>At some point, you&#x27;ll be maintaining templated prompts, implementing JSON parsing logic, building retry mechanisms for hallucinated outputs, and testing model-specific quirks. At that point—you&#x27;re building a document parsing solution.</p>
+  <h3>Standardization Across Teams</h3>
+  <p>Enterprise organizations need consistent approaches that work across teams and use cases. Every team building their own LLM-based parsing means inconsistent output formats, duplicated effort on common document types, and higher maintenance burden as model APIs evolve.</p>
+  <p>LlamaParse provides a standardized schema interface: define your extraction schema once (via JSON Schema or Pydantic), and our backend handles prompt optimization, output formatting, validation, and retries across multiple model providers.</p>
+</section>
+<section class="section" id="s7">
+  <h2>🔧 4. Operational Challenges That Break at Scale</h2>
+  <p class="lead">Hitting LLM APIs directly introduces operational headaches that become critical bottlenecks at enterprise scale.</p>
+  <p>Rate Limiting and Latency: Vision models have strict rate limits and high per-call latency (5-20+ seconds per page). Processing hundreds or thousands of documents requires sophisticated queue management and retry logic.</p>
+  <p>Content Filtering Issues: Many LLM APIs have content filters that inappropriately flag legitimate business documents containing financial data, legal terms, or technical specifications—causing processing failures.</p>
+  <p>Reliability and Vendor Risk: When the LLM service goes down, your entire document processing pipeline stops. API changes can break your prompts without warning.</p>
+  <p>Unpredictable Costs: LLM API pricing for vision models can be expensive and unpredictable, especially for high-resolution document images.</p>
+  <p>LlamaParse handles all of this with per-page caching and deduplication, configurable processing modes for cost optimization, async processing with webhooks for large document volumes, and credits-based pricing for cost predictability.</p>
+</section>
+<section class="section" id="s8">
+  <h2>🚀 The LlamaParse Approach: Best of Both Worlds</h2>
+  <p class="lead">We absolutely agree with the thesis that LLMs have made traditional OCR obsolete. But the path forward isn&#x27;t replacing your parsing infrastructure with raw API calls—it&#x27;s using a platform that harness</p>
+  <p>LlamaParse wraps frontier models (GPT-4.1, Claude Sonnet 4.0, Gemini 2.5 Pro) with always-updated intelligence, rich metadata by default, production-grade reliability, optimized prompts, and predictable economics.</p>
+  <p>[Bonus] Beyond Parsing, Come Build E2E Document Workflows!</p>
+  <p>Most document-related knowledge work requires multiple steps beyond basic text extraction: structured field extraction from invoices or contracts, source attribution for compliance and audit trails, document classification for routing workflows, and downstream integration with search or agent systems.</p>
+  <p>We have a ton of examples showing you how to interleave LlamaParse with our agentic workflow orchestration. These agent workflows involve interleaving parsing, extraction, retrieval with LLM calls in a sequential or looping manner. Because they are multi-step, high parsing and extraction accuracy become even more important (the probability of failures increases the more steps there are), and metadata is also important - you ideally want to be able to trace confidence scores and citations through to the final output!</p>
+</section>
+<section class="section" id="s9">
+  <h2>📈 The Bottom Line</h2>
+  <p class="lead">The future of document processing is absolutely LLM-powered, but the winning approach combines the intelligence of frontier models with the operational excellence, metadata richness, and engineering s</p>
+  <p>Just as you wouldn&#x27;t replace your database with direct file system calls, you shouldn&#x27;t replace your document processing infrastructure with unstructured LLM API calls. The abstraction layer matters—it&#x27;s where reliability, observability, and long-term maintainability are built.</p>
+  <p>You can always build it yourself—you just have to handle prompting, retries, metadata extraction, schema enforcement, API error handling, bounding box recovery, multi-model fallbacks, and more.</p>
+  <p>If you want this handled for you though, there’s always LlamaParse. Come check it out!</p>
+  <p>Sign up to LlamaParse (get 10k free credits) Come get in touch</p>
+</section>
+
+    <section class="section" id="key-concepts">
+  <h2>🔑 核心概念 Key Concepts</h2>
+  <p class="lead">本文涉及的关键技术概念与术语。</p>
+<div class="flow">
+  <div class="flow-step">Accuracy gaps remain</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Missing enterprise metadata</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">High maintenance burden</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Operational challenges</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step purple">Screenshotting Loses Critical Information:</div>
+</div>
+</section>
+<section class="section" id="structure">
+  <h2>📊 文章结构 Article Structure</h2>
+  <p class="lead">文章各章节的组织脉络。</p>
+<div class="timeline">
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Ready to get started with LlamaParse?</div>
+    <div class="tl-desc">Explore our free and paid plans today.
+
+
+ -   Learn more</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Can we just rely on screenshots?</div>
+    <div class="tl-desc">The baseline approach sounds simple: screenshot the page, feed it to your favorite LLM API (OpenAI, Claude, Gemini), and</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">1. Frontier Models are good, but remain cost-prohibitive</div>
+    <div class="tl-desc">The baseline of one-shot document parsing through screenshotting using the latest models has gotten much better in the p</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">2. You&#x27;re Missing Enterprise-Critical Metadata</div>
+    <div class="tl-desc">If all you get from an LLM API is a markdown blob or basic JSON, that might work for a toy demo. But for enterprise work</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">3. Do you really want to Context Engineer a Document Parser?</div>
+    <div class="tl-desc">The hottest new AI Engineering skill to learn these days is context engineering. Any LLM is only as good as the prompt/c</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">You&#x27;re Building a Parser Anyway</div>
+    <div class="tl-desc">Even if your screenshot-to-LLM method works for one document type, what happens when you need to handle 10 new documen</div>
+  </div>
+</div>
+</section>
+
+  </div>
+
+  <footer class="footer">
+    <div class="footer-links">
+      <a href="./">LlamaIndex Blog Hub</a>
+      <a href="https://www.llamaindex.ai/blog/llm-apis-are-not-complete-document-parsers" target="_blank" rel="noopener">原文链接 Original</a>
+      <a href="../">Engineering Blogs Hub</a>
+    </div>
+    <p>Generated from LlamaIndex blog content for learning purposes.</p>
+  </footer>
+</body>
+</html>

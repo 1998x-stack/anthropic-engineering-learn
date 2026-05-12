@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：OCR for Accounts Payable: Benefits, Challenges, and Best Practices</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafbfc;
+      --surface: #fff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --amber: #d97706;
+      --amber-light: #fbbf24;
+      --amber-dark: #92400e;
+      --purple: #6366f1;
+      --teal: #14b8a6;
+      --green: #10b981;
+      --red: #ef4444;
+      --blue: #3b82f6;
+      --pink: #ec4899;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans SC', 'Inter', sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:var(--sans); background:var(--bg); color:var(--text); line-height:1.7; }
+
+    .nav { position:sticky; top:0; background:rgba(15,23,42,.92); backdrop-filter:blur(12px); z-index:100; border-bottom:1px solid rgba(255,255,255,.08); }
+    .nav-inner { max-width:1100px; margin:0 auto; padding:12px 24px; display:flex; justify-content:space-between; align-items:center; }
+    .nav-brand { color:#fbbf24; text-decoration:none; font-weight:700; display:flex; align-items:center; gap:8px; }
+    .nav-logo { font-size:20px; }
+    .nav a:last-child { font-size:13px; color:rgba(255,255,255,.6); text-decoration:none; }
+    .nav a:last-child:hover { color:#fbbf24; }
+
+    .hero { background:linear-gradient(135deg,#0f172a 0%,#78350f 50%,#d97706 100%); color:#fff; padding:60px 24px 48px; }
+    .hero-inner { max-width:1100px; margin:0 auto; }
+    .hero-tag { display:inline-block; background:rgba(251,191,36,.15); color:#fbbf24; padding:4px 14px; border-radius:20px; font-size:13px; font-weight:500; margin-bottom:16px; letter-spacing:.5px; }
+    .hero h1 { font-size:clamp(24px,4vw,42px); font-weight:800; line-height:1.2; margin-bottom:12px; }
+    .hero p { font-size:17px; color:rgba(255,255,255,.8); max-width:700px; margin-bottom:28px; line-height:1.6; }
+    .hero-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; max-width:600px; }
+    .stat { text-align:center; }
+    .stat-num { display:block; font-size:28px; font-weight:800; color:#fbbf24; font-family:var(--mono); }
+    .stat-label { font-size:12px; color:rgba(255,255,255,.6); text-transform:uppercase; letter-spacing:.5px; }
+
+    .page { max-width:1100px; margin:0 auto; padding:32px 24px 60px; }
+
+    .toc { margin-bottom:40px; }
+    .toc-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:10px; }
+    .toc-item { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); text-decoration:none; color:var(--text); font-size:14px; font-weight:500; transition:all .2s; }
+    .toc-item:hover { border-color:var(--amber); transform:translateY(-1px); box-shadow:0 4px 12px rgba(217,119,6,.1); }
+    .toc-num { font-size:16px; }
+
+    .section { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:32px; margin-bottom:24px; }
+    .section h2 { font-size:22px; font-weight:700; margin-bottom:12px; color:var(--text); }
+    .section h3 { font-size:17px; font-weight:600; margin:20px 0 8px; color:var(--amber-dark); }
+    .lead { color:var(--text-secondary); font-size:15px; margin-bottom:16px; line-height:1.7; }
+    .section p { margin-bottom:12px; font-size:15px; line-height:1.7; }
+
+    .chart { margin:20px 0; }
+    .chart-row { display:flex; align-items:center; margin-bottom:8px; }
+    .chart-label { width:160px; font-size:13px; font-weight:500; text-align:right; padding-right:12px; color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:28px; overflow:hidden; }
+    .chart-bar { height:100%; border-radius:8px; display:flex; align-items:center; padding-left:10px; font-size:12px; font-weight:600; color:#fff; transition:width .6s ease; min-width:40px; }
+    .chart-bar.amber { background:linear-gradient(90deg,#d97706,#f59e0b); }
+    .chart-bar.purple { background:linear-gradient(90deg,#6366f1,#818cf8); }
+    .chart-bar.teal { background:linear-gradient(90deg,#0d9488,#14b8a6); }
+    .chart-bar.green { background:linear-gradient(90deg,#059669,#10b981); }
+    .chart-bar.blue { background:linear-gradient(90deg,#2563eb,#3b82f6); }
+    .chart-bar.red { background:linear-gradient(90deg,#dc2626,#ef4444); }
+
+    .timeline { position:relative; padding-left:28px; margin:20px 0; }
+    .timeline::before { content:''; position:absolute; left:8px; top:0; bottom:0; width:3px; background:linear-gradient(180deg,#d97706,#6366f1,#14b8a6); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:20px; padding-left:16px; }
+    .tl-dot { position:absolute; left:-24px; top:4px; width:14px; height:14px; border-radius:50%; border:3px solid var(--amber); background:#fff; }
+    .tl-item:nth-child(2) .tl-dot { border-color:var(--purple); }
+    .tl-item:nth-child(3) .tl-dot { border-color:var(--teal); }
+    .tl-item:nth-child(4) .tl-dot { border-color:var(--green); }
+    .tl-item:nth-child(5) .tl-dot { border-color:var(--blue); }
+    .tl-phase { font-weight:600; font-size:15px; margin-bottom:4px; }
+    .tl-desc { font-size:13px; color:var(--text-secondary); line-height:1.5; }
+
+    .compare-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin:20px 0; }
+    .compare-card { padding:16px; border-radius:var(--radius); font-size:14px; line-height:1.6; }
+    .compare-card.old { background:#fef2f2; border:1px solid #fecaca; }
+    .compare-card.new { background:#f0fdf4; border:1px solid #bbf7d0; }
+
+    .flow { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:20px 0; }
+    .flow-step { padding:10px 18px; background:#f8fafc; border:2px solid var(--border); border-radius:var(--radius); font-size:13px; font-weight:600; text-align:center; }
+    .flow-step.purple { background:#eef2ff; border-color:var(--purple); color:var(--purple); }
+    .flow-arrow { color:var(--amber); font-size:20px; font-weight:700; }
+
+    .fail-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:20px 0; }
+    .fail-grid .card { padding:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); font-size:13px; line-height:1.6; }
+
+    .block-q { margin:20px 0; padding:20px 24px; background:linear-gradient(135deg,#fffbeb,#fef3c7); border-left:4px solid var(--amber); border-radius:0 var(--radius) var(--radius) 0; font-style:italic; color:#92400e; font-size:14px; line-height:1.7; }
+
+    .tbl-wrap { overflow-x:auto; margin:20px 0; }
+    table { width:100%; border-collapse:collapse; font-size:14px; }
+    th { background:#f8fafc; padding:10px 14px; text-align:left; font-weight:600; border-bottom:2px solid var(--border); white-space:nowrap; }
+    td { padding:10px 14px; border-bottom:1px solid var(--border); }
+    tr:hover td { background:#fffbeb; }
+
+    .badge { display:inline-block; padding:3px 10px; border-radius:12px; font-size:12px; font-weight:500; }
+    .badge-amber { background:#fffbeb; color:#92400e; }
+    .badge-purple { background:#eef2ff; color:#4338ca; }
+    .badge-green { background:#f0fdf4; color:#166534; }
+
+    .footer { background:#0f172a; color:rgba(255,255,255,.6); padding:32px 24px; text-align:center; font-size:13px; }
+    .footer a { color:#fbbf24; text-decoration:none; }
+    .footer a:hover { text-decoration:underline; }
+    .footer-links { display:flex; justify-content:center; gap:24px; margin-bottom:12px; flex-wrap:wrap; }
+
+    @media(max-width:768px) {
+      .hero-stats { grid-template-columns:repeat(2,1fr); }
+      .compare-grid, .fail-grid { grid-template-columns:1fr; }
+      .chart-label { width:100px; font-size:12px; }
+      .flow { flex-direction:column; gap:6px; }
+      .flow-arrow { transform:rotate(90deg); }
+      .toc-grid { grid-template-columns:1fr; }
+      .section { padding:20px 16px; }
+      .hero { padding:40px 16px 32px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="../" class="nav-brand">
+        <span class="nav-logo">🦙</span>
+        <span>LlamaIndex Blog Hub</span>
+      </a>
+      <a href="./">← Back to Hub</a>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="hero-tag">文档处理</div>
+      <h1>OCR for Accounts Payable: Benefits, Challenges, and Best Practices</h1>
+      <p>Accounts Payable teams are under constant pressure to process invoices faster while maintaining financial accuracy and compliance. As organizations scale, invoice volumes increase, vendor formats diversify, and approval workflows grow more complex. What often appears to be a simple data entry functi</p>
+      <div class="hero-stats">
+        <div class="stat"><span class="stat-num">20</span><span class="stat-label">核心章节</span></div><div class="stat"><span class="stat-num">7</span><span class="stat-label">关键概念</span></div><div class="stat"><span class="stat-num">8min</span><span class="stat-label">阅读时长</span></div><div class="stat"><span class="stat-num">2067</span><span class="stat-label">总字数</span></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc"><div class="toc-grid">
+  <a href="#s0" class="toc-item"><span class="toc-num">🔍</span>What Is OCR in the Context of Accounts Payable?</a>
+  <a href="#s2" class="toc-item"><span class="toc-num">⚙️</span>The 5 Major Benefits of OCR Invoice Processing</a>
+  <a href="#s8" class="toc-item"><span class="toc-num">🚀</span>From Scan to Payment: The OCR-Enhanced Workflow</a>
+  <a href="#s14" class="toc-item"><span class="toc-num">📝</span>Current Challenges in OCR for Accounts Payable</a>
+  <a href="#s18" class="toc-item"><span class="toc-num">🔑</span>Best Practices for Implementing OCR in AP</a>
+  <a href="#s19" class="toc-item"><span class="toc-num">📦</span>**Conclusion**</a>
+</div></nav>
+
+    <section class="section" id="s0">
+  <h2>🔍 What Is OCR in the Context of Accounts Payable?</h2>
+  <p class="lead">Optical Character Recognition (OCR) refers to the technology that converts images of text into machine-readable content. In accounts payable processes, OCR is used to extract key invoice fields such a</p>
+  <p>Historically, OCR systems relied heavily on pattern matching and template-based parsing. These systems required predefined layouts and manual configuration for each vendor format. While effective in limited environments, they struggled when confronted with new layouts or structural changes.</p>
+  <p>Modern OCR software, powered by machine learning, has evolved beyond simple character recognition. Today’s systems incorporate layout-aware models and intelligent document understanding techniques, automating the process completely. Instead of reading documents as flat text streams, advanced platforms interpret spatial relationships, table structures, and contextual signals within invoices.</p>
+  <p>Within LlamaParse, OCR is not treated as an isolated component. Instead, it is integrated into a broader parsing and indexing framework that preserves document structure and prepares financial data for downstream workflows.</p>
+  <p>Invoice uploaded into LlamaParse’s Extract environment.</p>
+  <h3>Why Accounts Payable Automation Matters</h3>
+  <p>Invoice processing is a multi-stage workflow that includes document receipt, data extraction, validation, matching, approval routing, and ERP integration. Any breakdown in this sequence can delay payment cycles and introduce operational friction.</p>
+  <p>As invoice volumes increase, manual processes scale linearly with headcount. This creates a cost-per-invoice model that becomes unsustainable over time. In addition, human error in high-volume environments can result in incorrect invoice numbers, mismatched totals, or duplicate entries.</p>
+  <p>Automation reduces the dependency on manual data entry while improving consistency. However, sustainable AP automation depends on structured data integrity, not raw extraction accuracy alone.</p>
+<div class="flow">
+  <div class="flow-step">Optical Character Recognition (OCR)</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Quantify the baseline before automating: </div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Prioritize structured output over raw extraction accuracy: </div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Design for integration from day one: </div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step purple">Plan for exception handling and governance:</div>
+</div>
+</section>
+<section class="section" id="s2">
+  <h2>⚙️ The 5 Major Benefits of OCR Invoice Processing</h2>
+  <h3>1. Improved Accuracy</h3>
+  <p>Manual data entry inevitably introduces human error, especially in high-volume environments. Even minor inaccuracies—such as mistyped invoice numbers or incorrect tax amounts—can disrupt reconciliation processes.</p>
+  <p>By automatically extracting and validating invoice data, OCR systems reduce reliance on manual typing. When integrated with structured parsing and validation logic, platforms like LlamaIndex ensure that subtotals reconcile with line items and totals align with financial rules before data reaches the ERP.</p>
+  <h3>2. Significant Cost Savings</h3>
+  <p>Manual AP workflows scale with staffing requirements. As invoice volume increases, organizations must hire additional personnel to maintain processing timelines.</p>
+  <p>OCR-driven automation shifts this model. Once implemented, the system processes invoices consistently, regardless of incremental increases in volume. Over time, this reduces operational overhead and reallocates staff toward higher-value financial tasks.</p>
+  <h3>3. Accelerated Processing Cycles</h3>
+  <p>Automated extraction enables invoices to move through workflows within minutes rather than days. Faster processing improves vendor relationships, enables early payment discounts, and supports more predictable cash flow management.</p>
+  <p>When OCR is integrated into a broader workflow system—as enabled by LlamaIndex—data flows directly from extraction into matching and approval processes without redundant re-entry.</p>
+  <h3>4. Deep Line-Item Data Extraction</h3>
+  <p>Many organizations manually enter only header-level invoice information because capturing line-item detail is time-consuming. This limits analytical visibility into procurement trends and spend categorization.</p>
+  <p>Advanced OCR systems can extract structured line-item data, preserving table hierarchies and quantities. This enables granular spend analysis, compliance monitoring, and more accurate financial reporting.</p>
+</section>
+<section class="section" id="s8">
+  <h2>🚀 From Scan to Payment: The OCR-Enhanced Workflow</h2>
+  <p class="lead">An effective OCR solution must support the full lifecycle of invoice processing.</p>
+  <h3>Step 1: Receipt</h3>
+  <p>Invoices arrive through email, vendor portals, or physical mail. Documents are digitized and ingested into the system. A production-ready workflow must normalize these inputs into a consistent processing format.</p>
+  <p>This stage includes file-type detection, handling of multi-page PDFs, and image preprocessing for scanned documents. Skew correction, contrast normalization, and orientation detection improve downstream recognition accuracy. Inconsistent file quality is common in real AP environments, so ingestion must be resilient to compression artifacts, shadows, stamps, and handwritten annotations.</p>
+  <p>Rather than treating ingestion as a simple upload step, mature systems treat it as the first quality control checkpoint in the pipeline.</p>
+  <h3>Step 2: Data Extraction</h3>
+  <p>Once ingested, the document moves into the extraction layer. OCR converts visual text into machine-readable content, but reliable invoice processing requires more than character recognition.</p>
+  <p>Modern systems interpret layout structure, table boundaries, spatial relationships, and contextual labels. For example, distinguishing between an invoice number, purchase order reference, tax ID, and internal account number requires both positional and semantic reasoning. Line-item extraction must preserve row integrity so quantities, descriptions, unit prices, and totals remain logically connected.</p>
+  <p>At this stage, the goal is not simply to detect text, but to produce structured, schema-aligned output that downstream systems can process without additional transformation logic.</p>
+  <h3>Step 3: Verification and Matching</h3>
+  <p>Extraction alone does not guarantee financial correctness. Before approval, invoice data must be validated against internal records.</p>
+  <p>Two-way and three-way matching processes compare invoice data against purchase orders and goods receipt records. Totals are recalculated to verify arithmetic consistency. Vendor identifiers are cross-checked against approved vendor lists. Duplicate invoice detection prevents redundant payments.</p>
+  <p>Confidence scoring and exception thresholds determine whether an invoice proceeds automatically or routes to manual review. High-confidence, fully matched invoices can flow straight through. Ambiguous or inconsistent entries are flagged with context so reviewers can resolve issues quickly.</p>
+  <h3>Step 4: Invoice Approval</h3>
+  <p>Validated invoices enter rule-based approval workflows. Routing logic may depend on department, cost center, invoice amount, or vendor category.</p>
+  <p>Automation ensures invoices are directed to the appropriate stakeholders immediately, eliminating delays caused by email chains or manual forwarding. Audit trails capture timestamps, approver actions, and validation history, preserving compliance documentation for future review.</p>
+</section>
+<section class="section" id="s14">
+  <h2>📝 Current Challenges in OCR for Accounts Payable</h2>
+  <p class="lead">Despite advancements, certain challenges persist when it comes to OCR for accounts payable.</p>
+  <h3>Document Quality Variability</h3>
+  <p>Not all invoices arrive as clean, digitally generated PDFs. Many organizations still receive scanned paper documents, mobile-captured images, or compressed email attachments. These files may contain skewed text, shadows, overlapping stamps, handwritten annotations, or degraded print quality.</p>
+  <p>Recognition errors often originate here. If preprocessing is weak, downstream extraction accuracy suffers regardless of model sophistication. Robust systems apply image normalization, orientation correction, and layout detection before extraction begins. Without this foundation, even advanced models struggle to produce reliable structured output.</p>
+  <h3>Layout and Vendor Variability</h3>
+  <p>There is no standardized invoice format across vendors. Layouts vary in structure, terminology, field positioning, and table organization. A vendor may change accounting software or redesign its invoice template without notice, introducing structural changes that break template-dependent systems.</p>
+  <p>Template-based OCR pipelines degrade under this variability because they rely on positional assumptions. Machine learning-driven document understanding improves adaptability by interpreting invoices semantically rather than positionally. However, even adaptive systems must be evaluated against edge cases such as multi-column tables, nested line items, or invoices that combine service summaries with detailed attachments.</p>
+  <h3>Exception Management and Financial Risk</h3>
+  <p>No OCR system operates with perfect certainty. Ambiguous fields, inconsistent totals, duplicate invoices, and incomplete purchase order references require controlled intervention.</p>
+  <p>The challenge is not eliminating exceptions, but managing them efficiently. Without structured confidence scoring and contextual validation, teams either over-review (slowing processing) or under-review (increasing financial risk). Effective systems integrate human-in-the-loop workflows that surface only the invoices that genuinely require judgment.</p>
+  <p>Accounts payable automation must strike a balance between straight-through processing and financial oversight. Automation reduces manual workload, but governance mechanisms remain essential to maintain auditability and control.</p>
+</section>
+<section class="section" id="s18">
+  <h2>🔑 Best Practices for Implementing OCR in AP</h2>
+  <p class="lead">Successful OCR implementation in accounts payable requires more than deploying an extraction model. It demands deliberate planning around data validation, integration with financial systems, and excep</p>
+  <p>Quantify the baseline before automating: Measure invoice volume, processing time, cost per invoice, and exception rates before implementation. Many inefficiencies only become visible once metrics are tracked explicitly. Clear baselines make automation gains measurable rather than assumed. Prioritize structured output over raw extraction accuracy: The goal is not just high character recognition accuracy but schema-aligned, validated financial data. Field-level confidence scores, arithmetic validation, and duplicate detection reduce downstream reconciliation risk. Output should integrate directly with ERP systems without heavy transformation. Design for integration from day one: OCR must connect to ERPs, approval systems, and financial databases through APIs and structured data formats. Integration should be planned alongside schema design and workflow routing. Tight system coupling reduces manual data movement and operational friction. Plan for exception handling and governance: No system achieves perfect straight-through processing. Define thresholds for manual review, escalation logic, and audit logging before deployment. Human review should focus on ambiguous or high-risk invoices, not routine cases. Treat OCR as part of an end-to-end workflow: Extraction alone does not create operational efficiency. Value emerges when parsing, validation, approval routing, and system synchronization operate as a unified pipeline. Automation should improve the full lifecycle — not just the initial data capture step.</p>
+<div class="fail-grid">
+  <div class="card"><strong>Quantify the baseline before automating: </strong><br>Measure invoice volume, processing time, cost per invoice, and exception rates before implementation. Many inefficiencies only become visible once metrics are tracked explicitly. Clear baselines make automation gains measurable rather than assumed.</div>
+  <div class="card"><strong>Prioritize structured output over raw extraction accuracy: </strong><br>The goal is not just high character recognition accuracy but schema-aligned, validated financial data. Field-level confidence scores, arithmetic validation, and duplicate detection reduce downstream reconciliation risk. Output should integrate directly with ERP systems without heavy transformation.</div>
+  <div class="card"><strong>Design for integration from day one: </strong><br>OCR must connect to ERPs, approval systems, and financial databases through APIs and structured data formats. Integration should be planned alongside schema design and workflow routing. Tight system coupling reduces manual data movement and operational friction.</div>
+  <div class="card"><strong>Plan for exception handling and governance:</strong><br>No system achieves perfect straight-through processing. Define thresholds for manual review, escalation logic, and audit logging before deployment. Human review should focus on ambiguous or high-risk invoices, not routine cases.</div>
+  <div class="card"><strong>Treat OCR as part of an end-to-end workflow: </strong><br>Extraction alone does not create operational efficiency. Value emerges when parsing, validation, approval routing, and system synchronization operate as a unified pipeline. Automation should improve the full lifecycle — not just the initial data capture step.</div>
+</div>
+</section>
+<section class="section" id="s19">
+  <h2>📦 **Conclusion**</h2>
+  <p class="lead">The transition from manual invoice processing to intelligent automation marks a significant shift in how accounts payable departments operate. OCR technology provides the foundation for this transform</p>
+  <p>Organizations that continue relying on manual processes risk falling behind in an era of real-time financial operations. By adopting machine learning-driven OCR solutions integrated within platforms like LlamaIndex, businesses can improve accuracy, reduce operational costs, and build scalable AP workflows.</p>
+  <p>To learn how LlamaParse can support intelligent document processing and OCR for accounts payable, explore the LlamaParse platform capabilities or request a demonstration tailored to your AP workflow needs.</p>
+</section>
+
+    <section class="section" id="key-concepts">
+  <h2>🔑 核心概念 Key Concepts</h2>
+  <p class="lead">本文涉及的关键技术概念与术语。</p>
+<div class="flow">
+  <div class="flow-step">Optical Character Recognition (OCR)</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Quantify the baseline before automating: </div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Prioritize structured output over raw extraction accuracy: </div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Design for integration from day one: </div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step purple">Plan for exception handling and governance:</div>
+</div>
+</section>
+
+  </div>
+
+  <footer class="footer">
+    <div class="footer-links">
+      <a href="./">LlamaIndex Blog Hub</a>
+      <a href="https://www.llamaindex.ai/blog/ocr-for-accounts-payable" target="_blank" rel="noopener">原文链接 Original</a>
+      <a href="../">Engineering Blogs Hub</a>
+    </div>
+    <p>Generated from LlamaIndex blog content for learning purposes.</p>
+  </footer>
+</body>
+</html>

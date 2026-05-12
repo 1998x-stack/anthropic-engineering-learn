@@ -1,0 +1,527 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>深度解析：No-Code RAG Pipeline Builder: One-Click Code | LlamaIndex</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg: #fafbfc;
+  --surface: #fff;
+  --text: #0f172a;
+  --text-secondary: #64748b;
+  --border: #e2e8f0;
+  --radius: 14px;
+  --amber: #d97706;
+  --amber-light: #fbbf24;
+  --amber-dark: #92400e;
+  --purple: #6366f1;
+  --teal: #14b8a6;
+  --green: #10b981;
+  --red: #ef4444;
+  --blue: #3b82f6;
+  --mono: 'JetBrains Mono', monospace;
+  --sans: 'Noto Sans SC', 'Inter', sans-serif;
+}
+* { margin:0; padding:0; box-sizing:border-box; }
+body { font-family:var(--sans); background:var(--bg); color:var(--text); line-height:1.7; }
+a { color:var(--amber); text-decoration:none; }
+a:hover { text-decoration:underline; }
+
+/* Nav */
+.nav {
+  position:sticky; top:0; z-index:100;
+  background:rgba(15,23,42,0.95); backdrop-filter:blur(12px);
+  padding:0 2rem; height:56px;
+  display:flex; align-items:center; justify-content:space-between;
+}
+.nav-brand { color:#fbbf24; font-weight:700; font-size:1.1rem; }
+.nav-back { color:#94a3b8; font-size:0.9rem; }
+.nav-back:hover { color:#fbbf24; }
+
+/* Hero */
+.hero {
+  background:linear-gradient(135deg,#0f172a 0%,#78350f 50%,#d97706 100%);
+  padding:4rem 2rem 3rem; color:#fff; text-align:center;
+}
+.hero-badge { display:inline-block; background:rgba(251,191,36,0.2); color:#fbbf24;
+  padding:4px 16px; border-radius:20px; font-size:0.85rem; margin-bottom:1rem; font-weight:500; }
+.hero h1 { font-size:clamp(1.5rem,4vw,2.4rem); font-weight:800; max-width:800px; margin:0 auto 1rem; line-height:1.3; }
+.hero-sub { color:rgba(255,255,255,0.8); font-size:1rem; max-width:600px; margin:0 auto 2rem; }
+.stats { display:grid; grid-template-columns:repeat(4,1fr); gap:1rem; max-width:700px; margin:0 auto; }
+.stat-card {
+  background:rgba(255,255,255,0.08); border:1px solid rgba(255,255,255,0.12);
+  border-radius:12px; padding:1rem 0.5rem; text-align:center;
+}
+.stat-emoji { font-size:1.3rem; margin-bottom:4px; }
+.stat-val { font-size:1.4rem; font-weight:800; color:#fbbf24; }
+.stat-label { font-size:0.75rem; color:rgba(255,255,255,0.7); text-transform:uppercase; letter-spacing:0.5px; }
+.stat-desc { font-size:0.7rem; color:rgba(255,255,255,0.5); margin-top:2px; }
+
+/* Page */
+.page { max-width:900px; margin:0 auto; padding:2rem 1.5rem; }
+
+/* TOC */
+.toc { display:grid; grid-template-columns:repeat(auto-fill,minmax(250px,1fr)); gap:0.75rem; margin-bottom:3rem; }
+.toc-item {
+  display:flex; align-items:center; gap:10px;
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:10px; padding:10px 14px; font-size:0.9rem;
+  color:var(--text); transition:all 0.2s;
+}
+.toc-item:hover { border-color:var(--amber); background:#fffbeb; text-decoration:none; transform:translateY(-1px); }
+.toc-num {
+  background:linear-gradient(135deg,#d97706,#f59e0b);
+  color:#fff; font-weight:700; font-size:0.75rem;
+  width:28px; height:28px; border-radius:8px;
+  display:flex; align-items:center; justify-content:center; flex-shrink:0;
+}
+
+/* Section */
+.section { margin-bottom:3rem; }
+.section h2 {
+  font-size:1.5rem; font-weight:700; margin-bottom:0.5rem;
+  padding-bottom:0.5rem; border-bottom:2px solid var(--amber);
+}
+.lead { color:var(--text-secondary); font-size:0.95rem; margin-bottom:1.2rem; }
+
+/* Cards */
+.card {
+  background:var(--surface); border:1px solid var(--border);
+  border-radius:var(--radius); padding:1.2rem; margin-bottom:0.8rem;
+}
+.card p { font-size:0.9rem; }
+.card-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(280px,1fr)); gap:0.8rem; margin:1rem 0; }
+
+/* Code Block */
+.code-block {
+  background:#1e293b; border-radius:12px; overflow:hidden; margin:1rem 0;
+}
+.code-header { padding:8px 16px; background:#0f172a; display:flex; align-items:center; gap:8px; }
+.code-block pre {
+  padding:1rem 1.2rem; color:#e2e8f0; font-family:var(--mono);
+  font-size:0.82rem; line-height:1.6; overflow-x:auto; white-space:pre;
+}
+
+/* Compare */
+.compare-grid { display:grid; grid-template-columns:1fr 1fr; gap:1rem; margin:1rem 0; }
+.compare-card {
+  background:var(--surface); border-radius:var(--radius); padding:1.2rem;
+  border:1px solid var(--border);
+}
+.compare-card.old { border-left:4px solid var(--red); }
+.compare-card.new { border-left:4px solid var(--green); }
+.compare-card h4 { font-size:0.95rem; margin-bottom:0.5rem; }
+
+/* Chart */
+.chart { margin:1rem 0; }
+.chart-row { display:flex; align-items:center; margin-bottom:8px; }
+.chart-label { width:160px; font-size:0.85rem; font-weight:500; flex-shrink:0; }
+.chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:32px; overflow:hidden; }
+.chart-bar {
+  height:100%; border-radius:8px; display:flex; align-items:center;
+  padding:0 12px; font-size:0.75rem; font-weight:600; color:#fff;
+  transition:width 0.6s ease;
+}
+.chart-bar.amber { background:linear-gradient(90deg,#d97706,#f59e0b); }
+.chart-bar.purple { background:linear-gradient(90deg,#6366f1,#818cf8); }
+.chart-bar.green { background:linear-gradient(90deg,#10b981,#34d399); }
+.chart-bar.blue { background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+.chart-bar.teal { background:linear-gradient(90deg,#14b8a6,#2dd4bf); }
+.chart-bar.red { background:linear-gradient(90deg,#ef4444,#f87171); }
+
+/* Timeline */
+.timeline { position:relative; padding-left:2rem; margin:1rem 0; }
+.timeline::before {
+  content:''; position:absolute; left:7px; top:0; bottom:0; width:3px;
+  background:linear-gradient(180deg,#d97706,#f59e0b,#fbbf24);
+  border-radius:2px;
+}
+.tl-item { position:relative; margin-bottom:1.5rem; padding-left:1rem; }
+.tl-dot {
+  position:absolute; left:-2rem; top:4px;
+  width:16px; height:16px; border-radius:50%;
+  background:#d97706; border:3px solid #fef3c7;
+}
+.tl-item:nth-child(2) .tl-dot { background:#3b82f6; border-color:#dbeafe; }
+.tl-item:nth-child(3) .tl-dot { background:#10b981; border-color:#d1fae5; }
+.tl-item:nth-child(4) .tl-dot { background:#6366f1; border-color:#e0e7ff; }
+.tl-item:nth-child(5) .tl-dot { background:#14b8a6; border-color:#ccfbf1; }
+.tl-phase { font-weight:600; font-size:0.95rem; }
+.tl-desc { color:var(--text-secondary); font-size:0.85rem; margin-top:2px; }
+
+/* Flow */
+.flow { display:flex; align-items:center; gap:12px; flex-wrap:wrap; margin:1rem 0; }
+.flow-step {
+  background:var(--surface); border:2px solid var(--border);
+  border-radius:12px; padding:10px 18px; font-weight:600; font-size:0.9rem;
+}
+.flow-step.amber { border-color:var(--amber); background:#fffbeb; }
+.flow-step.purple { border-color:var(--purple); background:#eef2ff; }
+.flow-arrow { color:var(--text-secondary); font-size:1.2rem; }
+
+/* Block Quote */
+.block-q {
+  border-left:4px solid var(--amber); background:#fffbeb;
+  padding:1.2rem 1.5rem; border-radius:0 12px 12px 0; margin:1rem 0;
+  font-style:italic; color:#78350f;
+}
+.block-q p { margin:0; font-size:0.92rem; }
+
+/* Badge */
+.badge {
+  display:inline-block; padding:3px 10px; border-radius:6px;
+  font-size:0.75rem; font-weight:600;
+}
+.badge-amber { background:#fef3c7; color:#92400e; }
+.badge-purple { background:#e0e7ff; color:#3730a3; }
+.badge-green { background:#d1fae5; color:#065f46; }
+.badge-red { background:#fee2e2; color:#991b1b; }
+.badge-blue { background:#dbeafe; color:#1e40af; }
+.badge-teal { background:#ccfbf1; color:#115e59; }
+
+/* Table */
+.tbl-wrap { overflow-x:auto; margin:1rem 0; }
+table { width:100%; border-collapse:collapse; font-size:0.85rem; }
+th { background:#f8fafc; padding:10px 12px; text-align:left; font-weight:600; border-bottom:2px solid var(--border); }
+td { padding:10px 12px; border-bottom:1px solid var(--border); }
+
+/* Footer */
+.footer {
+  background:#0f172a; color:#94a3b8; text-align:center;
+  padding:2rem; margin-top:3rem; font-size:0.85rem;
+}
+.footer a { color:#fbbf24; }
+.footer-links { display:flex; justify-content:center; gap:2rem; margin-top:0.8rem; flex-wrap:wrap; }
+
+/* Responsive */
+@media(max-width:768px) {
+  .stats { grid-template-columns:repeat(2,1fr); }
+  .toc { grid-template-columns:1fr; }
+  .compare-grid { grid-template-columns:1fr; }
+  .card-grid { grid-template-columns:1fr; }
+  .chart-label { width:120px; font-size:0.78rem; }
+  .flow { flex-direction:column; gap:8px; }
+  .flow-arrow { transform:rotate(90deg); }
+  .hero { padding:3rem 1rem 2rem; }
+  .hero h1 { font-size:1.4rem; }
+  .page { padding:1.5rem 1rem; }
+  .section h2 { font-size:1.2rem; }
+}
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <a href="../" class="nav-brand">LlamaIndex Blog</a>
+  <a href="../" class="nav-back">&larr; Back to Hub</a>
+</nav>
+
+<header class="hero">
+  <div class="hero-badge">RAG</div>
+  <h1>No-Code RAG Pipeline Builder: One-Click Code | LlamaIndex</h1>
+  <p class="hero-sub">作者：Unknown | 日期：Unknown</p>
+  <div class="stats">
+<div class="stat-card">
+  <div class="stat-emoji">📝</div>
+  <div class="stat-val">1700+</div>
+  <div class="stat-label">words</div>
+  <div class="stat-desc">文章总字数</div>
+</div>
+<div class="stat-card">
+  <div class="stat-emoji">📑</div>
+  <div class="stat-val">9</div>
+  <div class="stat-label">sections</div>
+  <div class="stat-desc">核心章节</div>
+</div>
+<div class="stat-card">
+  <div class="stat-emoji">📌</div>
+  <div class="stat-val">16</div>
+  <div class="stat-label">key points</div>
+  <div class="stat-desc">关键要点</div>
+</div>
+<div class="stat-card">
+  <div class="stat-emoji">🏷️</div>
+  <div class="stat-val">RAG</div>
+  <div class="stat-label">category</div>
+  <div class="stat-desc">文章分类</div>
+</div>
+
+  </div>
+</header>
+
+<div class="page">
+
+<div class="intro-section"><p>](https://www.linkedin.com/company/91154103/)
+ -  [</p>
+<p>](https://www.youtube.com/@LlamaIndex)</p>
+<p>Unlocking the power of AI should be as intuitive as using your favorite apps. That’s the philosophy behind RAGArch, my latest creation designed to demystify and streamline the process of setting up Retrieval-Augmented Generation (RAG) pipelines. This tool is born from a simple vision: to provide a straightforward, no-code platform that empowers both seasoned developers and curious explorers in the world of AI to craft, test, and implement RAG pipelines with confidence and ease.</p>
+</div>
+
+<nav class="toc"><a href="#s0" class="toc-item"><span class="toc-num">01</span>`**upload_file**`</a>
+<a href="#s1" class="toc-item"><span class="toc-num">02</span>save_uploaded_file</a>
+<a href="#s2" class="toc-item"><span class="toc-num">03</span>`**select_llm**`</a>
+<a href="#s3" class="toc-item"><span class="toc-num">04</span>`select_embedding_model`</a>
+<a href="#s4" class="toc-item"><span class="toc-num">05</span>select_node_parser Function</a>
+<a href="#s5" class="toc-item"><span class="toc-num">06</span>`select_response_synthesis_method`</a>
+<a href="#s6" class="toc-item"><span class="toc-num">07</span>`select_vector_store`</a>
+<a href="#s7" class="toc-item"><span class="toc-num">08</span>generate_rag_pipeline Function</a>
+<a href="#s8" class="toc-item"><span class="toc-num">09</span>generate_code_snippet Function</a>
+</nav>
+
+
+<section class="section" id="s0">
+  <h2>🔍 `**upload_file**`</h2>
+  <p class="lead">This function manages file uploads and uses Llamaindex&#x27;s <code>SimpleDirectoryReader</code> to load documents into the system. It supports a wide array of document types, including PDFs, text files, HTML, JSON f</p>
+  <div class="block-q"><p>This function manages file uploads and uses Llamaindex&#x27;s <code>SimpleDirectoryReader</code> to load documents into the system. It supports a wide array of document types, including PDFs, text files, HTML, JSON files, and more, making it versatile for processing diverse data sources. ![](/blog/images/1*hrekcMe</p></div>
+  <p></p>
+<p>def upload_file():
+    file = st.file_uploader(&quot;Upload a file&quot;, on_change=reset_pipeline_generated)
+    if file is not None:
+        file_path = save_uploaded_file(file)</p>
+<p>if file_path:
+            loaded_file = SimpleDirectoryReader(input_files=[file_path]).load_data()
+            print(f&quot;Total documents: {len(loaded_file)}&quot;)</p>
+<p>st.success(f&quot;File uploaded successfully. Total documents loaded: {len(loaded_file)}&quot;)
+        return loaded_file
+    return None</p>
+
+</section>
+
+<section class="section" id="s1">
+  <h2>⚡ save_uploaded_file</h2>
+  <p class="lead">This utility function saves the uploaded file to a temporary location on the server, making it accessible for further processing. It’s a crucial part of the file handling process, ensuring data integr</p>
+  <div class="block-q"><p>This utility function saves the uploaded file to a temporary location on the server, making it accessible for further processing. It’s a crucial part of the file handling process, ensuring data integrity and availability. def save_uploaded_file(uploaded_file):     try:         with tempfile.NamedTe</p></div>
+  <p>def save_uploaded_file(uploaded_file):
+    try:
+        with tempfile.NamedTemporaryFile(delete=False, suffix=os.path.splitext(uploaded_file.name)[1]) as tmp_file:
+            tmp_file.write(uploaded_file.getvalue())
+            return tmp_file.name
+    except Exception as e:
+        st.error(f&quot;Error saving file: {e}&quot;)
+        return None</p>
+
+</section>
+
+<section class="section" id="s2">
+  <h2>🏗️ `**select_llm**`</h2>
+  <p class="lead">Allows users to select a Large Language Model and initializes it for use. You can choose from Google’s Gemini Pro, Cohere, OpenAI’s GPT 3.5 and GPT 4.</p>
+  <div class="block-q"><p>Allows users to select a Large Language Model and initializes it for use. You can choose from Google’s Gemini Pro, Cohere, OpenAI’s GPT 3.5 and GPT 4.  def select_llm():     st.header(&quot;Choose LLM&quot;)     llm_choice = st.selectbox(&quot;Select LLM&quot;, [&quot;Gemini&quot;,</p></div>
+  <p></p>
+<p>def select_llm():
+    st.header(&quot;Choose LLM&quot;)
+    llm_choice = st.selectbox(&quot;Select LLM&quot;, [&quot;Gemini&quot;, &quot;Cohere&quot;, &quot;GPT-3.5&quot;, &quot;GPT-4&quot;], on_change=reset_pipeline_generated)</p>
+<p>if llm_choice == &quot;GPT-3.5&quot;:
+        llm = OpenAI(temperature=0.1, model=&quot;gpt-3.5-turbo-1106&quot;)
+        st.write(f&quot;{llm_choice} selected&quot;)
+    elif llm_choice == &quot;GPT-4&quot;:
+        llm = OpenAI(temperature=0.1, model=&quot;gpt-4-1106-preview&quot;)
+        st.write(f&quot;{llm_choice} selected&quot;)
+    elif llm_choice == &quot;Gemini&quot;:
+        llm = Gemini(model=&quot;models/gemini-pro&quot;)
+        st.write(f&quot;{llm_choice} selected&quot;)
+    elif llm_choice == &quot;Cohere&quot;:
+        llm = Cohere(model=&quot;command&quot;, api_key=os.environ[&#x27;COHERE_API_TOKEN&#x27;])
+        st.write(f&quot;{llm_choice} selected&quot;)
+    return llm, llm_choice</p>
+
+</section>
+
+<section class="section" id="s3">
+  <h2>📊 `select_embedding_model`</h2>
+  <p class="lead">Offers a dropdown for users to select the embedding model of their choice from a predefined list. I have included some of the top embedding models from Hugging Face’s MTEB leaderboard. Near the dropdo</p>
+  <div class="block-q"><p>Offers a dropdown for users to select the embedding model of their choice from a predefined list. I have included some of the top embedding models from Hugging Face’s MTEB leaderboard. Near the dropdown I have also included a handy link to the leaderboard where users can get more information about t</p></div>
+  <p></p>
+<p>def select_embedding_model():
+    st.header(&quot;Choose Embedding Model&quot;)
+    col1, col2 = st.columns([2,1])
+    with col2:
+        st.markdown(&quot;&quot;&quot;
+                    <a href="https://huggingface.co/spaces/mteb/leaderboard" target="_blank">Embedding Models Leaderboard</a>
+                    &quot;&quot;&quot;)
+    model_names = [
+        &quot;BAAI/bge-small-en-v1.5&quot;,
+        &quot;WhereIsAI/UAE-Large-V1&quot;,
+        &quot;BAAI/bge-large-en-v1.5&quot;,
+        &quot;khoa-klaytn/bge-small-en-v1.5-angle&quot;,
+        &quot;BAAI/bge-base-en-v1.5&quot;,
+        &quot;llmrails/ember-v1&quot;,
+        &quot;jamesgpt1/sf_model_e5&quot;,
+        &quot;thenlper/gte-large&quot;,
+        &quot;infgrad/stella-base-en-v2&quot;,
+        &quot;thenlper/gte-base&quot;
+    ]
+    selected_model = st.selectbox(&quot;Select Embedding Model&quot;, model_names,  on_change=reset_pipeline_generated)
+    with st.spinner(&quot;Please wait&quot;) as status:
+        embed_model = HuggingFaceEmbedding(model_name=selected_model)
+        st.session_state[&#x27;embed_model&#x27;] = embed_model
+        st.markdown(F&quot;Embedding Model: {embed_model.model_name}&quot;)
+        st.markdown(F&quot;Embed Batch Size: {embed_model.embed_batch_size}&quot;)
+        st.markdown(F&quot;Embed Batch Size: {embed_model.max_length}&quot;)</p>
+<p>return embed_model, selected_model</p>
+
+</section>
+
+<section class="section" id="s4">
+  <h2>🎯 select_node_parser Function</h2>
+  <p class="lead">This function allows users to choose a node parser, which is instrumental in breaking down documents into manageable chunks or nodes, facilitating better handling and processing. I have included some </p>
+  <div class="block-q"><p>This function allows users to choose a node parser, which is instrumental in breaking down documents into manageable chunks or nodes, facilitating better handling and processing. I have included some of the most commonly used node parsers supported by Llamaindex, which include SentenceSplitter, Code</p></div>
+  <p></p>
+<p>def select_node_parser():
+    st.header(&quot;Choose Node Parser&quot;)
+    col1, col2 = st.columns([4,1])
+    with col2:
+        st.markdown(&quot;&quot;&quot;
+                    <a href="https://docs.llamaindex.ai/en/stable/module_guides/loading/node_parsers/root.html" target="_blank">More Information</a>
+                    &quot;&quot;&quot;)
+    parser_types = [&quot;SentenceSplitter&quot;, &quot;CodeSplitter&quot;, &quot;SemanticSplitterNodeParser&quot;,
+                    &quot;TokenTextSplitter&quot;, &quot;HTMLNodeParser&quot;, &quot;JSONNodeParser&quot;, &quot;MarkdownNodeParser&quot;]
+    parser_type = st.selectbox(&quot;Select Node Parser&quot;, parser_types, on_change=reset_pipeline_generated)</p>
+<p>parser_params = {}
+    if parser_type == &quot;HTMLNodeParser&quot;:
+        tags = st.text_input(&quot;Enter tags separated by commas&quot;, &quot;p, h1&quot;)
+        tag_list = tags.split(&#x27;,&#x27;)
+        parser = HTMLNodeParser(tags=tag_list)
+        parser_params = {&#x27;tags&#x27;: tag_list}</p>
+<p>elif parser_type == &quot;JSONNodeParser&quot;:
+        parser = JSONNodeParser()</p>
+<p>elif parser_type == &quot;MarkdownNodeParser&quot;:
+        parser = MarkdownNodeParser()</p>
+
+</section>
+
+<section class="section" id="s5">
+  <h2>🔧 `select_response_synthesis_method`</h2>
+  <p class="lead">This function allows users to choose how the RAG pipeline synthesizes responses. I have included varioud response synthesis methods supported by Llamaindex including <em>refine</em>, <em>tree_summarize</em>, *compa</p>
+  <div class="block-q"><p>This function allows users to choose how the RAG pipeline synthesizes responses. I have included varioud response synthesis methods supported by Llamaindex including <em>refine</em>, <em>tree_summarize</em>, <em>compact</em>, <em>simple_summarize</em>, <em>accumulate </em>and<em> compact_accumulate.</em> Users can click on the more informa</p></div>
+  <p>Users can click on the more information link to get more details about response synthesis and the different types.</p>
+<p></p>
+<p>def select_response_synthesis_method():
+    st.header(&quot;Choose Response Synthesis Method&quot;)
+    col1, col2 = st.columns([4,1])
+    with col2:
+        st.markdown(&quot;&quot;&quot;
+                    <a href="https://docs.llamaindex.ai/en/stable/module_guides/querying/response_synthesizers/response_synthesizers.html" target="_blank">More Information</a>
+                    &quot;&quot;&quot;)
+    response_modes = [
+        &quot;refine&quot;,
+        &quot;tree_summarize&quot;,
+        &quot;compact&quot;,
+        &quot;simple_summarize&quot;,
+        &quot;accumulate&quot;,
+        &quot;compact_accumulate&quot;
+    ]
+    selected_mode = st.selectbox(&quot;Select Response Mode&quot;, response_modes, on_change=reset_pipeline_generated)
+    response_mode = selected_mode
+    return response_mode, selected_mode</p>
+
+</section>
+
+<section class="section" id="s6">
+  <h2>💡 `select_vector_store`</h2>
+  <p class="lead">Enables users to choose a vector store, which is a critical component for storing and retrieving embeddings in the RAG pipeline. This function supports the selection from multiple vector store options</p>
+  <div class="block-q"><p>Enables users to choose a vector store, which is a critical component for storing and retrieving embeddings in the RAG pipeline. This function supports the selection from multiple vector store options including Simple (Llamaindex default), Pinecone and Qdrant. ![](/blog/images/1*bDOo67R7yzPKFQX_TMR</p></div>
+  <p></p>
+<p>def select_vector_store():
+    st.header(&quot;Choose Vector Store&quot;)
+    vector_stores = [&quot;Simple&quot;, &quot;Pinecone&quot;, &quot;Qdrant&quot;]
+    selected_store = st.selectbox(&quot;Select Vector Store&quot;, vector_stores, on_change=reset_pipeline_generated)</p>
+<p>vector_store = None
+    if selected_store == &quot;Pinecone&quot;:
+        pc = Pinecone(api_key=os.environ[&#x27;PINECONE_API_KEY&#x27;])
+        index = pc.Index(&quot;test&quot;)
+        vector_store = PineconeVectorStore(pinecone_index=index)
+    elif selected_store == &quot;Qdrant&quot;:
+        client = qdrant_client.QdrantClient(location=&quot;:memory:&quot;)
+        vector_store = QdrantVectorStore(client=client, collection_name=&quot;sampledata&quot;)
+    st.write(selected_store)
+    return vector_store, selected_store</p>
+
+</section>
+
+<section class="section" id="s7">
+  <h2>📈 generate_rag_pipeline Function</h2>
+  <p class="lead">This core function ties together the selected components to generate a RAG pipeline. It initializes the pipeline with the chosen LLM, embedding model, node parser, response synthesis method, and vecto</p>
+  <div class="block-q"><p>This core function ties together the selected components to generate a RAG pipeline. It initializes the pipeline with the chosen LLM, embedding model, node parser, response synthesis method, and vector store. It is triggered by pressing the ‘Generate RAG Pipeline’ button. def generate_rag_pipeline(</p></div>
+  <p>def generate_rag_pipeline(file, llm, embed_model, node_parser, response_mode, vector_store):
+    if vector_store is not None:
+        # Set storage context if vector_store is not None
+        storage_context = StorageContext.from_defaults(vector_store=vector_store)
+    else:
+        storage_context = None</p>
+<p># Create the service context
+    service_context = ServiceContext.from_defaults(llm=llm, embed_model=embed_model, node_parser=node_parser)</p>
+<p># Create the vector index
+    vector_index = VectorStoreIndex.from_documents(documents=file, storage_context=storage_context, service_context=service_context, show_progress=True)
+    if storage_context:
+        vector_index.storage_context.persist(persist_dir=&quot;persist_dir&quot;)</p>
+<p># Create the query engine
+    query_engine = vector_index.as_query_engine(
+        response_mode=response_mode,
+        verbose=True,
+    )</p>
+<p>return query_engine</p>
+
+</section>
+
+<section class="section" id="s8">
+  <h2>🧩 generate_code_snippet Function</h2>
+  <p class="lead">This function is the culmination of the user’s selections, generating the Python code necessary to implement the configured RAG pipeline. It dynamically constructs the code snippet based on the chosen</p>
+  <div class="compare-grid">
+<div class="compare-card old"><h4>传统方法</h4><p>This function is the culmination of the user’s selections, generating the Python code necessary to implement the configured RAG pipeline. It dynamically constructs the code snippet based on the chosen</p></div>
+<div class="compare-card new"><h4>新方法</h4><p>LLM, embedding model, node parser, response synthesis method, and vector store, including the parameters set for the node parser.
+
+def generate_code_snippet(llm_choice, embed_model_choice, node_parse</p></div>
+</div>
+  <p>def generate_code_snippet(llm_choice, embed_model_choice, node_parser_choice, response_mode, vector_store_choice):
+    node_parser_params = st.session_state.get(&#x27;node_parser_params&#x27;, {})
+    print(node_parser_params)
+    code_snippet = &quot;from llama_index.llms import OpenAI, Gemini, Cohere\n&quot;
+    code_snippet += &quot;from llama_index.embeddings import HuggingFaceEmbedding\n&quot;
+    code_snippet += &quot;from llama_index import ServiceContext, VectorStoreIndex, StorageContext\n&quot;
+    code_snippet += &quot;from llama_index.node_parser import SentenceSplitter, CodeSplitter, SemanticSplitterNodeParser, TokenTextSplitter\n&quot;
+    code_snippet += &quot;from llama_index.node_parser.file import HTMLNodeParser, JSONNodeParser, MarkdownNodeParser\n&quot;
+    code_snippet += &quot;from llama_index.vector_stores import MilvusVectorStore, QdrantVectorStore\n&quot;
+    code_snippet += &quot;import qdrant_client\n\n&quot;</p>
+<p># LLM initialization
+    if llm_choice == &quot;GPT-3.5&quot;:
+        code_snippet += &quot;llm = OpenAI(temperature=0.1, model=&#x27;gpt-3.5-turbo-1106&#x27;)\n&quot;
+    elif llm_choice == &quot;GPT-4&quot;:
+        code_snippet += &quot;llm = OpenAI(temperature=0.1, model=&#x27;gpt-4-1106-preview&#x27;)\n&quot;
+    elif llm_choice == &quot;Gemini&quot;:
+        code_snippet += &quot;llm = Gemini(model=&#x27;models/gemini-pro&#x27;)\n&quot;
+    elif llm_choice == &quot;Cohere&quot;:
+        code_snippet += &quot;llm = Cohere(model=&#x27;command&#x27;, api_key=&#x27;&amp;amp;lt;YOUR_API_KEY&amp;amp;gt;&#x27;)  # Replace &amp;amp;lt;YOUR_API_KEY&amp;amp;gt; with your actual API key\n&quot;</p>
+<p># Embedding model initialization
+    code_snippet += f&quot;embed_model = HuggingFaceEmbedding(model_name=&#x27;{embed_model_choice}&#x27;)\n\n&quot;</p>
+<p># Node parser initialization
+    node_parsers = {
+        &quot;SentenceSplitter&quot;: f&quot;SentenceSplitter(chunk_size={node_parser_params.get(&#x27;chunk_size&#x27;, 1024)}, chunk_overlap={node_parser_params.get(&#x27;chunk_overlap&#x27;, 20)})&quot;,
+        &quot;CodeSplitter&quot;: f&quot;CodeSplitter(language={node_parser_params.get(&#x27;language&#x27;, &#x27;python&#x27;)}, chunk_lines={node_parser_params.get(&#x27;chunk_lines&#x27;, 40)}, chunk_lines_overlap={node_parser_params.get(&#x27;chunk_lines_overlap&#x27;, 15)}, max_chars={node_parser_params.get(&#x27;max_chars&#x27;, 1500)})&quot;,
+        &quot;SemanticSplitterNodeParser&quot;: f&quot;SemanticSplitterNodeParser(buffer_size={node_parser_params.get(&#x27;buffer_size&#x27;, 1)}, breakpoint_percentile_threshold={node_parser_params.get(&#x27;breakpoint_percentile_threshold&#x27;, 95)}, embed_model=embed_model)&quot;,
+        &quot;TokenTextSplitter&quot;: f&quot;TokenTextSplitter(chunk_size={node_parser_params.get(&#x27;chunk_size&#x27;, 1024)}, chunk_overlap={node_parser_params.get(&#x27;chunk_overlap&#x27;, 20)})&quot;,
+        &quot;HTMLNodeParser&quot;: f&quot;HTMLNodeParser(tags={node_parser_params.get(&#x27;tags&#x27;, [&#x27;p&#x27;, &#x27;h1&#x27;])})&quot;,
+        &quot;JSONNodeParser&quot;: &quot;JSONNodeParser()&quot;,
+        &quot;MarkdownNodeParser&quot;: &quot;MarkdownNodeParser()&quot;
+    }
+    code_snippet += f&quot;node_parser = {node_parsers[node_parser_choice]}\n\n&quot;</p>
+<p># Response mode
+    code_snippet += f&quot;response_mode = &#x27;{response_mode}&#x27;\n\n&quot;</p>
+
+</section>
+
+
+</div>
+
+<footer class="footer">
+  <p>LlamaIndex Blog Deep-Dive | 深度解析系列</p>
+  <div class="footer-links">
+    <a href="../">Hub 首页</a>
+    <a href="https://www.llamaindex.ai/blog/ragarch-building-a-no-code-rag-pipeline-configuration-one-click-rag-code-generation-tool-powered-b6e8eeb70089" target="_blank">原文链接</a>
+  </div>
+</footer>
+
+</body>
+</html>

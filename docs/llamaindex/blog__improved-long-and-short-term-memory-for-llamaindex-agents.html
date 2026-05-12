@@ -1,0 +1,461 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>深度解析：LlamaIndex Agent Memory: Short- &amp;amp; Long-Term Guide | LlamaIndex</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            --bg: #fafbfc;
+            --surface: #fff;
+            --text: #0f172a;
+            --text-secondary: #64748b;
+            --border: #e2e8f0;
+            --radius: 14px;
+            --amber: #d97706;
+            --amber-light: #fbbf24;
+            --amber-dark: #78350f;
+            --green: #10b981;
+            --red: #ef4444;
+            --blue: #3b82f6;
+            --purple: #6366f1;
+            --teal: #14b8a6;
+            --mono: 'JetBrains Mono', monospace;
+            --sans: 'Noto Sans SC', 'Inter', sans-serif;
+        }
+        * { margin:0; padding:0; box-sizing:border-box; }
+        body { font-family: var(--sans); background: var(--bg); color: var(--text); line-height: 1.7; }
+        a { color: var(--amber); text-decoration: none; }
+        a:hover { text-decoration: underline; }
+
+        /* Nav */
+        .nav {
+            position: sticky; top: 0; z-index: 100;
+            background: rgba(15,23,42,0.95);
+            backdrop-filter: blur(12px);
+            padding: 0 2rem; height: 56px;
+            display: flex; align-items: center; justify-content: space-between;
+        }
+        .nav-brand { color: #fbbf24; font-weight: 700; font-size: 1.1rem; }
+        .nav-back { color: #94a3b8; font-size: 0.9rem; }
+        .nav-back:hover { color: #fbbf24; text-decoration: none; }
+
+        /* Hero */
+        .hero {
+            background: linear-gradient(135deg, #0f172a 0%, #78350f 50%, #d97706 100%);
+            padding: 4rem 2rem 3rem;
+            color: #fff;
+        }
+        .hero-inner { max-width: 900px; margin: 0 auto; }
+        .hero h1 { font-size: 2rem; font-weight: 800; margin-bottom: 0.75rem; line-height: 1.3; }
+        .hero-desc { color: #fde68a; font-size: 1.05rem; margin-bottom: 2rem; }
+        .hero-meta { color: #d4a06a; font-size: 0.85rem; margin-bottom: 1.5rem; }
+        .stat-grid {
+            display: grid; grid-template-columns: repeat(4, 1fr); gap: 1rem;
+        }
+        .stat-card {
+            background: rgba(255,255,255,0.1);
+            border: 1px solid rgba(255,255,255,0.15);
+            border-radius: var(--radius);
+            padding: 1.2rem; text-align: center;
+            backdrop-filter: blur(6px);
+        }
+        .stat-value { font-size: 1.8rem; font-weight: 800; color: #fbbf24; }
+        .stat-label { font-size: 0.8rem; color: #fde68a; text-transform: uppercase; letter-spacing: 0.05em; }
+        .stat-desc { font-size: 0.75rem; color: #d4a06a; margin-top: 2px; }
+
+        /* Page */
+        .page { max-width: 900px; margin: 0 auto; padding: 2rem; }
+
+        /* TOC */
+        .toc {
+            display: grid; grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+            gap: 0.5rem; margin-bottom: 3rem;
+        }
+        .toc-item {
+            display: flex; align-items: center; gap: 8px;
+            padding: 0.6rem 1rem; border-radius: 8px;
+            background: var(--surface); border: 1px solid var(--border);
+            font-size: 0.85rem; color: var(--text); transition: all 0.2s;
+        }
+        .toc-item:hover { border-color: var(--amber); color: var(--amber); text-decoration: none; transform: translateY(-1px); }
+        .toc-num { font-family: var(--mono); font-weight: 700; color: var(--amber); font-size: 0.75rem; }
+
+        /* Section */
+        .section {
+            margin-bottom: 3rem;
+            background: var(--surface);
+            border-radius: var(--radius);
+            padding: 2rem;
+            border: 1px solid var(--border);
+        }
+        .section h2 {
+            font-size: 1.4rem; font-weight: 700; margin-bottom: 0.5rem;
+            color: var(--text);
+        }
+        .lead { color: var(--text-secondary); font-size: 0.95rem; margin-bottom: 1.5rem; }
+        .content-body { font-size: 0.95rem; }
+        .content-body p { margin-bottom: 1rem; }
+        .content-body ul { padding-left: 1.5rem; margin-bottom: 1rem; }
+        .content-body li { margin-bottom: 0.4rem; }
+        .content-body h3 { font-size: 1.1rem; font-weight: 600; margin: 1.5rem 0 0.75rem; color: var(--amber-dark); }
+        .content-body strong { color: var(--text); }
+
+        /* Code */
+        .code-block {
+            background: #1e293b; color: #e2e8f0; padding: 1rem 1.2rem;
+            border-radius: 8px; overflow-x: auto; font-family: var(--mono);
+            font-size: 0.82rem; line-height: 1.6; margin: 1rem 0;
+        }
+        .inline-code {
+            background: #f1f5f9; color: #b45309; padding: 2px 6px;
+            border-radius: 4px; font-family: var(--mono); font-size: 0.85em;
+        }
+
+        /* Visualizations */
+        .viz-block { margin-top: 1.5rem; padding-top: 1.5rem; border-top: 1px solid var(--border); }
+        .viz-title { font-size: 0.9rem; color: var(--amber-dark); margin-bottom: 1rem; font-weight: 600; }
+
+        /* Chart */
+        .chart { display: flex; flex-direction: column; gap: 0.6rem; }
+        .chart-row { display: flex; align-items: center; gap: 0.75rem; }
+        .chart-label { width: 140px; font-size: 0.8rem; color: var(--text-secondary); text-align: right; flex-shrink: 0; white-space: nowrap; overflow: hidden; text-overflow: ellipsis; }
+        .chart-bar-wrap { flex: 1; background: #f1f5f9; border-radius: 6px; height: 28px; overflow: hidden; }
+        .chart-bar {
+            height: 100%; border-radius: 6px; display: flex; align-items: center;
+            padding: 0 10px; font-size: 0.75rem; font-weight: 600; color: #fff;
+            transition: width 0.8s ease;
+        }
+        .chart-bar.amber { background: linear-gradient(90deg, #d97706, #fbbf24); }
+        .chart-bar.green { background: linear-gradient(90deg, #059669, #10b981); }
+        .chart-bar.blue { background: linear-gradient(90deg, #2563eb, #3b82f6); }
+        .chart-bar.purple { background: linear-gradient(90deg, #4f46e5, #6366f1); }
+        .chart-bar.teal { background: linear-gradient(90deg, #0d9488, #14b8a6); }
+        .chart-bar.red { background: linear-gradient(90deg, #dc2626, #ef4444); }
+
+        /* Flow */
+        .flow {
+            display: flex; align-items: center; gap: 0.5rem;
+            flex-wrap: wrap; justify-content: center;
+        }
+        .flow-step {
+            background: #fffbeb; border: 2px solid #fbbf24;
+            padding: 0.6rem 1rem; border-radius: 10px;
+            font-size: 0.82rem; font-weight: 600; color: #78350f;
+            white-space: nowrap;
+        }
+        .flow-step.amber { background: #fef3c7; border-color: #d97706; }
+        .flow-arrow { color: #d97706; font-size: 1.2rem; font-weight: 700; }
+
+        /* Concept grid */
+        .concept-grid {
+            display: flex; flex-wrap: wrap; gap: 0.5rem;
+        }
+        .concept-card {
+            background: #fffbeb; border: 1px solid #fde68a;
+            border-radius: 8px; padding: 0.5rem 0.75rem;
+        }
+
+        /* Badge */
+        .badge {
+            display: inline-block; padding: 3px 10px; border-radius: 20px;
+            font-size: 0.75rem; font-weight: 600;
+        }
+        .badge-amber { background: #fef3c7; color: #92400e; }
+        .badge-green { background: #d1fae5; color: #065f46; }
+        .badge-blue { background: #dbeafe; color: #1e40af; }
+        .badge-purple { background: #e0e7ff; color: #3730a3; }
+        .badge-teal { background: #ccfbf1; color: #115e59; }
+        .badge-red { background: #fee2e2; color: #991b1b; }
+
+        /* Block quote */
+        .block-q {
+            border-left: 4px solid #fbbf24;
+            background: #fffbeb; padding: 1rem 1.5rem;
+            border-radius: 0 8px 8px 0; margin: 1rem 0;
+            font-style: italic; color: #78350f;
+        }
+
+        /* Footer */
+        .footer {
+            background: #0f172a; color: #94a3b8; padding: 2rem;
+            text-align: center; font-size: 0.85rem;
+        }
+        .footer a { color: #fbbf24; }
+        .footer-links { margin-top: 0.5rem; }
+        .footer-links a { margin: 0 1rem; }
+
+        /* Responsive */
+        @media(max-width:768px) {
+            .hero h1 { font-size: 1.4rem; }
+            .stat-grid { grid-template-columns: repeat(2, 1fr); }
+            .toc { grid-template-columns: 1fr; }
+            .flow { flex-direction: column; gap: 8px; }
+            .flow-arrow { transform: rotate(90deg); }
+            .chart-label { width: 100px; font-size: 0.72rem; }
+            .section { padding: 1.2rem; }
+            .nav { padding: 0 1rem; }
+        }
+    </style>
+</head>
+<body>
+    <nav class="nav">
+        <a href="../" class="nav-brand">LlamaIndex 深度解析</a>
+        <a href="../" class="nav-back">&larr; Back to Hub</a>
+    </nav>
+
+    <header class="hero">
+        <div class="hero-inner">
+            <div class="hero-meta"> &middot; LlamaIndex Blog</div>
+            <h1>LlamaIndex Agent Memory: Short- &amp;amp; Long-Term Guide | LlamaIndex</h1>
+            <p class="hero-desc">探索 AI Agent 架构与实现，了解如何构建智能自主系统</p>
+            <div class="stat-grid">
+                <div class="stat-card">
+                <div class="stat-value">6</div>
+                <div class="stat-label">Sections</div>
+                <div class="stat-desc">章节</div>
+            </div>
+<div class="stat-card">
+                <div class="stat-value">8</div>
+                <div class="stat-label">Code</div>
+                <div class="stat-desc">代码块</div>
+            </div>
+<div class="stat-card">
+                <div class="stat-value">1400+</div>
+                <div class="stat-label">Words</div>
+                <div class="stat-desc">字数</div>
+            </div>
+<div class="stat-card">
+                <div class="stat-value">10</div>
+                <div class="stat-label">Tech</div>
+                <div class="stat-desc">技术栈</div>
+            </div>
+
+            </div>
+        </div>
+    </header>
+
+    <div class="page">
+        <nav class="toc">
+            <a href="#s1" class="toc-item"><span class="toc-num">01</span>Overview</a>
+<a href="#s2" class="toc-item"><span class="toc-num">02</span>When to Use Memory</a>
+<a href="#s3" class="toc-item"><span class="toc-num">03</span>The Basic Usage of Memory</a>
+<a href="#s4" class="toc-item"><span class="toc-num">04</span>Long-Term Memory Blocks</a>
+<a href="#s5" class="toc-item"><span class="toc-num">05</span>Customizing Memory</a>
+<a href="#s6" class="toc-item"><span class="toc-num">06</span>Future Improvements</a>
+        </nav>
+
+        
+    <section class="section" id="s1">
+        <h2>📋 Overview</h2>
+        <p class="lead">For any agentic application that needs to retain basic information about past conversations, about its users, their past interactions and so on, me...</p>
+        <div class="content-body">
+            <p>For any agentic application that needs to retain basic information about past conversations, about its users, their past interactions and so on, memory is unsurprisingly a core component. So, as part of our latest round of improvements to LlamaIndex, we’ve introduced a <a href="https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/memory/#memory" target="_blank">new and improved <code class="inline-code">Memory</code>  component</a>.</p>
+<p>In this article, we will walk through some of the core features of the new LlamaIndex memory component, and how you can start using it in your own agentic applications. First, we’ll look into the most basic implementation of memory, where we simply store chat message history. Then, we’ll also look into more advanced implementations with our latest additions of long-term memory blocks.</p>
+        </div>
+        
+            <div class="viz-block">
+                <h4 class="viz-title">文章结构流程</h4>
+                <div class="flow"><div class="flow-step">Overview</div>
+<div class="flow-arrow">&#8594;</div>
+<div class="flow-step amber">When to Use Memory</div>
+<div class="flow-arrow">&#8594;</div>
+<div class="flow-step">The Basic Usage of M</div>
+<div class="flow-arrow">&#8594;</div>
+<div class="flow-step amber">Long-Term Memory Blo</div>
+<div class="flow-arrow">&#8594;</div>
+<div class="flow-step">Customizing Memory</div></div>
+            </div>
+    </section>
+    <section class="section" id="s2">
+        <h2>📌 When to Use Memory</h2>
+        <p class="lead">Not all AI applications need a memory implementation. A lot of agentic applications we see today don’t necessarily rely on chat history, or persist...</p>
+        <div class="content-body">
+            <p>Not all AI applications need a memory implementation. A lot of agentic applications we see today don’t necessarily rely on chat history, or persistent information about their users. For example, our very own <a href="/llamaextract" target="_blank">LlamaExtract</a> is an agentic document extraction application, that uses LLMs to extract structured information from complex files. It doesn’t rely on retaining any sort of memory while doing so.</p>
+<p>But, if the essence of an application relies on persistent information that you’d rather not repeat (someone’s name and age for example), and/or any form of conversation flow (so virtually any application with a chat interface), memory quickly becomes quite a crucial component.</p>
+<p>Think of this simple (and annoying) chat flow where no form of memory has been implemented:</p>
+<p>Conversation with no memory</p>
+<p>Notice how by the time I get to my second question, the agent is not able to provide me with any answers. The simple reason is that it has no context as to what ‘there’ is in the sentence ‘Can you tell me what the weather is like there?’.</p>
+<p>This can be solved with a super simple step where we store chat message history, and send that to the LLM as context. That’s exactly how the most basic form of the LlamaIndex Memory starts:</p>
+        </div>
+        
+            <div class="viz-block">
+                <h4 class="viz-title">内容深度分析</h4>
+                <div class="chart"><div class="chart-row">
+            <div class="chart-label">Overview</div>
+            <div class="chart-bar-wrap"><div class="chart-bar amber" style="width:26%">26%</div></div>
+        </div>
+<div class="chart-row">
+            <div class="chart-label">When to Use Memory</div>
+            <div class="chart-bar-wrap"><div class="chart-bar green" style="width:41%">41%</div></div>
+        </div>
+<div class="chart-row">
+            <div class="chart-label">The Basic Usage of</div>
+            <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:46%">46%</div></div>
+        </div>
+<div class="chart-row">
+            <div class="chart-label">Long-Term Memory B</div>
+            <div class="chart-bar-wrap"><div class="chart-bar purple" style="width:100%">100%</div></div>
+        </div>
+<div class="chart-row">
+            <div class="chart-label">Customizing Memory</div>
+            <div class="chart-bar-wrap"><div class="chart-bar teal" style="width:35%">35%</div></div>
+        </div>
+<div class="chart-row">
+            <div class="chart-label">Future Improvement</div>
+            <div class="chart-bar-wrap"><div class="chart-bar red" style="width:43%">43%</div></div>
+        </div></div>
+            </div>
+    </section>
+    <section class="section" id="s3">
+        <h2>📌 The Basic Usage of Memory</h2>
+        <p class="lead">In the most simple form, the LlamaIndex Memory  will store any number of chat messages that fit into a given token limit, into a SQL database, whic...</p>
+        <div class="content-body">
+            <p>In the most simple form, the LlamaIndex <code class="inline-code">Memory</code>  will store any number of chat messages that fit into a given token limit, into a SQL database, which defaults to an in-memory SQLite database. In short, this memory will be able to store chat messages, up to a limit. Once that limit is reached (depending on how the memory is configured), the oldest messages in chat history will either get discarded, or flushed to long-term memory.</p>
+<p>So, in its most basic form, the LlamaIndex Memory component allows you to build agentic workflows that are able to retain past conversations. You can store chat history into this memory either by initializing an agent with memory:</p>
+<p>python</p>
+<pre class="code-block"><code>from llama_index.core.agent.workflow import FunctionAgent
+from llama_index.core.memory import Memory
+<p>memory = Memory.from_defaults(session_id="my_session", token_limit=40000)</p>
+<p>agent = FunctionAgent(llm=llm, tools=tools)</p>
+<p>response = await agent.run("&amp;#x3C;question that invokes tool&gt;", memory=memory)
+</code></pre></p>
+<p>Or, by using <code class="inline-code">memory.put_messages()</code>  to add specific chat messages into memory:</p>
+<p>python</p>
+<pre class="code-block"><code>memory = Memory.from_defaults(session_id="my_session",
+                              token_limit=40000)
+memory.put_messages(
+    [
+        ChatMessage(role="user", content="Hello, world!"),
+        ChatMessage(role="assistant", content="Hello, world to you too!"),
+<p>)
+chat_history = memory.get()
+</code></pre></p>
+        </div>
+        
+            <div class="viz-block">
+                <h4 class="viz-title">核心技术概念</h4>
+                <div class="concept-grid"><div class="concept-card"><span class="badge badge-amber">API</span></div>
+<div class="concept-card"><span class="badge badge-green">Agent</span></div>
+<div class="concept-card"><span class="badge badge-blue">Async</span></div>
+<div class="concept-card"><span class="badge badge-purple">Chroma</span></div>
+<div class="concept-card"><span class="badge badge-teal">Deploy</span></div>
+<div class="concept-card"><span class="badge badge-red">Document</span></div></div>
+            </div>
+    </section>
+    <section class="section" id="s4">
+        <h2>📌 Long-Term Memory Blocks</h2>
+        <p class="lead">For some use-cases, the simple chat history implementation above might be enough. But for others, it makes sense to implement something a bit more ...</p>
+        <div class="content-body">
+            <p>For some use-cases, the simple chat history implementation above might be enough. But for others, it makes sense to implement something a bit more advanced. We introduce 3 new “memory blocks” that act as long-term memory:
+<ul><li>Static memory block: which keeps track of static, non-changing information</li>
+<li>Fact extraction memory block: that populates a list of facts extracted from the conversation</li>
+<li>Vector memory block: which allows us to make use of classic embedding generation vector search as a way to both store chat history and fetch relevant parts of old conversations.</li></p>
+</ul>A memory component can be initialized with any number of these long-term memory blocks. Then, every time we reach the token limit for short-term memory, it will write the relevant information to these long-term memory blocks. To add long-term memory blocks we initialize memory with <code class="inline-code">memory_blocks</code> :
+<p>python</p>
+<pre class="code-block"><code>blocks = [&amp;#x3C;list of long-term memory blocks&gt;]
+<p>memory = Memory.from_defaults(
+    session_id="my_session",
+    memory_blocks=blocks,
+    insert_method="system")
+</code></pre>
+    Let’s see in more detail how we can initialize each block.</p>
+<h3>Static Information as long-term memory</h3>
+<p>Imagine information that might be relevant to your agentic application that is less likely to change over time. For example, your name, where you live, where you work etc. The <code class="inline-code">StaticMemoryBlock</code>  allows you to provide this information as added context for your agent:</p>
+<p>python</p>
+<pre class="code-block"><code>from llama_index.core.memory import StaticMemoryBlock
+<p>static_info_block = StaticMemoryBlock(
+    name="core_info",
+	static_content="My name is Tuana, and I live in Amsterdam. I work at LlamaIndex.",
+	priority=0
+)
+</code></pre>
+    You may think that the information here are facts, so are more appropriate for the fact extraction block. The main difference is that the fact extraction block is in itself an LLM powered extraction system, that is designed to extract facts as the conversation is happening.</p>
+<h3>Facts as long-term memory</h3>
+<p>My personal favorite. The <code class="inline-code">FactExtractionMemoryBlock</code>  is a unique long-term memory block that is initialized with a default prompt (which you can override), that instructs an LLM to extract a list of facts from ongoing conversations. To initialize this block:</p>
+<p>python</p>
+<pre class="code-block"><code>from llama_index.core.memory import FactExtractionMemoryBlock
+from llama_index.llms.openai import OpenAI
+<p>llm = OpenAI(model="gpt-4o-mini")</p>
+<p>facts_block = FactExtractionMemoryBlock(
+    name="extracted_info",
+	llm=llm,
+    max_facts=50,
+    priority=1
+)
+</code></pre></p>
+<p>Then, for example, after a long conversation with an agent where I provide some information about myself, we may get the following:</p>
+<p>python</p>
+<pre class="code-block"><code>memory.memory_blocks[1].facts
+<p># ['User is 29 years old.', 'User has a sister.']
+</code></pre></p>
+<h3>Vector search as long-term memory</h3>
+<p>Finally, we also have the <code class="inline-code">VectorMemoryBlock</code>  which has to be initialized with <a href="https://docs.llamaindex.ai/en/stable/module_guides/storing/vector_stores/" target="_blank">a vector store</a> like Weaviate, Qdrant or similar. The idea here is simple: once we reach the token limit for short-term memory, the memory component will write all the chat messages that have occurred to the vector store we initialized this block with. Once we do that, any ongoing conversations, where appropriate, can fetch relevant conversations from history and use that as context before replying to the user.</p>
+<p>python</p>
+<pre class="code-block"><code>from llama_index.core.memory import VectorMemoryBlock
+<p>vector_block = VectorMemoryBlock(
+    name="vector_memory",
+    # required: pass in a vector store like qdrant, chroma, weaviate, milvus, etc.
+    vector_store=vector_store,
+    priority=2,
+    embed_model=embed_model,
+    similarity_top_k=2,
+)
+</code></pre></p>
+        </div>
+        
+    </section>
+    <section class="section" id="s5">
+        <h2>⚡ Customizing Memory</h2>
+        <p class="lead">On top of all of these, we are also making it possible for you to introduce your own memory blocks by extending the BaseMemoryBlock  class. For exa...</p>
+        <div class="content-body">
+            <p>On top of all of these, we are also making it possible for you to introduce your own memory blocks by extending the <code class="inline-code">BaseMemoryBlock</code>  class. For example, below we define a memory block that counts the mention of a given name in the conversation:</p>
+<p>python</p>
+<pre class="code-block"><code>from typing import Optional, List, Any
+from llama_index.core.llms import ChatMessage
+from llama_index.core.memory.memory import BaseMemoryBlock
+<p>class MentionCounter(BaseMemoryBlock[str]):
+    """
+    A memory block that counts the number of times a user mentions a specific name.
+    """
+    mention_name: str = "Logan"
+    mention_count: int = 0</p>
+<p>async def _aget(self, messages: Optional[List[ChatMessage]] = None, **block_kwargs: Any) -&gt; str:
+        return f"Logan was mentioned {self.mention_count} times."</p>
+<p>async def _aput(self, messages: List[ChatMessage]) -&gt; None:
+        for message in messages:
+            if self.mention_name in message.content:
+                self.mention_count += 1</p>
+<p>async def atruncate(self, content: str, tokens_to_truncate: int) -&gt; Optional[str]:
+        return ""
+</code></pre></p>
+        </div>
+        
+    </section>
+    <section class="section" id="s6">
+        <h2>🔮 Future Improvements</h2>
+        <p class="lead">We would love for you to try out these latest improvements to the memory component for agents. If you do, please let us know how you got on in our ...</p>
+        <div class="content-body">
+            <p>We would love for you to try out these latest improvements to the memory component for agents. If you do, please let us know how you got on in our community Discord server.</p>
+<p>But, that being said, we see a few improvements coming for this component. For example, the current implementation only allows you to make use of memory as part of the backend of an agent. We’d love to provide the option of using memory as one of the suite of tools for a tool calling agent.</p>
+<p>Additionally, we currently only support SQL databases (<a href="https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/memory/#remote-memory" target="_blank">including remote databases which you can configure</a>). But, we would also like to add support for NoSQL databases like MongoDB, Redis and so on.</p>
+<p>Finally, we can imagine plenty of scenarios where the <code class="inline-code">FactExtractionMemoryBlock</code>  might benefit from structured outputs. This would allow us to initialize the block with a predefined set of fields (facts) that the agent will fill in along the way.</p>
+<p>To get started and learn more about how to build agents with both short-term and long-term memory:
+<ul><li><a href="https://docs.llamaindex.ai/en/stable/module_guides/deploying/agents/memory" target="_blank">Visit the Memory documentation</a></li>
+<li><a href="https://docs.llamaindex.ai/en/latest/api_reference/memory/memory/" target="_blank">See the API docs</a></li></ul></p>
+        </div>
+        
+    </section>
+    </div>
+
+    <footer class="footer">
+        <div>LlamaIndex Blog 深度解析系列</div>
+        <div class="footer-links">
+            <a href="../">返回 Hub</a>
+            <a href="https://www.llamaindex.ai/blog/improved-long-and-short-term-memory-for-llamaindex-agents" target="_blank">阅读原文</a>
+        </div>
+    </footer>
+</body>
+</html>

@@ -1,0 +1,298 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：DeepSeek-OCR Vision Compression Guide For Document AI | LlamaIndex</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafbfc;
+      --surface: #fff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --amber: #d97706;
+      --amber-light: #fbbf24;
+      --amber-dark: #92400e;
+      --purple: #6366f1;
+      --teal: #14b8a6;
+      --green: #10b981;
+      --red: #ef4444;
+      --blue: #3b82f6;
+      --pink: #ec4899;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans SC', 'Inter', sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:var(--sans); background:var(--bg); color:var(--text); line-height:1.7; }
+
+    .nav { position:sticky; top:0; background:rgba(15,23,42,.92); backdrop-filter:blur(12px); z-index:100; border-bottom:1px solid rgba(255,255,255,.08); }
+    .nav-inner { max-width:1100px; margin:0 auto; padding:12px 24px; display:flex; justify-content:space-between; align-items:center; }
+    .nav-brand { color:#fbbf24; text-decoration:none; font-weight:700; display:flex; align-items:center; gap:8px; }
+    .nav-logo { font-size:20px; }
+    .nav a:last-child { font-size:13px; color:rgba(255,255,255,.6); text-decoration:none; }
+    .nav a:last-child:hover { color:#fbbf24; }
+
+    .hero { background:linear-gradient(135deg,#0f172a 0%,#78350f 50%,#d97706 100%); color:#fff; padding:60px 24px 48px; }
+    .hero-inner { max-width:1100px; margin:0 auto; }
+    .hero-tag { display:inline-block; background:rgba(251,191,36,.15); color:#fbbf24; padding:4px 14px; border-radius:20px; font-size:13px; font-weight:500; margin-bottom:16px; letter-spacing:.5px; }
+    .hero h1 { font-size:clamp(24px,4vw,42px); font-weight:800; line-height:1.2; margin-bottom:12px; }
+    .hero p { font-size:17px; color:rgba(255,255,255,.8); max-width:700px; margin-bottom:28px; line-height:1.6; }
+    .hero-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; max-width:600px; }
+    .stat { text-align:center; }
+    .stat-num { display:block; font-size:28px; font-weight:800; color:#fbbf24; font-family:var(--mono); }
+    .stat-label { font-size:12px; color:rgba(255,255,255,.6); text-transform:uppercase; letter-spacing:.5px; }
+
+    .page { max-width:1100px; margin:0 auto; padding:32px 24px 60px; }
+
+    .toc { margin-bottom:40px; }
+    .toc-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:10px; }
+    .toc-item { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); text-decoration:none; color:var(--text); font-size:14px; font-weight:500; transition:all .2s; }
+    .toc-item:hover { border-color:var(--amber); transform:translateY(-1px); box-shadow:0 4px 12px rgba(217,119,6,.1); }
+    .toc-num { font-size:16px; }
+
+    .section { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:32px; margin-bottom:24px; }
+    .section h2 { font-size:22px; font-weight:700; margin-bottom:12px; color:var(--text); }
+    .section h3 { font-size:17px; font-weight:600; margin:20px 0 8px; color:var(--amber-dark); }
+    .lead { color:var(--text-secondary); font-size:15px; margin-bottom:16px; line-height:1.7; }
+    .section p { margin-bottom:12px; font-size:15px; line-height:1.7; }
+
+    .chart { margin:20px 0; }
+    .chart-row { display:flex; align-items:center; margin-bottom:8px; }
+    .chart-label { width:160px; font-size:13px; font-weight:500; text-align:right; padding-right:12px; color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:28px; overflow:hidden; }
+    .chart-bar { height:100%; border-radius:8px; display:flex; align-items:center; padding-left:10px; font-size:12px; font-weight:600; color:#fff; transition:width .6s ease; min-width:40px; }
+    .chart-bar.amber { background:linear-gradient(90deg,#d97706,#f59e0b); }
+    .chart-bar.purple { background:linear-gradient(90deg,#6366f1,#818cf8); }
+    .chart-bar.teal { background:linear-gradient(90deg,#0d9488,#14b8a6); }
+    .chart-bar.green { background:linear-gradient(90deg,#059669,#10b981); }
+    .chart-bar.blue { background:linear-gradient(90deg,#2563eb,#3b82f6); }
+    .chart-bar.red { background:linear-gradient(90deg,#dc2626,#ef4444); }
+
+    .timeline { position:relative; padding-left:28px; margin:20px 0; }
+    .timeline::before { content:''; position:absolute; left:8px; top:0; bottom:0; width:3px; background:linear-gradient(180deg,#d97706,#6366f1,#14b8a6); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:20px; padding-left:16px; }
+    .tl-dot { position:absolute; left:-24px; top:4px; width:14px; height:14px; border-radius:50%; border:3px solid var(--amber); background:#fff; }
+    .tl-item:nth-child(2) .tl-dot { border-color:var(--purple); }
+    .tl-item:nth-child(3) .tl-dot { border-color:var(--teal); }
+    .tl-item:nth-child(4) .tl-dot { border-color:var(--green); }
+    .tl-item:nth-child(5) .tl-dot { border-color:var(--blue); }
+    .tl-phase { font-weight:600; font-size:15px; margin-bottom:4px; }
+    .tl-desc { font-size:13px; color:var(--text-secondary); line-height:1.5; }
+
+    .compare-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin:20px 0; }
+    .compare-card { padding:16px; border-radius:var(--radius); font-size:14px; line-height:1.6; }
+    .compare-card.old { background:#fef2f2; border:1px solid #fecaca; }
+    .compare-card.new { background:#f0fdf4; border:1px solid #bbf7d0; }
+
+    .flow { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:20px 0; }
+    .flow-step { padding:10px 18px; background:#f8fafc; border:2px solid var(--border); border-radius:var(--radius); font-size:13px; font-weight:600; text-align:center; }
+    .flow-step.purple { background:#eef2ff; border-color:var(--purple); color:var(--purple); }
+    .flow-arrow { color:var(--amber); font-size:20px; font-weight:700; }
+
+    .fail-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:20px 0; }
+    .fail-grid .card { padding:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); font-size:13px; line-height:1.6; }
+
+    .block-q { margin:20px 0; padding:20px 24px; background:linear-gradient(135deg,#fffbeb,#fef3c7); border-left:4px solid var(--amber); border-radius:0 var(--radius) var(--radius) 0; font-style:italic; color:#92400e; font-size:14px; line-height:1.7; }
+
+    .tbl-wrap { overflow-x:auto; margin:20px 0; }
+    table { width:100%; border-collapse:collapse; font-size:14px; }
+    th { background:#f8fafc; padding:10px 14px; text-align:left; font-weight:600; border-bottom:2px solid var(--border); white-space:nowrap; }
+    td { padding:10px 14px; border-bottom:1px solid var(--border); }
+    tr:hover td { background:#fffbeb; }
+
+    .badge { display:inline-block; padding:3px 10px; border-radius:12px; font-size:12px; font-weight:500; }
+    .badge-amber { background:#fffbeb; color:#92400e; }
+    .badge-purple { background:#eef2ff; color:#4338ca; }
+    .badge-green { background:#f0fdf4; color:#166534; }
+
+    .footer { background:#0f172a; color:rgba(255,255,255,.6); padding:32px 24px; text-align:center; font-size:13px; }
+    .footer a { color:#fbbf24; text-decoration:none; }
+    .footer a:hover { text-decoration:underline; }
+    .footer-links { display:flex; justify-content:center; gap:24px; margin-bottom:12px; flex-wrap:wrap; }
+
+    @media(max-width:768px) {
+      .hero-stats { grid-template-columns:repeat(2,1fr); }
+      .compare-grid, .fail-grid { grid-template-columns:1fr; }
+      .chart-label { width:100px; font-size:12px; }
+      .flow { flex-direction:column; gap:6px; }
+      .flow-arrow { transform:rotate(90deg); }
+      .toc-grid { grid-template-columns:1fr; }
+      .section { padding:20px 16px; }
+      .hero { padding:40px 16px 32px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="../" class="nav-brand">
+        <span class="nav-logo">🦙</span>
+        <span>LlamaIndex Blog Hub</span>
+      </a>
+      <a href="./">← Back to Hub</a>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="hero-tag">文档处理</div>
+      <h1>DeepSeek-OCR Vision Compression Guide For Document AI | LlamaIndex</h1>
+      <p>DeepSeek recently released a new [paper](https://arxiv.org/abs/2510.18234) and [model](https://huggingface.co/deepseek-ai/DeepSeek-OCR) that presents a shift in how we think about documents and context. The model name &quot;DeepSeek-OCR&quot; might imply improvements in reading text from images, but their app</p>
+      <div class="hero-stats">
+        <div class="stat"><span class="stat-num">13</span><span class="stat-label">核心章节</span></div><div class="stat"><span class="stat-num">8</span><span class="stat-label">关键概念</span></div><div class="stat"><span class="stat-num">6min</span><span class="stat-label">阅读时长</span></div><div class="stat"><span class="stat-num">1542</span><span class="stat-label">总字数</span></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc"><div class="toc-grid">
+  <a href="#s1" class="toc-item"><span class="toc-num">💡</span>What DeepSeek-OCR Actually Is</a>
+  <a href="#s5" class="toc-item"><span class="toc-num">🎯</span>The Traditional Parsing Problem</a>
+  <a href="#s7" class="toc-item"><span class="toc-num">🔧</span>How LlamaParse Solves This Today</a>
+  <a href="#s8" class="toc-item"><span class="toc-num">🚀</span>The Future of Document Parsing and Memory</a>
+  <a href="#s11" class="toc-item"><span class="toc-num">🔗</span>What This Means for LlamaParse</a>
+  <a href="#s12" class="toc-item"><span class="toc-num">💻</span>Resources to Learn More</a>
+</div></nav>
+
+    <section class="section" id="s1">
+  <h2>💡 What DeepSeek-OCR Actually Is</h2>
+  <p class="lead">When DeepSeek released their &quot;OCR&quot; model, the name arguably undersold what they&#x27;d built. They built an optimized a vision-text compression system that treats images as compact representations of textu</p>
+  <p>✨ Insight #1: Instead of converting documents to text tokens (expensive), what if we kept them as compressed visual representations (cheap)?</p>
+  <h3>How It Works</h3>
+  <p>DeepSeek&#x27;s DeepEncoder uses a two-stage architecture:</p>
+  <p>Stage 1: High-Resolution Perception A SAM model (80M parameters) processes the document with window attention, capturing fine text details at high resolution without exploding memory usage.</p>
+  <p>Stage 2: Intelligent Compression A 16× convolutional compressor reduces tokens, then a CLIP model (300M parameters) applies global attention to understand relationships across the entire document.</p>
+  <h3>Compression at Multiple Resolutions</h3>
+  <p>They offer different &quot;zoom levels&quot; depending on your needs:</p>
+  <p>Tiny mode: 64 tokens per page (20× compression) Small mode: 100 tokens per page (10× compression) Base mode: 256 tokens per page (~4× compression) Large mode: 400 tokens per page (~2.5× compression) Gundam mode: Dynamic (400-1,800 tokens for complex layouts)</p>
+  <p>For comparison: a typical VLM like Qwen2.5-VL uses 3,949 tokens per page. InternVL3 uses 6,790. DeepSeek-OCR&#x27;s Base mode achieves competitive accuracy with just 256 tokens—a 15-26× reduction.</p>
+  <h3>The Vision Memory Paradigm</h3>
+  <p>Their paper proposes an intriguing application of this compression architecture: keep recent context as high-fidelity text tokens, but compress older context into progressively lower-resolution visual representations. Like human memory—recent conversations stay sharp, older ones fade but remain accessible.</p>
+<div class="timeline">
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Ready to get started with LlamaParse?</div>
+    <div class="tl-desc">Explore our free and paid plans today.
+
+
+ -   Learn more</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">What DeepSeek-OCR Actually Is</div>
+    <div class="tl-desc">When DeepSeek released their &quot;OCR&quot; model, the name arguably undersold what they&#x27;d built. They built an opt</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">How It Works</div>
+    <div class="tl-desc">DeepSeek&#x27;s DeepEncoder uses a two-stage architecture:
+
+
+
+ Stage 1: High-Resolution Perception A SAM model (80M p</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Compression at Multiple Resolutions</div>
+    <div class="tl-desc">They offer different &quot;zoom levels&quot; depending on your needs:
+
+
+-  Tiny mode: 64 tokens per page (20× compre</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">The Vision Memory Paradigm</div>
+    <div class="tl-desc">Their paper proposes an intriguing application of this compression architecture: keep recent context as high-fidelity te</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">The Traditional Parsing Problem</div>
+    <div class="tl-desc">Before we dive into what this changes, let&#x27;s establish why document parsing exists in the first place.
+
+
+
+ Most valu</div>
+  </div>
+</div>
+</section>
+<section class="section" id="s5">
+  <h2>🎯 The Traditional Parsing Problem</h2>
+  <p class="lead">Before we dive into what this changes, let&#x27;s establish why document parsing exists in the first place.</p>
+  <p>Most valuable information lives in formats LLMs can&#x27;t natively consume: PDFs with complex layouts, tables spanning pages, documents mixing charts and text. You need to translate these into something an LLM understands: clean text, markdown, structured JSON, layout information. Other downstream applications beyond LLMs also benefit from structured outputs like this.</p>
+  <h3>Existing Approaches and Their Limitations</h3>
+  <p>Pure OCR Approach:</p>
+  <p>No visual understanding of what it “reads” (just character extraction) Rigid heuristics that don’t generalize to varied inputs Lacks semantic structure preservation</p>
+  <p>Vision-Language Models (VLMs):</p>
+</section>
+<section class="section" id="s7">
+  <h2>🔧 How LlamaParse Solves This Today</h2>
+  <p class="lead">At LlamaIndex, parsing is central to what we do. LlamaParse takes a multi-agent approach, combining LLM intelligence, VLMs, and OCR: essentially running specialized agents that work together:</p>
+  <p>Vision Agent: Identifies layout elements (tables, headers, columns) OCR Agent: Extracts text with high precision Structure Agent: Builds semantic relationships (&quot;this table belongs to Section 2.3&quot;) LLM Agent: Understands context and meaning Synthesis Agent: Outputs clean, structured results (markdown, JSON, etc.)</p>
+  <p>Think of it as a team of specialists examining your document from different angles, cross-checking each other&#x27;s work to minimize errors.</p>
+  <p>Crucially, LlamaParse produces structured output: tables as JSON, semantic hierarchies, and layout elements. This structured representation is what makes downstream AI applications possible.</p>
+<div class="fail-grid">
+  <div class="card"><strong>Vision Agent</strong><br>Identifies layout elements (tables, headers, columns)</div>
+  <div class="card"><strong>OCR Agent</strong><br>Extracts text with high precision</div>
+  <div class="card"><strong>Structure Agent</strong><br>Builds semantic relationships (&quot;this table belongs to Section 2.3&quot;)</div>
+  <div class="card"><strong>LLM Agent</strong><br>Understands context and meaning</div>
+  <div class="card"><strong>Synthesis Agent</strong><br>Outputs clean, structured results (markdown, JSON, etc.)</div>
+</div>
+</section>
+<section class="section" id="s8">
+  <h2>🚀 The Future of Document Parsing and Memory</h2>
+  <p class="lead">With the introduction of models like DeepSeek-OCR, here are two possible futures we can image as the technology matures.</p>
+  <h3>Future 1: “Parsing” Becomes a Form of Compression</h3>
+  <p>For many applications (particularly retrieval-augmented generation (RAG), document Q&amp;A, and summarization) DeepSeek-OCR suggests you might not need what we currently call “parsing” at all.</p>
+  <p>You could imagine a workflow like:</p>
+  <p>Render PDFs as images (at appropriate resolution) Encode with DeepSeek-OCR-style compression Store compressed representations in vector database (ColPali, anyone?) Query directly against visual encodings Let the VLM decode relevant sections on-demand</p>
+  <h3>Future 2: Parsing + Compression</h3>
+  <p>Not all applications just need understanding. If you&#x27;re building systems that require:</p>
+  <p>Structured data extraction (tables as JSON/Markdown/SQL for databases) Semantic hierarchies (section trees, document structure) Cross-references (linking citations, footnotes, appendices) Precise text manipulation (redaction, editing, compliance checking)</p>
+  <p>...then you still need parsing. Because compressed visual representations don&#x27;t give you machine-readable structure, just efficient understanding.</p>
+</section>
+<section class="section" id="s11">
+  <h2>🔗 What This Means for LlamaParse</h2>
+  <p class="lead">The honest truth is that we think the the most likely path forward for LlamaParse and similar technologies will see their stack incorporate DeepSeek-OCR-like technology. But, it will boil down to what</p>
+  <p>If you&#x27;re building RAG systems where understanding is sufficient, DeepSeek-OCR-style compression and models like ColPali could handle 80% of use cases more efficiently than traditional parsing, assuming that the underlying technology continues to scale.</p>
+  <p>But if you&#x27;re building applications that need structured data (databases, hierarchies, compliance systems, precise extraction) classic parsing will remain essential. Compression gives you understanding; parsing gives you structure. If anything, models like DeepSeek-OCR will improve existing agentic OCR pipelines like LlamaParse in the future.</p>
+  <p>At the end of the day, our goal is to provide the most flexible and accurate document parsing system.</p>
+</section>
+<section class="section" id="s12">
+  <h2>💻 Resources to Learn More</h2>
+  <p class="lead">For those wanting to dive deeper into DeepSeek-OCR&#x27;s approach:</p>
+  <p>DeepSeek-OCR Paper - The original technical paper &quot;DeepSeek-OCR: Contexts Optical Compression&quot; with full technical details, benchmarks, and methodology DeepSeek-OCR Model - The released model on Hugging Face Video Explanation by Sam Witteveen - An excellent breakdown of why this is about compression rather than traditional OCR LlamaParse Documentation - Learn more about our approach to intelligent document parsing</p>
+  <p>Have thoughts on how compression and parsing should evolve together? We&#x27;d love to hear from you. Join the discussion in our Discord community or reach out on Twitter/X.</p>
+</section>
+
+    <section class="section" id="key-concepts">
+  <h2>🔑 核心概念 Key Concepts</h2>
+  <p class="lead">本文涉及的关键技术概念与术语。</p>
+<div class="flow">
+  <div class="flow-step">vision as a compression algorithm</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Insight #1</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Stage 1: High-Resolution Perception</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Stage 2: Intelligent Compression</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step purple">Tiny mode</div>
+</div>
+</section>
+
+  </div>
+
+  <footer class="footer">
+    <div class="footer-links">
+      <a href="./">LlamaIndex Blog Hub</a>
+      <a href="https://www.llamaindex.ai/blog/beyond-ocr" target="_blank" rel="noopener">原文链接 Original</a>
+      <a href="../">Engineering Blogs Hub</a>
+    </div>
+    <p>Generated from LlamaIndex blog content for learning purposes.</p>
+  </footer>
+</body>
+</html>

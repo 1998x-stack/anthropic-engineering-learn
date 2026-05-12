@@ -1,0 +1,280 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：OCR for KYC: Why Standard Text Extraction Falls Short</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafbfc;
+      --surface: #fff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --amber: #d97706;
+      --amber-light: #fbbf24;
+      --amber-dark: #92400e;
+      --purple: #6366f1;
+      --teal: #14b8a6;
+      --green: #10b981;
+      --red: #ef4444;
+      --blue: #3b82f6;
+      --pink: #ec4899;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans SC', 'Inter', sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family:var(--sans); background:var(--bg); color:var(--text); line-height:1.7; }
+
+    .nav { position:sticky; top:0; background:rgba(15,23,42,.92); backdrop-filter:blur(12px); z-index:100; border-bottom:1px solid rgba(255,255,255,.08); }
+    .nav-inner { max-width:1100px; margin:0 auto; padding:12px 24px; display:flex; justify-content:space-between; align-items:center; }
+    .nav-brand { color:#fbbf24; text-decoration:none; font-weight:700; display:flex; align-items:center; gap:8px; }
+    .nav-logo { font-size:20px; }
+    .nav a:last-child { font-size:13px; color:rgba(255,255,255,.6); text-decoration:none; }
+    .nav a:last-child:hover { color:#fbbf24; }
+
+    .hero { background:linear-gradient(135deg,#0f172a 0%,#78350f 50%,#d97706 100%); color:#fff; padding:60px 24px 48px; }
+    .hero-inner { max-width:1100px; margin:0 auto; }
+    .hero-tag { display:inline-block; background:rgba(251,191,36,.15); color:#fbbf24; padding:4px 14px; border-radius:20px; font-size:13px; font-weight:500; margin-bottom:16px; letter-spacing:.5px; }
+    .hero h1 { font-size:clamp(24px,4vw,42px); font-weight:800; line-height:1.2; margin-bottom:12px; }
+    .hero p { font-size:17px; color:rgba(255,255,255,.8); max-width:700px; margin-bottom:28px; line-height:1.6; }
+    .hero-stats { display:grid; grid-template-columns:repeat(4,1fr); gap:16px; max-width:600px; }
+    .stat { text-align:center; }
+    .stat-num { display:block; font-size:28px; font-weight:800; color:#fbbf24; font-family:var(--mono); }
+    .stat-label { font-size:12px; color:rgba(255,255,255,.6); text-transform:uppercase; letter-spacing:.5px; }
+
+    .page { max-width:1100px; margin:0 auto; padding:32px 24px 60px; }
+
+    .toc { margin-bottom:40px; }
+    .toc-grid { display:grid; grid-template-columns:repeat(auto-fill,minmax(260px,1fr)); gap:10px; }
+    .toc-item { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); text-decoration:none; color:var(--text); font-size:14px; font-weight:500; transition:all .2s; }
+    .toc-item:hover { border-color:var(--amber); transform:translateY(-1px); box-shadow:0 4px 12px rgba(217,119,6,.1); }
+    .toc-num { font-size:16px; }
+
+    .section { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:32px; margin-bottom:24px; }
+    .section h2 { font-size:22px; font-weight:700; margin-bottom:12px; color:var(--text); }
+    .section h3 { font-size:17px; font-weight:600; margin:20px 0 8px; color:var(--amber-dark); }
+    .lead { color:var(--text-secondary); font-size:15px; margin-bottom:16px; line-height:1.7; }
+    .section p { margin-bottom:12px; font-size:15px; line-height:1.7; }
+
+    .chart { margin:20px 0; }
+    .chart-row { display:flex; align-items:center; margin-bottom:8px; }
+    .chart-label { width:160px; font-size:13px; font-weight:500; text-align:right; padding-right:12px; color:var(--text-secondary); overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+    .chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:28px; overflow:hidden; }
+    .chart-bar { height:100%; border-radius:8px; display:flex; align-items:center; padding-left:10px; font-size:12px; font-weight:600; color:#fff; transition:width .6s ease; min-width:40px; }
+    .chart-bar.amber { background:linear-gradient(90deg,#d97706,#f59e0b); }
+    .chart-bar.purple { background:linear-gradient(90deg,#6366f1,#818cf8); }
+    .chart-bar.teal { background:linear-gradient(90deg,#0d9488,#14b8a6); }
+    .chart-bar.green { background:linear-gradient(90deg,#059669,#10b981); }
+    .chart-bar.blue { background:linear-gradient(90deg,#2563eb,#3b82f6); }
+    .chart-bar.red { background:linear-gradient(90deg,#dc2626,#ef4444); }
+
+    .timeline { position:relative; padding-left:28px; margin:20px 0; }
+    .timeline::before { content:''; position:absolute; left:8px; top:0; bottom:0; width:3px; background:linear-gradient(180deg,#d97706,#6366f1,#14b8a6); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:20px; padding-left:16px; }
+    .tl-dot { position:absolute; left:-24px; top:4px; width:14px; height:14px; border-radius:50%; border:3px solid var(--amber); background:#fff; }
+    .tl-item:nth-child(2) .tl-dot { border-color:var(--purple); }
+    .tl-item:nth-child(3) .tl-dot { border-color:var(--teal); }
+    .tl-item:nth-child(4) .tl-dot { border-color:var(--green); }
+    .tl-item:nth-child(5) .tl-dot { border-color:var(--blue); }
+    .tl-phase { font-weight:600; font-size:15px; margin-bottom:4px; }
+    .tl-desc { font-size:13px; color:var(--text-secondary); line-height:1.5; }
+
+    .compare-grid { display:grid; grid-template-columns:repeat(2,1fr); gap:12px; margin:20px 0; }
+    .compare-card { padding:16px; border-radius:var(--radius); font-size:14px; line-height:1.6; }
+    .compare-card.old { background:#fef2f2; border:1px solid #fecaca; }
+    .compare-card.new { background:#f0fdf4; border:1px solid #bbf7d0; }
+
+    .flow { display:flex; align-items:center; gap:8px; flex-wrap:wrap; margin:20px 0; }
+    .flow-step { padding:10px 18px; background:#f8fafc; border:2px solid var(--border); border-radius:var(--radius); font-size:13px; font-weight:600; text-align:center; }
+    .flow-step.purple { background:#eef2ff; border-color:var(--purple); color:var(--purple); }
+    .flow-arrow { color:var(--amber); font-size:20px; font-weight:700; }
+
+    .fail-grid { display:grid; grid-template-columns:repeat(3,1fr); gap:12px; margin:20px 0; }
+    .fail-grid .card { padding:16px; background:#f8fafc; border:1px solid var(--border); border-radius:var(--radius); font-size:13px; line-height:1.6; }
+
+    .block-q { margin:20px 0; padding:20px 24px; background:linear-gradient(135deg,#fffbeb,#fef3c7); border-left:4px solid var(--amber); border-radius:0 var(--radius) var(--radius) 0; font-style:italic; color:#92400e; font-size:14px; line-height:1.7; }
+
+    .tbl-wrap { overflow-x:auto; margin:20px 0; }
+    table { width:100%; border-collapse:collapse; font-size:14px; }
+    th { background:#f8fafc; padding:10px 14px; text-align:left; font-weight:600; border-bottom:2px solid var(--border); white-space:nowrap; }
+    td { padding:10px 14px; border-bottom:1px solid var(--border); }
+    tr:hover td { background:#fffbeb; }
+
+    .badge { display:inline-block; padding:3px 10px; border-radius:12px; font-size:12px; font-weight:500; }
+    .badge-amber { background:#fffbeb; color:#92400e; }
+    .badge-purple { background:#eef2ff; color:#4338ca; }
+    .badge-green { background:#f0fdf4; color:#166534; }
+
+    .footer { background:#0f172a; color:rgba(255,255,255,.6); padding:32px 24px; text-align:center; font-size:13px; }
+    .footer a { color:#fbbf24; text-decoration:none; }
+    .footer a:hover { text-decoration:underline; }
+    .footer-links { display:flex; justify-content:center; gap:24px; margin-bottom:12px; flex-wrap:wrap; }
+
+    @media(max-width:768px) {
+      .hero-stats { grid-template-columns:repeat(2,1fr); }
+      .compare-grid, .fail-grid { grid-template-columns:1fr; }
+      .chart-label { width:100px; font-size:12px; }
+      .flow { flex-direction:column; gap:6px; }
+      .flow-arrow { transform:rotate(90deg); }
+      .toc-grid { grid-template-columns:1fr; }
+      .section { padding:20px 16px; }
+      .hero { padding:40px 16px 32px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <div class="nav-inner">
+      <a href="../" class="nav-brand">
+        <span class="nav-logo">🦙</span>
+        <span>LlamaIndex Blog Hub</span>
+      </a>
+      <a href="./">← Back to Hub</a>
+    </div>
+  </nav>
+
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="hero-tag">文档处理</div>
+      <h1>OCR for KYC: Why Standard Text Extraction Falls Short</h1>
+      <p>One wrong digit in a date of birth. A transposed character in a document number. In real know your customer (KYC) workflows, these are the predictable result of building identity verification on standard optical character recognition. Standard OCR technology was designed for clean, typed text on whi</p>
+      <div class="hero-stats">
+        <div class="stat"><span class="stat-num">11</span><span class="stat-label">核心章节</span></div><div class="stat"><span class="stat-num">4</span><span class="stat-label">关键概念</span></div><div class="stat"><span class="stat-num">7min</span><span class="stat-label">阅读时长</span></div><div class="stat"><span class="stat-num">1958</span><span class="stat-label">总字数</span></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc"><div class="toc-grid">
+  <a href="#s0" class="toc-item"><span class="toc-num">🔍</span>What OCR Actually Does in a KYC Workflow</a>
+  <a href="#s1" class="toc-item"><span class="toc-num">💡</span>Why Manual Data Entry Still Exists, and Why That&#x27;s a Compliance Risk</a>
+  <a href="#s4" class="toc-item"><span class="toc-num">🔄</span>Where Standard OCR Technology Breaks Down on Real Identity Documents</a>
+  <a href="#s5" class="toc-item"><span class="toc-num">🎯</span>Agentic OCR for KYC: What Changes When the System Can Reason</a>
+  <a href="#s6" class="toc-item"><span class="toc-num">📋</span>OCR for KYC Across Regulated Industries</a>
+  <a href="#s10" class="toc-item"><span class="toc-num">🧪</span>The Compliance Baseline Is Moving. OCR Has to Move With It.</a>
+</div></nav>
+
+    <section class="section" id="s0">
+  <h2>🔍 What OCR Actually Does in a KYC Workflow</h2>
+  <p class="lead">Optical character recognition converts image-based content (scanned documents, photographed IDs, uploaded PDFs) into machine-readable text. When a customer uploads a passport during onboarding, OCR is</p>
+  <p>Identity documents in scope for KYC processes span a wider range than most people expect. Passports have Machine Readable Zones (MRZ), the two lines of encoded characters at the bottom of the data page that contain a checksum-validated summary of the holder&#x27;s identity. Driver&#x27;s licenses vary by jurisdiction with no standardized layout. National IDs from different countries use different field positions and sometimes different scripts entirely. Utility bills, used widely for proof-of-address verification, have formats that change from issuer to issuer with no consistency across countries.</p>
+  <p>Extracted data from the document verification step goes directly into customer records, AML watchlist comparison, and compliance audit trails. When OCR gets a field wrong, that error propagates through every downstream system. Fixing it later means tracking down the source, correcting it across systems, and re-running AML checks against corrected data.</p>
+<div class="flow">
+  <div class="flow-step">Security features interfere with character extraction.</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Document structure isn&amp;#39;t understood.</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Difficult documents are the norm.</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step purple">Extraction without evaluation.</div>
+</div>
+</section>
+<section class="section" id="s1">
+  <h2>💡 Why Manual Data Entry Still Exists, and Why That&#x27;s a Compliance Risk</h2>
+  <p class="lead">Most financial institutions haven&#x27;t eliminated manual review from their KYC processes. OCR handles initial extraction and a manual review fallback catches what it misses, but that safety net only exis</p>
+  <p>Human keying errors average 1–4% in typical manual data entry workflows. Automated OCR extraction at comparable error rates sounds equivalent until you&#x27;re processing 50,000 KYC documents per month. A 1% error rate at that volume means 500 records with corrupted fields flowing into AML screening systems. That&#x27;s 500 potential false positives, failed verifications, or missed watchlist matches per month.</p>
+  <h3>The Accuracy Stakes in KYC Compliance</h3>
+  <p>AML regulations require accuracy, not just throughput. Field-level accuracy is what actually matters for compliance. The threshold for true straight-through processing is 99.9% at the field level, not aggregate document accuracy. FATF recommendations and EU AML directive requirements around data integrity mean a wrong field in a KYC record is a compliance liability. A transposed digit in a document number generates a false AML watchlist positive, which triggers a manual investigation queue, which delays onboarding, which costs a customer relationship. A corrupted name field might cause AML screening to miss a match entirely.</p>
+  <p>Regulators auditing your KYC processes don&#x27;t distinguish between &quot;our OCR got it wrong&quot; and &quot;we missed this customer.&quot; The obligation is accurate data. How it failed to be accurate isn&#x27;t a defense.</p>
+  <h3>The Volume Problem at Scale</h3>
+  <p>High-growth fintechs and crypto exchanges discover quickly that manual review fallback functions as a scaling constraint, not a safety net. Each manual review adds roughly $1.50–$8 per document depending on complexity and reviewer location. At 10,000 documents per day, it&#x27;s a structural cost that makes growing the customer base more expensive the faster you grow.</p>
+<div class="timeline">
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">What OCR Actually Does in a KYC Workflow</div>
+    <div class="tl-desc">Optical character recognition converts image-based content (scanned documents, photographed IDs, uploaded PDFs) into mac</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Why Manual Data Entry Still Exists, and Why That&#x27;s a Compliance Risk</div>
+    <div class="tl-desc">Most financial institutions haven&#x27;t eliminated manual review from their KYC processes. OCR handles initial extractio</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">The Accuracy Stakes in KYC Compliance</div>
+    <div class="tl-desc">AML regulations require accuracy, not just throughput. [Field-level accuracy](https://www.llamaindex.ai/blog/ocr-accurac</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">The Volume Problem at Scale</div>
+    <div class="tl-desc">High-growth fintechs and crypto exchanges discover quickly that manual review fallback functions as a scaling constraint</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Where Standard OCR Technology Breaks Down on Real Identity Documents</div>
+    <div class="tl-desc">Standard OCR was built for clean, typed text in controlled document environments. Real KYC document intake is the opposi</div>
+  </div>
+  <div class="tl-item">
+    <div class="tl-dot"></div>
+    <div class="tl-phase">Agentic OCR for KYC: What Changes When the System Can Reason</div>
+    <div class="tl-desc">The core limitation of standard OCR for KYC is architectural. Traditional OCR applies a single model to every document e</div>
+  </div>
+</div>
+</section>
+<section class="section" id="s4">
+  <h2>🔄 Where Standard OCR Technology Breaks Down on Real Identity Documents</h2>
+  <p class="lead">Standard OCR was built for clean, typed text in controlled document environments. Real KYC document intake is the opposite of that.</p>
+  <p>Security features interfere with character extraction. Holograms shift the visual appearance of characters depending on the angle of the camera that captured the ID. Watermarks appear as noise to standard OCR engines. Microprint security features on driver&#x27;s licenses and banknotes look like character artifacts, producing phantom characters in extracted text.</p>
+  <p>Document structure isn&#x27;t understood. Traditional OCR extracts text without understanding document layout. It treats a multi-column format as a continuous stream, merging field values that belong to separate fields. MRZ zones require a specialized parser that understands the encoding format and can validate the checksum. Standard OCR doesn&#x27;t know it&#x27;s looking at a structured zone, so it reads the characters and discards the structure. The result is extracted text that&#x27;s technically present but structurally wrong.</p>
+  <p>Difficult documents are the norm. Worn documents from elderly customers with faded ink. Documents photographed in poor lighting by users who didn&#x27;t read the instruction to place ID flat on a dark surface. Scanned documents with stamps over printed fields. Documents in Arabic, Chinese, or Cyrillic from the global user bases that digital financial services attract. Standard OCR treats these as edge cases, but they describe typical KYC intake volume.</p>
+  <p>Extraction without evaluation. Standard OCR produces text. It doesn&#x27;t produce confidence scores, doesn&#x27;t flag suspicious output, and doesn&#x27;t recognize when a document has been digitally altered. Whether what came out is trustworthy is your problem to figure out downstream, usually by the time a compliance review catches the error.</p>
+  <p>Machine learning models improve baseline accuracy but don&#x27;t fix the architecture. A model trained on clean passport images fails on worn documents from countries it hasn&#x27;t seen. Retraining requires labeled data and time that compliance teams don&#x27;t have when new document variants start showing up in intake. Traditional OCR systems typically achieve 60–80% straight-through processing on documents they were trained for. On new formats or complex layouts, that rate drops fast. This is the architecture problem that agentic OCR addresses differently.</p>
+</section>
+<section class="section" id="s5">
+  <h2>🎯 Agentic OCR for KYC: What Changes When the System Can Reason</h2>
+  <p class="lead">The core limitation of standard OCR for KYC is architectural. Traditional OCR applies a single model to every document element uniformly. Identity document extraction requires a system that understand</p>
+  <p>LlamaParse addresses this differently. Layout-aware computer vision segments the document before any extraction happens, identifying the MRZ zone, the photo field, the address block, the issuing authority stamp, and understanding the structure of what&#x27;s on the page rather than just the pixels. Each element gets routed to the model best suited for it: an MRZ-specific parser that validates the checksum, a vision model for stamps and handwriting, a structured extractor for tabular data.</p>
+  <p>This agentic orchestration handles the edge cases that break standard OCR without requiring custom training for every new document variant. When a country updates its national ID design, the system adapts through its layout understanding and model selection rather than requiring a new labeled training dataset.</p>
+  <p>Self-correction loops catch known hallucination patterns before extracted data reaches compliance systems. When a field extraction produces output that doesn&#x27;t match the expected format (a date that doesn&#x27;t parse as a valid date, a document number with an impossible checksum), the system flags it rather than silently passing bad data downstream.</p>
+  <p>For KYC compliance teams, confidence scores and citations enable targeted Human-in-the-Loop (HITL) review: reviewers see which specific fields have low confidence and why, rather than reviewing entire documents because OCR uncertainty could be anywhere. Straight-through processing rates improve because human review is reserved for genuine edge cases, not blanket OCR uncertainty.</p>
+</section>
+<section class="section" id="s6">
+  <h2>📋 OCR for KYC Across Regulated Industries</h2>
+  <p class="lead">Different sectors face different document sets, different regulatory thresholds, and different risk profiles for extraction errors.</p>
+  <h3>Banking and Fintech</h3>
+  <p>Remote account opening depends entirely on the reliability of identity document extraction at onboarding. A customer who fails verification because OCR misread their date of birth doesn&#x27;t file a complaint with the OCR vendor. They leave a negative review and switch to a competitor that onboarded them in 60 seconds.</p>
+  <p>Beyond onboarding, BSA/AML compliance in the US and EU 6AMLD in Europe require extracted data to feed reliably into AML watchlist screening. A 95% accurate extraction system processing 100,000 identity documents per month produces 5,000 records with potential errors, each one a compliance exposure that only surfaces when a regulator examines your KYC records.</p>
+  <h3>Insurance and Healthcare</h3>
+  <p>Policyholder onboarding requires proof-of-address alongside identity documents. Utility bills, used widely for address confirmation, have some of the most variable formats of any document type in KYC intake. Layout varies by issuer, by country, by account type. Standard OCR handles that inconsistency poorly.</p>
+  <p>Healthcare adds HIPAA implications to patient identity verification during registration. Extraction errors in clinical systems carry different consequences than in fintech onboarding. Incorrect patient identity information creates risks that go beyond compliance exposure into patient safety territory, with stricter audit trail requirements throughout.</p>
+  <h3>Crypto and Regulated Exchanges</h3>
+  <p>Crypto exchanges face jurisdictional variation in KYC thresholds: different required document types by country, different acceptable identity formats, a globally distributed user base presenting documents in dozens of scripts. Customer KYC and anti-money laundering requirements at wallet creation and withdrawal thresholds mean AML screening runs directly against onboarding document data. Extraction errors at verification propagate into AML screening as false negatives that regulators treat as compliance failures, not technical issues.</p>
+</section>
+<section class="section" id="s10">
+  <h2>🧪 The Compliance Baseline Is Moving. OCR Has to Move With It.</h2>
+  <p class="lead">FATF guidance, the EU Anti-Money Laundering Authority (AMLA) now operational, and US FinCEN beneficial ownership requirements all push in the same direction: stricter data accuracy requirements, more </p>
+  <p>Basic OCR technology is already table stakes for KYC. What differentiates compliant operations from exposed ones is extraction accuracy at the field level and fraud detection at the extraction layer, with straight-through processing rates high enough that you&#x27;re not funding a permanent manual review team.</p>
+  <p>KYC and anti-money laundering programs built on legacy OCR accumulate technical debt with regulatory consequences. Manual review queues signal that your extraction layer can&#x27;t stand alone. That&#x27;s a hard position to defend when regulators ask how you validate customer identity data.</p>
+  <p>The standard now is verifiable extraction: confidence scores, self-correction loops, and HITL review targeted at genuine uncertainty rather than blanket coverage for OCR unreliability. LlamaParse’s agentic OCR delivers this: layout-aware extraction that picks the right model per document element and validates outputs before they reach compliance systems. For the broader financial compliance workflow, see LlamaParse’s finance industry solutions. LlamaParse is free to try with 10,000 credits upon signup.</p>
+</section>
+
+    <section class="section" id="key-concepts">
+  <h2>🔑 核心概念 Key Concepts</h2>
+  <p class="lead">本文涉及的关键技术概念与术语。</p>
+<div class="flow">
+  <div class="flow-step">Security features interfere with character extraction.</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Document structure isn&amp;#39;t understood.</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step">Difficult documents are the norm.</div>
+  <div class="flow-arrow">→</div>
+  <div class="flow-step purple">Extraction without evaluation.</div>
+</div>
+</section>
+
+  </div>
+
+  <footer class="footer">
+    <div class="footer-links">
+      <a href="./">LlamaIndex Blog Hub</a>
+      <a href="https://www.llamaindex.ai/blog/ocr-for-kyc" target="_blank" rel="noopener">原文链接 Original</a>
+      <a href="../">Engineering Blogs Hub</a>
+    </div>
+    <p>Generated from LlamaIndex blog content for learning purposes.</p>
+  </footer>
+</body>
+</html>

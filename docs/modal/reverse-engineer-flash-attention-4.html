@@ -1,0 +1,199 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：逆向工程 Flash Attention 4</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--purple:#7c3aed;--purple-light:#a78bfa;--teal:#14b8a6;--amber:#f59e0b;--green:#10b981;--red:#ef4444;--blue:#3b82f6;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',sans-serif}*{margin:0;padding:0;box-sizing:border-box}body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}.nav{position:sticky;top:0;background:rgba(15,23,42,.95);backdrop-filter:blur(12px);z-index:100;border-bottom:1px solid rgba(255,255,255,.1)}.nav-inner{max-width:1100px;margin:0 auto;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}.nav-brand{color:#fff;text-decoration:none;font-weight:700;font-size:15px}.nav-back{color:#94a3b8;text-decoration:none;font-size:13px}.nav-back:hover{color:#e2e8f0}.hero{background:linear-gradient(135deg,#0f172a 0%,#3b0764 50%,#7c3aed 100%);padding:80px 24px 60px}.hero-inner{max-width:1100px;margin:0 auto}.hero-tag{color:var(--purple-light);font-size:13px;font-family:var(--mono);margin-bottom:16px}.hero h1{color:#fff;font-size:2.2rem;font-weight:800;line-height:1.2;margin-bottom:12px}.hero .subtitle{color:#c4b5fd;font-size:1.1rem;margin-bottom:32px}.hero-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}.stat-card{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:var(--radius);padding:20px;text-align:center}.stat-num{display:block;font-size:1.8rem;font-weight:800;color:#fff;font-family:var(--mono)}.stat-label{color:#a5b4fc;font-size:12px;margin-top:4px;display:block}.page{max-width:1100px;margin:0 auto;padding:48px 24px}.toc{margin-bottom:48px}.toc h2{font-size:1.2rem;margin-bottom:16px;color:var(--text-secondary)}.toc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}.toc-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 18px;text-decoration:none;color:var(--text);font-size:14px;display:flex;align-items:center;gap:10px;transition:all .2s}.toc-item:hover{border-color:var(--purple);background:#f5f3ff}.toc-num{background:linear-gradient(135deg,var(--purple),var(--purple-light));color:#fff;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}.section{margin-bottom:56px}.section h2{font-size:1.5rem;font-weight:700;margin-bottom:8px}.lead{color:var(--text-secondary);font-size:15px;margin-bottom:24px}.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}.card h3{font-size:1rem;font-weight:600;margin-bottom:8px}.card p,.card li{font-size:14px;color:var(--text-secondary)}.chart{margin:24px 0}.chart-row{display:flex;align-items:center;margin-bottom:10px}.chart-label{width:200px;font-size:13px;font-weight:500;flex-shrink:0}.chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}.chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;padding:0 12px;font-size:12px;font-weight:600;color:#fff}.chart-bar.purple{background:linear-gradient(90deg,#7c3aed,#a78bfa)}.chart-bar.green{background:linear-gradient(90deg,#10b981,#34d399)}.chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}.chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}.chart-bar.teal{background:linear-gradient(90deg,#14b8a6,#2dd4bf)}.chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}.compare-card{background:var(--surface);border-radius:var(--radius);padding:24px}.compare-card.old{border:2px solid var(--amber)}.compare-card.new{border:2px solid var(--green)}.compare-card h4{font-size:14px;margin-bottom:8px}.compare-card ul{font-size:13px;color:var(--text-secondary);padding-left:18px}.compare-card ul li{margin-bottom:4px}.flow{display:flex;align-items:center;gap:12px;margin:24px 0;flex-wrap:wrap}.flow-step{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 20px;font-size:13px;font-weight:500}.flow-step.purple{background:var(--purple);color:#fff;border-color:var(--purple)}.flow-step.teal{background:var(--teal);color:#fff;border-color:var(--teal)}.flow-step.blue{background:var(--blue);color:#fff;border-color:var(--blue)}.flow-arrow{font-size:18px;color:var(--text-secondary)}.block-q{border-left:4px solid var(--purple);background:#f5f3ff;padding:20px 24px;border-radius:0 var(--radius) var(--radius) 0;margin:24px 0;font-style:italic;color:#4c1d95}.timeline{position:relative;padding-left:32px;margin:24px 0}.timeline::before{content:'';position:absolute;left:10px;top:0;bottom:0;width:3px;background:linear-gradient(180deg,var(--purple),var(--teal));border-radius:2px}.tl-item{position:relative;margin-bottom:24px}.tl-dot{position:absolute;left:-27px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid var(--purple);background:#fff}.tl-item:nth-child(2) .tl-dot{border-color:var(--blue)}.tl-item:nth-child(3) .tl-dot{border-color:var(--teal)}.tl-item:nth-child(4) .tl-dot{border-color:var(--amber)}.tl-item:nth-child(5) .tl-dot{border-color:var(--green)}.tl-phase{font-weight:700;font-size:15px}.tl-desc{font-size:13px;color:var(--text-secondary);margin-top:4px}.badge{display:inline-block;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:600}.badge-purple{background:#ede9fe;color:#6d28d9}.badge-green{background:#d1fae5;color:#065f46}.badge-amber{background:#fef3c7;color:#92400e}.badge-blue{background:#dbeafe;color:#1e40af}.fail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:24px 0}.agent-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin:24px 0}.footer{background:#0f172a;color:#94a3b8;padding:40px 24px;text-align:center;font-size:13px}.footer a{color:var(--purple-light);text-decoration:none}.footer a:hover{text-decoration:underline}@media(max-width:768px){.hero h1{font-size:1.5rem}.hero-stats{grid-template-columns:repeat(2,1fr)}.compare-grid,.agent-grid,.fail-grid{grid-template-columns:1fr}.chart-label{width:120px;font-size:12px}.flow{flex-direction:column;gap:8px}.flow-arrow{transform:rotate(90deg)}.toc-grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <nav class="nav"><div class="nav-inner"><a href="../" class="nav-brand">⚡ Engineering Blogs Hub</a><a href="../" class="nav-back">← Back to Hub</a></div></nav>
+
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="hero-tag">modal.com/blog · GPU Engineering</div>
+      <h1>逆向工程 Flash Attention 4：Blackwell 架构下的极致优化</h1>
+      <p class="subtitle">Modal 团队拆解 FA4 内核的 Warp Specialization Pipeline、近似指数函数和智能 Online Softmax</p>
+      <div class="hero-stats">
+        <div class="stat-card"><span class="stat-num">~20%</span><span class="stat-label">vs cuDNN 加速</span></div>
+        <div class="stat-card"><span class="stat-num">5</span><span class="stat-label">Warp 角色类型</span></div>
+        <div class="stat-card"><span class="stat-num">10x</span><span class="stat-label">Correction 减少</span></div>
+        <div class="stat-card"><span class="stat-num">SM100</span><span class="stat-label">Blackwell 架构</span></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc">
+      <h2>📑 目录导航</h2>
+      <div class="toc-grid">
+        <a href="#s1" class="toc-item"><span class="toc-num">1</span>Tile 的一生（Quick Tour）</a>
+        <a href="#s2" class="toc-item"><span class="toc-num">2</span>Warp Specialization 管线</a>
+        <a href="#s3" class="toc-item"><span class="toc-num">3</span>数学创新：近似指数</a>
+        <a href="#s4" class="toc-item"><span class="toc-num">4</span>智能 Online Softmax</a>
+        <a href="#s5" class="toc-item"><span class="toc-num">5</span>五种 Warp 角色深入</a>
+        <a href="#s6" class="toc-item"><span class="toc-num">6</span>GPU 编程的未来</a>
+      </div>
+    </nav>
+
+    <section class="section" id="s1">
+      <h2>🧩 Tile 的一生：Flash Attention 4 快速巡览</h2>
+      <p class="lead">将巨大的 Tensor 拆分成 Tile，每个 CTA 处理两个 Query Tile 并流式处理所有 Key/Value Tile</p>
+      <div class="flow">
+        <div class="flow-step">bf16 Q/K/V Tensors</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">拆分为 Tiles</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step purple">CTA 异步 Pipeline</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step teal">bf16 Output Tensor</div>
+      </div>
+      <div class="card">
+        <h3>类比：数据库顺序扫描</h3>
+        <p>可以把 FA4 想象为对 Key-Value 存储的向量化顺序扫描，为一批聚合查询（Query Tiles）服务。每个 CTA 的工作类似于微服务架构图。</p>
+      </div>
+      <div class="compare-grid">
+        <div class="compare-card old">
+          <h4>🖥️ CPU 异步模型</h4>
+          <ul>
+            <li>单线程处理单个请求的完整旅程</li>
+            <li>通过状态机切换（Reading → Parsing → Writing）</li>
+            <li>数据就绪时切换状态转换</li>
+          </ul>
+        </div>
+        <div class="compare-card new">
+          <h4>🎮 GPU 异步模型（FA4）</h4>
+          <ul>
+            <li>单个 Warp 实现单个状态转换</li>
+            <li>Warp Scheduler 在时钟级切换</li>
+            <li>Producer/Consumer + Barrier 同步</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="s2">
+      <h2>🔧 Warp Specialization Pipeline</h2>
+      <p class="lead">FA4 最大的变化不是数学而是异步管道复杂度的巨大提升</p>
+      <div class="chart">
+        <div class="chart-row"><div class="chart-label">Load Warp（1 个）</div><div class="chart-bar-wrap"><div class="chart-bar purple" style="width:20%">TMA 加载</div></div></div>
+        <div class="chart-row"><div class="chart-label">MMA Warp（1 个）</div><div class="chart-bar-wrap"><div class="chart-bar blue" style="width:30%">Tensor Core 矩阵乘</div></div></div>
+        <div class="chart-row"><div class="chart-label">Softmax Warps（8 个）</div><div class="chart-bar-wrap"><div class="chart-bar teal" style="width:60%">注意力分数归一化</div></div></div>
+        <div class="chart-row"><div class="chart-label">Correction Warps（4 个）</div><div class="chart-bar-wrap"><div class="chart-bar amber" style="width:40%">输出缩放校正</div></div></div>
+        <div class="chart-row"><div class="chart-label">Epilogue Warp（1-2 个）</div><div class="chart-bar-wrap"><div class="chart-bar green" style="width:15%">写回 Global Memory</div></div></div>
+      </div>
+    </section>
+
+    <section class="section" id="s3">
+      <h2>🧬 数学创新：快速近似指数函数</h2>
+      <p class="lead">用 CUDA Core 上的三次多项式替代 SFU 的硬件指数运算，避免 SFU 排队瓶颈</p>
+      <div class="card">
+        <h3>算法思路（Schraudolph 1999 启发）</h3>
+        <p>将 2^x 分为整数部分 2^floor(x) 和小数部分 2^(x-floor(x))。对 [0,1] 区间用三次多项式 Horner 评估：</p>
+        <p style="font-family:var(--mono);margin-top:8px;color:var(--text)">0.07711909*r^3 + 0.22756439*r^2 + 0.69514614*r + 1.0</p>
+        <p style="margin-top:8px">三个 FMA 指令完成，对 bf16 精度与 SFU 输出完全匹配。</p>
+      </div>
+      <div class="flow">
+        <div class="flow-step">输入 x (bf16)</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">分离整数/小数部分</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step purple">三次多项式 (3x FMA)</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step teal">2^x 结果 (f32x2)</div>
+      </div>
+    </section>
+
+    <section class="section" id="s4">
+      <h2>📊 智能 Online Softmax</h2>
+      <p class="lead">不再每次新最大值出现就触发校正，而是仅在影响数值稳定性时才更新，校正次数减少 10 倍</p>
+      <div class="compare-grid">
+        <div class="compare-card old">
+          <h4>FA3 之前</h4>
+          <ul>
+            <li>每次发现新 max 都触发 Correction</li>
+            <li>Correction 频率高，浪费大量计算</li>
+            <li>所有指数运算都走 SFU</li>
+          </ul>
+        </div>
+        <div class="compare-card new">
+          <h4>FA4 改进</h4>
+          <ul>
+            <li>仅当 max 变化"足够大"时才校正</li>
+            <li>Correction 减少 ~10x</li>
+            <li>部分迭代用 CUDA Core 近似指数</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="s5">
+      <h2>🔬 五种 Warp 角色深入</h2>
+      <p class="lead">从 Load 到 Epilogue，每种 Warp 在 Pipeline 中承担特定职责</p>
+      <div class="fail-grid">
+        <div class="card">
+          <h3>Load Warp</h3>
+          <p>使用 TMA 异步加载 2 个 Q Tile，并流式加载所有 K/V Tile（最多 3 对 buffer）</p>
+        </div>
+        <div class="card">
+          <h3>MMA Warp</h3>
+          <p>用 tcgen05.mma 指令在 Tensor Core 上执行矩阵乘，产生 S 和 O Tile</p>
+        </div>
+        <div class="card">
+          <h3>Softmax Warps (8)</h3>
+          <p>两个 Warpgroup 归一化注意力分数，在 Register 和 Tensor Memory 间复制数据</p>
+        </div>
+      </div>
+      <div class="agent-grid">
+        <div class="card">
+          <h3>Correction Warps (4)</h3>
+          <p>监控缩放因子变化，仅在数值稳定性受威胁时才重缩放输出 Tile</p>
+        </div>
+        <div class="card">
+          <h3>Epilogue Warp (1-2)</h3>
+          <p>将完成的 Output Tile 从 Tensor Memory 存回 Global Memory，可选 TMA 加速</p>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="s6">
+      <h2>🔮 GPU 编程的未来</h2>
+      <p class="lead">从 CUDA C 的简单向量加法到 FA4 的多阶段异步管道，GPU 编程正在经历范式转变</p>
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">CUDA C (2008)</div>
+          <div class="tl-desc">Ian Buck 设计：能否用一行代码写出简洁的向量加法？CUDA 编程模型至今延续</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Hopper (FA3)</div>
+          <div class="tl-desc">引入 ping-pong pipeline，异步能力初显</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Blackwell (FA4)</div>
+          <div class="tl-desc">多阶段多缓冲 Pipeline，Warp Specialization 成为主流</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">新语言/DSL 涌现</div>
+          <div class="tl-desc">CuTe DSL, CUTLASS C++, CuTile — Tile 化、Warp 专用化编程的新工具</div>
+        </div>
+      </div>
+      <div class="block-q">
+        <p>"异步编程绝对烂透了。" — 这在 GPU 世界里更是如此，当你还需要管理自己的事件循环时。但 FA4 清晰地展示了向 Tile 化、Warp 专用化编程的趋势。</p>
+      </div>
+    </section>
+  </div>
+
+  <footer class="footer">
+    <p>基于 <a href="https://modal.com/blog/reverse-engineer-flash-attention-4" target="_blank">Modal Blog 原文</a> 深度解析 · 登上 HackerNews 首页</p>
+    <p style="margin-top:8px"><a href="../">← 返回 Engineering Blogs Hub</a></p>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>深度解析：L40S GPU 深度解析：Modal 新一代推理加速器</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;
+  --border:#e2e8f0;--radius:14px;
+  --purple:#7c3aed;--violet:#8b5cf6;--indigo:#6366f1;
+  --teal:#14b8a6;--amber:#f59e0b;--green:#10b981;--red:#ef4444;--blue:#3b82f6;--pink:#ec4899;
+  --mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+.nav{position:sticky;top:0;z-index:100;background:rgba(15,23,42,.92);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,.08)}
+.nav-inner{max-width:1100px;margin:0 auto;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.nav-brand{color:#fff;text-decoration:none;font-weight:700;font-size:15px;display:flex;align-items:center;gap:8px}
+.nav-logo{font-size:20px}
+.nav a:last-child{font-size:13px;color:rgba(255,255,255,.6);text-decoration:none}
+.nav a:last-child:hover{color:#fff}
+.hero{background:linear-gradient(135deg,#0f172a 0%,#3b0764 50%,#7c3aed 100%);padding:80px 24px 60px;text-align:center}
+.hero-tag{display:inline-block;background:rgba(255,255,255,.1);color:rgba(255,255,255,.8);padding:4px 14px;border-radius:20px;font-size:13px;margin-bottom:20px}
+.hero h1{color:#fff;font-size:clamp(28px,5vw,44px);font-weight:800;margin-bottom:12px;line-height:1.2}
+.hero p{color:rgba(255,255,255,.75);font-size:17px;max-width:680px;margin:0 auto 32px}
+.hero-stats{display:flex;justify-content:center;gap:20px;flex-wrap:wrap}
+.stat-card{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:16px 28px;min-width:130px}
+.stat-num{font-size:28px;font-weight:800;color:#fff}
+.stat-label{font-size:12px;color:rgba(255,255,255,.6);margin-top:2px}
+.page{max-width:1100px;margin:0 auto;padding:40px 24px 60px}
+.toc{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-bottom:48px}
+.toc-item{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;transition:all .2s}
+.toc-item:hover{border-color:var(--purple);color:var(--purple);transform:translateY(-1px);box-shadow:0 4px 12px rgba(124,58,237,.1)}
+.toc-num{background:linear-gradient(135deg,var(--purple),var(--violet));color:#fff;width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.section{margin-bottom:48px}
+.section h2{font-size:22px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+.lead{color:var(--text-secondary);font-size:15px;margin-bottom:20px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}
+.card h3{font-size:16px;font-weight:600;margin-bottom:8px}
+.card p,.card li{font-size:14px;color:var(--text-secondary);line-height:1.7}
+.card ul{padding-left:20px}
+.card li{margin-bottom:4px}
+.chart{margin:16px 0}
+.chart-row{display:flex;align-items:center;margin-bottom:8px}
+.chart-label{width:160px;font-size:13px;font-weight:500;flex-shrink:0}
+.chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:6px;height:28px;overflow:hidden}
+.chart-bar{height:100%;border-radius:6px;display:flex;align-items:center;padding:0 10px;font-size:12px;font-weight:600;color:#fff;transition:width .6s}
+.chart-bar.purple{background:linear-gradient(90deg,var(--purple),var(--violet))}
+.chart-bar.teal{background:linear-gradient(90deg,var(--teal),#2dd4bf)}
+.chart-bar.amber{background:linear-gradient(90deg,var(--amber),#fbbf24)}
+.chart-bar.green{background:linear-gradient(90deg,var(--green),#34d399)}
+.chart-bar.red{background:linear-gradient(90deg,var(--red),#f87171)}
+.chart-bar.blue{background:linear-gradient(90deg,var(--blue),#60a5fa)}
+.chart-bar.pink{background:linear-gradient(90deg,var(--pink),#f472b6)}
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0}
+.compare-card{padding:20px;border-radius:var(--radius);font-size:14px}
+.compare-card.old{background:#fef2f2;border:1px solid #fecaca}
+.compare-card.new{background:#f0fdf4;border:1px solid #bbf7d0}
+.compare-card h4{font-size:14px;font-weight:700;margin-bottom:6px}
+.compare-card p,.compare-card li{font-size:13px;color:var(--text-secondary)}
+.compare-card ul{padding-left:16px;margin-top:6px}
+.timeline{position:relative;padding-left:28px;margin:16px 0}
+.timeline::before{content:'';position:absolute;left:8px;top:4px;bottom:4px;width:2px;background:linear-gradient(180deg,var(--purple),var(--teal),var(--amber))}
+.tl-item{position:relative;margin-bottom:20px}
+.tl-dot{position:absolute;left:-24px;top:4px;width:12px;height:12px;border-radius:50%;border:2px solid var(--purple);background:#fff}
+.tl-item:nth-child(2) .tl-dot{border-color:var(--violet)}
+.tl-item:nth-child(3) .tl-dot{border-color:var(--teal)}
+.tl-item:nth-child(4) .tl-dot{border-color:var(--amber)}
+.tl-item:nth-child(5) .tl-dot{border-color:var(--green)}
+.tl-phase{font-weight:600;font-size:15px;margin-bottom:2px}
+.tl-desc{font-size:13px;color:var(--text-secondary)}
+.tl-token{font-size:12px;color:var(--purple);font-family:var(--mono);margin-bottom:2px}
+.flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:16px 0}
+.flow-step{padding:10px 18px;background:var(--surface);border:1px solid var(--border);border-radius:10px;font-size:13px;font-weight:500}
+.flow-step.purple{background:var(--purple);color:#fff;border-color:var(--purple)}
+.flow-step.teal{background:var(--teal);color:#fff;border-color:var(--teal)}
+.flow-step.amber{background:var(--amber);color:#fff;border-color:var(--amber)}
+.flow-arrow{color:var(--text-secondary);font-size:18px}
+.block-q{border-left:3px solid var(--purple);padding:16px 20px;background:rgba(124,58,237,.04);border-radius:0 var(--radius) var(--radius) 0;margin:16px 0;font-style:italic;color:var(--text-secondary);font-size:14px}
+.badge{display:inline-block;padding:2px 10px;border-radius:20px;font-size:12px;font-weight:600}
+.badge-purple{background:rgba(124,58,237,.1);color:var(--purple)}
+.badge-teal{background:rgba(20,184,166,.1);color:var(--teal)}
+.badge-amber{background:rgba(245,158,11,.1);color:var(--amber)}
+.badge-green{background:rgba(16,185,129,.1);color:var(--green)}
+.badge-red{background:rgba(239,68,68,.1);color:var(--red)}
+.badge-blue{background:rgba(59,130,246,.1);color:var(--blue)}
+.metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:16px 0}
+.metric-card{text-align:center;padding:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius)}
+.metric-card .num{font-size:24px;font-weight:800;color:var(--purple)}
+.metric-card .label{font-size:12px;color:var(--text-secondary);margin-top:2px}
+.code-block{background:#1e293b;color:#e2e8f0;padding:16px;border-radius:10px;font-family:var(--mono);font-size:13px;overflow-x:auto;margin:12px 0;line-height:1.6}
+.progress-wrap{margin:8px 0}
+.progress-bar{background:#f1f5f9;border-radius:6px;height:8px;overflow:hidden}
+.progress-bar .fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--purple),var(--violet))}
+.tag-list{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.footer{text-align:center;padding:40px 24px;background:var(--surface);border-top:1px solid var(--border);font-size:13px;color:var(--text-secondary)}
+.footer a{color:var(--purple);text-decoration:none}
+.footer a:hover{text-decoration:underline}
+.tbl-wrap{overflow-x:auto;margin:12px 0}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#f8fafc;font-weight:600;text-align:left;padding:10px 12px;border-bottom:2px solid var(--border)}
+td{padding:10px 12px;border-bottom:1px solid var(--border)}
+@media(max-width:768px){
+  .compare-grid,.metric-grid{grid-template-columns:1fr}
+  .chart-label{width:100px;font-size:12px}
+  .flow{flex-direction:column}
+  .flow-arrow{transform:rotate(90deg)}
+  .toc{grid-template-columns:1fr}
+  .hero{padding:60px 16px 40px}
+  .hero h1{font-size:26px}
+  .hero-stats{gap:10px}
+  .stat-card{padding:12px 16px;min-width:100px}
+  .stat-num{font-size:22px}
+}
+</style>
+</head>
+<body>
+<nav class="nav"><div class="nav-inner">
+<a href="../" class="nav-brand"><span class="nav-logo">⚡</span><span>Engineering Blogs Hub</span></a>
+<a href="../">← Back to Hub</a>
+</div></nav>
+
+<header class="hero">
+<div class="hero-tag">2024-12-19</div>
+<h1>L40S GPU 深度解析：Modal 新一代推理加速器</h1>
+<p>NVIDIA L40S GPU 登陆 Modal 平台——48GB 显存、Ada Lovelace 架构，为 AI Inference 带来 40%+ 的性能飞跃</p>
+<div class="hero-stats">
+<div class="stat-card"><div class="stat-num">48GB</div><div class="stat-label">DDR6 显存</div></div>
+<div class="stat-card"><div class="stat-num">40%</div><div class="stat-label">Memory-bound 加速</div></div>
+<div class="stat-card"><div class="stat-num">100%+</div><div class="stat-label">Compute-bound 加速</div></div>
+<div class="stat-card"><div class="stat-num">$1.95</div><div class="stat-label">每小时价格</div></div>
+
+</div>
+</header>
+
+<div class="page">
+<nav class="toc">
+<a href="#s1" class="toc-item"><span class="toc-num">01</span>为什么需要 L40S</a>
+<a href="#s2" class="toc-item"><span class="toc-num">02</span>更大模型支持</a>
+<a href="#s3" class="toc-item"><span class="toc-num">03</span>推理速度提升</a>
+<a href="#s4" class="toc-item"><span class="toc-num">04</span>A10 vs L40S 规格对比</a>
+<a href="#s5" class="toc-item"><span class="toc-num">05</span>架构技术细节</a>
+<a href="#s6" class="toc-item"><span class="toc-num">06</span>快速上手</a>
+
+</nav>
+
+
+<section class="section" id="s1">
+<h2>🚀 为什么需要 L40S</h2>
+<p class="lead">AI Inference 有独特的基础设施需求——L40S 正是为此而生的 Ada Lovelace 架构加速器</p>
+<div class="card">
+<h3>推理场景的核心痛点</h3>
+<p>Modal 团队认为 AI Inference 的基础设施需求与训练有着本质区别：需要更灵活的 GPU 容量、更快的冷启动、更高效的 autoscaling。L40S 作为当前最受欢迎的推理加速器 A10 的升级版，在显存容量和计算带宽上实现了质的飞跃。</p>
+</div>
+<div class="compare-grid">
+<div class="compare-card old">
+<h4>❌ A10 的局限</h4>
+<ul><li>24GB 显存限制了大模型运行</li><li>Ampere 架构不支持 FP8</li><li>内存带宽仅 600 GB/s</li><li>运行 Flux.1-schnell 16bit 会 OOM</li></ul>
+</div>
+<div class="compare-card new">
+<h4>✅ L40S 的优势</h4>
+<ul><li>48GB DDR6 — 2x 显存容量</li><li>Ada Lovelace + FP8 Tensor Cores</li><li>864 GB/s 内存带宽</li><li>轻松运行 Flux.1-schnell 全精度</li></ul>
+</div>
+</div>
+</section>
+
+<section class="section" id="s2">
+<h2>💾 更大模型支持</h2>
+<p class="lead">48GB 显存意味着可以在单卡上运行更大的模型，无需痛苦的 CPU Offload</p>
+<div class="card">
+<h3>Flux.1-schnell 实测</h3>
+<p>以 Flux.1-schnell 为例，16bit 精度下仅模型权重就占用 24GB，在 A10 上无法运行（触发 CUDA OOM），但在 L40S 上运行非常从容。这意味着开发者不再需要牺牲 throughput 来做 CPU RAM offload。</p>
+<div class="chart">
+<div class="chart-row"><div class="chart-label">Flux.1 权重大小</div><div class="chart-bar-wrap"><div class="chart-bar purple" style="width:50%">24 GB</div></div></div>
+<div class="chart-row"><div class="chart-label">A10 可用显存</div><div class="chart-bar-wrap"><div class="chart-bar red" style="width:50%">24 GB ❌</div></div></div>
+<div class="chart-row"><div class="chart-label">L40S 可用显存</div><div class="chart-bar-wrap"><div class="chart-bar green" style="width:100%">48 GB ✅</div></div></div>
+</div>
+</div>
+</section>
+
+<section class="section" id="s3">
+<h2>⚡ 推理速度提升</h2>
+<p class="lead">不仅是显存更大——L40S 在计算速度上同样大幅领先</p>
+<div class="card">
+<h3>性能基准测试</h3>
+<p>Memory-bound 任务（如小 batch inference）可获得约 40% 加速；Compute-bound 任务（使用 16bit Tensor Cores）加速超过 100%。在 chat-style workload 的基础 load test 中，无需任何调优即可实现 20% 加速。</p>
+<div class="chart">
+<div class="chart-row"><div class="chart-label">Memory-bound 加速</div><div class="chart-bar-wrap"><div class="chart-bar teal" style="width:40%">~40%</div></div></div>
+<div class="chart-row"><div class="chart-label">Compute-bound 加速</div><div class="chart-bar-wrap"><div class="chart-bar purple" style="width:100%">100%+</div></div></div>
+<div class="chart-row"><div class="chart-label">Chat Workload (零调优)</div><div class="chart-bar-wrap"><div class="chart-bar blue" style="width:20%">~20%</div></div></div>
+</div>
+</div>
+</section>
+
+<section class="section" id="s4">
+<h2>📊 A10 vs L40S 规格对比</h2>
+<p class="lead">从架构到算力的全面对比，数据来自 NVIDIA 官方 Datasheet</p>
+<div class="tbl-wrap"><table>
+<tr><th>规格</th><th>A10</th><th>L40S</th></tr>
+<tr><td>SM Architecture</td><td>Ampere</td><td>Ada Lovelace</td></tr>
+<tr><td>Compute Capability</td><td>8.6</td><td>8.9</td></tr>
+<tr><td>GPU RAM</td><td>24 GB DDR6</td><td>48 GB DDR6</td></tr>
+<tr><td>Memory Bandwidth</td><td>600 GB/s</td><td>864 GB/s</td></tr>
+<tr><td>FP16/BF16 Tensor TFLOPS</td><td>125</td><td>362</td></tr>
+<tr><td>FP8 Tensor TFLOPS</td><td>N/A</td><td>733</td></tr>
+</table></div>
+</section>
+
+<section class="section" id="s5">
+<h2>🔧 架构技术细节</h2>
+<p class="lead">Ada Lovelace 架构带来的关键技术升级</p>
+<div class="flow">
+<div class="flow-step">FP8 Tensor Cores</div>
+<div class="flow-arrow">→</div>
+<div class="flow-step purple">733 TFLOPS</div>
+<div class="flow-arrow">→</div>
+<div class="flow-step teal">量化推理友好</div>
+</div>
+<div class="card">
+<p>L40S 的 Ada Lovelace 架构支持 FP8 Tensor Cores（A10 不支持），这对于使用量化模型的推理场景至关重要。配合 864 GB/s 的内存带宽（比 A10 高 44%），在 LLM 推理中 memory-bound 阶段的 token 生成速度显著提升。</p>
+</div>
+</section>
+
+<section class="section" id="s6">
+<h2>🎯 快速上手</h2>
+<p class="lead">Modal 让部署到 L40S 只需一行装饰器</p>
+<div class="code-block">@app.function(gpu="L40S")
+def my_inference():
+    # 你的推理代码
+    pass</div>
+<div class="card"><p>Modal 提供每月 $30 的免费计算额度，注册后即可使用 L40S。Modal 的自定义基础设施可以在 1 秒内启动 L40S 容器，支持高效的 autoscaling，按使用量付费。</p></div>
+</section>
+
+</div>
+
+<footer class="footer">
+<p><a href="index.html">Modal Blog Hub</a> · 原文：<a href="https://modal.com/blog/introducing-l40s" target="_blank" rel="noopener">https://modal.com/blog/introducing-l40s</a></p>
+<p style="margin-top:8px">基于 Modal 官方博客内容的深度解析与可视化呈现</p>
+</footer>
+</body>
+</html>

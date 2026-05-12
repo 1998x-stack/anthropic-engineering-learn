@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>深度解析：Quora 案例：Modal 上运行数千并发 Python 沙箱</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;
+  --border:#e2e8f0;--radius:14px;
+  --purple:#7c3aed;--violet:#8b5cf6;--indigo:#6366f1;
+  --teal:#14b8a6;--amber:#f59e0b;--green:#10b981;--red:#ef4444;--blue:#3b82f6;--pink:#ec4899;
+  --mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+.nav{position:sticky;top:0;z-index:100;background:rgba(15,23,42,.92);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,.08)}
+.nav-inner{max-width:1100px;margin:0 auto;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.nav-brand{color:#fff;text-decoration:none;font-weight:700;font-size:15px;display:flex;align-items:center;gap:8px}
+.nav-logo{font-size:20px}
+.nav a:last-child{font-size:13px;color:rgba(255,255,255,.6);text-decoration:none}
+.nav a:last-child:hover{color:#fff}
+.hero{background:linear-gradient(135deg,#0f172a 0%,#3b0764 50%,#7c3aed 100%);padding:80px 24px 60px;text-align:center}
+.hero-tag{display:inline-block;background:rgba(255,255,255,.1);color:rgba(255,255,255,.8);padding:4px 14px;border-radius:20px;font-size:13px;margin-bottom:20px}
+.hero h1{color:#fff;font-size:clamp(28px,5vw,44px);font-weight:800;margin-bottom:12px;line-height:1.2}
+.hero p{color:rgba(255,255,255,.75);font-size:17px;max-width:680px;margin:0 auto 32px}
+.hero-stats{display:flex;justify-content:center;gap:20px;flex-wrap:wrap}
+.stat-card{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:16px 28px;min-width:130px}
+.stat-num{font-size:28px;font-weight:800;color:#fff}
+.stat-label{font-size:12px;color:rgba(255,255,255,.6);margin-top:2px}
+.page{max-width:1100px;margin:0 auto;padding:40px 24px 60px}
+.toc{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-bottom:48px}
+.toc-item{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;transition:all .2s}
+.toc-item:hover{border-color:var(--purple);color:var(--purple);transform:translateY(-1px);box-shadow:0 4px 12px rgba(124,58,237,.1)}
+.toc-num{background:linear-gradient(135deg,var(--purple),var(--violet));color:#fff;width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.section{margin-bottom:48px}
+.section h2{font-size:22px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+.lead{color:var(--text-secondary);font-size:15px;margin-bottom:20px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}
+.card h3{font-size:16px;font-weight:600;margin-bottom:8px}
+.card p,.card li{font-size:14px;color:var(--text-secondary);line-height:1.7}
+.card ul{padding-left:20px}
+.card li{margin-bottom:4px}
+.chart{margin:16px 0}
+.chart-row{display:flex;align-items:center;margin-bottom:8px}
+.chart-label{width:160px;font-size:13px;font-weight:500;flex-shrink:0}
+.chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:6px;height:28px;overflow:hidden}
+.chart-bar{height:100%;border-radius:6px;display:flex;align-items:center;padding:0 10px;font-size:12px;font-weight:600;color:#fff;transition:width .6s}
+.chart-bar.purple{background:linear-gradient(90deg,var(--purple),var(--violet))}
+.chart-bar.teal{background:linear-gradient(90deg,var(--teal),#2dd4bf)}
+.chart-bar.amber{background:linear-gradient(90deg,var(--amber),#fbbf24)}
+.chart-bar.green{background:linear-gradient(90deg,var(--green),#34d399)}
+.chart-bar.red{background:linear-gradient(90deg,var(--red),#f87171)}
+.chart-bar.blue{background:linear-gradient(90deg,var(--blue),#60a5fa)}
+.chart-bar.pink{background:linear-gradient(90deg,var(--pink),#f472b6)}
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0}
+.compare-card{padding:20px;border-radius:var(--radius);font-size:14px}
+.compare-card.old{background:#fef2f2;border:1px solid #fecaca}
+.compare-card.new{background:#f0fdf4;border:1px solid #bbf7d0}
+.compare-card h4{font-size:14px;font-weight:700;margin-bottom:6px}
+.compare-card p,.compare-card li{font-size:13px;color:var(--text-secondary)}
+.compare-card ul{padding-left:16px;margin-top:6px}
+.timeline{position:relative;padding-left:28px;margin:16px 0}
+.timeline::before{content:'';position:absolute;left:8px;top:4px;bottom:4px;width:2px;background:linear-gradient(180deg,var(--purple),var(--teal),var(--amber))}
+.tl-item{position:relative;margin-bottom:20px}
+.tl-dot{position:absolute;left:-24px;top:4px;width:12px;height:12px;border-radius:50%;border:2px solid var(--purple);background:#fff}
+.tl-item:nth-child(2) .tl-dot{border-color:var(--violet)}
+.tl-item:nth-child(3) .tl-dot{border-color:var(--teal)}
+.tl-item:nth-child(4) .tl-dot{border-color:var(--amber)}
+.tl-item:nth-child(5) .tl-dot{border-color:var(--green)}
+.tl-phase{font-weight:600;font-size:15px;margin-bottom:2px}
+.tl-desc{font-size:13px;color:var(--text-secondary)}
+.tl-token{font-size:12px;color:var(--purple);font-family:var(--mono);margin-bottom:2px}
+.flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:16px 0}
+.flow-step{padding:10px 18px;background:var(--surface);border:1px solid var(--border);border-radius:10px;font-size:13px;font-weight:500}
+.flow-step.purple{background:var(--purple);color:#fff;border-color:var(--purple)}
+.flow-step.teal{background:var(--teal);color:#fff;border-color:var(--teal)}
+.flow-step.amber{background:var(--amber);color:#fff;border-color:var(--amber)}
+.flow-arrow{color:var(--text-secondary);font-size:18px}
+.block-q{border-left:3px solid var(--purple);padding:16px 20px;background:rgba(124,58,237,.04);border-radius:0 var(--radius) var(--radius) 0;margin:16px 0;font-style:italic;color:var(--text-secondary);font-size:14px}
+.badge{display:inline-block;padding:2px 10px;border-radius:20px;font-size:12px;font-weight:600}
+.badge-purple{background:rgba(124,58,237,.1);color:var(--purple)}
+.badge-teal{background:rgba(20,184,166,.1);color:var(--teal)}
+.badge-amber{background:rgba(245,158,11,.1);color:var(--amber)}
+.badge-green{background:rgba(16,185,129,.1);color:var(--green)}
+.badge-red{background:rgba(239,68,68,.1);color:var(--red)}
+.badge-blue{background:rgba(59,130,246,.1);color:var(--blue)}
+.metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:16px 0}
+.metric-card{text-align:center;padding:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius)}
+.metric-card .num{font-size:24px;font-weight:800;color:var(--purple)}
+.metric-card .label{font-size:12px;color:var(--text-secondary);margin-top:2px}
+.code-block{background:#1e293b;color:#e2e8f0;padding:16px;border-radius:10px;font-family:var(--mono);font-size:13px;overflow-x:auto;margin:12px 0;line-height:1.6}
+.progress-wrap{margin:8px 0}
+.progress-bar{background:#f1f5f9;border-radius:6px;height:8px;overflow:hidden}
+.progress-bar .fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--purple),var(--violet))}
+.tag-list{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.footer{text-align:center;padding:40px 24px;background:var(--surface);border-top:1px solid var(--border);font-size:13px;color:var(--text-secondary)}
+.footer a{color:var(--purple);text-decoration:none}
+.footer a:hover{text-decoration:underline}
+.tbl-wrap{overflow-x:auto;margin:12px 0}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#f8fafc;font-weight:600;text-align:left;padding:10px 12px;border-bottom:2px solid var(--border)}
+td{padding:10px 12px;border-bottom:1px solid var(--border)}
+@media(max-width:768px){
+  .compare-grid,.metric-grid{grid-template-columns:1fr}
+  .chart-label{width:100px;font-size:12px}
+  .flow{flex-direction:column}
+  .flow-arrow{transform:rotate(90deg)}
+  .toc{grid-template-columns:1fr}
+  .hero{padding:60px 16px 40px}
+  .hero h1{font-size:26px}
+  .hero-stats{gap:10px}
+  .stat-card{padding:12px 16px;min-width:100px}
+  .stat-num{font-size:22px}
+}
+</style>
+</head>
+<body>
+<nav class="nav"><div class="nav-inner">
+<a href="../" class="nav-brand"><span class="nav-logo">⚡</span><span>Engineering Blogs Hub</span></a>
+<a href="../">← Back to Hub</a>
+</div></nav>
+
+<header class="hero">
+<div class="hero-tag">2025-06-30</div>
+<h1>Quora 案例：Modal 上运行数千并发 Python 沙箱</h1>
+<p>Quora 如何使用 Modal Sandboxes 为 Poe 平台提供安全代码执行——节省 2 名工程师的持续维护时间</p>
+<div class="hero-stats">
+<div class="stat-card"><div class="stat-num">400M</div><div class="stat-label">月活用户</div></div>
+<div class="stat-card"><div class="stat-num">1000/s</div><div class="stat-label">Sandbox 创建速率</div></div>
+<div class="stat-card"><div class="stat-num">$75M</div><div class="stat-label">Poe 融资额</div></div>
+<div class="stat-card"><div class="stat-num">2人</div><div class="stat-label">节省的工程师时间</div></div>
+
+</div>
+</header>
+
+<div class="page">
+<nav class="toc">
+<a href="#s1" class="toc-item"><span class="toc-num">01</span>Quora 和 Poe</a>
+<a href="#s2" class="toc-item"><span class="toc-num">02</span>代码解释器需求</a>
+<a href="#s3" class="toc-item"><span class="toc-num">03</span>为什么选择 Modal</a>
+<a href="#s4" class="toc-item"><span class="toc-num">04</span>Modal Sandboxes 优势</a>
+<a href="#s5" class="toc-item"><span class="toc-num">05</span>工程效率提升</a>
+<a href="#s6" class="toc-item"><span class="toc-num">06</span>快速上手</a>
+
+</nav>
+
+
+<section class="section" id="s1">
+<h2>❓ Quora 和 Poe</h2>
+<p class="lead">4 亿月活的 Q&A 平台 + AI 聊天机器人平台 Poe</p>
+<div class="card"><p>Quora 是拥有 4 亿月活用户的知识分享平台。2023 年推出 Poe——一个 AI 聊天机器人平台，任何人都可以部署公共聊天机器人。Quora 已为 Poe 融资 $75M。</p></div>
+</section>
+
+<section class="section" id="s2">
+<h2>🔧 代码解释器需求</h2>
+<p class="lead">安全性 + 低延迟 + 可靠性——三大核心需求</p>
+<div class="card">
+<p>Poe 中的 LLM 机器人可以生成代码，用户期望直接在 Poe 中运行而非复制到编辑器。团队需要完全隔离的安全代码执行方案。</p>
+<div class="metric-grid">
+<div class="metric-card"><div class="num">🔒</div><div class="label">安全隔离</div></div>
+<div class="metric-card"><div class="num">⚡</div><div class="label">低延迟</div></div>
+<div class="metric-card"><div class="num">💎</div><div class="label">高可靠性</div></div>
+</div>
+</div>
+</section>
+
+<section class="section" id="s3">
+<h2>💡 为什么选择 Modal</h2>
+<p class="lead">自建需要数月且还需持续投入——Modal 开箱即用</p>
+<div class="compare-grid">
+<div class="compare-card old">
+<h4>自建方案</h4>
+<ul><li>数月开发时间</li><li>安全隔离需持续维护</li><li>可扩展性自行构建</li><li>网络限制自行实现</li></ul>
+</div>
+<div class="compare-card new">
+<h4>Modal Sandboxes</h4>
+<ul><li>即插即用</li><li>gVisor 企业级隔离</li><li>1000 Sandbox/秒创建</li><li>内置 Tunnels 和 IP 限制</li></ul>
+</div>
+</div>
+</section>
+
+<section class="section" id="s4">
+<h2>🏗️ Modal Sandboxes 优势</h2>
+<p class="lead">核心原语 Modal Functions 减去 Modal Client——战斗测试过的成熟产品</p>
+<div class="card">
+<ul>
+<li>✅ gVisor 的企业级容器隔离</li>
+<li>✅ 压力测试通过 1000 Sandbox/秒的创建吞吐量</li>
+<li>✅ Tunnels 和 IP Allowlisting 等强大网络原语</li>
+</ul>
+</div>
+<div class="block-q"><p>"There would be a lot of edge cases and unknowns if we built code sandboxes ourselves... We offloaded this to Modal and are actively saving 2 engineers' worth of ongoing engineering time." — Hwan Seung Yeo, Director of Engineering</p></div>
+</section>
+
+<section class="section" id="s5">
+<h2>⏱️ 工程效率提升</h2>
+<p class="lead">比自建早数月交付 + 持续节省 2 名工程师的维护时间</p>
+<div class="chart">
+<div class="chart-row"><div class="chart-label">自建开发时间</div><div class="chart-bar-wrap"><div class="chart-bar red" style="width:100%">数月</div></div></div>
+<div class="chart-row"><div class="chart-label">Modal 集成时间</div><div class="chart-bar-wrap"><div class="chart-bar green" style="width:15%">数天</div></div></div>
+</div>
+</section>
+
+<section class="section" id="s6">
+<h2>🚀 快速上手</h2>
+<p class="lead">三步开始使用 Modal Sandboxes</p>
+<div class="code-block"># 安装 Modal
+pip install modal
+
+# 创建账号
+python -m modal setup
+
+# 开始使用 Sandboxes
+import modal
+sb = modal.Sandbox.create(
+    "python", "-c", "print('Hello from sandbox!')"
+)
+sb.wait()</div>
+</section>
+
+</div>
+
+<footer class="footer">
+<p><a href="index.html">Modal Blog Hub</a> · 原文：<a href="https://modal.com/blog/quora-case-study" target="_blank" rel="noopener">https://modal.com/blog/quora-case-study</a></p>
+<p style="margin-top:8px">基于 Modal 官方博客内容的深度解析与可视化呈现</p>
+</footer>
+</body>
+</html>

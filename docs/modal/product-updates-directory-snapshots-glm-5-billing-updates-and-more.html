@@ -1,0 +1,220 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>深度解析：Modal 产品更新 2026 年 3 月：Directory Snapshots、GLM-5、Billing API</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;
+  --border:#e2e8f0;--radius:14px;
+  --purple:#7c3aed;--violet:#8b5cf6;--indigo:#6366f1;
+  --teal:#14b8a6;--amber:#f59e0b;--green:#10b981;--red:#ef4444;--blue:#3b82f6;--pink:#ec4899;
+  --mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+.nav{position:sticky;top:0;z-index:100;background:rgba(15,23,42,.92);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,.08)}
+.nav-inner{max-width:1100px;margin:0 auto;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.nav-brand{color:#fff;text-decoration:none;font-weight:700;font-size:15px;display:flex;align-items:center;gap:8px}
+.nav-logo{font-size:20px}
+.nav a:last-child{font-size:13px;color:rgba(255,255,255,.6);text-decoration:none}
+.nav a:last-child:hover{color:#fff}
+.hero{background:linear-gradient(135deg,#0f172a 0%,#3b0764 50%,#7c3aed 100%);padding:80px 24px 60px;text-align:center}
+.hero-tag{display:inline-block;background:rgba(255,255,255,.1);color:rgba(255,255,255,.8);padding:4px 14px;border-radius:20px;font-size:13px;margin-bottom:20px}
+.hero h1{color:#fff;font-size:clamp(28px,5vw,44px);font-weight:800;margin-bottom:12px;line-height:1.2}
+.hero p{color:rgba(255,255,255,.75);font-size:17px;max-width:680px;margin:0 auto 32px}
+.hero-stats{display:flex;justify-content:center;gap:20px;flex-wrap:wrap}
+.stat-card{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:16px 28px;min-width:130px}
+.stat-num{font-size:28px;font-weight:800;color:#fff}
+.stat-label{font-size:12px;color:rgba(255,255,255,.6);margin-top:2px}
+.page{max-width:1100px;margin:0 auto;padding:40px 24px 60px}
+.toc{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-bottom:48px}
+.toc-item{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;transition:all .2s}
+.toc-item:hover{border-color:var(--purple);color:var(--purple);transform:translateY(-1px);box-shadow:0 4px 12px rgba(124,58,237,.1)}
+.toc-num{background:linear-gradient(135deg,var(--purple),var(--violet));color:#fff;width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.section{margin-bottom:48px}
+.section h2{font-size:22px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+.lead{color:var(--text-secondary);font-size:15px;margin-bottom:20px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}
+.card h3{font-size:16px;font-weight:600;margin-bottom:8px}
+.card p,.card li{font-size:14px;color:var(--text-secondary);line-height:1.7}
+.card ul{padding-left:20px}
+.card li{margin-bottom:4px}
+.chart{margin:16px 0}
+.chart-row{display:flex;align-items:center;margin-bottom:8px}
+.chart-label{width:160px;font-size:13px;font-weight:500;flex-shrink:0}
+.chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:6px;height:28px;overflow:hidden}
+.chart-bar{height:100%;border-radius:6px;display:flex;align-items:center;padding:0 10px;font-size:12px;font-weight:600;color:#fff;transition:width .6s}
+.chart-bar.purple{background:linear-gradient(90deg,var(--purple),var(--violet))}
+.chart-bar.teal{background:linear-gradient(90deg,var(--teal),#2dd4bf)}
+.chart-bar.amber{background:linear-gradient(90deg,var(--amber),#fbbf24)}
+.chart-bar.green{background:linear-gradient(90deg,var(--green),#34d399)}
+.chart-bar.red{background:linear-gradient(90deg,var(--red),#f87171)}
+.chart-bar.blue{background:linear-gradient(90deg,var(--blue),#60a5fa)}
+.chart-bar.pink{background:linear-gradient(90deg,var(--pink),#f472b6)}
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0}
+.compare-card{padding:20px;border-radius:var(--radius);font-size:14px}
+.compare-card.old{background:#fef2f2;border:1px solid #fecaca}
+.compare-card.new{background:#f0fdf4;border:1px solid #bbf7d0}
+.compare-card h4{font-size:14px;font-weight:700;margin-bottom:6px}
+.compare-card p,.compare-card li{font-size:13px;color:var(--text-secondary)}
+.compare-card ul{padding-left:16px;margin-top:6px}
+.timeline{position:relative;padding-left:28px;margin:16px 0}
+.timeline::before{content:'';position:absolute;left:8px;top:4px;bottom:4px;width:2px;background:linear-gradient(180deg,var(--purple),var(--teal),var(--amber))}
+.tl-item{position:relative;margin-bottom:20px}
+.tl-dot{position:absolute;left:-24px;top:4px;width:12px;height:12px;border-radius:50%;border:2px solid var(--purple);background:#fff}
+.tl-item:nth-child(2) .tl-dot{border-color:var(--violet)}
+.tl-item:nth-child(3) .tl-dot{border-color:var(--teal)}
+.tl-item:nth-child(4) .tl-dot{border-color:var(--amber)}
+.tl-item:nth-child(5) .tl-dot{border-color:var(--green)}
+.tl-phase{font-weight:600;font-size:15px;margin-bottom:2px}
+.tl-desc{font-size:13px;color:var(--text-secondary)}
+.tl-token{font-size:12px;color:var(--purple);font-family:var(--mono);margin-bottom:2px}
+.flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:16px 0}
+.flow-step{padding:10px 18px;background:var(--surface);border:1px solid var(--border);border-radius:10px;font-size:13px;font-weight:500}
+.flow-step.purple{background:var(--purple);color:#fff;border-color:var(--purple)}
+.flow-step.teal{background:var(--teal);color:#fff;border-color:var(--teal)}
+.flow-step.amber{background:var(--amber);color:#fff;border-color:var(--amber)}
+.flow-arrow{color:var(--text-secondary);font-size:18px}
+.block-q{border-left:3px solid var(--purple);padding:16px 20px;background:rgba(124,58,237,.04);border-radius:0 var(--radius) var(--radius) 0;margin:16px 0;font-style:italic;color:var(--text-secondary);font-size:14px}
+.badge{display:inline-block;padding:2px 10px;border-radius:20px;font-size:12px;font-weight:600}
+.badge-purple{background:rgba(124,58,237,.1);color:var(--purple)}
+.badge-teal{background:rgba(20,184,166,.1);color:var(--teal)}
+.badge-amber{background:rgba(245,158,11,.1);color:var(--amber)}
+.badge-green{background:rgba(16,185,129,.1);color:var(--green)}
+.badge-red{background:rgba(239,68,68,.1);color:var(--red)}
+.badge-blue{background:rgba(59,130,246,.1);color:var(--blue)}
+.metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:16px 0}
+.metric-card{text-align:center;padding:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius)}
+.metric-card .num{font-size:24px;font-weight:800;color:var(--purple)}
+.metric-card .label{font-size:12px;color:var(--text-secondary);margin-top:2px}
+.code-block{background:#1e293b;color:#e2e8f0;padding:16px;border-radius:10px;font-family:var(--mono);font-size:13px;overflow-x:auto;margin:12px 0;line-height:1.6}
+.progress-wrap{margin:8px 0}
+.progress-bar{background:#f1f5f9;border-radius:6px;height:8px;overflow:hidden}
+.progress-bar .fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--purple),var(--violet))}
+.tag-list{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.footer{text-align:center;padding:40px 24px;background:var(--surface);border-top:1px solid var(--border);font-size:13px;color:var(--text-secondary)}
+.footer a{color:var(--purple);text-decoration:none}
+.footer a:hover{text-decoration:underline}
+.tbl-wrap{overflow-x:auto;margin:12px 0}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#f8fafc;font-weight:600;text-align:left;padding:10px 12px;border-bottom:2px solid var(--border)}
+td{padding:10px 12px;border-bottom:1px solid var(--border)}
+@media(max-width:768px){
+  .compare-grid,.metric-grid{grid-template-columns:1fr}
+  .chart-label{width:100px;font-size:12px}
+  .flow{flex-direction:column}
+  .flow-arrow{transform:rotate(90deg)}
+  .toc{grid-template-columns:1fr}
+  .hero{padding:60px 16px 40px}
+  .hero h1{font-size:26px}
+  .hero-stats{gap:10px}
+  .stat-card{padding:12px 16px;min-width:100px}
+  .stat-num{font-size:22px}
+}
+</style>
+</head>
+<body>
+<nav class="nav"><div class="nav-inner">
+<a href="../" class="nav-brand"><span class="nav-logo">⚡</span><span>Engineering Blogs Hub</span></a>
+<a href="../">← Back to Hub</a>
+</div></nav>
+
+<header class="hero">
+<div class="hero-tag">2026-03-04</div>
+<h1>Modal 产品更新 2026 年 3 月：Directory Snapshots、GLM-5、Billing API</h1>
+<p>Directory Snapshots 精细化快照、GLM-5 免费端点、刷新版 Billing UI 和编程化使用报告</p>
+<div class="hero-stats">
+<div class="stat-card"><div class="stat-num">Directory</div><div class="stat-label">Snapshots 新功能</div></div>
+<div class="stat-card"><div class="stat-num">GLM-5</div><div class="stat-label">免费端点</div></div>
+<div class="stat-card"><div class="stat-num">Billing</div><div class="stat-label">API 全面可用</div></div>
+<div class="stat-card"><div class="stat-num">modal</div><div class="stat-label">changelog CLI</div></div>
+
+</div>
+</header>
+
+<div class="page">
+<nav class="toc">
+<a href="#s1" class="toc-item"><span class="toc-num">01</span>Directory Snapshots</a>
+<a href="#s2" class="toc-item"><span class="toc-num">02</span>GLM-5 免费端点</a>
+<a href="#s3" class="toc-item"><span class="toc-num">03</span>Billing 更新</a>
+<a href="#s4" class="toc-item"><span class="toc-num">04</span>SDK 更新</a>
+<a href="#s5" class="toc-item"><span class="toc-num">05</span>AI 研究加速</a>
+<a href="#s6" class="toc-item"><span class="toc-num">06</span>活动日历</a>
+
+</nav>
+
+
+<section class="section" id="s1">
+<h2>📁 Directory Snapshots</h2>
+<p class="lead">精确快照特定目录——分离系统依赖与应用代码，加速初始化</p>
+<div class="card">
+<p>此前快照 Sandbox 意味着捕获整个文件系统。Directory Snapshots 允许快照特定目录并独立于基础镜像挂载到新 Sandbox 中。</p>
+<div class="compare-grid">
+<div class="compare-card old"><h4>旧方式</h4><p>快照整个文件系统，耦合依赖和代码</p></div>
+<div class="compare-card new"><h4>Directory Snapshots</h4><p>分离系统依赖与应用代码，预热 Sandbox 池</p></div>
+</div>
+</div>
+</section>
+
+<section class="section" id="s2">
+<h2>🤖 GLM-5 免费端点</h2>
+<p class="lead">Z.ai 的前沿开源模型——兼容 OpenCode、Claude Code、OpenClaw</p>
+<div class="card"><p>GLM-5 是为长期 Agent 任务优化的开源模型，性能匹配最新专有模型。Modal 提供免费公共端点至 4 月底。</p></div>
+</section>
+
+<section class="section" id="s3">
+<h2>💲 Billing 更新</h2>
+<p class="lead">modal billing report CLI + 编程化 API 全面可用</p>
+<div class="card">
+<ul>
+<li><code style="font-family:var(--mono);background:#f1f5f9;padding:2px 6px;border-radius:4px">modal billing report</code> CLI 命令</li>
+<li><code style="font-family:var(--mono);background:#f1f5f9;padding:2px 6px;border-radius:4px">modal.billing.workspace_billing_report</code> API</li>
+<li>刷新的 Billing UI</li>
+</ul>
+</div>
+</section>
+
+<section class="section" id="s4">
+<h2>💻 SDK 更新</h2>
+<p class="lead">modal changelog CLI、Dashboard URL 方法、Sandbox.detach()</p>
+<div class="timeline">
+<div class="tl-item"><div class="tl-dot"></div><div class="tl-phase">modal changelog</div><div class="tl-desc">打印 Release Notes，支持 --since 和 --newer 查询</div></div>
+<div class="tl-item"><div class="tl-dot"></div><div class="tl-phase">.get_dashboard_url()</div><div class="tl-desc">直接从代码跳转到 Dashboard</div></div>
+<div class="tl-item"><div class="tl-dot"></div><div class="tl-phase">Sandbox.detach()</div><div class="tl-desc">触发资源清理，适合管理大量 Sandbox 的长期客户端</div></div>
+</div>
+</section>
+
+<section class="section" id="s5">
+<h2>🔬 AI 研究加速</h2>
+<p class="lead">Stanford 团队使用 Modal 加速 AI-for-AI 研究</p>
+<div class="compare-grid">
+<div class="compare-card new"><h4>TTT-Discover</h4><p>使用 Modal GPU 环境训练模型，在 GPUMODE kernel 竞赛中超越人类工程师</p></div>
+<div class="compare-card new"><h4>RL-4-MLE</h4><p>使用 Modal Sandboxes 在数百个并发 rollout 中自动化 ML 研究生命周期</p></div>
+</div>
+</section>
+
+<section class="section" id="s6">
+<h2>📍 活动日历</h2>
+<p class="lead">NVIDIA GTC、NYC Agent Infra 等活动</p>
+<div class="card">
+<ul>
+<li>Speculative Decoding 介绍 (虚拟)</li>
+<li>NVIDIA GTC — Booth 4020</li>
+<li>Women in AI/ML — San Jose</li>
+<li>Scaling up AI Agent Infrastructure — NYC</li>
+</ul>
+</div>
+</section>
+
+</div>
+
+<footer class="footer">
+<p><a href="index.html">Modal Blog Hub</a> · 原文：<a href="https://modal.com/blog/product-updates-directory-snapshots-glm-5-billing-updates-and-more" target="_blank" rel="noopener">https://modal.com/blog/product-updates-directory-snapshots-glm-5-billing-updates-and-more</a></p>
+<p style="margin-top:8px">基于 Modal 官方博客内容的深度解析与可视化呈现</p>
+</footer>
+</body>
+</html>

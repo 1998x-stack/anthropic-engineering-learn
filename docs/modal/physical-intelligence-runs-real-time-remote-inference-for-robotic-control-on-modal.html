@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>深度解析：Physical Intelligence：Modal 上的实时机器人推理</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;
+  --border:#e2e8f0;--radius:14px;
+  --purple:#7c3aed;--violet:#8b5cf6;--indigo:#6366f1;
+  --teal:#14b8a6;--amber:#f59e0b;--green:#10b981;--red:#ef4444;--blue:#3b82f6;--pink:#ec4899;
+  --mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+.nav{position:sticky;top:0;z-index:100;background:rgba(15,23,42,.92);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,.08)}
+.nav-inner{max-width:1100px;margin:0 auto;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.nav-brand{color:#fff;text-decoration:none;font-weight:700;font-size:15px;display:flex;align-items:center;gap:8px}
+.nav-logo{font-size:20px}
+.nav a:last-child{font-size:13px;color:rgba(255,255,255,.6);text-decoration:none}
+.nav a:last-child:hover{color:#fff}
+.hero{background:linear-gradient(135deg,#0f172a 0%,#3b0764 50%,#7c3aed 100%);padding:80px 24px 60px;text-align:center}
+.hero-tag{display:inline-block;background:rgba(255,255,255,.1);color:rgba(255,255,255,.8);padding:4px 14px;border-radius:20px;font-size:13px;margin-bottom:20px}
+.hero h1{color:#fff;font-size:clamp(28px,5vw,44px);font-weight:800;margin-bottom:12px;line-height:1.2}
+.hero p{color:rgba(255,255,255,.75);font-size:17px;max-width:680px;margin:0 auto 32px}
+.hero-stats{display:flex;justify-content:center;gap:20px;flex-wrap:wrap}
+.stat-card{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:16px 28px;min-width:130px}
+.stat-num{font-size:28px;font-weight:800;color:#fff}
+.stat-label{font-size:12px;color:rgba(255,255,255,.6);margin-top:2px}
+.page{max-width:1100px;margin:0 auto;padding:40px 24px 60px}
+.toc{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-bottom:48px}
+.toc-item{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;transition:all .2s}
+.toc-item:hover{border-color:var(--purple);color:var(--purple);transform:translateY(-1px);box-shadow:0 4px 12px rgba(124,58,237,.1)}
+.toc-num{background:linear-gradient(135deg,var(--purple),var(--violet));color:#fff;width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.section{margin-bottom:48px}
+.section h2{font-size:22px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+.lead{color:var(--text-secondary);font-size:15px;margin-bottom:20px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}
+.card h3{font-size:16px;font-weight:600;margin-bottom:8px}
+.card p,.card li{font-size:14px;color:var(--text-secondary);line-height:1.7}
+.card ul{padding-left:20px}
+.card li{margin-bottom:4px}
+.chart{margin:16px 0}
+.chart-row{display:flex;align-items:center;margin-bottom:8px}
+.chart-label{width:160px;font-size:13px;font-weight:500;flex-shrink:0}
+.chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:6px;height:28px;overflow:hidden}
+.chart-bar{height:100%;border-radius:6px;display:flex;align-items:center;padding:0 10px;font-size:12px;font-weight:600;color:#fff;transition:width .6s}
+.chart-bar.purple{background:linear-gradient(90deg,var(--purple),var(--violet))}
+.chart-bar.teal{background:linear-gradient(90deg,var(--teal),#2dd4bf)}
+.chart-bar.amber{background:linear-gradient(90deg,var(--amber),#fbbf24)}
+.chart-bar.green{background:linear-gradient(90deg,var(--green),#34d399)}
+.chart-bar.red{background:linear-gradient(90deg,var(--red),#f87171)}
+.chart-bar.blue{background:linear-gradient(90deg,var(--blue),#60a5fa)}
+.chart-bar.pink{background:linear-gradient(90deg,var(--pink),#f472b6)}
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0}
+.compare-card{padding:20px;border-radius:var(--radius);font-size:14px}
+.compare-card.old{background:#fef2f2;border:1px solid #fecaca}
+.compare-card.new{background:#f0fdf4;border:1px solid #bbf7d0}
+.compare-card h4{font-size:14px;font-weight:700;margin-bottom:6px}
+.compare-card p,.compare-card li{font-size:13px;color:var(--text-secondary)}
+.compare-card ul{padding-left:16px;margin-top:6px}
+.timeline{position:relative;padding-left:28px;margin:16px 0}
+.timeline::before{content:'';position:absolute;left:8px;top:4px;bottom:4px;width:2px;background:linear-gradient(180deg,var(--purple),var(--teal),var(--amber))}
+.tl-item{position:relative;margin-bottom:20px}
+.tl-dot{position:absolute;left:-24px;top:4px;width:12px;height:12px;border-radius:50%;border:2px solid var(--purple);background:#fff}
+.tl-item:nth-child(2) .tl-dot{border-color:var(--violet)}
+.tl-item:nth-child(3) .tl-dot{border-color:var(--teal)}
+.tl-item:nth-child(4) .tl-dot{border-color:var(--amber)}
+.tl-item:nth-child(5) .tl-dot{border-color:var(--green)}
+.tl-phase{font-weight:600;font-size:15px;margin-bottom:2px}
+.tl-desc{font-size:13px;color:var(--text-secondary)}
+.tl-token{font-size:12px;color:var(--purple);font-family:var(--mono);margin-bottom:2px}
+.flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:16px 0}
+.flow-step{padding:10px 18px;background:var(--surface);border:1px solid var(--border);border-radius:10px;font-size:13px;font-weight:500}
+.flow-step.purple{background:var(--purple);color:#fff;border-color:var(--purple)}
+.flow-step.teal{background:var(--teal);color:#fff;border-color:var(--teal)}
+.flow-step.amber{background:var(--amber);color:#fff;border-color:var(--amber)}
+.flow-arrow{color:var(--text-secondary);font-size:18px}
+.block-q{border-left:3px solid var(--purple);padding:16px 20px;background:rgba(124,58,237,.04);border-radius:0 var(--radius) var(--radius) 0;margin:16px 0;font-style:italic;color:var(--text-secondary);font-size:14px}
+.badge{display:inline-block;padding:2px 10px;border-radius:20px;font-size:12px;font-weight:600}
+.badge-purple{background:rgba(124,58,237,.1);color:var(--purple)}
+.badge-teal{background:rgba(20,184,166,.1);color:var(--teal)}
+.badge-amber{background:rgba(245,158,11,.1);color:var(--amber)}
+.badge-green{background:rgba(16,185,129,.1);color:var(--green)}
+.badge-red{background:rgba(239,68,68,.1);color:var(--red)}
+.badge-blue{background:rgba(59,130,246,.1);color:var(--blue)}
+.metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:16px 0}
+.metric-card{text-align:center;padding:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius)}
+.metric-card .num{font-size:24px;font-weight:800;color:var(--purple)}
+.metric-card .label{font-size:12px;color:var(--text-secondary);margin-top:2px}
+.code-block{background:#1e293b;color:#e2e8f0;padding:16px;border-radius:10px;font-family:var(--mono);font-size:13px;overflow-x:auto;margin:12px 0;line-height:1.6}
+.progress-wrap{margin:8px 0}
+.progress-bar{background:#f1f5f9;border-radius:6px;height:8px;overflow:hidden}
+.progress-bar .fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--purple),var(--violet))}
+.tag-list{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.footer{text-align:center;padding:40px 24px;background:var(--surface);border-top:1px solid var(--border);font-size:13px;color:var(--text-secondary)}
+.footer a{color:var(--purple);text-decoration:none}
+.footer a:hover{text-decoration:underline}
+.tbl-wrap{overflow-x:auto;margin:12px 0}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#f8fafc;font-weight:600;text-align:left;padding:10px 12px;border-bottom:2px solid var(--border)}
+td{padding:10px 12px;border-bottom:1px solid var(--border)}
+@media(max-width:768px){
+  .compare-grid,.metric-grid{grid-template-columns:1fr}
+  .chart-label{width:100px;font-size:12px}
+  .flow{flex-direction:column}
+  .flow-arrow{transform:rotate(90deg)}
+  .toc{grid-template-columns:1fr}
+  .hero{padding:60px 16px 40px}
+  .hero h1{font-size:26px}
+  .hero-stats{gap:10px}
+  .stat-card{padding:12px 16px;min-width:100px}
+  .stat-num{font-size:22px}
+}
+</style>
+</head>
+<body>
+<nav class="nav"><div class="nav-inner">
+<a href="../" class="nav-brand"><span class="nav-logo">⚡</span><span>Engineering Blogs Hub</span></a>
+<a href="../">← Back to Hub</a>
+</div></nav>
+
+<header class="hero">
+<div class="hero-tag">2026-04-08</div>
+<h1>Physical Intelligence：Modal 上的实时机器人推理</h1>
+<p>Pi 的 VLA 模型在 Modal 上运行实时远程推理，仅增加 10-15ms 网络开销——控制真实机器人</p>
+<div class="hero-stats">
+<div class="stat-card"><div class="stat-num">10-15ms</div><div class="stat-label">网络开销</div></div>
+<div class="stat-card"><div class="stat-num">24/7</div><div class="stat-label">推理运行</div></div>
+<div class="stat-card"><div class="stat-num"><30s</div><div class="stat-label">Checkpoint 加载</div></div>
+<div class="stat-card"><div class="stat-num">QUIC</div><div class="stat-label">传输协议</div></div>
+
+</div>
+</header>
+
+<div class="page">
+<nav class="toc">
+<a href="#s1" class="toc-item"><span class="toc-num">01</span>Pi 简介</a>
+<a href="#s2" class="toc-item"><span class="toc-num">02</span>实时推理挑战</a>
+<a href="#s3" class="toc-item"><span class="toc-num">03</span>Modal Tunnels</a>
+<a href="#s4" class="toc-item"><span class="toc-num">04</span>QUIC 传输方案</a>
+<a href="#s5" class="toc-item"><span class="toc-num">05</span>Region Pinning</a>
+<a href="#s6" class="toc-item"><span class="toc-num">06</span>全球扩展</a>
+
+</nav>
+
+
+<section class="section" id="s1">
+<h2>🤖 Pi 简介</h2>
+<p class="lead">构建通用机器人智能系统——VLA 架构驱动的闭环连续推理</p>
+<div class="card">
+<p>Physical Intelligence (Pi) 的核心模型是 Visual-Language-Action (VLA) 架构，接受视觉观察、自然语言指令和机器人本体感觉状态，输出下一个瞬间的电机命令。每个手臂运动都经过这个连续推理的闭环。</p>
+</div>
+<div class="flow">
+<div class="flow-step">视觉观察</div>
+<div class="flow-arrow">→</div>
+<div class="flow-step">语言指令</div>
+<div class="flow-arrow">→</div>
+<div class="flow-step purple">VLA 模型</div>
+<div class="flow-arrow">→</div>
+<div class="flow-step teal">电机命令</div>
+</div>
+</section>
+
+<section class="section" id="s2">
+<h2>⏱️ 实时推理挑战</h2>
+<p class="lead">机器人处于连续控制循环中——即使微小的抖动或阻塞都会降低行为质量</p>
+<div class="card"><p>标准方案是在机器人上搭载 GPU 进行本地推理。但远程推理可为没有板载 GPU 的机器人提供更轻量的方案，同时能使用数据中心级别的更大 GPU 来实验更大模型。</p></div>
+</section>
+
+<section class="section" id="s3">
+<h2>🔌 Modal Tunnels</h2>
+<p class="lead">直接 TCP 端口暴露——大多数低延迟场景的标准方案</p>
+<div class="card"><p>Tunnels 在不到一分钟的容器启动时间内，通过自动 TLS 终止和安全 URL 将运行中容器的 TCP 端口暴露到公网。适用于 API、Jupyter Notebooks、VS Code 等交互式工作负载。</p></div>
+</section>
+
+<section class="section" id="s4">
+<h2>🚀 QUIC 传输方案</h2>
+<p class="lead">基于 UDP 的 QUIC Portal——Rust 实现，自动 NAT 穿越</p>
+<div class="card">
+<h3>技术细节</h3>
+<ul>
+<li>持久双向通道——机器人连接一次，持续流式传输观察和接收动作</li>
+<li>STUN 发现 + UDP 打洞的自动 NAT 穿越</li>
+<li>通过 Modal Dict 进行会合协调</li>
+<li>Rust 实现的 QUIC，高吞吐低延迟</li>
+<li>仅增加 ~10-15ms 网络开销</li>
+</ul>
+</div>
+</section>
+
+<section class="section" id="s5">
+<h2>📍 Region Pinning</h2>
+<p class="lead">将推理部署固定到靠近机器人的区域——最短往返路径</p>
+<div class="card"><p>Checkpoint 存储在 Modal Volumes 中，直接挂载到 GPU 容器。模型加载不到 30 秒。</p></div>
+</section>
+
+<section class="section" id="s6">
+<h2>🌎 全球扩展</h2>
+<p class="lead">新增机器人位置不再需要基础设施建设——同一容器、同一 Checkpoint、同一传输</p>
+<div class="card"><p>在新位置附近启动相同容器，通过 Modal Volumes 挂载相同 Checkpoint，使用相同的低延迟传输连接机器人——无需运送 GPU 塔或搭建本地集群。</p></div>
+</section>
+
+</div>
+
+<footer class="footer">
+<p><a href="index.html">Modal Blog Hub</a> · 原文：<a href="https://modal.com/blog/physical-intelligence-runs-real-time-remote-inference-for-robotic-control-on-modal" target="_blank" rel="noopener">https://modal.com/blog/physical-intelligence-runs-real-time-remote-inference-for-robotic-control-on-modal</a></p>
+<p style="margin-top:8px">基于 Modal 官方博客内容的深度解析与可视化呈现</p>
+</footer>
+</body>
+</html>

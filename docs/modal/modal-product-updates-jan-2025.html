@@ -1,0 +1,226 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1.0">
+<title>深度解析：Modal 产品更新 2025 年 1 月：L40S、Proxy Auth、Sandbox Snapshots</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root {
+  --bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;
+  --border:#e2e8f0;--radius:14px;
+  --purple:#7c3aed;--violet:#8b5cf6;--indigo:#6366f1;
+  --teal:#14b8a6;--amber:#f59e0b;--green:#10b981;--red:#ef4444;--blue:#3b82f6;--pink:#ec4899;
+  --mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif;
+}
+*{margin:0;padding:0;box-sizing:border-box}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+.nav{position:sticky;top:0;z-index:100;background:rgba(15,23,42,.92);backdrop-filter:blur(12px);border-bottom:1px solid rgba(255,255,255,.08)}
+.nav-inner{max-width:1100px;margin:0 auto;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}
+.nav-brand{color:#fff;text-decoration:none;font-weight:700;font-size:15px;display:flex;align-items:center;gap:8px}
+.nav-logo{font-size:20px}
+.nav a:last-child{font-size:13px;color:rgba(255,255,255,.6);text-decoration:none}
+.nav a:last-child:hover{color:#fff}
+.hero{background:linear-gradient(135deg,#0f172a 0%,#3b0764 50%,#7c3aed 100%);padding:80px 24px 60px;text-align:center}
+.hero-tag{display:inline-block;background:rgba(255,255,255,.1);color:rgba(255,255,255,.8);padding:4px 14px;border-radius:20px;font-size:13px;margin-bottom:20px}
+.hero h1{color:#fff;font-size:clamp(28px,5vw,44px);font-weight:800;margin-bottom:12px;line-height:1.2}
+.hero p{color:rgba(255,255,255,.75);font-size:17px;max-width:680px;margin:0 auto 32px}
+.hero-stats{display:flex;justify-content:center;gap:20px;flex-wrap:wrap}
+.stat-card{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:16px 28px;min-width:130px}
+.stat-num{font-size:28px;font-weight:800;color:#fff}
+.stat-label{font-size:12px;color:rgba(255,255,255,.6);margin-top:2px}
+.page{max-width:1100px;margin:0 auto;padding:40px 24px 60px}
+.toc{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px;margin-bottom:48px}
+.toc-item{display:flex;align-items:center;gap:10px;padding:10px 14px;background:var(--surface);border:1px solid var(--border);border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;transition:all .2s}
+.toc-item:hover{border-color:var(--purple);color:var(--purple);transform:translateY(-1px);box-shadow:0 4px 12px rgba(124,58,237,.1)}
+.toc-num{background:linear-gradient(135deg,var(--purple),var(--violet));color:#fff;width:28px;height:28px;border-radius:8px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+.section{margin-bottom:48px}
+.section h2{font-size:22px;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+.lead{color:var(--text-secondary);font-size:15px;margin-bottom:20px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}
+.card h3{font-size:16px;font-weight:600;margin-bottom:8px}
+.card p,.card li{font-size:14px;color:var(--text-secondary);line-height:1.7}
+.card ul{padding-left:20px}
+.card li{margin-bottom:4px}
+.chart{margin:16px 0}
+.chart-row{display:flex;align-items:center;margin-bottom:8px}
+.chart-label{width:160px;font-size:13px;font-weight:500;flex-shrink:0}
+.chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:6px;height:28px;overflow:hidden}
+.chart-bar{height:100%;border-radius:6px;display:flex;align-items:center;padding:0 10px;font-size:12px;font-weight:600;color:#fff;transition:width .6s}
+.chart-bar.purple{background:linear-gradient(90deg,var(--purple),var(--violet))}
+.chart-bar.teal{background:linear-gradient(90deg,var(--teal),#2dd4bf)}
+.chart-bar.amber{background:linear-gradient(90deg,var(--amber),#fbbf24)}
+.chart-bar.green{background:linear-gradient(90deg,var(--green),#34d399)}
+.chart-bar.red{background:linear-gradient(90deg,var(--red),#f87171)}
+.chart-bar.blue{background:linear-gradient(90deg,var(--blue),#60a5fa)}
+.chart-bar.pink{background:linear-gradient(90deg,var(--pink),#f472b6)}
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0}
+.compare-card{padding:20px;border-radius:var(--radius);font-size:14px}
+.compare-card.old{background:#fef2f2;border:1px solid #fecaca}
+.compare-card.new{background:#f0fdf4;border:1px solid #bbf7d0}
+.compare-card h4{font-size:14px;font-weight:700;margin-bottom:6px}
+.compare-card p,.compare-card li{font-size:13px;color:var(--text-secondary)}
+.compare-card ul{padding-left:16px;margin-top:6px}
+.timeline{position:relative;padding-left:28px;margin:16px 0}
+.timeline::before{content:'';position:absolute;left:8px;top:4px;bottom:4px;width:2px;background:linear-gradient(180deg,var(--purple),var(--teal),var(--amber))}
+.tl-item{position:relative;margin-bottom:20px}
+.tl-dot{position:absolute;left:-24px;top:4px;width:12px;height:12px;border-radius:50%;border:2px solid var(--purple);background:#fff}
+.tl-item:nth-child(2) .tl-dot{border-color:var(--violet)}
+.tl-item:nth-child(3) .tl-dot{border-color:var(--teal)}
+.tl-item:nth-child(4) .tl-dot{border-color:var(--amber)}
+.tl-item:nth-child(5) .tl-dot{border-color:var(--green)}
+.tl-phase{font-weight:600;font-size:15px;margin-bottom:2px}
+.tl-desc{font-size:13px;color:var(--text-secondary)}
+.tl-token{font-size:12px;color:var(--purple);font-family:var(--mono);margin-bottom:2px}
+.flow{display:flex;align-items:center;gap:8px;flex-wrap:wrap;margin:16px 0}
+.flow-step{padding:10px 18px;background:var(--surface);border:1px solid var(--border);border-radius:10px;font-size:13px;font-weight:500}
+.flow-step.purple{background:var(--purple);color:#fff;border-color:var(--purple)}
+.flow-step.teal{background:var(--teal);color:#fff;border-color:var(--teal)}
+.flow-step.amber{background:var(--amber);color:#fff;border-color:var(--amber)}
+.flow-arrow{color:var(--text-secondary);font-size:18px}
+.block-q{border-left:3px solid var(--purple);padding:16px 20px;background:rgba(124,58,237,.04);border-radius:0 var(--radius) var(--radius) 0;margin:16px 0;font-style:italic;color:var(--text-secondary);font-size:14px}
+.badge{display:inline-block;padding:2px 10px;border-radius:20px;font-size:12px;font-weight:600}
+.badge-purple{background:rgba(124,58,237,.1);color:var(--purple)}
+.badge-teal{background:rgba(20,184,166,.1);color:var(--teal)}
+.badge-amber{background:rgba(245,158,11,.1);color:var(--amber)}
+.badge-green{background:rgba(16,185,129,.1);color:var(--green)}
+.badge-red{background:rgba(239,68,68,.1);color:var(--red)}
+.badge-blue{background:rgba(59,130,246,.1);color:var(--blue)}
+.metric-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:12px;margin:16px 0}
+.metric-card{text-align:center;padding:16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius)}
+.metric-card .num{font-size:24px;font-weight:800;color:var(--purple)}
+.metric-card .label{font-size:12px;color:var(--text-secondary);margin-top:2px}
+.code-block{background:#1e293b;color:#e2e8f0;padding:16px;border-radius:10px;font-family:var(--mono);font-size:13px;overflow-x:auto;margin:12px 0;line-height:1.6}
+.progress-wrap{margin:8px 0}
+.progress-bar{background:#f1f5f9;border-radius:6px;height:8px;overflow:hidden}
+.progress-bar .fill{height:100%;border-radius:6px;background:linear-gradient(90deg,var(--purple),var(--violet))}
+.tag-list{display:flex;gap:6px;flex-wrap:wrap;margin:8px 0}
+.footer{text-align:center;padding:40px 24px;background:var(--surface);border-top:1px solid var(--border);font-size:13px;color:var(--text-secondary)}
+.footer a{color:var(--purple);text-decoration:none}
+.footer a:hover{text-decoration:underline}
+.tbl-wrap{overflow-x:auto;margin:12px 0}
+table{width:100%;border-collapse:collapse;font-size:13px}
+th{background:#f8fafc;font-weight:600;text-align:left;padding:10px 12px;border-bottom:2px solid var(--border)}
+td{padding:10px 12px;border-bottom:1px solid var(--border)}
+@media(max-width:768px){
+  .compare-grid,.metric-grid{grid-template-columns:1fr}
+  .chart-label{width:100px;font-size:12px}
+  .flow{flex-direction:column}
+  .flow-arrow{transform:rotate(90deg)}
+  .toc{grid-template-columns:1fr}
+  .hero{padding:60px 16px 40px}
+  .hero h1{font-size:26px}
+  .hero-stats{gap:10px}
+  .stat-card{padding:12px 16px;min-width:100px}
+  .stat-num{font-size:22px}
+}
+</style>
+</head>
+<body>
+<nav class="nav"><div class="nav-inner">
+<a href="../" class="nav-brand"><span class="nav-logo">⚡</span><span>Engineering Blogs Hub</span></a>
+<a href="../">← Back to Hub</a>
+</div></nav>
+
+<header class="hero">
+<div class="hero-tag">2025-01-21</div>
+<h1>Modal 产品更新 2025 年 1 月：L40S、Proxy Auth、Sandbox Snapshots</h1>
+<p>L40S GPU 上线、Proxy Auth Tokens、Sandbox 文件系统 API 和磁盘快照、SOC 2 Type 2 认证</p>
+<div class="hero-stats">
+<div class="stat-card"><div class="stat-num">$1.95/hr</div><div class="stat-label">L40S 价格</div></div>
+<div class="stat-card"><div class="stat-num">48GB</div><div class="stat-label">DDR6 显存</div></div>
+<div class="stat-card"><div class="stat-num">SOC 2</div><div class="stat-label">Type 2 认证</div></div>
+<div class="stat-card"><div class="stat-num">GPU Glossary</div><div class="stat-label">开源发布</div></div>
+
+</div>
+</header>
+
+<div class="page">
+<nav class="toc">
+<a href="#s1" class="toc-item"><span class="toc-num">01</span>L40S GPU</a>
+<a href="#s2" class="toc-item"><span class="toc-num">02</span>Proxy Auth Tokens</a>
+<a href="#s3" class="toc-item"><span class="toc-num">03</span>Sandbox 快照</a>
+<a href="#s4" class="toc-item"><span class="toc-num">04</span>Client 更新</a>
+<a href="#s5" class="toc-item"><span class="toc-num">05</span>SOC 2 认证</a>
+<a href="#s6" class="toc-item"><span class="toc-num">06</span>GPU Glossary</a>
+<a href="#s7" class="toc-item"><span class="toc-num">07</span>新资源</a>
+
+</nav>
+
+
+<section class="section" id="s1">
+<h2>🚀 L40S GPU</h2>
+<p class="lead">NVIDIA L40S 以 $1.95/hr 上线——2x 显存、40%+ 加速</p>
+<div class="card">
+<div class="metric-grid">
+<div class="metric-card"><div class="num">2x</div><div class="label">更多显存</div></div>
+<div class="metric-card"><div class="num">40%</div><div class="label">Memory-bound 加速</div></div>
+<div class="metric-card"><div class="num">100%+</div><div class="label">Compute-bound 加速</div></div>
+</div>
+<div class="code-block">@app.function(gpu="L40S")</div>
+</div>
+</section>
+
+<section class="section" id="s2">
+<h2>🔒 Proxy Auth Tokens</h2>
+<p class="lead">为 Web Endpoints 添加认证——防止未授权使用产生费用</p>
+<div class="card"><p>Modal 现在支持 Proxy Auth Tokens，可以给 Web Endpoints 加上访问控制，防止未知流量产生额外费用。</p></div>
+</section>
+
+<section class="section" id="s3">
+<h2>📷 Sandbox 文件系统 API 和磁盘快照</h2>
+<p class="lead">无缝读写 Sandbox 文件 + 从快照分支创建新实例</p>
+<div class="timeline">
+<div class="tl-item"><div class="tl-dot"></div><div class="tl-phase">Filesystem API</div><div class="tl-desc">交互式读写 Sandbox 文件</div></div>
+<div class="tl-item"><div class="tl-dot"></div><div class="tl-phase">Disk Snapshots</div><div class="tl-desc">快照 Sandbox 完整状态</div></div>
+<div class="tl-item"><div class="tl-dot"></div><div class="tl-phase">分支恢复</div><div class="tl-desc">从任意快照创建新实例，消除冷启动</div></div>
+</div>
+</section>
+
+<section class="section" id="s4">
+<h2>👩‍💻 Client 更新</h2>
+<p class="lead">.dockerignore 自动检测、Volume 重命名、VSCode 自定义镜像等</p>
+<div class="card">
+<ul>
+<li>Image.from_dockerfile() 自动使用 .dockerignore</li>
+<li>FilePatternMatcher.from_file 构造器</li>
+<li>Volume 支持 CLI 和 SDK 重命名</li>
+<li>Sandbox 支持 fsnotify 和 1 GiB 写入</li>
+<li>modal launch vscode 支持任意 Dockerhub 基础镜像</li>
+</ul>
+</div>
+</section>
+
+<section class="section" id="s5">
+<h2>🔐 SOC 2 Type 2 认证</h2>
+<p class="lead">完成企业级安全合规认证</p>
+<div class="card"><p>Modal 已完成 SOC 2 Type 2 认证，为企业客户提供安全保障。</p></div>
+</section>
+
+<section class="section" id="s6">
+<h2>📚 GPU Glossary</h2>
+<p class="lead">"GPU documentation for humans"——从 Tensor Cores 到 CUDA Toolkit 的全面解释</p>
+<div class="card"><p>Modal 发布了 GPU Glossary，汇集了 GPU 编程领域从硬件到软件的快速解释和高质量资源链接。</p></div>
+</section>
+
+<section class="section" id="s7">
+<h2>🧬 新资源</h2>
+<p class="lead">ESM3 蛋白质折叠、GOT OCR、扩散模型最佳实践</p>
+<div class="card">
+<ul>
+<li><strong>ESM3</strong>：蛋白质结构预测与生成</li>
+<li><strong>GOT</strong>：580M 参数 OCR 模型</li>
+<li>扩散模型产品化最佳实践 Webinar</li>
+</ul>
+</div>
+</section>
+
+</div>
+
+<footer class="footer">
+<p><a href="index.html">Modal Blog Hub</a> · 原文：<a href="https://modal.com/blog/modal-product-updates-jan-2025" target="_blank" rel="noopener">https://modal.com/blog/modal-product-updates-jan-2025</a></p>
+<p style="margin-top:8px">基于 Modal 官方博客内容的深度解析与可视化呈现</p>
+</footer>
+</body>
+</html>

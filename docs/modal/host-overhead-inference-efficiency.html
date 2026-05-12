@@ -1,0 +1,72 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Host Overhead 正在扼杀推理效率</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--purple:#7c3aed;--purple-dark:#6d28d9;--amber:#f59e0b;--green:#10b981;--red:#ef4444;--blue:#3b82f6;--teal:#14b8a6;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif}
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}html{scroll-behavior:smooth}
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7;-webkit-font-smoothing:antialiased}
+    a{color:inherit;text-decoration:none}
+    .nav{position:sticky;top:0;z-index:100;background:rgba(255,255,255,.88);backdrop-filter:blur(14px);border-bottom:1px solid var(--border)}
+    .nav-inner{max-width:1200px;margin:0 auto;padding:0 24px;display:flex;align-items:center;justify-content:space-between;height:52px}
+    .nav-brand{display:flex;align-items:center;gap:8px;font-weight:700;font-size:14px}.nav-logo{font-size:18px}
+    .nav-back{font-size:13px;color:var(--text-secondary);transition:color .15s}.nav-back:hover{color:var(--purple)}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#3b0764 40%,#7c3aed 70%,#0f172a 100%);color:#fff;padding:80px 24px 64px;text-align:center;position:relative;overflow:hidden}
+    .hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse at 25% 60%,rgba(124,58,237,.15) 0%,transparent 55%),radial-gradient(ellipse at 75% 30%,rgba(168,85,247,.1) 0%,transparent 55%)}
+    .hero-inner{position:relative;max-width:800px;margin:0 auto}
+    .hero-tag{display:inline-block;background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:999px;padding:5px 16px;font-size:12px;letter-spacing:.5px;text-transform:uppercase;margin-bottom:20px}
+    .hero h1{font-size:clamp(26px,4.5vw,42px);font-weight:800;line-height:1.2;margin-bottom:12px;letter-spacing:-.02em}
+    .hero .sub{font-size:15px;opacity:.65;margin-bottom:28px}
+    .hero-stats{display:flex;gap:24px;justify-content:center;flex-wrap:wrap}
+    .hero-stat{text-align:center;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.1);border-radius:12px;padding:16px 20px;min-width:120px}
+    .hero-stat .v{font-size:30px;font-weight:800;background:linear-gradient(135deg,#c4b5fd,#a78bfa);-webkit-background-clip:text;-webkit-text-fill-color:transparent;background-clip:text}
+    .hero-stat .l{font-size:12px;opacity:.6;margin-top:4px}
+    .page{max-width:900px;margin:0 auto;padding:0 24px}
+    .toc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px 28px;margin:32px 0}
+    .toc h3{font-size:14px;font-weight:700;text-transform:uppercase;letter-spacing:.5px;color:var(--text-secondary);margin-bottom:12px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:8px}
+    .toc a{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:8px;font-size:14px;color:var(--text);transition:background .15s}
+    .toc a:hover{background:#f1f5f9}
+    .toc .num{background:var(--purple);color:#fff;width:24px;height:24px;border-radius:6px;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}
+    .section{margin:48px 0}.section h2{font-size:24px;font-weight:700;margin-bottom:8px;padding-bottom:10px;border-bottom:2px solid var(--border);display:flex;align-items:center;gap:10px}
+    .section .lead{font-size:16px;color:var(--text-secondary);line-height:1.8;margin-bottom:24px}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}
+    .card h3{font-size:17px;font-weight:700;margin-bottom:10px}.card p,.card li{font-size:14px;color:var(--text-secondary);line-height:1.7}.card ul{padding-left:18px;margin-top:8px}.card li{margin-bottom:4px}
+    .chart{margin:24px 0}.chart-row{display:flex;align-items:center;gap:12px;margin-bottom:12px}
+    .chart-label{width:160px;font-size:13px;color:var(--text-secondary);text-align:right;flex-shrink:0}
+    .chart-bar-wrap{flex:1;height:32px;background:#f1f5f9;border-radius:6px;overflow:hidden}
+    .chart-bar{height:100%;border-radius:6px;display:flex;align-items:center;padding-left:10px;font-size:12px;font-weight:600;color:#fff}
+    .chart-bar.purple{background:linear-gradient(90deg,#7c3aed,#a78bfa)}.chart-bar.green{background:linear-gradient(90deg,#10b981,#34d399)}.chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}.chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}.chart-bar.teal{background:linear-gradient(90deg,#14b8a6,#2dd4bf)}.chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:20px;margin:24px 0}
+    .compare-card{border-radius:var(--radius);padding:24px;border:1px solid}.compare-card.old{background:#fef2f2;border-color:#fecaca}.compare-card.new{background:#eff6ff;border-color:#bfdbfe}
+    .compare-card h4{font-size:15px;font-weight:700;margin-bottom:10px;display:flex;align-items:center;gap:8px}.compare-card.old h4{color:#dc2626}.compare-card.new h4{color:#2563eb}.compare-card p,.compare-card li{font-size:14px;line-height:1.7}
+    .timeline{position:relative;padding-left:32px;margin:24px 0}.timeline::before{content:'';position:absolute;left:14px;top:8px;bottom:8px;width:3px;background:linear-gradient(to bottom,#7c3aed,#a855f7,#ec4899);border-radius:2px}
+    .tl-item{position:relative;margin-bottom:28px}.tl-item:last-child{margin-bottom:0}
+    .tl-dot{position:absolute;left:-25px;top:4px;width:16px;height:16px;border-radius:50%;border:3px solid #fff;box-shadow:0 0 0 2px var(--purple)}
+    .tl-item:nth-child(1) .tl-dot{background:#7c3aed;box-shadow:0 0 0 2px #7c3aed}.tl-item:nth-child(2) .tl-dot{background:#8b5cf6;box-shadow:0 0 0 2px #8b5cf6}.tl-item:nth-child(3) .tl-dot{background:#a855f7;box-shadow:0 0 0 2px #a855f7}.tl-item:nth-child(4) .tl-dot{background:#c084fc;box-shadow:0 0 0 2px #c084fc}.tl-item:nth-child(5) .tl-dot{background:#e879f9;box-shadow:0 0 0 2px #e879f9}
+    .tl-phase{font-size:14px;font-weight:700;color:var(--purple-dark);margin-bottom:4px}.tl-desc{font-size:14px;color:var(--text-secondary);line-height:1.7}
+    .flow{display:flex;align-items:center;justify-content:center;gap:0;flex-wrap:wrap;margin:24px 0}
+    .flow-step{background:linear-gradient(135deg,#7c3aed,#a78bfa);color:#fff;padding:10px 16px;border-radius:10px;font-size:13px;font-weight:600;text-align:center;max-width:160px}.flow-arrow{font-size:20px;color:var(--purple);padding:0 8px}
+    .block-q{background:#f5f3ff;border-left:4px solid #7c3aed;border-radius:0 12px 12px 0;padding:20px 24px;margin:28px 0}.block-q p{font-size:15px;line-height:1.8;color:#4c1d95;font-style:italic}.block-q .attr{font-size:12px;color:var(--text-secondary);margin-top:8px;font-style:normal}
+    .badge{display:inline-block;font-size:11px;font-weight:700;padding:3px 8px;border-radius:6px;letter-spacing:.3px}.badge-purple{background:#ede9fe;color:#6d28d9}.badge-green{background:#dcfce7;color:#16a34a}.badge-amber{background:#fef3c7;color:#b45309}.badge-blue{background:#dbeafe;color:#2563eb}.badge-red{background:#fee2e2;color:#dc2626}.badge-teal{background:#ccfbf1;color:#0d9488}
+    .grid-3{display:grid;grid-template-columns:repeat(auto-fill,minmax(250px,1fr));gap:16px;margin:24px 0}.grid-card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:20px}.grid-card .icon{font-size:28px;margin-bottom:10px}.grid-card h4{font-size:15px;font-weight:700;margin-bottom:6px}.grid-card p{font-size:13px;color:var(--text-secondary);line-height:1.6}
+    .tbl-wrap{overflow-x:auto;margin:20px 0}table{width:100%;border-collapse:collapse;font-size:14px}th{background:#f8fafc;font-weight:600;text-align:left;padding:12px 16px;border-bottom:2px solid var(--border)}td{padding:10px 16px;border-bottom:1px solid var(--border)}tr:last-child td{border-bottom:none}
+    .diagram{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:28px;margin:24px 0;text-align:center}.diagram h4{font-size:15px;font-weight:700;margin-bottom:16px}
+    .footer{text-align:center;padding:40px 24px 48px;border-top:1px solid var(--border);margin-top:60px;font-size:13px;color:var(--text-secondary)}.footer a{color:var(--purple)}
+    @media(max-width:768px){.hero-stats{gap:12px}.hero-stat{min-width:100px;padding:12px 14px}.hero-stat .v{font-size:24px}.compare-grid,.grid-3{grid-template-columns:1fr}.chart-label{width:120px;font-size:12px}.flow{flex-direction:column;gap:8px}.flow-arrow{transform:rotate(90deg)}.toc-grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+<nav class="nav"><div class="nav-inner"><a href="../" class="nav-brand"><span class="nav-logo">&#x1F7E3;</span><span>Modal Deep Dive</span></a><a href="../" class="nav-back">&larr; Back to Hub</a></div></nav>
+<header class="hero"><div class="hero-inner"><div class="hero-tag">Inference &middot; Performance</div><h1>Host Overhead 正在扼杀推理效率</h1><div class="sub">永远不要阻塞 GPU -- 诊断和修复 host overhead &middot; 2025-11-18</div><div class="hero-stats"><div class="hero-stat"><div class="v">1M+</div><div class="l">每纳秒浪费的 FLOP</div></div>
+<div class="hero-stat"><div class="v">2x</div><div class="l">50% overhead 时成本翻倍</div></div>
+<div class="hero-stat"><div class="v">20%</div><div class="l">kernel fusion 延迟降低</div></div>
+<div class="hero-stat"><div class="v">&micro;s</div><div class="l">kernel launch 开销</div></div>
+</div></div></header>
+<div class="page"><nav class="toc"><h3>目录导航</h3><div class="toc-grid"><a href="#s1"><span class="num">1</span>什么是 Host Overhead</a><a href="#s2"><span class="num">2</span>避免不必要同步</a><a href="#s3"><span class="num">3</span>Kernel Launch 开销</a><a href="#s4"><span class="num">4</span>修复策略</a></div></nav><section class="section" id="s1"><h2><span class="emoji">&#x26A0;&#xFE0F;</span> Host Overhead：GPU 空转</h2><div class="lead">AI 推理的首要指令：永远不要阻塞 GPU。每纳秒空转 = 浪费百万次浮点运算。</div><div class="card"><h3>航海者比喻</h3><p>CPU 是航海士：决定做什么工作。GPU 是船：执行实际工作。好的船长不会让船停下来等航海士思考航向。</p></div><div class="chart"><div class="chart-row"><div class="chart-label">50% host overhead</div><div class="chart-bar-wrap"><div class="chart-bar red" style="width:100%">GPU 成本 2x</div></div></div><div class="chart-row"><div class="chart-label">25% host overhead</div><div class="chart-bar-wrap"><div class="chart-bar amber" style="width:67%">GPU 成本 1.33x</div></div></div><div class="chart-row"><div class="chart-label">最优目标</div><div class="chart-bar-wrap"><div class="chart-bar green" style="width:5%">接近 0%</div></div></div></div></section><section class="section" id="s2"><h2><span class="emoji">&#x1F504;</span> 避免不必要的 CPU-GPU 同步</h2><div class="lead">不必要的数据传输是 host overhead 的常见原因。</div><div class="compare-grid"><div class="compare-card old"><h4>&#x274C; CPU 构建 &rarr; 传输 GPU</h4><p>Position embeddings 在 CPU 上构建再传到 GPU。同步数据传输阻塞 GPU。</p></div><div class="compare-card new"><h4>&#x2705; 直接在 GPU 构建</h4><p>在 decode 的特殊情况下，tensor 结构简单，可直接在 GPU 上构建，避免同步传输。</p></div></div></section><section class="section" id="s3"><h2><span class="emoji">&#x1F680;</span> Kernel Launch 开销</h2><div class="lead">每次 kernel launch ~微秒级，但小模型小输入时数百次 launch 会严重侵蚀毫秒级预算。</div><div class="card"><h3>B200 的数学</h3><p>B200 GPU 可在 1ms 内从 HBM 流式传输 8GB 模型。一个 8B 参数模型有数百个 kernel。数百微秒的 launch 开销会显著侵蚀 1ms 的预算。</p></div></section><section class="section" id="s4"><h2><span class="emoji">&#x1F527;</span> 修复策略</h2><div class="lead">Modal 团队在开源推理引擎 SGLang 上的实战修复。</div><div class="grid-3"><div class="grid-card"><div class="icon">&#x1F517;</div><h4>Kernel Fusion</h4><p>Torch compiler 将 ~20 个 kernel 合并为 3 个，减少 30&micro;s overhead，E2E 延迟降 20%。</p></div><div class="grid-card"><div class="icon">&#x1F4C8;</div><h4>CUDA Graphs</h4><p>将 DAG 形式的多个 kernel launch 合并为单次启动。</p></div><div class="grid-card"><div class="icon">&#x1F9F1;</div><h4>构建替代传输</h4><p>在目标设备上直接构建 tensor，避免跨设备同步。</p></div></div></section></div>
+<footer class="footer"><a href="../">Back to Hub</a> &nbsp;|&nbsp; <a href="https://modal.com/blog/host-overhead-inference-efficiency" target="_blank">Original Post &rarr;</a></footer>
+</body></html>

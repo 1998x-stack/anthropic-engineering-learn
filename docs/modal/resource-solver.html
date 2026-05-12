@@ -1,0 +1,169 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Linear Programming 驱动的资源调度器</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--purple:#7c3aed;--purple-light:#a78bfa;--teal:#14b8a6;--amber:#f59e0b;--green:#10b981;--red:#ef4444;--blue:#3b82f6;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',sans-serif}*{margin:0;padding:0;box-sizing:border-box}body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}.nav{position:sticky;top:0;background:rgba(15,23,42,.95);backdrop-filter:blur(12px);z-index:100;border-bottom:1px solid rgba(255,255,255,.1)}.nav-inner{max-width:1100px;margin:0 auto;padding:0 24px;height:56px;display:flex;align-items:center;justify-content:space-between}.nav-brand{color:#fff;text-decoration:none;font-weight:700;font-size:15px}.nav-back{color:#94a3b8;text-decoration:none;font-size:13px}.nav-back:hover{color:#e2e8f0}.hero{background:linear-gradient(135deg,#0f172a 0%,#3b0764 50%,#7c3aed 100%);padding:80px 24px 60px}.hero-inner{max-width:1100px;margin:0 auto}.hero-tag{color:var(--purple-light);font-size:13px;font-family:var(--mono);margin-bottom:16px}.hero h1{color:#fff;font-size:2.4rem;font-weight:800;line-height:1.2;margin-bottom:12px}.hero .subtitle{color:#c4b5fd;font-size:1.1rem;margin-bottom:32px}.hero-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px}.stat-card{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:var(--radius);padding:20px;text-align:center}.stat-num{display:block;font-size:2rem;font-weight:800;color:#fff;font-family:var(--mono)}.stat-label{color:#a5b4fc;font-size:12px;margin-top:4px;display:block}.page{max-width:1100px;margin:0 auto;padding:48px 24px}.toc{margin-bottom:48px}.toc h2{font-size:1.2rem;margin-bottom:16px;color:var(--text-secondary)}.toc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(240px,1fr));gap:12px}.toc-item{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 18px;text-decoration:none;color:var(--text);font-size:14px;display:flex;align-items:center;gap:10px;transition:all .2s}.toc-item:hover{border-color:var(--purple);background:#f5f3ff}.toc-num{background:linear-gradient(135deg,var(--purple),var(--purple-light));color:#fff;width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0}.section{margin-bottom:56px}.section h2{font-size:1.5rem;font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}.lead{color:var(--text-secondary);font-size:15px;margin-bottom:24px}.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}.card h3{font-size:1rem;font-weight:600;margin-bottom:8px}.card p{font-size:14px;color:var(--text-secondary)}.chart{margin:24px 0}.chart-row{display:flex;align-items:center;margin-bottom:10px}.chart-label{width:180px;font-size:13px;font-weight:500;flex-shrink:0}.chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}.chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;padding:0 12px;font-size:12px;font-weight:600;color:#fff}.chart-bar.purple{background:linear-gradient(90deg,#7c3aed,#a78bfa)}.chart-bar.green{background:linear-gradient(90deg,#10b981,#34d399)}.chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}.chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}.chart-bar.teal{background:linear-gradient(90deg,#14b8a6,#2dd4bf)}.chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}.compare-card{background:var(--surface);border-radius:var(--radius);padding:24px}.compare-card.old{border:2px solid var(--red)}.compare-card.new{border:2px solid var(--green)}.compare-card h4{font-size:14px;margin-bottom:8px}.compare-card ul{font-size:13px;color:var(--text-secondary);padding-left:18px}.compare-card ul li{margin-bottom:4px}.flow{display:flex;align-items:center;gap:12px;margin:24px 0;flex-wrap:wrap}.flow-step{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:12px 20px;font-size:13px;font-weight:500}.flow-step.purple{background:var(--purple);color:#fff;border-color:var(--purple)}.flow-step.teal{background:var(--teal);color:#fff;border-color:var(--teal)}.flow-arrow{font-size:18px;color:var(--text-secondary)}.block-q{border-left:4px solid var(--purple);background:#f5f3ff;padding:20px 24px;border-radius:0 var(--radius) var(--radius) 0;margin:24px 0;font-style:italic;color:#4c1d95}.timeline{position:relative;padding-left:32px;margin:24px 0}.timeline::before{content:'';position:absolute;left:10px;top:0;bottom:0;width:3px;background:linear-gradient(180deg,var(--purple),var(--teal));border-radius:2px}.tl-item{position:relative;margin-bottom:24px}.tl-dot{position:absolute;left:-27px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid var(--purple);background:#fff}.tl-item:nth-child(2) .tl-dot{border-color:var(--blue)}.tl-item:nth-child(3) .tl-dot{border-color:var(--teal)}.tl-item:nth-child(4) .tl-dot{border-color:var(--amber)}.tl-item:nth-child(5) .tl-dot{border-color:var(--green)}.tl-phase{font-weight:700;font-size:15px}.tl-desc{font-size:13px;color:var(--text-secondary);margin-top:4px}.badge{display:inline-block;padding:3px 10px;border-radius:6px;font-size:11px;font-weight:600}.badge-purple{background:#ede9fe;color:#6d28d9}.badge-green{background:#d1fae5;color:#065f46}.badge-amber{background:#fef3c7;color:#92400e}.fail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:24px 0}.agent-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin:24px 0}.footer{background:#0f172a;color:#94a3b8;padding:40px 24px;text-align:center;font-size:13px}.footer a{color:var(--purple-light);text-decoration:none}.footer a:hover{text-decoration:underline}@media(max-width:768px){.hero h1{font-size:1.6rem}.hero-stats{grid-template-columns:repeat(2,1fr)}.compare-grid,.agent-grid,.fail-grid{grid-template-columns:1fr}.chart-label{width:120px;font-size:12px}.flow{flex-direction:column;gap:8px}.flow-arrow{transform:rotate(90deg)}.toc-grid{grid-template-columns:1fr}}
+  </style>
+</head>
+<body>
+  <nav class="nav"><div class="nav-inner"><a href="../" class="nav-brand">⚡ Engineering Blogs Hub</a><a href="../" class="nav-back">← Back to Hub</a></div></nav>
+
+  <header class="hero">
+    <div class="hero-inner">
+      <div class="hero-tag">modal.com/blog · Engineering Deep Dive</div>
+      <h1>Linear Programming 驱动的 GPU 资源调度器</h1>
+      <p class="subtitle">Modal 如何用线性规划算法在云计算价格波动中找到最优解，每年节省数百万美元</p>
+      <div class="hero-stats">
+        <div class="stat-card"><span class="stat-num">LP</span><span class="stat-label">线性规划核心</span></div>
+        <div class="stat-card"><span class="stat-num">7+</span><span class="stat-label">GPU 类型支持</span></div>
+        <div class="stat-card"><span class="stat-num">$M+</span><span class="stat-label">年节省成本</span></div>
+        <div class="stat-card"><span class="stat-num">秒级</span><span class="stat-label">扩容响应</span></div>
+      </div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc">
+      <h2>📑 目录导航</h2>
+      <div class="toc-grid">
+        <a href="#s1" class="toc-item"><span class="toc-num">1</span>问题定义：容量管理</a>
+        <a href="#s2" class="toc-item"><span class="toc-num">2</span>Simplex 算法应用</a>
+        <a href="#s3" class="toc-item"><span class="toc-num">3</span>双重使命与优化</a>
+        <a href="#s4" class="toc-item"><span class="toc-num">4</span>完整系统架构</a>
+        <a href="#s5" class="toc-item"><span class="toc-num">5</span>实践启示</a>
+      </div>
+    </nav>
+
+    <section class="section" id="s1">
+      <h2>🧮 问题定义：GPU 容量管理</h2>
+      <p class="lead">GPU 市场高度波动，但客户希望在任何时刻都能获得可预测价格的大量 GPU</p>
+      <div class="card">
+        <h3>从简单到复杂</h3>
+        <p>最简单场景：单一 GPU 类型，找最便宜的云厂商购买即可。但现实中约束层层叠加：</p>
+      </div>
+      <div class="chart">
+        <div class="chart-row"><div class="chart-label">GPU + CPU + RAM 需求</div><div class="chart-bar-wrap"><div class="chart-bar purple" style="width:90%">多维度资源匹配</div></div></div>
+        <div class="chart-row"><div class="chart-label">7 种 GPU 类型可选</div><div class="chart-bar-wrap"><div class="chart-bar blue" style="width:75%">多类型 Fallback</div></div></div>
+        <div class="chart-row"><div class="chart-label">多云 + 多区域</div><div class="chart-bar-wrap"><div class="chart-bar teal" style="width:85%">跨云价格波动</div></div></div>
+        <div class="chart-row"><div class="chart-label">客户瞬时扩缩容</div><div class="chart-bar-wrap"><div class="chart-bar amber" style="width:95%">数量级波动</div></div></div>
+      </div>
+      <div class="card">
+        <h3>💡 套利发现</h3>
+        <p>你知道几个月前可以用比 H100 低 20% 的价格拿到性能更强的 H200 吗？资源调度器发现了这个机会并抓住了它。</p>
+      </div>
+    </section>
+
+    <section class="section" id="s2">
+      <h2>📐 Simplex 算法实战</h2>
+      <p class="lead">将容量挑战转化为线性规划问题，使用 Simplex 算法在多维空间中找到最优解</p>
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">George Dantzig (1930s)</div>
+          <div class="tl-desc">像电影《心灵捕手》一样，走进教室解决了黑板上的未解问题，奠定了 Simplex 基础</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">二战物流优化</div>
+          <div class="tl-desc">几年后为美军后勤分析发明了完整的 Simplex 算法</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Google OR-Tools GLOP</div>
+          <div class="tl-desc">Modal 使用 Google 的 GLOP 求解器，提供生产级可靠性和可控性能</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Modal Resource Solver</div>
+          <div class="tl-desc">将 LP 求解与云价格、可用性、性能数据结合，持续优化资源分配</div>
+        </div>
+      </div>
+      <div class="flow">
+        <div class="flow-step">当前需求数据</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">云价格 + 可用性</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step purple">GLOP LP Solver</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step teal">Delta: 扩/缩实例</div>
+      </div>
+    </section>
+
+    <section class="section" id="s3">
+      <h2>⚖️ 双重使命：速度 vs 成本</h2>
+      <p class="lead">像美联储一样，Modal 的扩容决策必须同时追求快速响应和成本最优</p>
+      <div class="compare-grid">
+        <div class="compare-card old">
+          <h4>⏱️ 速度优先</h4>
+          <ul>
+            <li>用户期望秒级调度容器</li>
+            <li>维护 Buffer 应对突发</li>
+            <li>求解时间必须可控</li>
+          </ul>
+        </div>
+        <div class="compare-card new">
+          <h4>💰 成本优化</h4>
+          <ul>
+            <li>最小化 GPU 空闲</li>
+            <li>捕捉云价格套利</li>
+            <li>剪枝实例类型加速求解</li>
+          </ul>
+        </div>
+      </div>
+      <div class="card">
+        <h3>实际优化手段</h3>
+        <p>在运行 GLOP 之前用廉价启发式算法预处理输入：剪枝冗余实例类型可将求解时间缩短一个数量级（从数分钟降至亚秒级），仅牺牲少量精度。</p>
+      </div>
+    </section>
+
+    <section class="section" id="s4">
+      <h2>🏗️ 完整系统架构</h2>
+      <p class="lead">从 LP 求解到云实例获取的全链路闭环</p>
+      <div class="flow">
+        <div class="flow-step">系统需求输入</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">启发式预处理</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step purple">GLOP 求解</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step">输出 Delta 到数据库</div>
+        <div class="flow-arrow">→</div>
+        <div class="flow-step teal">后台 Workers 请求实例</div>
+      </div>
+      <div class="card">
+        <h3>反馈闭环</h3>
+        <p>当云厂商请求失败时，系统记录观察到的扩展限制，并将其作为后续求解的输入，确保后续请求优先选择仍有可用容量的实例类型。</p>
+      </div>
+    </section>
+
+    <section class="section" id="s5">
+      <h2>🎯 实践启示</h2>
+      <p class="lead">将复杂的云计算优化交给数学验证过的算法</p>
+      <div class="fail-grid">
+        <div class="card">
+          <h3>信任数学</h3>
+          <p>线性规划是经过验证的方法，只要给出正确输入就能保证最优解</p>
+        </div>
+        <div class="card">
+          <h3>关注用户体验</h3>
+          <p>让 LP 处理优化问题，团队可以专注容器启动速度和网络基础设施</p>
+        </div>
+        <div class="card">
+          <h3>拥抱混乱</h3>
+          <p>GPU 价格混乱不是负担而是机会 — Solver 能从中为用户攫取价值</p>
+        </div>
+      </div>
+    </section>
+  </div>
+
+  <footer class="footer">
+    <p>基于 <a href="https://modal.com/blog/resource-solver" target="_blank">Modal Blog 原文</a> 深度解析</p>
+    <p style="margin-top:8px"><a href="../">← 返回 Engineering Blogs Hub</a></p>
+  </footer>
+</body>
+</html>

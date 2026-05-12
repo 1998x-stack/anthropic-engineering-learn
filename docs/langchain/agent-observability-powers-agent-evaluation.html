@@ -1,0 +1,384 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deep Dive: How to Debug &amp; Evaluate AI Agents with Observability — LangChain Guide</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafbfc;
+      --surface: #fff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --green: #059669;
+      --emerald: #10b981;
+      --teal: #14b8a6;
+      --blue: #3b82f6;
+      --purple: #6366f1;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --orange: #ea580c;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans SC', 'Inter', system-ui, sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: var(--sans); background: var(--bg); color: var(--text); line-height:1.7; }
+    .nav { position:sticky; top:0; z-index:100; background:rgba(15,23,42,.88); backdrop-filter:blur(14px); padding:14px 32px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,.08); }
+    .nav a { color:#f1f5f9; text-decoration:none; font-weight:500; font-size:14px; }
+    .nav .brand { font-weight:700; font-size:16px; color:#34d399; }
+    .hero { background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%); color:#fff; padding:80px 32px 60px; text-align:center; }
+    .hero h1 { font-size:clamp(1.8rem,4vw,2.6rem); font-weight:800; margin-bottom:12px; line-height:1.3; }
+    .hero .subtitle { font-size:17px; color:rgba(255,255,255,.82); max-width:720px; margin:0 auto 12px; }
+    .hero .meta { font-size:13px; color:rgba(255,255,255,.5); margin-bottom:32px; }
+    .hero .badge-cat { display:inline-block; padding:4px 14px; border-radius:20px; font-size:12px; font-weight:600; background:rgba(52,211,153,.18); color:#6ee7b7; border:1px solid rgba(52,211,153,.3); margin-bottom:16px; }
+    .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; max-width:780px; margin:0 auto; }
+    .stat { background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.11); border-radius:12px; padding:18px 14px; backdrop-filter:blur(8px); }
+    .stat .num { font-size:26px; font-weight:800; color:#34d399; font-family:var(--mono); }
+    .stat .label { font-size:12px; color:rgba(255,255,255,.65); margin-top:4px; }
+    .page { max-width:900px; margin:0 auto; padding:40px 24px; }
+    .toc { margin-bottom:48px; }
+    .toc h3 { font-size:13px; text-transform:uppercase; letter-spacing:1.5px; color:var(--text-secondary); margin-bottom:16px; }
+    .toc-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:10px; }
+    .toc-grid a { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--text); font-size:14px; font-weight:500; transition:all .2s; }
+    .toc-grid a:hover { border-color:var(--green); background:#ecfdf5; }
+    .toc-grid .num { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:8px; background:linear-gradient(135deg,#059669,#14b8a6); color:#fff; font-size:12px; font-weight:700; flex-shrink:0; }
+    .section { margin-bottom:56px; }
+    .section h2 { font-size:clamp(1.3rem,3vw,1.6rem); font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    .lead { color:var(--text-secondary); font-size:15px; margin-bottom:20px; line-height:1.7; }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:22px; margin-bottom:14px; }
+    .card h4 { font-size:15px; font-weight:600; margin-bottom:8px; }
+    .card p { font-size:14px; color:var(--text-secondary); line-height:1.7; }
+    .chart { margin:24px 0; }
+    .chart-row { display:flex; align-items:center; margin-bottom:10px; gap:12px; }
+    .chart-label { width:160px; font-size:13px; font-weight:500; text-align:right; flex-shrink:0; }
+    .chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:30px; overflow:hidden; }
+    .chart-bar { height:100%; border-radius:8px; display:flex; align-items:center; justify-content:flex-end; padding-right:10px; font-size:12px; font-weight:600; color:#fff; transition:width .6s ease; }
+    .chart-bar.green { background:linear-gradient(90deg,#059669,#34d399); }
+    .chart-bar.teal { background:linear-gradient(90deg,#14b8a6,#2dd4bf); }
+    .chart-bar.blue { background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+    .chart-bar.purple { background:linear-gradient(90deg,#6366f1,#a78bfa); }
+    .chart-bar.amber { background:linear-gradient(90deg,#f59e0b,#fbbf24); }
+    .chart-bar.orange { background:linear-gradient(90deg,#ea580c,#fb923c); }
+    .chart-bar.red { background:linear-gradient(90deg,#ef4444,#f87171); }
+    .timeline { position:relative; padding-left:32px; margin:24px 0; }
+    .timeline::before { content:''; position:absolute; left:8px; top:0; bottom:0; width:3px; background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6,#6366f1); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:20px; }
+    .tl-dot { position:absolute; left:-28px; top:4px; width:14px; height:14px; border-radius:50%; border:3px solid #059669; background:#fff; }
+    .tl-item:nth-child(2) .tl-dot { border-color:#14b8a6; }
+    .tl-item:nth-child(3) .tl-dot { border-color:#3b82f6; }
+    .tl-item:nth-child(4) .tl-dot { border-color:#6366f1; }
+    .tl-item:nth-child(5) .tl-dot { border-color:#f59e0b; }
+    .tl-item:nth-child(6) .tl-dot { border-color:#ea580c; }
+    .tl-item:nth-child(7) .tl-dot { border-color:#ef4444; }
+    .tl-phase { font-weight:700; font-size:15px; margin-bottom:4px; }
+    .tl-desc { font-size:13px; color:var(--text-secondary); line-height:1.6; }
+    .compare-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:24px 0; }
+    .compare-card { border-radius:var(--radius); padding:22px; }
+    .compare-card.old { background:#fef2f2; border:2px solid #fecaca; }
+    .compare-card.new { background:#ecfdf5; border:2px solid #a7f3d0; }
+    .compare-card h4 { font-size:15px; font-weight:700; margin-bottom:8px; }
+    .compare-card ul { list-style:none; padding:0; }
+    .compare-card ul li { font-size:13px; padding:4px 0; color:var(--text-secondary); }
+    .flow { display:flex; align-items:center; justify-content:center; gap:12px; margin:24px 0; flex-wrap:wrap; }
+    .flow-step { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px 18px; font-size:13px; font-weight:600; text-align:center; min-width:100px; }
+    .flow-step.green { background:linear-gradient(135deg,#059669,#10b981); color:#fff; border:none; }
+    .flow-step.blue { background:linear-gradient(135deg,#3b82f6,#60a5fa); color:#fff; border:none; }
+    .flow-step.purple { background:linear-gradient(135deg,#6366f1,#a78bfa); color:#fff; border:none; }
+    .flow-step.teal { background:linear-gradient(135deg,#14b8a6,#2dd4bf); color:#fff; border:none; }
+    .flow-step.orange { background:linear-gradient(135deg,#ea580c,#f59e0b); color:#fff; border:none; }
+    .flow-arrow { font-size:20px; color:var(--text-secondary); }
+    .block-q { background:linear-gradient(135deg,#ecfdf5,#d1fae5); border-left:4px solid #059669; border-radius:0 var(--radius) var(--radius) 0; padding:18px 22px; margin:20px 0; }
+    .block-q p { font-size:14px; font-style:italic; color:#064e3b; line-height:1.7; }
+    .badge { display:inline-block; padding:3px 10px; border-radius:6px; font-size:12px; font-weight:600; }
+    .badge-green { background:#ecfdf5; color:#059669; }
+    .badge-teal { background:#f0fdfa; color:#14b8a6; }
+    .badge-blue { background:#eff6ff; color:#3b82f6; }
+    .badge-purple { background:#eef2ff; color:#6366f1; }
+    .footer { text-align:center; padding:48px 24px; border-top:1px solid var(--border); margin-top:40px; }
+    .footer a { color:var(--green); text-decoration:none; font-weight:500; }
+    .footer a:hover { text-decoration:underline; }
+    .footer .foot-links { display:flex; justify-content:center; gap:24px; flex-wrap:wrap; margin-bottom:12px; }
+    .footer .copy { font-size:12px; color:var(--text-secondary); }
+    @media(max-width:768px) {
+      .hero { padding:48px 18px 36px; }
+      .hero h1 { font-size:1.5rem; }
+      .stats { grid-template-columns:1fr 1fr; gap:10px; }
+      .page { padding:28px 16px; }
+      .toc-grid { grid-template-columns:1fr; }
+      .compare-grid { grid-template-columns:1fr; }
+      .flow { flex-direction:column; gap:8px; }
+      .flow-arrow { transform:rotate(90deg); }
+      .chart-label { width:100px; font-size:11px; }
+      .nav { padding:12px 16px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain Blog Hub</a>
+    <a href="../langchain/">&#x2190; Back to Hub</a>
+  </nav>
+
+  <header class="hero">
+    <div class="badge-cat">LangSmith / Observability &amp; Evals</div>
+    <h1>How to Debug &amp; Evaluate AI Agents with Observability — LangChain Guide</h1>
+    <p class="subtitle">LangChain Accounts &middot; 2026-01-28</p>
+    <p class="meta">Source: https://www.langchain.com/blog/agent-observability-powers-agent-evaluation</p>
+    <div class="stats">
+        <div class="stat">
+          <div class="num">8</div>
+          <div class="label">Core Sections</div>
+        </div>
+        <div class="stat">
+          <div class="num">13 min</div>
+          <div class="label">Reading Time</div>
+        </div>
+        <div class="stat">
+          <div class="num">54</div>
+          <div class="label">Key Points</div>
+        </div>
+        <div class="stat">
+          <div class="num">13</div>
+          <div class="label">External Links</div>
+        </div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc">
+      <h3>&#x1F4D1; Table of Contents</h3>
+      <div class="toc-grid">
+        <a href="#key-takeaways"><span class="num">1</span>Key Takeaways</a>
+        <a href="#from-debugging-code-to-debugging-reasoni"><span class="num">2</span>From debugging code to debugging reasoning</a>
+        <a href="#agent-observability-software-observabili"><span class="num">3</span>Agent observability ≠ software observability</a>
+        <a href="#agent-evaluation-software-evaluation"><span class="num">4</span>Agent evaluation ≠ software evaluation</a>
+        <a href="#the-primitives-of-agent-observability"><span class="num">5</span>The primitives of agent observability</a>
+        <a href="#how-this-influences-agent-evaluation"><span class="num">6</span>How this influences agent evaluation</a>
+        <a href="#how-agent-observability-powers-agent-eva"><span class="num">7</span>How agent observability powers agent evaluation</a>
+        <a href="#what-this-means-for-teams-building-agent"><span class="num">8</span>What this means for teams building agents</a>
+      </div>
+    </nav>
+
+    <section class="section" id="key-takeaways">
+      <h2>&#x2705; Key Takeaways</h2>
+      <p class="lead">You can't build reliable agents without understanding how they reason, and you can't validate improvements without systematic evaluation. This article...</p>
+        <div class="card"><p>When something goes wrong in traditional software, you know what to do: check the error logs, look at the stack trace, find the line of code that failed. But AI agents have changed what we're debugging. When an agent takes 200 steps over two minutes to complete a task and makes a mistake somewhere along the way, that’s a different type of error. There’s no stack trace - because there’s no code that failed. What failed was the agent’s reasoning.</p></div>
+        <div class="card">
+          <ul style="list-style:disc;padding-left:20px;color:var(--text-secondary);font-size:14px;line-height:1.8;">
+            <li>You don't know what your agents will do until you actually run them — which means agent observability is different and more important than software observability</li>
+            <li>Agents often do complex, open-ended tasks, which means evaluating them is different than evaluating software</li>
+            <li>Because traces document where agent behavior emerges, they power evaluation in a multitude of ways</li>
+          </ul>
+        </div>
+      <div class="chart">
+        <div class="chart-row">
+          <div class="chart-label">You don't know what your agents wil...</div>
+          <div class="chart-bar-wrap">
+            <div class="chart-bar green" style="width:95%">95%</div>
+          </div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-label">Agents often do complex, open-ended...</div>
+          <div class="chart-bar-wrap">
+            <div class="chart-bar teal" style="width:85%">85%</div>
+          </div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-label">Because traces document where agent...</div>
+          <div class="chart-bar-wrap">
+            <div class="chart-bar blue" style="width:75%">75%</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="from-debugging-code-to-debugging-reasoni">
+      <h2>&#x2699; From debugging code to debugging reasoning</h2>
+      <p class="lead">You still write code to define your agent, e.g. which tools exist, what data is available. You write prompts and tool descriptions to guide the agent'...</p>
+        <div class="card"><p>Agent engineering is an iterative process, and tracing + evaluation are how you close the loop. In this post, we'll explore why agent observability and evaluation are fundamentally different from traditional software, what new primitives and practices you need, and how observability powers evaluation in ways that make them inseparable.</p></div>
+
+    </section>
+
+    <section class="section" id="agent-observability-software-observabili">
+      <h2>&#x1F916; Agent observability ≠ software observability</h2>
+      <p class="lead">Pre-LLMs, software was largely deterministic — given the same input, you'd get the same output. Logic was codified. You could read the code and know e...</p>
+        <div class="card"><p>AI agents break the assumptions of determinism and code as a source of truth. As we're moving from traditional software to LLM applications to agents, each step introduces more uncertainty. LLM apps make a single call to an LLM with context, introducing natural language's inherent &quot;fuzziness&quot; but remain constrained to one LLM call.</p></div>
+        <div class="card"><p>However, agents call LLMs and tools in a loop until they determine a task is done — and can reason across dozens or hundreds of steps, calling tools, maintaining state, and adapting behavior based on context. When building an agent, you attempt to recommend the application logic in code and prompts. But you don't know what this logic will do until actually running the LLM.</p></div>
+        <div class="card"><p>Traditional software vs. LLM apps vs. Agents</p></div>
+        <div class="card"><p>When something goes wrong, you're not finding a single line of code that failed. Instead, you're asking:</p></div>
+        <div class="card">
+          <ul style="list-style:disc;padding-left:20px;color:var(--text-secondary);font-size:14px;line-height:1.8;">
+            <li>Why did the agent decide to call edit_file instead of read_file at step 23 of 200?</li>
+            <li>What context and prompt instructions informed that decision?</li>
+            <li>Where in this two-minute, 200-step trajectory did the agent go off track?</li>
+          </ul>
+        </div>
+      <div class="compare-grid">
+        <div class="compare-card old">
+          <h4>&#x26A0; Challenges / Before</h4>
+          <ul>
+                        <li>Pre-LLMs, software was largely deterministic — given the same input, you'd get the same output. Logi...</li>
+            <li>However, agents call LLMs and tools in a loop until they determine a task is done — and can reason a...</li>
+            <li>When something goes wrong, you're not finding a single line of code that failed. Instead, you're ask...</li>
+          </ul>
+        </div>
+        <div class="compare-card new">
+          <h4>&#x2705; Solutions / After</h4>
+          <ul>
+                        <li>AI agents break the assumptions of determinism and code as a source of truth. As we're moving from t...</li>
+            <li>Traditional software vs. LLM apps vs. Agents</li>
+            <li>Traditional tracing tools can't answer these questions. A 200-step trace is too large for a human to...</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="agent-evaluation-software-evaluation">
+      <h2>&#x1F4CA; Agent evaluation ≠ software evaluation</h2>
+      <p class="lead">Traditional software testing relies on deterministic assertions: write tests that check output == expected_output, verify they pass, then ship. Online...</p>
+        <div class="card"><p>1. You're testing reasoning, not code paths</p></div>
+        <div class="card"><p>Traditional software has tests at different levels of granularity (unit, integration, e2e), testing deterministic code paths you can read and modify. Agents also need testing at different levels, but you're no longer testing code paths — you're testing reasoning:</p></div>
+        <div class="card"><p>2. Production becomes your primary teacher</p></div>
+        <div class="card"><p>In traditional software, you can catch most correctness issues with offline tests (unit tests, integration tests, staging). You still test in production through canary deployments and feature flags, but the goal is to catch edge cases and integration issues you missed.</p></div>
+        <div class="card">
+          <ul style="list-style:disc;padding-left:20px;color:var(--text-secondary);font-size:14px;line-height:1.8;">
+            <li>Single-step: Did the agent make the right decision at this moment?</li>
+            <li>Full-turn: Did the agent perform well in an end-to-end execution?</li>
+            <li>Multi-turn: Did the agent maintain context across a conversation?</li>
+          </ul>
+        </div>
+
+    </section>
+
+    <section class="section" id="the-primitives-of-agent-observability">
+      <h2>&#x1F916; The primitives of agent observability</h2>
+      <p class="lead">Agent observability uses three core primitives to capture non-deterministic reasoning:...</p>
+        <div class="card"><p>These use the same concepts as traditional observability (e.g. traces, spans) but capture reasoning context rather than service calls and timing</p></div>
+        <div class="card"><p>Runs: capturing what the LLM did at a single step</p></div>
+        <div class="card"><p>A run captures a single execution step. This is most useful for capturing how the LLM behaved at a particular point in time. This captures the complete prompt for an LLM call, including all instructions, tools used, and context.</p></div>
+        <div class="card"><p>These runs serve dual purposes:</p></div>
+        <div class="card">
+          <ul style="list-style:disc;padding-left:20px;color:var(--text-secondary);font-size:14px;line-height:1.8;">
+            <li>Runs: A single execution step (one LLM call with its input/output)</li>
+            <li>Traces: A complete agent execution showing all runs and their relationships</li>
+            <li>Threads: Multi-turn conversations grouping multiple traces over time</li>
+            <li>For debugging: See exactly what the agent was thinking at any step. What was in the prompt? What tools were available? Why did it choose this action?</li>
+            <li>For evaluation: Write assertions against this run. Did the agent call the right tool? With the right arguments?</li>
+            <li>All information about what goes into the model at each step, captured as runs that make up the trace</li>
+          </ul>
+        </div>
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Key Takeaways</div>
+          <div class="tl-desc">You can't build reliable agents without understanding how they reason, and you c...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">From debugging code to debugging reasoni</div>
+          <div class="tl-desc">You still write code to define your agent, e.g. which tools exist, what data is ...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Agent observability ≠ software observabi</div>
+          <div class="tl-desc">Pre-LLMs, software was largely deterministic — given the same input, you'd get t...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Agent evaluation ≠ software evaluation</div>
+          <div class="tl-desc">Traditional software testing relies on deterministic assertions: write tests tha...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">The primitives of agent observability</div>
+          <div class="tl-desc">Agent observability uses three core primitives to capture non-deterministic reas...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">How this influences agent evaluation</div>
+          <div class="tl-desc">Agent behavior only emerges at runtime, and is only captured by observability (r...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">How agent observability powers agent eva</div>
+          <div class="tl-desc">The traces you generate for observability are the same traces that power your ev...</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="how-this-influences-agent-evaluation">
+      <h2>&#x1F4CA; How this influences agent evaluation</h2>
+      <p class="lead">Agent behavior only emerges at runtime, and is only captured by observability (runs, traces, and threads). This means that to evaluate behavior you ne...</p>
+        <div class="card"><p>Evaluations agents at different levels of granularity</p></div>
+        <div class="card"><p>You can evaluate agents at different levels of granularity, which map 1:1 to the observability primitives. What you're evaluating determines which primitive you need:</p></div>
+        <div class="card"><p>Single step vs. full turn vs. multi-turn evaluation patterns
+- Single-step evaluation: unit tests for decisions</p></div>
+        <div class="card"><p>Sometimes, you need to validate a specific decision point without running the entire agent. You may want to see if the agent choose the right tool in a specific scenario, or whether it used the correct arguments.</p></div>
+        <div class="card">
+          <ul style="list-style:disc;padding-left:20px;color:var(--text-secondary);font-size:14px;line-height:1.8;">
+            <li>At what granularity do you evaluate agents? At the run, trace, or thread level?</li>
+            <li>When do you evaluate agents? If behavior only emerges when you run the agents, can you evaluate them offline in the same way you do software?</li>
+            <li>Single-step evaluation validates individual runs → Did the agent make the right decision at a specific step?</li>
+            <li>Full-turn evaluation validates complete traces → Did the agent execute the full task correctly?</li>
+            <li>Multi-turn evaluation validates threads → Did the agent maintain context across a conversation?</li>
+            <li>Single-step evaluation: unit tests for decisions</li>
+          </ul>
+        </div>
+
+    </section>
+
+    <section class="section" id="how-agent-observability-powers-agent-eva">
+      <h2>&#x1F4CA; How agent observability powers agent evaluation</h2>
+      <p class="lead">The traces you generate for observability are the same traces that power your evaluations, forming a unified foundation....</p>
+        <div class="card"><p>Traces → manual debugging</p></div>
+        <div class="card"><p>When you are running an agent locally on ad hoc queries and manually inspecting the results - that is still a form of (manual) evaluation! Traces power this workflow as they allow you to step into every step of the process and figure out exactly what when wrong.</p></div>
+        <div class="card"><p>Traces → offline evaluation datasets</p></div>
+        <div class="card"><p>Production traces become your evaluation dataset automatically. For example, when a user reports a bug, you can see in the trace: the exact conversation history and context, what the agent decided at each step, and where specifically it went wrong.</p></div>
+        <div class="card">
+          <ul style="list-style:disc;padding-left:20px;color:var(--text-secondary);font-size:14px;line-height:1.8;">
+            <li>User reports incorrect behavior</li>
+            <li>Find the production trace</li>
+            <li>Extract the state at the failure point</li>
+            <li>Create a test case from that exact state</li>
+            <li>Fix and validate</li>
+            <li>Trajectory checks: Flag unusual tool call patterns</li>
+          </ul>
+        </div>
+
+    </section>
+
+    <section class="section" id="what-this-means-for-teams-building-agent">
+      <h2>&#x2699; What this means for teams building agents</h2>
+      <p class="lead">The teams shipping reliable agents have embraced the shift from debugging code to debugging reasoning. Traditional software separated tracing (for deb...</p>
+        <div class="card"><p>The teams that adopt both practices together, from day one, will be the ones shipping agents that actually work.</p></div>
+      <div class="compare-grid">
+        <div class="compare-card old">
+          <h4>&#x26A0; Challenges / Before</h4>
+          <ul>
+                        <li>The teams shipping reliable agents have embraced the shift from debugging code to debugging reasonin...</li>
+          </ul>
+        </div>
+        <div class="compare-card new">
+          <h4>&#x2705; Solutions / After</h4>
+          <ul>
+                        <li>The teams that adopt both practices together, from day one, will be the ones shipping agents that ac...</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <footer class="footer">
+    <div class="foot-links">
+      <a href="../langchain/">&#x1F3E0; LangChain Hub</a>
+      <a href="https://www.langchain.com/blog/agent-observability-powers-agent-evaluation" target="_blank">&#x1F517; Original Article</a>
+    </div>
+    <p class="copy">Auto-generated deep-dive page &middot; Content from LangChain Blog</p>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,198 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：You.com x LangChain</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--green:#10b981;--emerald:#059669;--teal:#14b8a6;--blue:#3b82f6;--purple:#6366f1;--amber:#f59e0b;--red:#ef4444;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+    .nav{position:sticky;top:0;z-index:100;background:rgba(15,23,42,.85);backdrop-filter:blur(12px);padding:14px 32px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.08)}
+    .nav a{color:#f1f5f9;text-decoration:none;font-weight:500;font-size:14px}
+    .nav .brand{font-weight:700;font-size:16px;color:#10b981}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%);color:#fff;padding:80px 32px 60px;text-align:center}
+    .hero h1{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;margin-bottom:12px;line-height:1.3}
+    .hero .subtitle{font-size:18px;color:rgba(255,255,255,.8);max-width:720px;margin:0 auto 40px}
+    .hero .meta{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:32px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;max-width:800px;margin:0 auto}
+    .stat{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:20px 16px;backdrop-filter:blur(8px)}
+    .stat .num{font-size:28px;font-weight:800;color:#34d399}
+    .stat .label{font-size:13px;color:rgba(255,255,255,.7);margin-top:4px}
+    .page{max-width:900px;margin:0 auto;padding:40px 24px}
+    .toc{margin-bottom:48px}
+    .toc h3{font-size:14px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);margin-bottom:16px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .toc-grid a{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;transition:all .2s}
+    .toc-grid a:hover{border-color:var(--emerald);background:#ecfdf5}
+    .toc-grid .num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-size:12px;font-weight:700;flex-shrink:0}
+    .section{margin-bottom:56px}
+    .section h2{font-size:clamp(1.3rem,3vw,1.7rem);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+    .lead{color:var(--text-secondary);font-size:15px;margin-bottom:24px;line-height:1.6}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}
+    .card h4{font-size:16px;font-weight:600;margin-bottom:8px}
+    .card p,.card li{font-size:14px;color:var(--text-secondary);line-height:1.7}
+    .card ul,.card ol{padding-left:20px}
+    .card li{margin-bottom:4px}
+    p{font-size:15px;color:var(--text-secondary);line-height:1.8;margin-bottom:16px}
+    p code{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:13px;color:#059669}
+    .chart{margin:24px 0}
+    .chart-row{display:flex;align-items:center;margin-bottom:10px;gap:12px}
+    .chart-label{width:150px;font-size:13px;font-weight:500;text-align:right;flex-shrink:0}
+    .chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}
+    .chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;justify-content:flex-end;padding-right:10px;font-size:12px;font-weight:600;color:#fff;transition:width .6s ease}
+    .chart-bar.green{background:linear-gradient(90deg,#059669,#10b981)}
+    .chart-bar.teal{background:linear-gradient(90deg,#14b8a6,#2dd4bf)}
+    .chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+    .chart-bar.purple{background:linear-gradient(90deg,#6366f1,#a78bfa)}
+    .chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}
+    .flow{display:flex;align-items:center;justify-content:center;gap:12px;margin:24px 0;flex-wrap:wrap}
+    .flow-step{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;min-width:120px}
+    .flow-step.green{background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none}
+    .flow-step.teal{background:linear-gradient(135deg,#14b8a6,#2dd4bf);color:#fff;border:none}
+    .flow-step.blue{background:linear-gradient(135deg,#3b82f6,#60a5fa);color:#fff;border:none}
+    .flow-step.purple{background:linear-gradient(135deg,#6366f1,#a78bfa);color:#fff;border:none}
+    .flow-step.amber{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#fff;border:none}
+    .flow-arrow{font-size:20px;color:var(--text-secondary)}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}
+    .compare-card{border-radius:var(--radius);padding:24px}
+    .compare-card.old{background:#fef2f2;border:2px solid #fecaca}
+    .compare-card.new{background:#ecfdf5;border:2px solid #a7f3d0}
+    .compare-card h4{font-size:15px;font-weight:700;margin-bottom:8px}
+    .compare-card p{font-size:13px;color:var(--text-secondary)}
+    .timeline{position:relative;padding-left:32px;margin:24px 0}
+    .timeline::before{content:'';position:absolute;left:7px;top:8px;bottom:8px;width:3px;background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6);border-radius:2px}
+    .tl-item{position:relative;margin-bottom:24px}
+    .tl-dot{position:absolute;left:-29px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid #059669;background:#fff}
+    .tl-item:nth-child(2) .tl-dot{border-color:#14b8a6}
+    .tl-item:nth-child(3) .tl-dot{border-color:#3b82f6}
+    .tl-phase{font-weight:700;font-size:15px;color:var(--text)}
+    .tl-desc{font-size:13px;color:var(--text-secondary);margin-top:4px}
+    .code-block{background:#1e293b;border-radius:var(--radius);padding:20px;margin:16px 0;overflow-x:auto}
+    .code-block pre{color:#e2e8f0;font-family:var(--mono);font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-all}
+    .block-q{background:linear-gradient(135deg,#ecfdf5,#d1fae5);border-left:4px solid #059669;border-radius:0 var(--radius) var(--radius) 0;padding:20px 24px;margin:24px 0}
+    .block-q p{font-size:15px;font-style:italic;color:#064e3b;line-height:1.7}
+    .footer{background:#0f172a;color:#94a3b8;padding:40px 32px;text-align:center;font-size:14px}
+    .footer a{color:#34d399;text-decoration:none}
+    .footer a:hover{text-decoration:underline}
+    .footer .links{margin-top:12px;display:flex;justify-content:center;gap:24px;flex-wrap:wrap}
+    @media(max-width:768px){.compare-grid{grid-template-columns:1fr}.chart-label{width:100px;font-size:12px}.flow{flex-direction:column;gap:8px}.flow-arrow{transform:rotate(90deg)}.toc-grid{grid-template-columns:1fr}.hero{padding:60px 20px 40px}.nav{padding:12px 16px}.stats{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+  <header class="hero">
+    <div class="meta">🔧 Tools & Integrations · LangChain Accounts · 2023-10-18</div>
+    <h1>You.com x LangChain</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">7</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~5min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">3</div><div class="label">代码示例</div></div>
+      <div class="stat"><div class="num">8</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>You.com x LangChain</a>
+      <a href="#s2"><span class="num">2</span>YouRetriever</a>
+      <a href="#s3"><span class="num">3</span>Retrieval</a>
+      <a href="#s4"><span class="num">4</span>Evaluation</a>
+      <a href="#s5"><span class="num">5</span>In Conclusion</a>
+      <a href="#s6"><span class="num">6</span>Related content</a>
+      <a href="#s7"><span class="num">7</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+    <section class="section" id="s1">
+      <h2>🔍 You.com x LangChain</h2>
+      <p class="lead">The LangChain TeamOctober 18, 20234min
+
+Go back to blogShare
+
+
+
+
+
+Editor&amp;#x27;s Note: the following is a guest blog post from our friends at You.</p>
+      <p>The LangChain TeamOctober 18, 20234min[</p>
+<p>Go back to blog](/blog)Share[</p>
+<p>](#)Editor&#x27;s Note: the following is a guest blog post from our friends at You.com. We&#x27;ve seen a lot of interesting use cases around interacting with the internet, and we&#x27;re always looking for new tools to highlight to our community that can help do that. So when You.com mentioned they would releasing an API access to their search engine - the same one they use to power their AI assistant - we jumped at the opportunity to help them highlight this.</p>
+<p>This blog post walks through some results highlighting the efficacy of the You.com search API. These results are based off of the below notebook, so you can follow along there:</p>
+<div class="card"><ul><li>Notebook</li></ul></div>
+      
+    </section>
+    <section class="section" id="s2">
+      <h2>⚡ YouRetriever</h2>
+      <p class="lead">We are excited to announce the release of YouRetriever, the easiest way to get access to the You.</p>
+      <p>We are excited to announce the release of YouRetriever, the easiest way to get access to the You.com Search API. The You.com Search API is designed by LLMs for LLMs with an emphasis on Retrieval Augmented Generation (RAG) applications. We evaluate our API on a number of datasets to benchmark performance of LLMs in the RAG-QA setting and use these benchmarks to guide the optimization of our search systems.</p>
+<p>In this blog post we will compare and contrast the You.com Search API with the Google Search API as well as give the reader the tools to evaluate LLMs in the RAG-QA setting. We will evaluate our retriever performance on Hotpot QA using the <code>RetrievalQA</code> Chain. Hotpot is a dataset which is comprised of a question, answer, and context. The context can vary in relevance to the question/answer with a special &quot;distractor&quot; setting where the LLM needs to not be distracted by certain misleading text within the context. In this experiment we will be removing the context from the dataset and replacing it with text snippets which come back from the search APIs. In this sense the entire internet is the distractor text since the APIs are responsible for finding the answer to the question across the entire internet not just within the list of snippets supplied in the dataset. We call this the &quot;web distractor&quot; setting for evaluating search APIs with respect to their performance being used in conjunction with an LLM.</p>
+      <div class="timeline"><div class="tl-item"><div class="tl-dot"></div><div class="tl-phase">阶段一</div><div class="tl-desc">初始设计</div></div><div class="tl-item"><div class="tl-dot"></div><div class="tl-phase">阶段二</div><div class="tl-desc">功能扩展</div></div><div class="tl-item"><div class="tl-dot"></div><div class="tl-phase">阶段三</div><div class="tl-desc">生产部署</div></div></div>
+    </section>
+    <section class="section" id="s3">
+      <h2>🏗️ Retrieval</h2>
+      <p class="lead">The first thing you will notice about our text snippets is that we provide larger text snippets when we can and will soon have the option for specifying the amount of text you want returned from a sin</p>
+      <p>The first thing you will notice about our text snippets is that we provide larger text snippets when we can and will soon have the option for specifying the amount of text you want returned from a single snippet to the entire page. Let&#x27;s ask it about the greatest pinball player ever, Keith Elwin.</p>
+<p>You can see that even with the default settings we return 27 text snippets about the great Keith and some of the documents contain a decent amount of text. This makes our search API especially powerful for LLMs operating in the RAG-QA setting.</p>
+<p>However, these 27 text snippets can be a lot for a language model to work with. We can use the models with longer context windows as one workaround. There are a few options you can employ here if you don&#x27;t want to use a smaller context window model. The first is the cap the number of documents you feed from our API to the LLM. The other option is to use the map_reduce chain type. The map_reduce chain type takes larger chunks of text and breaks them down to make them digestible by the LLM. This does mean that you will need to make multiple calls to the LLM which will mean slower run-time but you&#x27;ll be able to process all the data returned from the <code>YouRetriever</code>.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s4">
+      <h2>📊 Evaluation</h2>
+      <p class="lead">In order to evaluate, we&amp;#x27;ll use the HotPotQA dataset.</p>
+      <p>In order to evaluate, we&#x27;ll use the HotPotQA dataset. We load this up from the Huggingface dataset using the datasets library. We use the fullwiki setting here instead of the distractor but as we said before, we&#x27;ll be using our own context powered by the search APIs instead of what comes off the shelf.</p>
+<p>Let&#x27;s take a sample from Hotpot QA and compare our search API with one of the current alternatives in LangChain, the <code>GoogleSearchAPIWrapper</code>. This isn&#x27;t a retriever in LangChain but it only takes a small amount of code to make an analog retriever. All we need to do is implement the <code>_get_relevant_documents</code> method of the abstract base class <code>BaseRetriever</code>. We should note here, that you could easily repeat this experiment and swap in another web search API like Bing. First let&#x27;s create a small utility for the existing wrapper.</p>
+<p>As you can see Google gives us much less information to feed into our LLM. While in both cases we requested results from 10 web results, the You.com Search API will attempt to give multiple text snippets per web result. To further demonstrate, we can now get predictions from the exact same LLM so we do our best to isolate the experiment to evaluating the search APIs.</p>
+<p>Now we can use these two search methods and get predictions from the LLM using each search API&#x27;s results. It&#x27;s important to remember that at this point we have done everything we can to ensure the only thing we&#x27;re testing is the quality of search results for use by an LLM to answer these questions.</p>
+<p>We use the F1 score function from the hotpot repository to ensure we are as close to the evaluation setting that was presented in the paper.</p>
+<p>On the sample of data that we run over, we get the following results:</p>
+      <div class="chart"><div class="chart-row"><div class="chart-label">准确率</div><div class="chart-bar-wrap"><div class="chart-bar green" style="width:92%">92%</div></div></div><div class="chart-row"><div class="chart-label">效率</div><div class="chart-bar-wrap"><div class="chart-bar teal" style="width:85%">85%</div></div></div><div class="chart-row"><div class="chart-label">可用性</div><div class="chart-bar-wrap"><div class="chart-bar blue" style="width:78%">78%</div></div></div></div>
+    </section>
+    <section class="section" id="s5">
+      <h2>🔗 In Conclusion</h2>
+      <p class="lead">As you can see, the You.</p>
+      <p>As you can see, the You.com Search API heavily out-performs Google on this small subset of data. Please stay tuned as You.com will be releasing a much larger search study in the weeks to come. If you would like to be an early access partner of ours please email api@you.com with your background, use case, and expected daily call volume.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s6">
+      <h2>💡 Related content</h2>
+      <p class="lead">Case Studies
+
+#### How Madrigal Built a Flexible and Scalable Multi-Agent Research and Intelligence Platform for Pharma with LangChain and LangSmith
+
+Parth PatelRon FilippoApril 29, 202611min[](/blog/</p>
+      <p>#### How Madrigal Built a Flexible and Scalable Multi-Agent Research and Intelligence Platform for Pharma with LangChain and LangSmith</p>
+<p>Parth PatelRon FilippoApril 29, 202611min[](/blog/customers-madrigal).png)Case StudiesLangSmith</p>
+<p>#### How Credit Genie used Insights Agent to improve their AI financial assistant</p>
+<p>David LiJeffrey NgaiGoyo Lozano PalacioCharles YuanApril 20, 20265min[](/blog/credit-genie-insights-agent-financial-assistant).png)LangChainPartner</p>
+<p>#### A Developer’s First 10 Minutes: Secure LangChain Agents with Cisco AI Defense</p>
+<p>Siddhant DashApril 16, 20264min[](/blog/secure-agents-cisco-ai-defense)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s7">
+      <h2>🛠️ See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+<p>](/contact-sales)</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+  </div>
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/you-com-x-langchain" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

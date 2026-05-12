@@ -1,0 +1,406 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deep Dive: Agent Evaluation Readiness Checklist</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafbfc;
+      --surface: #fff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --green: #059669;
+      --emerald: #10b981;
+      --teal: #14b8a6;
+      --blue: #3b82f6;
+      --purple: #6366f1;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --orange: #ea580c;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans SC', 'Inter', system-ui, sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: var(--sans); background: var(--bg); color: var(--text); line-height:1.7; }
+    .nav { position:sticky; top:0; z-index:100; background:rgba(15,23,42,.88); backdrop-filter:blur(14px); padding:14px 32px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,.08); }
+    .nav a { color:#f1f5f9; text-decoration:none; font-weight:500; font-size:14px; }
+    .nav .brand { font-weight:700; font-size:16px; color:#34d399; }
+    .hero { background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%); color:#fff; padding:80px 32px 60px; text-align:center; }
+    .hero h1 { font-size:clamp(1.8rem,4vw,2.6rem); font-weight:800; margin-bottom:12px; line-height:1.3; }
+    .hero .subtitle { font-size:17px; color:rgba(255,255,255,.82); max-width:720px; margin:0 auto 12px; }
+    .hero .meta { font-size:13px; color:rgba(255,255,255,.5); margin-bottom:32px; }
+    .hero .badge-cat { display:inline-block; padding:4px 14px; border-radius:20px; font-size:12px; font-weight:600; background:rgba(52,211,153,.18); color:#6ee7b7; border:1px solid rgba(52,211,153,.3); margin-bottom:16px; }
+    .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; max-width:780px; margin:0 auto; }
+    .stat { background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.11); border-radius:12px; padding:18px 14px; backdrop-filter:blur(8px); }
+    .stat .num { font-size:26px; font-weight:800; color:#34d399; font-family:var(--mono); }
+    .stat .label { font-size:12px; color:rgba(255,255,255,.65); margin-top:4px; }
+    .page { max-width:900px; margin:0 auto; padding:40px 24px; }
+    .toc { margin-bottom:48px; }
+    .toc h3 { font-size:13px; text-transform:uppercase; letter-spacing:1.5px; color:var(--text-secondary); margin-bottom:16px; }
+    .toc-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:10px; }
+    .toc-grid a { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--text); font-size:14px; font-weight:500; transition:all .2s; }
+    .toc-grid a:hover { border-color:var(--green); background:#ecfdf5; }
+    .toc-grid .num { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:8px; background:linear-gradient(135deg,#059669,#14b8a6); color:#fff; font-size:12px; font-weight:700; flex-shrink:0; }
+    .section { margin-bottom:56px; }
+    .section h2 { font-size:clamp(1.3rem,3vw,1.6rem); font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    .lead { color:var(--text-secondary); font-size:15px; margin-bottom:20px; line-height:1.7; }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:22px; margin-bottom:14px; }
+    .card h4 { font-size:15px; font-weight:600; margin-bottom:8px; }
+    .card p { font-size:14px; color:var(--text-secondary); line-height:1.7; }
+    .chart { margin:24px 0; }
+    .chart-row { display:flex; align-items:center; margin-bottom:10px; gap:12px; }
+    .chart-label { width:160px; font-size:13px; font-weight:500; text-align:right; flex-shrink:0; }
+    .chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:30px; overflow:hidden; }
+    .chart-bar { height:100%; border-radius:8px; display:flex; align-items:center; justify-content:flex-end; padding-right:10px; font-size:12px; font-weight:600; color:#fff; transition:width .6s ease; }
+    .chart-bar.green { background:linear-gradient(90deg,#059669,#34d399); }
+    .chart-bar.teal { background:linear-gradient(90deg,#14b8a6,#2dd4bf); }
+    .chart-bar.blue { background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+    .chart-bar.purple { background:linear-gradient(90deg,#6366f1,#a78bfa); }
+    .chart-bar.amber { background:linear-gradient(90deg,#f59e0b,#fbbf24); }
+    .chart-bar.orange { background:linear-gradient(90deg,#ea580c,#fb923c); }
+    .chart-bar.red { background:linear-gradient(90deg,#ef4444,#f87171); }
+    .timeline { position:relative; padding-left:32px; margin:24px 0; }
+    .timeline::before { content:''; position:absolute; left:8px; top:0; bottom:0; width:3px; background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6,#6366f1); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:20px; }
+    .tl-dot { position:absolute; left:-28px; top:4px; width:14px; height:14px; border-radius:50%; border:3px solid #059669; background:#fff; }
+    .tl-item:nth-child(2) .tl-dot { border-color:#14b8a6; }
+    .tl-item:nth-child(3) .tl-dot { border-color:#3b82f6; }
+    .tl-item:nth-child(4) .tl-dot { border-color:#6366f1; }
+    .tl-item:nth-child(5) .tl-dot { border-color:#f59e0b; }
+    .tl-item:nth-child(6) .tl-dot { border-color:#ea580c; }
+    .tl-item:nth-child(7) .tl-dot { border-color:#ef4444; }
+    .tl-phase { font-weight:700; font-size:15px; margin-bottom:4px; }
+    .tl-desc { font-size:13px; color:var(--text-secondary); line-height:1.6; }
+    .compare-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:24px 0; }
+    .compare-card { border-radius:var(--radius); padding:22px; }
+    .compare-card.old { background:#fef2f2; border:2px solid #fecaca; }
+    .compare-card.new { background:#ecfdf5; border:2px solid #a7f3d0; }
+    .compare-card h4 { font-size:15px; font-weight:700; margin-bottom:8px; }
+    .compare-card ul { list-style:none; padding:0; }
+    .compare-card ul li { font-size:13px; padding:4px 0; color:var(--text-secondary); }
+    .flow { display:flex; align-items:center; justify-content:center; gap:12px; margin:24px 0; flex-wrap:wrap; }
+    .flow-step { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px 18px; font-size:13px; font-weight:600; text-align:center; min-width:100px; }
+    .flow-step.green { background:linear-gradient(135deg,#059669,#10b981); color:#fff; border:none; }
+    .flow-step.blue { background:linear-gradient(135deg,#3b82f6,#60a5fa); color:#fff; border:none; }
+    .flow-step.purple { background:linear-gradient(135deg,#6366f1,#a78bfa); color:#fff; border:none; }
+    .flow-step.teal { background:linear-gradient(135deg,#14b8a6,#2dd4bf); color:#fff; border:none; }
+    .flow-step.orange { background:linear-gradient(135deg,#ea580c,#f59e0b); color:#fff; border:none; }
+    .flow-arrow { font-size:20px; color:var(--text-secondary); }
+    .block-q { background:linear-gradient(135deg,#ecfdf5,#d1fae5); border-left:4px solid #059669; border-radius:0 var(--radius) var(--radius) 0; padding:18px 22px; margin:20px 0; }
+    .block-q p { font-size:14px; font-style:italic; color:#064e3b; line-height:1.7; }
+    .badge { display:inline-block; padding:3px 10px; border-radius:6px; font-size:12px; font-weight:600; }
+    .badge-green { background:#ecfdf5; color:#059669; }
+    .badge-teal { background:#f0fdfa; color:#14b8a6; }
+    .badge-blue { background:#eff6ff; color:#3b82f6; }
+    .badge-purple { background:#eef2ff; color:#6366f1; }
+    .footer { text-align:center; padding:48px 24px; border-top:1px solid var(--border); margin-top:40px; }
+    .footer a { color:var(--green); text-decoration:none; font-weight:500; }
+    .footer a:hover { text-decoration:underline; }
+    .footer .foot-links { display:flex; justify-content:center; gap:24px; flex-wrap:wrap; margin-bottom:12px; }
+    .footer .copy { font-size:12px; color:var(--text-secondary); }
+    @media(max-width:768px) {
+      .hero { padding:48px 18px 36px; }
+      .hero h1 { font-size:1.5rem; }
+      .stats { grid-template-columns:1fr 1fr; gap:10px; }
+      .page { padding:28px 16px; }
+      .toc-grid { grid-template-columns:1fr; }
+      .compare-grid { grid-template-columns:1fr; }
+      .flow { flex-direction:column; gap:8px; }
+      .flow-arrow { transform:rotate(90deg); }
+      .chart-label { width:100px; font-size:11px; }
+      .nav { padding:12px 16px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain Blog Hub</a>
+    <a href="../langchain/">&#x2190; Back to Hub</a>
+  </nav>
+
+  <header class="hero">
+    <div class="badge-cat">LangSmith / Observability &amp; Evals</div>
+    <h1>Agent Evaluation Readiness Checklist</h1>
+    <p class="subtitle">LangChain Accounts &middot; 2026-03-27</p>
+    <p class="meta">Source: https://www.langchain.com/blog/agent-evaluation-readiness-checklist</p>
+    <div class="stats">
+        <div class="stat">
+          <div class="num">8</div>
+          <div class="label">Core Sections</div>
+        </div>
+        <div class="stat">
+          <div class="num">17 min</div>
+          <div class="label">Reading Time</div>
+        </div>
+        <div class="stat">
+          <div class="num">65</div>
+          <div class="label">Key Points</div>
+        </div>
+        <div class="stat">
+          <div class="num">66</div>
+          <div class="label">External Links</div>
+        </div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc">
+      <h3>&#x1F4D1; Table of Contents</h3>
+      <div class="toc-grid">
+        <a href="#before-you-build-evals"><span class="num">1</span>Before you build evals</a>
+        <a href="#choose-your-evaluation-level"><span class="num">2</span>Choose your evaluation level</a>
+        <a href="#dataset-construction"><span class="num">3</span>Dataset construction</a>
+        <a href="#grader-design"><span class="num">4</span>Grader design</a>
+        <a href="#running-amp-iterating"><span class="num">5</span>Running &amp; iterating</a>
+        <a href="#production-readiness"><span class="num">6</span>Production readiness</a>
+        <a href="#the-full-checklist"><span class="num">7</span>The full checklist</a>
+        <a href="#further-reading"><span class="num">8</span>Further reading</a>
+      </div>
+    </nav>
+
+    <section class="section" id="before-you-build-evals">
+      <h2>&#x2699; Before you build evals</h2>
+      <p class="lead">0:00                            /0:421×...</p>
+        <div class="card"><p>Use LangSmith to go from traces to the annotation queue to datasets &amp; experiments</p></div>
+        <div class="card"><p>☑️ Manually review 20-50 real agent traces before building any eval infrastructure</p></div>
+        <div class="card"><p>☑️ Define unambiguous success criteria for a single task</p></div>
+        <div class="card"><p>☑️ Separate capability evals from regression evals</p></div>
+        <div class="card">
+          <ul style="list-style:disc;padding-left:20px;color:var(--text-secondary);font-size:14px;line-height:1.8;">
+            <li>Unclear success: “Summarize this document well.”</li>
+            <li>Clear success: “Extract the 3 main action items from this meeting transcript. Each should be &lt; 20 words and include an owner if mentioned.”</li>
+            <li>Capability evals answer “what can it do?”</li>
+            <li>Regression evals answer “does it still work?”</li>
+            <li>Gather traces: Collect representative failures from production or testing</li>
+            <li>Open coding: Review traces with a domain expert, noting every issue you see without pre-categorizing (or use our annotation queue to have subject matter experts review traces on their own)</li>
+          </ul>
+        </div>
+      <div class="chart">
+        <div class="chart-row">
+          <div class="chart-label">Unclear success: “Summarize this do...</div>
+          <div class="chart-bar-wrap">
+            <div class="chart-bar green" style="width:95%">95%</div>
+          </div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-label">Clear success: “Extract the 3 main ...</div>
+          <div class="chart-bar-wrap">
+            <div class="chart-bar teal" style="width:85%">85%</div>
+          </div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-label">Capability evals answer “what can i...</div>
+          <div class="chart-bar-wrap">
+            <div class="chart-bar blue" style="width:75%">75%</div>
+          </div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-label">Regression evals answer “does it st...</div>
+          <div class="chart-bar-wrap">
+            <div class="chart-bar purple" style="width:65%">65%</div>
+          </div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-label">Gather traces: Collect representati...</div>
+          <div class="chart-bar-wrap">
+            <div class="chart-bar amber" style="width:55%">55%</div>
+          </div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-label">Open coding: Review traces with a d...</div>
+          <div class="chart-bar-wrap">
+            <div class="chart-bar orange" style="width:45%">45%</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="choose-your-evaluation-level">
+      <h2>&#x1F4CA; Choose your evaluation level</h2>
+      <p class="lead">Single-step vs. Full-turn vs. Multi-turn evals...</p>
+        <div class="card"><p>Not all evals test the same thing. Match your evaluation to the right level of agent behavior. For a deep dive on each level, see &quot;Agent Observability Powers Agent Evaluation&quot;.</p></div>
+        <div class="card"><p>Single-step vs. Full-turn vs. Multi-turn evals</p></div>
+        <div class="card"><p>☑️ Understand the three evaluation levels: single-step (run), full-turn (trace), and multi-turn (thread)</p></div>
+        <div class="card"><p>☑️ Start with trace-level (full-turn) evals, then layer in run-level and thread-level as needed</p></div>
+        <div class="card">
+          <ul style="list-style:disc;padding-left:20px;color:var(--text-secondary);font-size:14px;line-height:1.8;">
+            <li>Final response: Is the output correct and useful?</li>
+            <li>Trajectory: Did the agent take a reasonable path? (Not necessarily the exact path you expected, just a valid one)</li>
+            <li>State changes: Did the agent create the right artifacts? (files written, database updated, meeting scheduled, etc.)</li>
+          </ul>
+        </div>
+
+    </section>
+
+    <section class="section" id="dataset-construction">
+      <h2>&#x1F4DA; Dataset construction</h2>
+      <p class="lead">☑️ Ensure every task is unambiguous, with a reference solution that proves it's solvable...</p>
+        <div class="card"><p>☑️ Test both positive cases (behavior should occur) and negative cases (behavior should not occur)</p></div>
+        <div class="card"><p>☑️ Ensure dataset structure matches your chosen evaluation level</p></div>
+        <div class="card"><p>☑️ Tailor datasets to your agent type (coding, conversational, research)</p></div>
+        <div class="card"><p>☑️ Generate seed examples if you lack production data</p></div>
+        <div class="card">
+          <ul style="list-style:disc;padding-left:20px;color:var(--text-secondary);font-size:14px;line-height:1.8;">
+            <li>Ambiguous: “Find me good flights to NYC.”</li>
+            <li>Unambiguous: “Find roundtrip flights from SFO to JFK, departing Dec 15-17, returning Dec 22, under $400, economy class.”</li>
+            <li>Run-level (single-step) evals need reference tool calls or decisions</li>
+            <li>Trace-level (full-turn) evals need expected final outputs and/or state changes</li>
+            <li>Thread-level (multi-turn) evals need multi-turn conversation sequences with expected context retention</li>
+            <li>Coding agents: Include deterministic test suites (unit tests that pass/fail) alongside quality rubrics</li>
+          </ul>
+        </div>
+      <div class="compare-grid">
+        <div class="compare-card old">
+          <h4>&#x26A0; Challenges / Before</h4>
+          <ul>
+                        <li>☑️ Ensure every task is unambiguous, with a reference solution that proves it's solvable</li>
+            <li>☑️ Ensure dataset structure matches your chosen evaluation level</li>
+            <li>☑️ Generate seed examples if you lack production data</li>
+          </ul>
+        </div>
+        <div class="compare-card new">
+          <h4>&#x2705; Solutions / After</h4>
+          <ul>
+                        <li>☑️ Test both positive cases (behavior should occur) and negative cases (behavior should not occur)</li>
+            <li>☑️ Tailor datasets to your agent type (coding, conversational, research)</li>
+            <li>☑️ Source from dogfooding errors, adapted external benchmarks, and hand-written behavior tests</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="grader-design">
+      <h2>&#x1F3D7; Grader design</h2>
+      <p class="lead">☑️ Select specialized graders per evaluation dimension: default to code-based for objective checks, LLM-as-judge for subjective assessments, human for...</p>
+        <div class="card"><p>☑️ Distinguish guardrails (inline, runtime) from evaluators (async, quality assessment)</p></div>
+        <div class="card"><p>☑️ Prefer binary pass/fail over numeric scales</p></div>
+        <div class="card"><p>☑️ Calibrate LLM-as-a-Judge graders to human preferences</p></div>
+        <div class="card"><p>☑️ Grade the outcome, not the exact path, and build in partial credit for incremental progress</p></div>
+        <div class="card">
+          <ul style="list-style:disc;padding-left:20px;color:var(--text-secondary);font-size:14px;line-height:1.8;">
+            <li>Start with 20+ labeled examples using LangSmith's Align Evaluator feature, then grow toward ~100 for production-grade confidence</li>
+            <li>Include reasoning in the judge's output; this improves accuracy and lets you audit why it scored something (Anthropic's Demystifying Evals emphasizes this as well)</li>
+            <li>Recalibrate regularly; judges drift over time and no single judge is uniformly reliable across all benchmarks</li>
+            <li>Use few-shot examples to improve evaluator consistency; corrections can auto-populate as few-shot examples in LangSmith</li>
+          </ul>
+        </div>
+
+    </section>
+
+    <section class="section" id="running-amp-iterating">
+      <h2>&#x1F536; Running &amp; iterating</h2>
+      <p class="lead">☑️ Distinguish between offline, online, and ad-hoc evaluation and use all three...</p>
+        <div class="card"><p>☑️ Run multiple trials per task to account for non-determinism</p></div>
+        <div class="card"><p>☑️ Manually review traces for failed evaluations to verify grader fairness</p></div>
+        <div class="card"><p>☑️ Tag evals by capability category, document what each measures, and track efficiency metrics (step count, tool calls, latency) alongside quality</p></div>
+        <div class="card"><p>☑️ Recognize when pass rates plateau and evolve your test suite accordingly</p></div>
+        <div class="card">
+          <ul style="list-style:disc;padding-left:20px;color:var(--text-secondary);font-size:14px;line-height:1.8;">
+            <li>Coding agents: Fresh containers or VMs per trial</li>
+            <li>API-calling agents: Staging environments or mock services</li>
+            <li>Database agents: Snapshot and restore between trials</li>
+          </ul>
+        </div>
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Before you build evals</div>
+          <div class="tl-desc">0:00                            /0:421×...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Choose your evaluation level</div>
+          <div class="tl-desc">Single-step vs. Full-turn vs. Multi-turn evals...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Dataset construction</div>
+          <div class="tl-desc">☑️ Ensure every task is unambiguous, with a reference solution that proves it's ...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Grader design</div>
+          <div class="tl-desc">☑️ Select specialized graders per evaluation dimension: default to code-based fo...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Running &amp; iterating</div>
+          <div class="tl-desc">☑️ Distinguish between offline, online, and ad-hoc evaluation and use all three...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Production readiness</div>
+          <div class="tl-desc">☑️ Promote capability evals with consistently high pass rates into your regressi...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">The full checklist</div>
+          <div class="tl-desc">Before you build evals...</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="production-readiness">
+      <h2>&#x1F680; Production readiness</h2>
+      <p class="lead">☑️ Promote capability evals with consistently high pass rates into your regression suite...</p>
+        <div class="card"><p>☑️ Integrate regression evals into your CI/CD pipeline with automated quality gates</p></div>
+        <div class="card"><p>☑️ Capture user feedback</p></div>
+        <div class="card"><p>☑️ Set up online evaluations for production traffic</p></div>
+        <div class="card"><p>☑️ Schedule regular manual exploration of production traces beyond automated checks</p></div>
+        <div class="card">
+          <ul style="list-style:disc;padding-left:20px;color:var(--text-secondary);font-size:14px;line-height:1.8;">
+            <li>Code or prompt change triggers the pipeline (via git push, PromptHub update, or manual trigger)</li>
+            <li>Offline evals run unit tests, integration tests, and evaluation against curated datasets using cheap, fast graders</li>
+            <li>Preview deployment goes up if offline evals pass</li>
+            <li>Online evals run against the preview with live data using LLM-as-judge graders</li>
+            <li>Promote to production only if all quality gates pass, otherwise route failing traces to annotation queues and alert the team</li>
+          </ul>
+        </div>
+
+    </section>
+
+    <section class="section" id="the-full-checklist">
+      <h2>&#x1F538; The full checklist</h2>
+      <p class="lead">Before you build evals...</p>
+        <div class="card"><p>⬜️ Manually review 20-50 real agent traces before building any eval infrastructure</p></div>
+        <div class="card"><p>⬜️ Define unambiguous success criteria for a single task</p></div>
+        <div class="card"><p>⬜️ Separate capability evals from regression evals</p></div>
+        <div class="card"><p>⬜️ Ensure you can identify and articulate why each failure occurs</p></div>
+
+    </section>
+
+    <section class="section" id="further-reading">
+      <h2>&#x1F4CE; Further reading</h2>
+      <p class="lead">External benchmarks (for sourcing eval tasks):...</p>
+        <div class="card">
+          <ul style="list-style:disc;padding-left:20px;color:var(--text-secondary);font-size:14px;line-height:1.8;">
+            <li>“Agent Observability Powers Agent Evaluation”—the conceptual companion to this checklist</li>
+            <li>“You don't know what your agent will do until it's in production”</li>
+            <li>“Evaluating skills”</li>
+            <li>“How we build evals for Deep Agents”</li>
+            <li>Research Log: Building an LLM-powered spreadsheet agent</li>
+            <li>Terminal Bench 2.0</li>
+          </ul>
+        </div>
+      <div class="card">
+        <h4>&#x1F4A1; Key Insight</h4>
+        <p>External benchmarks (for sourcing eval tasks):</p>
+      </div>
+    </section>
+
+  </div>
+
+  <footer class="footer">
+    <div class="foot-links">
+      <a href="../langchain/">&#x1F3E0; LangChain Hub</a>
+      <a href="https://www.langchain.com/blog/agent-evaluation-readiness-checklist" target="_blank">&#x1F517; Original Article</a>
+    </div>
+    <p class="copy">Auto-generated deep-dive page &middot; Content from LangChain Blog</p>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：GPTeam: A multi-agent simulation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--green:#10b981;--emerald:#059669;--teal:#14b8a6;--blue:#3b82f6;--purple:#6366f1;--amber:#f59e0b;--red:#ef4444;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+    .nav{position:sticky;top:0;z-index:100;background:rgba(15,23,42,.85);backdrop-filter:blur(12px);padding:14px 32px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.08)}
+    .nav a{color:#f1f5f9;text-decoration:none;font-weight:500;font-size:14px}
+    .nav .brand{font-weight:700;font-size:16px;color:#10b981}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%);color:#fff;padding:80px 32px 60px;text-align:center}
+    .hero h1{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;margin-bottom:12px;line-height:1.3}
+    .hero .subtitle{font-size:18px;color:rgba(255,255,255,.8);max-width:720px;margin:0 auto 40px}
+    .hero .meta{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:32px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;max-width:800px;margin:0 auto}
+    .stat{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:20px 16px;backdrop-filter:blur(8px)}
+    .stat .num{font-size:28px;font-weight:800;color:#34d399}
+    .stat .label{font-size:13px;color:rgba(255,255,255,.7);margin-top:4px}
+    .page{max-width:900px;margin:0 auto;padding:40px 24px}
+    .toc{margin-bottom:48px}
+    .toc h3{font-size:14px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);margin-bottom:16px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .toc-grid a{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;transition:all .2s}
+    .toc-grid a:hover{border-color:var(--emerald);background:#ecfdf5}
+    .toc-grid .num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-size:12px;font-weight:700;flex-shrink:0}
+    .section{margin-bottom:56px}
+    .section h2{font-size:clamp(1.3rem,3vw,1.7rem);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+    .lead{color:var(--text-secondary);font-size:15px;margin-bottom:24px;line-height:1.6}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}
+    .card h4{font-size:16px;font-weight:600;margin-bottom:8px}
+    .card p,.card li{font-size:14px;color:var(--text-secondary);line-height:1.7}
+    .card ul,.card ol{padding-left:20px}
+    .card li{margin-bottom:4px}
+    p{font-size:15px;color:var(--text-secondary);line-height:1.8;margin-bottom:16px}
+    p code{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:13px;color:#059669}
+    .chart{margin:24px 0}
+    .chart-row{display:flex;align-items:center;margin-bottom:10px;gap:12px}
+    .chart-label{width:150px;font-size:13px;font-weight:500;text-align:right;flex-shrink:0}
+    .chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}
+    .chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;justify-content:flex-end;padding-right:10px;font-size:12px;font-weight:600;color:#fff;transition:width .6s ease}
+    .chart-bar.green{background:linear-gradient(90deg,#059669,#10b981)}
+    .chart-bar.teal{background:linear-gradient(90deg,#14b8a6,#2dd4bf)}
+    .chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+    .chart-bar.purple{background:linear-gradient(90deg,#6366f1,#a78bfa)}
+    .chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}
+    .flow{display:flex;align-items:center;justify-content:center;gap:12px;margin:24px 0;flex-wrap:wrap}
+    .flow-step{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;min-width:120px}
+    .flow-step.green{background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none}
+    .flow-step.teal{background:linear-gradient(135deg,#14b8a6,#2dd4bf);color:#fff;border:none}
+    .flow-step.blue{background:linear-gradient(135deg,#3b82f6,#60a5fa);color:#fff;border:none}
+    .flow-step.purple{background:linear-gradient(135deg,#6366f1,#a78bfa);color:#fff;border:none}
+    .flow-step.amber{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#fff;border:none}
+    .flow-arrow{font-size:20px;color:var(--text-secondary)}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}
+    .compare-card{border-radius:var(--radius);padding:24px}
+    .compare-card.old{background:#fef2f2;border:2px solid #fecaca}
+    .compare-card.new{background:#ecfdf5;border:2px solid #a7f3d0}
+    .compare-card h4{font-size:15px;font-weight:700;margin-bottom:8px}
+    .compare-card p{font-size:13px;color:var(--text-secondary)}
+    .timeline{position:relative;padding-left:32px;margin:24px 0}
+    .timeline::before{content:'';position:absolute;left:7px;top:8px;bottom:8px;width:3px;background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6);border-radius:2px}
+    .tl-item{position:relative;margin-bottom:24px}
+    .tl-dot{position:absolute;left:-29px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid #059669;background:#fff}
+    .tl-item:nth-child(2) .tl-dot{border-color:#14b8a6}
+    .tl-item:nth-child(3) .tl-dot{border-color:#3b82f6}
+    .tl-phase{font-weight:700;font-size:15px;color:var(--text)}
+    .tl-desc{font-size:13px;color:var(--text-secondary);margin-top:4px}
+    .code-block{background:#1e293b;border-radius:var(--radius);padding:20px;margin:16px 0;overflow-x:auto}
+    .code-block pre{color:#e2e8f0;font-family:var(--mono);font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-all}
+    .block-q{background:linear-gradient(135deg,#ecfdf5,#d1fae5);border-left:4px solid #059669;border-radius:0 var(--radius) var(--radius) 0;padding:20px 24px;margin:24px 0}
+    .block-q p{font-size:15px;font-style:italic;color:#064e3b;line-height:1.7}
+    .footer{background:#0f172a;color:#94a3b8;padding:40px 32px;text-align:center;font-size:14px}
+    .footer a{color:#34d399;text-decoration:none}
+    .footer a:hover{text-decoration:underline}
+    .footer .links{margin-top:12px;display:flex;justify-content:center;gap:24px;flex-wrap:wrap}
+    @media(max-width:768px){.compare-grid{grid-template-columns:1fr}.chart-label{width:100px;font-size:12px}.flow{flex-direction:column;gap:8px}.flow-arrow{transform:rotate(90deg)}.toc-grid{grid-template-columns:1fr}.hero{padding:60px 20px 40px}.nav{padding:12px 16px}.stats{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+  <header class="hero">
+    <div class="meta">🔧 Tools & Integrations · LangChain Accounts · 2023-06-05</div>
+    <h1>GPTeam: A multi-agent simulation</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">14</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~13min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">-</div><div class="label">代码示例</div></div>
+      <div class="stat"><div class="num">26</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>GPTeam: A multi-agent simulati</a>
+      <a href="#s2"><span class="num">2</span>The Architecture</a>
+      <a href="#s3"><span class="num">3</span>The Agent Loop</a>
+      <a href="#s4"><span class="num">4</span>Agent.observe</a>
+      <a href="#s5"><span class="num">5</span>Agent.plan</a>
+      <a href="#s6"><span class="num">6</span>Agent.react</a>
+      <a href="#s7"><span class="num">7</span>Agent.act</a>
+      <a href="#s8"><span class="num">8</span>The Plan Executor</a>
+      <a href="#s9"><span class="num">9</span>**PlanExecutor.execute**</a>
+      <a href="#s10"><span class="num">10</span>Agent.reflect</a>
+      <a href="#s11"><span class="num">11</span>The Results</a>
+      <a href="#s12"><span class="num">12</span>Closing Thoughts</a>
+      <a href="#s13"><span class="num">13</span>Related content</a>
+      <a href="#s14"><span class="num">14</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+    <section class="section" id="s1">
+      <h2>🔍 GPTeam: A multi-agent simulation</h2>
+      <p class="lead">The LangChain TeamJune 5, 202311min
+
+Go back to blogShare
+
+
+
+
+
+Editor&amp;#x27;s Note: This is another edition in our series of guest posts highlighting novel applications of LangChain.</p>
+      <p>The LangChain TeamJune 5, 202311min[</p>
+<p>Go back to blog](/blog)Share[</p>
+<p>](#)Editor&#x27;s Note: This is another edition in our series of guest posts highlighting novel applications of LangChain. After the Generative Agents paper was released, there was a flurry of open source projects rushing to incorporate some of the key ideas. GPTeam was one of the most impressive ones we saw, so we&#x27;re incredibly excited to highlight this guest blog from @itstimconnors and the rest of the team  (@alecvxyz @joshsny, and @haniasnyder).</p>
+<p>On May 16th, we released GPTeam, a completely customizable open-source multi-agent simulation, inspired by Stanford’s ground-breaking “Generative Agents” paper from the month prior. Every agent within a GPTeam simulation has their own unique personality, memories, and directives, leading to interesting emergent behavior as they interact.</p>
+<p>We set up the project so that anyone can run their own multi-agent simulation by editing a simple JSON configuration file like the one shown below. In this example we’ve created a simple world called “Jest Jockeys”, which contains a “Park” location and a “Mall” location. We’ve included several agents who each contain their own bios, directives, and plans.</p>
+<p>Users can then run the simulation with a single command, poetry run world, which triggers a web interface showing the agent thought processes and dialog. This allows users to see the agents as they observe new events, decide how to react, and carry out their plans.</p>
+<p>The goal of the project was to test the capabilities of LLMs to emulate human-like social behavior. Our theory was that human-like behavior emerges from (a) sufficiently capable long-term memory systems, and (b) a recurring process of self-reflection to achieve abstract reasoning.</p>
+<p>Here’s how it went…</p>
+<div class="block-q"><p>> FYI: This write-up will reference the code from our project, which can be found here.</p></div>
+      
+    </section>
+    <section class="section" id="s2">
+      <h2>⚡ The Architecture</h2>
+      <p class="lead">At a high level, the architecture of the simulation looks like this.</p>
+      <p>At a high level, the architecture of the simulation looks like this. The actual code contains a lot more nuance and additional helper classes, but this is the rough sketch of how things work together.</p>
+<p>The World class serves the the top level wrapper for everything else. When we run the simulation, we are running world.run( ), which triggers each agent in the world to begin its agent loop.</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s3">
+      <h2>🏗️ The Agent Loop</h2>
+      <p class="lead">The agent loop is the main driver of activity within GPTeam.</p>
+      <p>The agent loop is the main driver of activity within GPTeam. As the world runs, each agent repeats this loop again and again until the world stops. You can view the code for the agent loop here.</p>
+<p>As we dive into how the agent loop works, it’s helpful to understand that there is no discrete agentic AI to be found in this repository. The appearence of an agentic human-like entity is an illusion created by our memories system and a string of distinct Language Model prompts.</p>
+      
+    </section>
+    <section class="section" id="s4">
+      <h2>📊 Agent.observe</h2>
+      <p class="lead">An agent starts their loop by first observing activity in its location.</p>
+      <p>An agent starts their loop by first observing activity in its location. This function, observe( ), gets the latest events from the agent’s current location and adds each one to the agents memory. When a new memory is created, it’s assigned an importance score, which aims to quantify the poignancy of the memory. This allows more critical events to be “remembered” more easily later on. We assign the importance score by simply asking an LLM to generate one:</p>
+<div class="block-q"><p>> FYI: You can view all of our LLM prompts in this file.</p></div>
+      
+    </section>
+    <section class="section" id="s5">
+      <h2>🔗 Agent.plan</h2>
+      <p class="lead">Next, the agent makes plans if they don’t have any, although they usually do, since they make 5 plans at a time.</p>
+      <p>Next, the agent makes plans if they don’t have any, although they usually do, since they make 5 plans at a time. Every action an agent takes must be part of some plan, so planning is critical. To make plans, we take the agent’s personal details and situational context, then pass them into an LLM call with the prompt shown below.</p>
+<p>An important part of this prompt is the agent’s directives, which act as their compass when deciding what to do. Without them, they can only be reactionary. You can think of their directives as their default activity.</p>
+<p>The result from this LLM call is an ordered list of JSON objects, which populate the Agent.plans array. Each plan contins an index, description, location, start time, max duration, and a stopping condition.</p>
+      
+    </section>
+    <section class="section" id="s6">
+      <h2>💡 Agent.react</h2>
+      <p class="lead">After making plans, the agent decides how to react.</p>
+      <p>After making plans, the agent decides how to react. The react( ) function is very simple: it asks an LLM to decide, based on recent events whether they should continue, postpone, or cancel their top plan. Here’s what that prompt looks like:</p>
+<p>This prompt started off way simpler, but as we tried to achieve human-like dialog, we were having trouble getting the agents to respond appropriately. At first they wouldn’t respond to dialog until they completed their current plan. We addressed that problem by instructing agents to prioritize dialog, but then we found that they would continue dialog forever, just saying platitudes and greetings to one another over and over. What we ended up with was an instruction to prioritize responding to other agents if it would be rude not to. This simple addition allowed agents to converse with one another as humans do.</p>
+<p>As you can see in the agent loop code, if the reaction is a postponing of plans, the agent switches to an alternative plan, provided by the LLM response. If the reaction is a cancellation of plans, the agent simply removes its current plan and moves on to the next plan in its list of plans.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s7">
+      <h2>🛠️ Agent.act</h2>
+      <p class="lead">After all of this, we’re ready to carry out our top plan, which starts in the act( ) method of the Agent class.</p>
+      <p>After all of this, we’re ready to carry out our top plan, which starts in the act( ) method of the Agent class. The first step of the act function is to gather relevant memories based on what’s happening to the agent. To do this, we make a semantic embedding of latest activity, and then we compare that embedding to those of the memories in the agent’s memory list. The relevancy of a memory is a weighted summation of the memory’s importance, cosine similarity, and recency:</p>
+<p>After gathering these related memories and some other important context, the act function sets up a PlanExecutor object and calls its execute method to run a langchain agent.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s8">
+      <h2>📈 The Plan Executor</h2>
+      <p class="lead">The PlanExecutor class is a custom class we made to wrap around langchain’s LLMSingleActionAgent.</p>
+      <p>The PlanExecutor class is a custom class we made to wrap around langchain’s LLMSingleActionAgent. We made this custom abstraction instead of using an AgentExecutor for a few reasons:</p>
+<div class="card"><ul><li>We needed helper functions to handle the context that the langchain agent would need to populate its prompt correctly.</li><li>We wanted to store the intermediate steps of each agent in our database so that the simulation could be paused and recontinued.</li><li>We wanted to incorporate a lot of custom logging logic, which we needed for our logging interface.</li></ul></div>
+      
+    </section>
+    <section class="section" id="s9">
+      <h2>🎯 **PlanExecutor.execute**</h2>
+      <p class="lead">The execute function has two primary parts: First it runs the plan method of the LLMSingleActionAgent to get an an AgentAction, and then it manually handles the AgentAction to call the run method on t</p>
+      <p>The execute function has two primary parts: First it runs the plan method of the LLMSingleActionAgent to get an an AgentAction, and then it manually handles the AgentAction to call the run method on the chosen tool, or return a response if the agent is done.</p>
+<p>The LLMSingleActionAgent is initialized with the prompt template shown below, which is ultimately used in the plan method to get an AgentAction. Let’s dive into this prompt a bit:</p>
+<p>The first thing to note is the framing: you are a character playing in front of a live audience. We found that directly telling the agent this generated a lot more chatter, which helped make our simulation more interesting to observers. It inspired the agents to talk to themselves when they were doing a task (for example, saying things like “Wow that’s interesting” when searching on google).</p>
+<p>The next thing to note is the prioritization of dialog. This is something we did in the react function as well. Even if the current plan has nothing to do with dialog, we instruct the agent here to finish their pending conversations first, reminding them they need not respond all the time.</p>
+<p>The rest of the prompt is pretty straight forward, and heavily inspired by the default langchain agent prompt. We include the agent’s bio, their location context, relevant memories, conversation history, and tools available.</p>
+<div class="block-q"><p>> Quick note: every agent has a public bio and a private bio. The public bio is a description that all the other agents have access to, such as their role, their appearence, and their name. A private bio includes details that only the agent themselves know, such as their insecurities and desires.</p></div>
+<p>We referred to this plan + tool usage action as a single step. The execute function of the PlanExecutor class runs the agent for one step each time it’s called. After a step is run, a string representation of the step is added to a list of historical steps contained within the current plan (we borrow from Langchain’s terminology here when we call that a scratchpad).We save the scratchpad at the end of the function so that the agent can pick up where it left off in the next run of the agent loop.</p>
+      
+    </section>
+    <section class="section" id="s10">
+      <h2>🔬 Agent.reflect</h2>
+      <p class="lead">As the final step of every agent loop, we check if it’s time to reflect.</p>
+      <p>As the final step of every agent loop, we check if it’s time to reflect. This function is triggered every time the total importance score across all of an agent’s memories reaches a multiple of 100. This way, if the agent is experiencing something extremely exciting and memorable, it will reflect more often, and vice versa.</p>
+<div class="block-q"><p>> This reflection logic was borrowed directly from the brilliant authors of the “Generative Agents” paper at Stanford.</p></div>
+<p>The reflect method does two primary things: first, it generates three high level questions the agent can reflect on. Then, it generates answers to those quetions. In order to gather the right questions to ask, we use this prompt, passing in a list of the most recent memories:</p>
+<p>After getting questions from the recent memories, it’s time to generate some reflections. To do this, we first make a semantic embedding of the question, and use our get_relevant_memories function (discussed earlier) to find relevant memories based on the topic. If the question is “What does Marty do with his free time?”, we’ll find memories such as “I see Marty walking his dog” or “Marty likes talking with his friends”.</p>
+<p>To get our final reflection, we pass in these relevant memories for each topic and ask: “What high level insights can you infer from these memories?” This gives us insights such as “Marty likes the outdoors” and “Marty is an extroverted person”.</p>
+<p>After this final step, we’ve concluded the agent loop, and it’s time to repeat the whole thing. Although it’s a relatively simple process, this method of observe → react → act → reflect achieves suprisingly human-like behavior from our agents. Let’s take a look at the results:</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s11">
+      <h2>📝 The Results</h2>
+      <p class="lead">When run, the agents exhibit complex social behavior, coordinating among one each other and playing off the dialog appropriately.</p>
+      <p>When run, the agents exhibit complex social behavior, coordinating among one each other and playing off the dialog appropriately. In this example, we’ve made three agents: Marty, Ricardo, and Rebecca who are all part of a traveling improv troupe. We’ve given each one a public bio, private bio, directives, and an initial plan.</p>
+<p>Then we run <code>poetry run world</code> and we’re off! Let’s see how the agents proceed with an improv performance at the park...</p>
+<p>Within a few loops, you can see that the agents have started coordinating amongst each other about the performance. Marty asks if everyone is ready to go. Ricardo proposes a scene and assigns characters: Marty and Ricardo will be gardeners who stumble upon hidden treasure at the Park, and Rebecca will be the park ranger who notices them and starts to investigate. Rebecca accepts the premise and begins her performance:</p>
+<div class="block-q"><p>> The logs render the agent activity from most newest to oldest, so you should read from the bottom up.</p></div>
+<p>In this context, the agents don’t need to change plans much because their directives are all in harmony.  Thus, the dialog shown here is driven mainly by observe and act. But what happens when we set up our agents with more divergent directives?</p>
+<p>Let’s run another example. Marty is bummed because he thinks his coworkers forgot about his birthday, but they’ve planned a suprise for him in his office. Unfortunately, Ricardo isn’t done setting up the decorations, so Rebecca is trying to distract Marty in the hallway outside to give Ricardo more time. Marty wants to just go back to his office to sulk.</p>
+<p>Here we can see the Rebeccas comments about a new coffee machine has successfully inspired Marty to change his plans and engage with Rebecca instead.</p>
+      <div class="chart"><div class="chart-row"><div class="chart-label">准确率</div><div class="chart-bar-wrap"><div class="chart-bar green" style="width:92%">92%</div></div></div><div class="chart-row"><div class="chart-label">效率</div><div class="chart-bar-wrap"><div class="chart-bar teal" style="width:85%">85%</div></div></div><div class="chart-row"><div class="chart-label">可用性</div><div class="chart-bar-wrap"><div class="chart-bar blue" style="width:78%">78%</div></div></div></div>
+    </section>
+    <section class="section" id="s12">
+      <h2>🧪 Closing Thoughts</h2>
+      <p class="lead">Despite the project’s many robust features, I’m not confident that this architecture is optimized to produce a productive output.</p>
+      <p>Despite the project’s many robust features, I’m not confident that this architecture is optimized to produce a productive output. There’s a lot of productivity lost in the fact that these agents rely on dialog to share their thoughts. A hive-mind architecture that creates and delegates tasks to ephemeral sub-agents only when needed (like AutoGPT) would likely perform better at complex digital tasks. This “shoggoth” architecture could share some or all of its scratchpad when needed instead of relying on dialog.</p>
+<p>That being said, there’s also an argument to be made that intentionally silo’d personalities and memories might contribute to a more effectively working entity, just like how diverse human-teams tend to produce better output than more homogenous ones. Divergent ideas create healthy debate. I’d be excited to see future projects create benchmarks with which we can test various configuration of agent workers.</p>
+<p>The thought of applying multiple agents in a work setting is certainly intriguing, however, what I’m most excited about is use-cases in interactive entertainment. Creating your own multi-agent simulation is an incredibly exciting and novel experience. It gives a strange feeling of authorship, yet is unpredictable at the same time. Video games could use set ups like this to create organic never-ending NPC interactions. They could create simulated human-like characters that develop real emotional relationships with human players.</p>
+<p>I’m excited for future projects to build off of some of the ideas explored here, and solve for the limitations of our set up. Speed is a big opportunity. Complex multi-agent systems rely on slow language models and convoluted agent loops. A forked version of GPTeam might commit more heavily to the goal of entertaining dialog, shedding the more productive features of the project that are unecessary in that context. Such a project might be able to use more lightweight language models that are faster.</p>
+<p>Another opportunity is in the interface: In its current state, the repo must be cloned and run locally. The lightweight UI we built is helpful, but it doesn’t make the project any more accessible to non-technical people. What if we could visualize the agents walking around in a virtual space. What if we could visually represent their emotions somehow? Our team is considering making some new features in this direction, and are happy to talk with others who have ideas!</p>
+<p>And finally, there’s a big opportunity in interactivity. The Sims would be a boring game if it was entirely passive. what if a human user could talk to the agents as if they were another character in the world? Maybe human players can trigger environmental actions that the characters respond to.</p>
+<p>This project was a blast to build, and we’re all really appreciate of the reception its gotten. If you’re working on, or have ideas for future iterations of GPTeam, please hit me up on twitter @itstimconnors. Shout out to the rest of our team for the work they put in making this happen: @alecvxyz @joshsny, and @haniasnyder ❤️</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s13">
+      <h2>🌐 Related content</h2>
+      <p class="lead">Deep AgentsAgent ArchitectureOpen Source
+
+#### Tuning Deep Agents to Work Well with Different Models
+
+Vivek TrivedyMason DaughertyApril 29, 20265min[](/blog/tuning-deep-agents-different-models).</p>
+      <p>Deep AgentsAgent ArchitectureOpen Source</p>
+<p>#### Tuning Deep Agents to Work Well with Different Models</p>
+<p>Vivek TrivedyMason DaughertyApril 29, 20265min[](/blog/tuning-deep-agents-different-models).png)Agent ArchitectureLangSmithOpen Source</p>
+<p>#### How LangSmith and LangChain OSS Help You Meet EU AI Act Requirements</p>
+<p>Jacob TalbotBecca WengApril 27, 20267min[](/blog/langsmith-langchain-oss-eu-ai-act).png)Agent ArchitecturePartner</p>
+<p>#### Agentic Engineering: How Swarms of AI Agents Are Redefining Software Engineering</p>
+<p>Renuka KumarPrashanth RamagopalApril 17, 202611min[](/blog/agentic-engineering-redefining-software-engineering)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s14">
+      <h2>📦 See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+<p>](/contact-sales)</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+  </div>
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/gpteam-a-multi-agent-simulation" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

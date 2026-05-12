@@ -1,0 +1,221 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：LangFriend: a Journal with Long-Term Memory</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--green:#10b981;--emerald:#059669;--teal:#14b8a6;--blue:#3b82f6;--purple:#6366f1;--amber:#f59e0b;--red:#ef4444;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+    .nav{position:sticky;top:0;z-index:100;background:rgba(15,23,42,.85);backdrop-filter:blur(12px);padding:14px 32px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.08)}
+    .nav a{color:#f1f5f9;text-decoration:none;font-weight:500;font-size:14px}
+    .nav .brand{font-weight:700;font-size:16px;color:#10b981}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%);color:#fff;padding:80px 32px 60px;text-align:center}
+    .hero h1{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;margin-bottom:12px;line-height:1.3}
+    .hero .subtitle{font-size:18px;color:rgba(255,255,255,.8);max-width:720px;margin:0 auto 40px}
+    .hero .meta{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:32px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;max-width:800px;margin:0 auto}
+    .stat{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:20px 16px;backdrop-filter:blur(8px)}
+    .stat .num{font-size:28px;font-weight:800;color:#34d399}
+    .stat .label{font-size:13px;color:rgba(255,255,255,.7);margin-top:4px}
+    .page{max-width:900px;margin:0 auto;padding:40px 24px}
+    .toc{margin-bottom:48px}
+    .toc h3{font-size:14px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);margin-bottom:16px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .toc-grid a{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;transition:all .2s}
+    .toc-grid a:hover{border-color:var(--emerald);background:#ecfdf5}
+    .toc-grid .num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-size:12px;font-weight:700;flex-shrink:0}
+    .section{margin-bottom:56px}
+    .section h2{font-size:clamp(1.3rem,3vw,1.7rem);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+    .lead{color:var(--text-secondary);font-size:15px;margin-bottom:24px;line-height:1.6}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}
+    .card h4{font-size:16px;font-weight:600;margin-bottom:8px}
+    .card p,.card li{font-size:14px;color:var(--text-secondary);line-height:1.7}
+    .card ul,.card ol{padding-left:20px}
+    .card li{margin-bottom:4px}
+    p{font-size:15px;color:var(--text-secondary);line-height:1.8;margin-bottom:16px}
+    p code{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:13px;color:#059669}
+    .chart{margin:24px 0}
+    .chart-row{display:flex;align-items:center;margin-bottom:10px;gap:12px}
+    .chart-label{width:150px;font-size:13px;font-weight:500;text-align:right;flex-shrink:0}
+    .chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}
+    .chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;justify-content:flex-end;padding-right:10px;font-size:12px;font-weight:600;color:#fff;transition:width .6s ease}
+    .chart-bar.green{background:linear-gradient(90deg,#059669,#10b981)}
+    .chart-bar.teal{background:linear-gradient(90deg,#14b8a6,#2dd4bf)}
+    .chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+    .chart-bar.purple{background:linear-gradient(90deg,#6366f1,#a78bfa)}
+    .chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}
+    .flow{display:flex;align-items:center;justify-content:center;gap:12px;margin:24px 0;flex-wrap:wrap}
+    .flow-step{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;min-width:120px}
+    .flow-step.green{background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none}
+    .flow-step.teal{background:linear-gradient(135deg,#14b8a6,#2dd4bf);color:#fff;border:none}
+    .flow-step.blue{background:linear-gradient(135deg,#3b82f6,#60a5fa);color:#fff;border:none}
+    .flow-step.purple{background:linear-gradient(135deg,#6366f1,#a78bfa);color:#fff;border:none}
+    .flow-step.amber{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#fff;border:none}
+    .flow-arrow{font-size:20px;color:var(--text-secondary)}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}
+    .compare-card{border-radius:var(--radius);padding:24px}
+    .compare-card.old{background:#fef2f2;border:2px solid #fecaca}
+    .compare-card.new{background:#ecfdf5;border:2px solid #a7f3d0}
+    .compare-card h4{font-size:15px;font-weight:700;margin-bottom:8px}
+    .compare-card p{font-size:13px;color:var(--text-secondary)}
+    .timeline{position:relative;padding-left:32px;margin:24px 0}
+    .timeline::before{content:'';position:absolute;left:7px;top:8px;bottom:8px;width:3px;background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6);border-radius:2px}
+    .tl-item{position:relative;margin-bottom:24px}
+    .tl-dot{position:absolute;left:-29px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid #059669;background:#fff}
+    .tl-item:nth-child(2) .tl-dot{border-color:#14b8a6}
+    .tl-item:nth-child(3) .tl-dot{border-color:#3b82f6}
+    .tl-phase{font-weight:700;font-size:15px;color:var(--text)}
+    .tl-desc{font-size:13px;color:var(--text-secondary);margin-top:4px}
+    .code-block{background:#1e293b;border-radius:var(--radius);padding:20px;margin:16px 0;overflow-x:auto}
+    .code-block pre{color:#e2e8f0;font-family:var(--mono);font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-all}
+    .block-q{background:linear-gradient(135deg,#ecfdf5,#d1fae5);border-left:4px solid #059669;border-radius:0 var(--radius) var(--radius) 0;padding:20px 24px;margin:24px 0}
+    .block-q p{font-size:15px;font-style:italic;color:#064e3b;line-height:1.7}
+    .footer{background:#0f172a;color:#94a3b8;padding:40px 32px;text-align:center;font-size:14px}
+    .footer a{color:#34d399;text-decoration:none}
+    .footer a:hover{text-decoration:underline}
+    .footer .links{margin-top:12px;display:flex;justify-content:center;gap:24px;flex-wrap:wrap}
+    @media(max-width:768px){.compare-grid{grid-template-columns:1fr}.chart-label{width:100px;font-size:12px}.flow{flex-direction:column;gap:8px}.flow-arrow{transform:rotate(90deg)}.toc-grid{grid-template-columns:1fr}.hero{padding:60px 20px 40px}.nav{padding:12px 16px}.stats{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+  <header class="hero">
+    <div class="meta">🔧 Tools & Integrations · LangChain Accounts · 2024-03-28</div>
+    <h1>LangFriend: a Journal with Long-Term Memory</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">8</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~6min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">-</div><div class="label">代码示例</div></div>
+      <div class="stat"><div class="num">10</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>LangFriend: a Journal with Lon</a>
+      <a href="#s2"><span class="num">2</span>Academic Work</a>
+      <a href="#s3"><span class="num">3</span>Companies</a>
+      <a href="#s4"><span class="num">4</span>Why a Journal App?</a>
+      <a href="#s5"><span class="num">5</span>Customizing</a>
+      <a href="#s6"><span class="num">6</span>Conclusion</a>
+      <a href="#s7"><span class="num">7</span>Related content</a>
+      <a href="#s8"><span class="num">8</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+    <section class="section" id="s1">
+      <h2>🔍 LangFriend: a Journal with Long-Term Memory</h2>
+      <p class="lead">The LangChain TeamMarch 28, 20246min
+
+Go back to blogShare
+
+
+
+
+
+One of the concepts we are most interested in at LangChain is memory.</p>
+      <p>The LangChain TeamMarch 28, 20246min[</p>
+<p>Go back to blog](/blog)Share[</p>
+<p>](#)One of the concepts we are most interested in at LangChain is memory. Whenever we are interested in a concept, we like to build an example app showing off that concept. For memory, we decided to build a journaling app! We&#x27;re hosting a version of it that anyone can try out. We&#x27;re also starting to work with a few alpha users on a developer facing API. If you are interested in this, please sign up below.</p>
+<div class="card"><ul><li>YouTube[](https://journal.langchain.com/?ref=blog.langchain.com)</li><li>Developer API Access</li></ul></div>
+<p>We are also doing a memory related hackathon with New Computer, MongoDB and Anthropic on 4/6/2024. Sign up here.</p>
+<p>One of the components of LLM systems that we are most bullish on is memory. A lot of the power of generative AI is its ability to generate unique content on the fly. This can be incredibly powerful for customizing a user experience. This can be done by drawing upon existing information about users, but it can also be done by remembering previous user interactions and learning from those.</p>
+<p>Is is this type of &quot;remembering&quot; that we are excited about exploring. We think that more and more interactions will occur between a user and an LLM - chatbots are the dominant form factor for LLM applications. This means that more and more valuable user information will be exchanged in those conversation - a persons likes or dislikes, who their friends are, what their goals are. Learning these attributes - and then incorporating them back into the application can greatly improve the user experience.</p>
+<p>As we were exploring memory, we thought it would be helpful to put together a use case example to motivate and ground a lot of our work. We chose a journaling app to be this use case. We named this journaling app &quot;LangFriend&quot;, and are opening it up to the public today. While still just a humble research preview, we hope to gather community feedback on what works well and how to improve it, before open sourcing it.</p>
+<p>In this post we&#x27;ll talk a bit about prior academic work in memory, other companies doing interesting things and why we chose a journaling app to focus on. We&#x27;ll then deep dive into the journaling app, walking through its functionality. If you are interested in exploring memory with us, please reach out here.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s2">
+      <h2>⚡ Academic Work</h2>
+      <p class="lead">There are two main academic papers we found inspiring for our work on memory.</p>
+      <p>There are two main academic papers we found inspiring for our work on memory.</p>
+<p>First: MemGPT. From researchers at UC Berkley, the TLDR of this paper is that they give the LLM the ability to call a few functions. These functions can do things like remember specific facts, recalls related things, etc.</p>
+<div class="block-q"><p>> Large language models (LLMs) have revolutionized AI, but are constrained by limited context windows, hindering their utility in tasks like extended conversations and document analysis. To enable using context beyond limited context windows, we propose virtual context management, a technique drawing inspiration from hierarchical memory systems in traditional operating systems which provide the illusion of an extended virtual memory via paging between physical memory and disk. Using this technique, we introduce MemGPT (MemoryGPT), a system that intelligently manages different storage tiers in order to effectively provide extended context within the LLM’s limited context window</p></div>
+<p>Second: Generative Agents. From researchers at Stanford, the TLDR of this paper is that they use reflection over experiences to form memories, which are then stored and retrieved programmatically.</p>
+<div class="block-q"><p>> We demonstrate through ablation that the components of our agent architecture—observation, planning, and reflection—each contribute critically to the believability of agent behavior. By fusing large language models with computational interactive agents, this work introduces architectural and interaction patterns for enabling believable simulations of human behavior.</p></div>
+<p>One interesting difference between these two papers is the degree to which the LLM actively decides to use memory, versus having it be more of background process. MemGPT forces the LLM to use memory functions, while Generative Agents is more of a background process.</p>
+      
+    </section>
+    <section class="section" id="s3">
+      <h2>🏗️ Companies</h2>
+      <p class="lead">There are a few companies doing awesome stuff with memory.</p>
+      <p>There are a few companies doing awesome stuff with memory.</p>
+<p>Plastic Labs is a startup building projects like TutorGPT.</p>
+<div class="block-q"><p>> LangChain LLM application. Dynamic metaprompting for theory-of-mind-powered tutoring.</p></div>
+<p>Good AI is a startup that just open-sourced a chat assistant with long-term memory.</p>
+<div class="block-q"><p>> At first glance, Charlie might resemble existing LLM agents like ChatGPT, Claude, and Gemini. However, its distinctive feature is the implementation of LTM, enabling it to learn from every interaction. This includes storing and integrating user messages, assistant responses, and environmental feedback into LTM for future retrieval when relevant to the task at hand.</p></div>
+<p>OpenAI has recently incorporated memory features into ChatGPT.</p>
+<p>Looking at these companies also displays a difference between implementing memory as something active that the LLM needs to consciously invoke (ChatGPT) versus a background process that is automatically incorporated (TutorGPT).</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s4">
+      <h2>📊 Why a Journal App?</h2>
+      <p class="lead">When thinking about a good use case to implement to test out long-term memory, a journaling app jumped to mind.</p>
+      <p>When thinking about a good use case to implement to test out long-term memory, a journaling app jumped to mind. The main reason for this is that we believed the interactions in this app would contain more relevant information to remember than a standard chat application.</p>
+<p>With a standard chat application, there may a lot of superfluous exchanges - &quot;hey!&quot;, &quot;hi&quot;, &quot;whats up&quot;, etc. In a journal setting, you more quickly get to a point where you are sharing real, interesting feelings and insights.</p>
+<p>Still - we wanted to add a chat component to this app. The main reason for this was to show that our application was learning and remembering information about the user. It would be able to use this information to craft personalized responses to the user.</p>
+<p>Here you can see it remember that I&#x27;m a fan of Italian cuisine, and that I feel refreshed after working out.</p>
+<p>After adding your first journal, and chatting with our companion, you&#x27;ll see a &quot;Memories&quot; button appear in the navigation bar. Clicking on this will show you all the main memories we were able to extract from your journals.</p>
+<p>You&#x27;ll notice the list is slim, and doesn&#x27;t contain too much information. These are just the most important, high level facts we extracted. Behind the scenes we&#x27;re pulling many more facts than this from your entries, and you can search through all of them!</p>
+<p>Start typing in the &quot;Search memories...&quot; input, and in real time you&#x27;ll see the wide variety of facts LangFriend is storing about you:</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s5">
+      <h2>🔗 Customizing</h2>
+      <p class="lead">We wanted to make LangFriend as appealing as possible to all users.</p>
+      <p>We wanted to make LangFriend as appealing as possible to all users. Because of this, we allow anyone to update the system message that prefixes, and sets the tone of all chats with our companion. A default is included, which we carefully crafted to suit the needs of many users. However if you&#x27;re looking for something slightly, or entirely different you can change as little, or as much of it as you&#x27;d like.</p>
+<p>Find the system prompt, and update it by visiting the &quot;Logs&quot; page, and clicking on the &quot;Config&quot; button. From here, a dialog will popup with your system prompt.</p>
+<p>Any changes made will persist between sessions, and will prefix all your future chat conversations!</p>
+      
+    </section>
+    <section class="section" id="s6">
+      <h2>💡 Conclusion</h2>
+      <p class="lead">LangFriend is an exciting research preview that showcases the potential of incorporating long-term memory into LLM applications.</p>
+      <p>LangFriend is an exciting research preview that showcases the potential of incorporating long-term memory into LLM applications. By focusing on a journaling app, we aim to capture meaningful user information to provide personalized responses and enhance the user experience. Inspired by academic work and innovative companies in the field, LangFriend demonstrates how memory can be actively utilized or incorporated as a background process to create engaging and adaptive interactions. We&#x27;re excited to invite the community to explore LangFriend, provide feedback, and join us in pushing the boundaries of what&#x27;s possible with memory in LLM applications, unlocking the full potential of generative AI for more powerful, personalized, and meaningful user experiences.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s7">
+      <h2>🛠️ Related content</h2>
+      <p class="lead">Case StudiesLangGraphObservability &amp;amp; Evals
+
+#### How Kensho built a multi-agent framework with LangGraph to solve trusted financial data retrieval
+
+The LangChain TeamMarch 26, 20264min[](/blog/cus</p>
+      <p>Case StudiesLangGraphObservability &amp; Evals</p>
+<p>#### How Kensho built a multi-agent framework with LangGraph to solve trusted financial data retrieval</p>
+<p>The LangChain TeamMarch 26, 20264min[](/blog/customers-kensho)Case StudiesLangChainLangGraph</p>
+<p>#### How Remote uses LangChain and LangGraph to onboard thousands of customers with AI</p>
+<p>The LangChain TeamJanuary 19, 20265min[](/blog/customers-remote)Case StudiesLangGraphLangSmith</p>
+<p>#### Fastweb + Vodafone: Transforming Customer Experience with AI Agents using LangGraph and LangSmith</p>
+<p>The LangChain TeamDecember 16, 20257min[](/blog/customers-vodafone-italy)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s8">
+      <h2>📈 See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+<p>](/contact-sales)</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+  </div>
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/langfriend" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

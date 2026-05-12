@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deep Dive: Peering Into the Soul of AI Decision-Making with LangSmith</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafbfc;
+      --surface: #fff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --green: #059669;
+      --emerald: #10b981;
+      --teal: #14b8a6;
+      --blue: #3b82f6;
+      --purple: #6366f1;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --orange: #ea580c;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans SC', 'Inter', system-ui, sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: var(--sans); background: var(--bg); color: var(--text); line-height:1.7; }
+    .nav { position:sticky; top:0; z-index:100; background:rgba(15,23,42,.88); backdrop-filter:blur(14px); padding:14px 32px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,.08); }
+    .nav a { color:#f1f5f9; text-decoration:none; font-weight:500; font-size:14px; }
+    .nav .brand { font-weight:700; font-size:16px; color:#34d399; }
+    .hero { background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%); color:#fff; padding:80px 32px 60px; text-align:center; }
+    .hero h1 { font-size:clamp(1.8rem,4vw,2.6rem); font-weight:800; margin-bottom:12px; line-height:1.3; }
+    .hero .subtitle { font-size:17px; color:rgba(255,255,255,.82); max-width:720px; margin:0 auto 12px; }
+    .hero .meta { font-size:13px; color:rgba(255,255,255,.5); margin-bottom:32px; }
+    .hero .badge-cat { display:inline-block; padding:4px 14px; border-radius:20px; font-size:12px; font-weight:600; background:rgba(52,211,153,.18); color:#6ee7b7; border:1px solid rgba(52,211,153,.3); margin-bottom:16px; }
+    .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; max-width:780px; margin:0 auto; }
+    .stat { background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.11); border-radius:12px; padding:18px 14px; backdrop-filter:blur(8px); }
+    .stat .num { font-size:26px; font-weight:800; color:#34d399; font-family:var(--mono); }
+    .stat .label { font-size:12px; color:rgba(255,255,255,.65); margin-top:4px; }
+    .page { max-width:900px; margin:0 auto; padding:40px 24px; }
+    .toc { margin-bottom:48px; }
+    .toc h3 { font-size:13px; text-transform:uppercase; letter-spacing:1.5px; color:var(--text-secondary); margin-bottom:16px; }
+    .toc-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:10px; }
+    .toc-grid a { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--text); font-size:14px; font-weight:500; transition:all .2s; }
+    .toc-grid a:hover { border-color:var(--green); background:#ecfdf5; }
+    .toc-grid .num { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:8px; background:linear-gradient(135deg,#059669,#14b8a6); color:#fff; font-size:12px; font-weight:700; flex-shrink:0; }
+    .section { margin-bottom:56px; }
+    .section h2 { font-size:clamp(1.3rem,3vw,1.6rem); font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    .lead { color:var(--text-secondary); font-size:15px; margin-bottom:20px; line-height:1.7; }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:22px; margin-bottom:14px; }
+    .card h4 { font-size:15px; font-weight:600; margin-bottom:8px; }
+    .card p { font-size:14px; color:var(--text-secondary); line-height:1.7; }
+    .chart { margin:24px 0; }
+    .chart-row { display:flex; align-items:center; margin-bottom:10px; gap:12px; }
+    .chart-label { width:160px; font-size:13px; font-weight:500; text-align:right; flex-shrink:0; }
+    .chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:30px; overflow:hidden; }
+    .chart-bar { height:100%; border-radius:8px; display:flex; align-items:center; justify-content:flex-end; padding-right:10px; font-size:12px; font-weight:600; color:#fff; transition:width .6s ease; }
+    .chart-bar.green { background:linear-gradient(90deg,#059669,#34d399); }
+    .chart-bar.teal { background:linear-gradient(90deg,#14b8a6,#2dd4bf); }
+    .chart-bar.blue { background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+    .chart-bar.purple { background:linear-gradient(90deg,#6366f1,#a78bfa); }
+    .chart-bar.amber { background:linear-gradient(90deg,#f59e0b,#fbbf24); }
+    .chart-bar.orange { background:linear-gradient(90deg,#ea580c,#fb923c); }
+    .chart-bar.red { background:linear-gradient(90deg,#ef4444,#f87171); }
+    .timeline { position:relative; padding-left:32px; margin:24px 0; }
+    .timeline::before { content:''; position:absolute; left:8px; top:0; bottom:0; width:3px; background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6,#6366f1); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:20px; }
+    .tl-dot { position:absolute; left:-28px; top:4px; width:14px; height:14px; border-radius:50%; border:3px solid #059669; background:#fff; }
+    .tl-item:nth-child(2) .tl-dot { border-color:#14b8a6; }
+    .tl-item:nth-child(3) .tl-dot { border-color:#3b82f6; }
+    .tl-item:nth-child(4) .tl-dot { border-color:#6366f1; }
+    .tl-item:nth-child(5) .tl-dot { border-color:#f59e0b; }
+    .tl-item:nth-child(6) .tl-dot { border-color:#ea580c; }
+    .tl-item:nth-child(7) .tl-dot { border-color:#ef4444; }
+    .tl-phase { font-weight:700; font-size:15px; margin-bottom:4px; }
+    .tl-desc { font-size:13px; color:var(--text-secondary); line-height:1.6; }
+    .compare-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:24px 0; }
+    .compare-card { border-radius:var(--radius); padding:22px; }
+    .compare-card.old { background:#fef2f2; border:2px solid #fecaca; }
+    .compare-card.new { background:#ecfdf5; border:2px solid #a7f3d0; }
+    .compare-card h4 { font-size:15px; font-weight:700; margin-bottom:8px; }
+    .compare-card ul { list-style:none; padding:0; }
+    .compare-card ul li { font-size:13px; padding:4px 0; color:var(--text-secondary); }
+    .flow { display:flex; align-items:center; justify-content:center; gap:12px; margin:24px 0; flex-wrap:wrap; }
+    .flow-step { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px 18px; font-size:13px; font-weight:600; text-align:center; min-width:100px; }
+    .flow-step.green { background:linear-gradient(135deg,#059669,#10b981); color:#fff; border:none; }
+    .flow-step.blue { background:linear-gradient(135deg,#3b82f6,#60a5fa); color:#fff; border:none; }
+    .flow-step.purple { background:linear-gradient(135deg,#6366f1,#a78bfa); color:#fff; border:none; }
+    .flow-step.teal { background:linear-gradient(135deg,#14b8a6,#2dd4bf); color:#fff; border:none; }
+    .flow-step.orange { background:linear-gradient(135deg,#ea580c,#f59e0b); color:#fff; border:none; }
+    .flow-arrow { font-size:20px; color:var(--text-secondary); }
+    .block-q { background:linear-gradient(135deg,#ecfdf5,#d1fae5); border-left:4px solid #059669; border-radius:0 var(--radius) var(--radius) 0; padding:18px 22px; margin:20px 0; }
+    .block-q p { font-size:14px; font-style:italic; color:#064e3b; line-height:1.7; }
+    .badge { display:inline-block; padding:3px 10px; border-radius:6px; font-size:12px; font-weight:600; }
+    .badge-green { background:#ecfdf5; color:#059669; }
+    .badge-teal { background:#f0fdfa; color:#14b8a6; }
+    .badge-blue { background:#eff6ff; color:#3b82f6; }
+    .badge-purple { background:#eef2ff; color:#6366f1; }
+    .footer { text-align:center; padding:48px 24px; border-top:1px solid var(--border); margin-top:40px; }
+    .footer a { color:var(--green); text-decoration:none; font-weight:500; }
+    .footer a:hover { text-decoration:underline; }
+    .footer .foot-links { display:flex; justify-content:center; gap:24px; flex-wrap:wrap; margin-bottom:12px; }
+    .footer .copy { font-size:12px; color:var(--text-secondary); }
+    @media(max-width:768px) {
+      .hero { padding:48px 18px 36px; }
+      .hero h1 { font-size:1.5rem; }
+      .stats { grid-template-columns:1fr 1fr; gap:10px; }
+      .page { padding:28px 16px; }
+      .toc-grid { grid-template-columns:1fr; }
+      .compare-grid { grid-template-columns:1fr; }
+      .flow { flex-direction:column; gap:8px; }
+      .flow-arrow { transform:rotate(90deg); }
+      .chart-label { width:100px; font-size:11px; }
+      .nav { padding:12px 16px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain Blog Hub</a>
+    <a href="../langchain/">&#x2190; Back to Hub</a>
+  </nav>
+
+  <header class="hero">
+    <div class="badge-cat">LangSmith / Observability &amp; Evals</div>
+    <h1>Peering Into the Soul of AI Decision-Making with LangSmith</h1>
+    <p class="subtitle">LangChain Accounts &middot; 2023-09-20</p>
+    <p class="meta">Source: https://www.langchain.com/blog/peering-into-the-soul-of-ai-decision-making-with-langsmith</p>
+    <div class="stats">
+        <div class="stat">
+          <div class="num">5</div>
+          <div class="label">Core Sections</div>
+        </div>
+        <div class="stat">
+          <div class="num">9 min</div>
+          <div class="label">Reading Time</div>
+        </div>
+        <div class="stat">
+          <div class="num">11</div>
+          <div class="label">Key Points</div>
+        </div>
+        <div class="stat">
+          <div class="num">16</div>
+          <div class="label">External Links</div>
+        </div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc">
+      <h3>&#x1F4D1; Table of Contents</h3>
+      <div class="toc-grid">
+        <a href="#what-is-langsmith"><span class="num">1</span>What Is LangSmith?</a>
+        <a href="#langchain-vs-langsmith-whats-the-differe"><span class="num">2</span>LangChain vs LangSmith: What’s the difference?</a>
+        <a href="#how-we-use-langsmith-at-commandbar-ai-po"><span class="num">3</span>How We Use LangSmith at CommandBar: AI-Powered Use</a>
+        <a href="#the-verdict-are-we-betting-the-house-on-"><span class="num">4</span>The Verdict: Are We Betting The House On LangSmith</a>
+        <a href="#conclusion"><span class="num">5</span>Conclusion</a>
+      </div>
+    </nav>
+
+    <section class="section" id="what-is-langsmith">
+      <h2>&#x1F538; What Is LangSmith?</h2>
+      <p class="lead">LangSmith is a framework built on the shoulders of LangChain. It’s designed to track the inner workings of LLMs and AI agents within your product....</p>
+        <div class="card"><p>Those LLM inner-workings can be categorized into 4 main buckets - each with its own flair of usefulness. Here’s a breakdown of how they all work in unison and what you can expect.</p></div>
+        <div class="card"><p>When your LLM starts throwing curveballs instead of answers, you don't just want to sit there catching them. With LangSmith, you can roll up your sleeves and play detective. We use the debugging tools to dive into perplexing agent loops, frustratingly slow chains, and to scrutinize prompts like they're suspects in a lineup.</p></div>
+        <div class="card"><p>Testing LLM applications without LangSmith is like trying to assemble IKEA furniture without the manual: sure, you could wing it, but do you really want to risk it? Baked into LangSmith is the option to utilize existing datasets or create new ones, and run them against your chains. Visual feedback on outputs and accuracy metrics are presented within the interface, streamlining the testing process for our eng team (we really like this).</p></div>
+        <div class="card"><p>Beyond mere testing, evaluation in LangSmith delves into the performance nuances of LLM runs. While the built-in evaluators offer a preliminary analysis, the true power lies in guiding your focus towards crucial examples (more on how we do that later). As your datasets grow, LangSmith ensures you never miss a beat, making evaluations both comprehensive and insightful. Because &quot;good enough&quot; isn't in your vocabulary, right?</p></div>
+      <div class="flow">
+                <div class="flow-step green">Concept</div>
+        <div class="flow-arrow">&#x2192;</div>
+        <div class="flow-step">Analysis</div>
+        <div class="flow-arrow">&#x2192;</div>
+        <div class="flow-step blue">Application</div>
+      </div>
+    </section>
+
+    <section class="section" id="langchain-vs-langsmith-whats-the-differe">
+      <h2>&#x2696; LangChain vs LangSmith: What’s the difference?</h2>
+      <p class="lead">While LangChain is the muscle doing the heavy lifting with Chains, Prompts, and Agents, understanding the 'why' behind the decisions LLMs make is a ma...</p>
+        <div class="card"><p>&gt; &quot;LangChain's (the company's) goal is to make it as easy as possible to develop LLM applications&quot;</p></div>
+        <div class="card"><p>said Harrison Chase, co-founder and CEO of LangChain.</p></div>
+        <div class="card"><p>What Are LangSmith Traces?</p></div>
+        <div class="card"><p>Traces in the world of LangSmith are analogous to logs when programming; they allow us to easily see what text came in and out of chains and LLMs. Think of them as detailed breadcrumbs illuminating the AI's journey. Each trace, like a footprint on a sandy beach, represents a pivotal AI decision. Traces don't merely depict the path taken; they shed light on the underlying thought process and actions taken at each juncture.</p></div>
+
+    </section>
+
+    <section class="section" id="how-we-use-langsmith-at-commandbar-ai-po">
+      <h2>&#x1F4DD; How We Use LangSmith at CommandBar: AI-Powered User Assistance</h2>
+      <p class="lead">We’ve covered a lot of ground so far on how LangSmith works. From here on out, we’re ripping the covers off and showing you what’s under the hood of o...</p>
+        <div class="card"><p>HelpHub is a GPT-Powered chatbot for any site. It syncs with any public URL or your existing help center to assist users in getting instantaneous support while circumventing customer service teams or manually screening docs.</p></div>
+        <div class="card"><p>While we utilize our own search with ElasticSearch, we rely on LangChain to merge those search results into meaningful prompts for HelpHub. This synergy allows us to search hundreds of docs and sites in milliseconds, source relevant context, compute reasoning, and deliver an answer to our users (with citations!) almost instantly.</p></div>
+        <div class="card"><p>It’s through this core integration with LangChain that we’re able to capture traces via LangSmith.  primarily to finetune and optimize our chatbot’s functionality and sandbox future improvements for our users.</p></div>
+        <div class="card"><p>Accurate AI Responses Are A Necessity, Not A Nice-To-Have</p></div>
+        <div class="card">
+          <ul style="list-style:disc;padding-left:20px;color:var(--text-secondary);font-size:14px;line-height:1.8;">
+            <li>Previously the snippet in the prompt responsible for this was: Return the source ID with the most relevance to your answer.</li>
+            <li>We update that piece of the prompt to: ALWAYS return the source ID with the most relevance to your answer prior to answering the question.</li>
+          </ul>
+        </div>
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">What Is LangSmith?</div>
+          <div class="tl-desc">LangSmith is a framework built on the shoulders of LangChain. It’s designed to t...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">LangChain vs LangSmith: What’s the diffe</div>
+          <div class="tl-desc">While LangChain is the muscle doing the heavy lifting with Chains, Prompts, and ...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">How We Use LangSmith at CommandBar: AI-P</div>
+          <div class="tl-desc">We’ve covered a lot of ground so far on how LangSmith works. From here on out, w...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">The Verdict: Are We Betting The House On</div>
+          <div class="tl-desc">When a product like LangSmith comes along, it can feel really natural to default...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Conclusion</div>
+          <div class="tl-desc">After diving deep with LangSmith's traces, experimenting with prompts, testing, ...</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="the-verdict-are-we-betting-the-house-on-">
+      <h2>&#x1F538; The Verdict: Are We Betting The House On LangSmith?</h2>
+      <p class="lead">When a product like LangSmith comes along, it can feel really natural to default to the path of least resistance and offhand all responsibility. As we...</p>
+        <div class="card"><p>So, in short, yes, we are putting a lot of trust right now in LangSmith and scaling our prototyping and debugging rapidly. The systems we’re building internally have already been instrumental in improving user experience, and as you’ve read earlier, many of these insights and improvements have come directly from those real-time traces from users chatting with HelpHub in the wild.</p></div>
+        <div class="card"><p>Leveraging User Feedback For Improvements:</p></div>
+        <div class="card"><p>We believe that every piece of user feedback, whether positive or negative, is a goldmine of insights. And with LangSmith's help (plus a little ingenuity on our side), we've turned these insights into actionable improvements.</p></div>
+        <div class="card"><p>Here's how our feedback loop works:</p></div>
+        <div class="card">
+          <ul style="list-style:disc;padding-left:20px;color:var(--text-secondary);font-size:14px;line-height:1.8;">
+            <li>Real-time Feedback Collection: As users interact with HelpHub, they have the opportunity to provide feedback on the AI-generated responses, signaling with a simple &quot;thumbs up&quot; or &quot;thumb</li>
+            <li>In-depth Analysis with LangSmith: Instead of just collecting feedback in the form or positive or negative signals, we delve deeper (particularly for the negative signals). Using LangSmith, we’re able </li>
+            <li>Categorizing Into Datasets: Central to our refinement process is LangSmith's use of dynamic datasets. We maintain multiple datasets, each tailored to different query types and user interactions. These</li>
+            <li>Automating ENG-team Signals: When a user provides feedback, say a thumbs down, it's immediately flagged to our team via Slack. We built this little snippet to help the team screen traces and prioritiz</li>
+            <li>Iterating Quickly: We rigorously review the feedback, analyze the corresponding traces, and then, based on our insights, make informed adjustments to the model's role, prompts, or configurations to tr</li>
+            <li>Dive Deep with Traces: Don't just skim the surface. Use LangSmith's trace feature to dive deep into AI decision-making. Every trace is a lesson, a chance to improve.</li>
+          </ul>
+        </div>
+
+    </section>
+
+    <section class="section" id="conclusion">
+      <h2>&#x2705; Conclusion</h2>
+      <p class="lead">After diving deep with LangSmith's traces, experimenting with prompts, testing, and iterating on our LLM environment, here's the real talk: LangSmith ...</p>
+        <div class="card"><p>So, to our fellow AI product people trailblazers, dive into LangSmith. You’d be silly not to if you’re already using LangChain!</p></div>
+      <div class="compare-grid">
+        <div class="compare-card old">
+          <h4>&#x26A0; Challenges / Before</h4>
+          <ul>
+                        <li>After diving deep with LangSmith's traces, experimenting with prompts, testing, and iterating on our...</li>
+          </ul>
+        </div>
+        <div class="compare-card new">
+          <h4>&#x2705; Solutions / After</h4>
+          <ul>
+                        <li>So, to our fellow AI product people trailblazers, dive into LangSmith. You’d be silly not to if you’...</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <footer class="footer">
+    <div class="foot-links">
+      <a href="../langchain/">&#x1F3E0; LangChain Hub</a>
+      <a href="https://www.langchain.com/blog/peering-into-the-soul-of-ai-decision-making-with-langsmith" target="_blank">&#x1F517; Original Article</a>
+    </div>
+    <p class="copy">Auto-generated deep-dive page &middot; Content from LangChain Blog</p>
+  </footer>
+</body>
+</html>

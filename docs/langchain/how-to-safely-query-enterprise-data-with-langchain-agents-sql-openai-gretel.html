@@ -1,0 +1,303 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：How to Safely Query Enterprise Data with LangChain Agents + SQL + OpenAI + Gretel</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--green:#10b981;--emerald:#059669;--teal:#14b8a6;--blue:#3b82f6;--purple:#6366f1;--amber:#f59e0b;--red:#ef4444;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+    .nav{position:sticky;top:0;z-index:100;background:rgba(15,23,42,.85);backdrop-filter:blur(12px);padding:14px 32px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.08)}
+    .nav a{color:#f1f5f9;text-decoration:none;font-weight:500;font-size:14px}
+    .nav .brand{font-weight:700;font-size:16px;color:#10b981}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%);color:#fff;padding:80px 32px 60px;text-align:center}
+    .hero h1{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;margin-bottom:12px;line-height:1.3}
+    .hero .subtitle{font-size:18px;color:rgba(255,255,255,.8);max-width:720px;margin:0 auto 40px}
+    .hero .meta{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:32px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;max-width:800px;margin:0 auto}
+    .stat{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:20px 16px;backdrop-filter:blur(8px)}
+    .stat .num{font-size:28px;font-weight:800;color:#34d399}
+    .stat .label{font-size:13px;color:rgba(255,255,255,.7);margin-top:4px}
+    .page{max-width:900px;margin:0 auto;padding:40px 24px}
+    .toc{margin-bottom:48px}
+    .toc h3{font-size:14px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);margin-bottom:16px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .toc-grid a{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;transition:all .2s}
+    .toc-grid a:hover{border-color:var(--emerald);background:#ecfdf5}
+    .toc-grid .num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-size:12px;font-weight:700;flex-shrink:0}
+    .section{margin-bottom:56px}
+    .section h2{font-size:clamp(1.3rem,3vw,1.7rem);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+    .lead{color:var(--text-secondary);font-size:15px;margin-bottom:24px;line-height:1.6}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}
+    .card h4{font-size:16px;font-weight:600;margin-bottom:8px}
+    .card p,.card li{font-size:14px;color:var(--text-secondary);line-height:1.7}
+    .card ul,.card ol{padding-left:20px}
+    .card li{margin-bottom:4px}
+    p{font-size:15px;color:var(--text-secondary);line-height:1.8;margin-bottom:16px}
+    p code{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:13px;color:#059669}
+    .chart{margin:24px 0}
+    .chart-row{display:flex;align-items:center;margin-bottom:10px;gap:12px}
+    .chart-label{width:150px;font-size:13px;font-weight:500;text-align:right;flex-shrink:0}
+    .chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}
+    .chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;justify-content:flex-end;padding-right:10px;font-size:12px;font-weight:600;color:#fff;transition:width .6s ease}
+    .chart-bar.green{background:linear-gradient(90deg,#059669,#10b981)}
+    .chart-bar.teal{background:linear-gradient(90deg,#14b8a6,#2dd4bf)}
+    .chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+    .chart-bar.purple{background:linear-gradient(90deg,#6366f1,#a78bfa)}
+    .chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}
+    .flow{display:flex;align-items:center;justify-content:center;gap:12px;margin:24px 0;flex-wrap:wrap}
+    .flow-step{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;min-width:120px}
+    .flow-step.green{background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none}
+    .flow-step.teal{background:linear-gradient(135deg,#14b8a6,#2dd4bf);color:#fff;border:none}
+    .flow-step.blue{background:linear-gradient(135deg,#3b82f6,#60a5fa);color:#fff;border:none}
+    .flow-step.purple{background:linear-gradient(135deg,#6366f1,#a78bfa);color:#fff;border:none}
+    .flow-step.amber{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#fff;border:none}
+    .flow-arrow{font-size:20px;color:var(--text-secondary)}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}
+    .compare-card{border-radius:var(--radius);padding:24px}
+    .compare-card.old{background:#fef2f2;border:2px solid #fecaca}
+    .compare-card.new{background:#ecfdf5;border:2px solid #a7f3d0}
+    .compare-card h4{font-size:15px;font-weight:700;margin-bottom:8px}
+    .compare-card p{font-size:13px;color:var(--text-secondary)}
+    .timeline{position:relative;padding-left:32px;margin:24px 0}
+    .timeline::before{content:'';position:absolute;left:7px;top:8px;bottom:8px;width:3px;background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6);border-radius:2px}
+    .tl-item{position:relative;margin-bottom:24px}
+    .tl-dot{position:absolute;left:-29px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid #059669;background:#fff}
+    .tl-item:nth-child(2) .tl-dot{border-color:#14b8a6}
+    .tl-item:nth-child(3) .tl-dot{border-color:#3b82f6}
+    .tl-phase{font-weight:700;font-size:15px;color:var(--text)}
+    .tl-desc{font-size:13px;color:var(--text-secondary);margin-top:4px}
+    .code-block{background:#1e293b;border-radius:var(--radius);padding:20px;margin:16px 0;overflow-x:auto}
+    .code-block pre{color:#e2e8f0;font-family:var(--mono);font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-all}
+    .block-q{background:linear-gradient(135deg,#ecfdf5,#d1fae5);border-left:4px solid #059669;border-radius:0 var(--radius) var(--radius) 0;padding:20px 24px;margin:24px 0}
+    .block-q p{font-size:15px;font-style:italic;color:#064e3b;line-height:1.7}
+    .footer{background:#0f172a;color:#94a3b8;padding:40px 32px;text-align:center;font-size:14px}
+    .footer a{color:#34d399;text-decoration:none}
+    .footer a:hover{text-decoration:underline}
+    .footer .links{margin-top:12px;display:flex;justify-content:center;gap:24px;flex-wrap:wrap}
+    @media(max-width:768px){.compare-grid{grid-template-columns:1fr}.chart-label{width:100px;font-size:12px}.flow{flex-direction:column;gap:8px}.flow-arrow{transform:rotate(90deg)}.toc-grid{grid-template-columns:1fr}.hero{padding:60px 20px 40px}.nav{padding:12px 16px}.stats{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+  <header class="hero">
+    <div class="meta">🔧 Tools & Integrations · LangChain Accounts · 2023-09-12</div>
+    <h1>How to Safely Query Enterprise Data with LangChain Agents + SQL + OpenAI + Gretel</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">14</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~6min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">8</div><div class="label">代码示例</div></div>
+      <div class="stat"><div class="num">14</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>How to Safely Query Enterprise</a>
+      <a href="#s2"><span class="num">2</span>**Key technologies**</a>
+      <a href="#s3"><span class="num">3</span>**What is an Agent in LangChai</a>
+      <a href="#s4"><span class="num">4</span>**Generating synthetic tabular</a>
+      <a href="#s5"><span class="num">5</span>**Getting started: Installatio</a>
+      <a href="#s6"><span class="num">6</span>**Initializing the LangChain A</a>
+      <a href="#s7"><span class="num">7</span>Create SQL agent to interact w</a>
+      <a href="#s8"><span class="num">8</span>Create SQL agent to interact w</a>
+      <a href="#s9"><span class="num">9</span>**Querying the data**</a>
+      <a href="#s10"><span class="num">10</span>**Sample queries**</a>
+      <a href="#s11"><span class="num">11</span>**Importance of privacy: Re-id</a>
+      <a href="#s12"><span class="num">12</span>**Conclusion**</a>
+      <a href="#s13"><span class="num">13</span>Related content</a>
+      <a href="#s14"><span class="num">14</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+    <section class="section" id="s1">
+      <h2>🔍 How to Safely Query Enterprise Data with LangChain Agents + SQL + OpenAI + Gretel</h2>
+      <p class="lead">The LangChain TeamSeptember 12, 20236min
+
+Go back to blogShare
+
+
+
+
+
+Editor&amp;#x27;s Note: This post was written in collaboration with the Gretel team.</p>
+      <p>The LangChain TeamSeptember 12, 20236min[</p>
+<p>Go back to blog](/blog)Share[</p>
+<p>](#)Editor&#x27;s Note: This post was written in collaboration with the Gretel team. We&#x27;re really excited by their approach to combining agent-based methods, LLMs, and synthetic data to enable natural language queries for databases and data warehouses, sans SQL. The post has a really helpful walkthrough (with code!) to bring the ideas to life.</p>
+<p>Agent-based approaches coupled with large language models (LLMs) are quickly transforming how we interact with databases and data warehouses. Combined, these technologies enable natural language queries to data in your application or business, eliminating the need for SQL expertise to interact with data and even facilitating seamless queries across diverse systems.</p>
+<p>In this post, we’ll walk through an example of how LangChain, LLMs (whether open-source models like Llama-2, Falcon, or API-based models from OpenAI, Google, Anthropic), and synthetic data from Gretel combine to create a powerful, privacy-preserving solution for natural language data interaction with data in databases and warehouses. We&#x27;ll introduce key concepts such as Agents, LLM Chains, and synthetic data, then delve into a practical code example to bring these ideas to life.</p>
+      
+    </section>
+    <section class="section" id="s2">
+      <h2>⚡ **Key technologies**</h2>
+      <p class="lead">- LLM Chains: Frameworks such as LangChain for developing applications powered by language models by chaining them together.</p>
+      <div class="card"><ul><li>LLM Chains: Frameworks such as LangChain for developing applications powered by language models by chaining them together.</li><li>Agents: Agents use an LLM to decide what actions to take and the order to take them in, making future decisions by iteratively observing the outcome of prior actions.</li><li>Function Aware LLMs: Certain newer LLMs (like OpenAI’s GPT-3.5-turbo-0613 and Google’s PaLM text-bison) have been fine-tuned to detect when a function should be called and respond with the inputs that should be passed to the function.</li><li>Synthetic data: An artificial version of the real-world created by data-aware generative models that can offer strong privacy guarantees to data. Gretel offers generative models for working with tabular data based on Transformer, GAN, and graph-based architectures.</li><li>SQL Databases: The backbone holding the data you&#x27;ll be querying. For today, we’ll use a SQLite database.</li></ul></div>
+      
+    </section>
+    <section class="section" id="s3">
+      <h2>🏗️ **What is an Agent in LangChain?**</h2>
+      <p class="lead">Some applications will require not just a predetermined chain of calls to LLMs/other tools, but potentially an unknown chain that depends on the user&amp;#x27;s input, too.</p>
+      <p>Some applications will require not just a predetermined chain of calls to LLMs/other tools, but potentially an unknown chain that depends on the user&#x27;s input, too. In these types of chains, there is an “agent” that has access to a suite of tools — for example math, or the ability to query a SQL database. Depending on the user input, the agent can then decide which, if any, of these tools to call.</p>
+<p>Under the hood, the LangChain SQL Agent uses a MRKL (pronounced Miracle)-based approach, and queries the database schema and example rows and uses these to generate SQL queries, which it then executes to pull back the results you&#x27;re asking for.</p>
+      
+    </section>
+    <section class="section" id="s4">
+      <h2>📊 **Generating synthetic tabular data**</h2>
+      <p class="lead">Before diving into the example, let&amp;#x27;s talk about synthetic data.</p>
+      <p>Before diving into the example, let&#x27;s talk about synthetic data. With Gretel&#x27;s models, you can make an artificial but statistically similar version of your sensitive data. This synthetic data is safe to use, thanks to math-backed privacy features like differential privacy. In our example, we&#x27;ll use both real and synthetic data to show why this privacy is crucial when letting language models access sensitive info.</p>
+<p>To generate your own synthetic data for this example, grab the IBM HR Employee Attrition dataset (or your own) and an API key from https://console.gretel.ai. You can run Gretel&#x27;s quickstart notebook or console-based workflow to create a synthetic version of the data.</p>
+<p>For this example, I used the Gretel Tabular DP model (notebook, docs) with an epsilon value of 5 for strong privacy guarantees that are great for regulated environments. For maximum accuracy while still maintaining privacy, you can also try the Gretel ACTGAN model (docs), which excels at working with highly dimensional tabular data to enable machine learning and analytics use cases.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s5">
+      <h2>🔗 **Getting started: Installation**</h2>
+      <p class="lead">Follow along with our complete notebook in Colab or GitHub.</p>
+      <p>Follow along with our complete notebook in Colab or GitHub.</p>
+<p>First, install dependencies.</p>
+<div class="code-block"><pre>!pip install -Uqq langchain openai gretel-client
+!pip install -Uqq smart_open tabulate</pre></div>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s6">
+      <h2>💡 **Initializing the LangChain Agent**</h2>
+      <p class="lead">Note: Please use your OpenAI key for this, which should be kept private.</p>
+      <p>Note: Please use your OpenAI key for this, which should be kept private.</p>
+<p>Here&#x27;s the code to initialize the LangChain Agent and connect it to your SQL database.</p>
+<div class="code-block"><pre>from langchain.agents import AgentExecutor, create_sql_agent
+from langchain.agents.agent_toolkits import SQLDatabaseToolkit
+from langchain.agents.agent_types import AgentType
+from langchain.chat_models import ChatOpenAI
+from langchain.llms.openai import OpenAI
+from langchain.sql_database import SQLDatabase</pre></div>
+<p>def create_agent(
+    db_uri,
+    agent_type=AgentType.OPENAI_FUNCTIONS,
+    verbose=VERBOSE_LANGCHAIN,
+    temperature=0,
+    model=&quot;gpt-3.5-turbo-0613&quot;,
+ ):
+    db = SQLDatabase.from_uri(db_uri)
+    toolkit = SQLDatabaseToolkit(db=db, llm=OpenAI(temperature=temperature))</p>
+<div class="code-block"><pre>return create_sql_agent(
+        llm=ChatOpenAI(temperature=temperature, model=model),
+        toolkit=toolkit,
+        verbose=verbose,
+        agent_type=agent_type,
+    )</pre></div>
+<p>Here, we are also importing some sample datasets. We&#x27;ll use both a real and a synthetic version of the IBM attrition HR dataset. The synthetic version is generated using Gretel&#x27;s Tabular DP model with an (ε) Epsilon of 5.</p>
+<div class="code-block"><pre># Create SQLite databases from CSV datasets
+create_sqlite_db_from_csv(
+    SYNTHETIC_DATA, db_name=&amp;quot;synthetic-sqlite.db&amp;quot;, table_name=&amp;quot;synthetic_ibm_attrition&amp;quot;
+)
+create_sqlite_db_from_csv(
+    REAL_DATA, db_name=&amp;quot;real-sqlite.db&amp;quot;, table_name=&amp;quot;real_ibm_attrition&amp;quot;
+)</pre></div>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s7">
+      <h2>🛠️ Create SQL agent to interact with synthetic IBM attrition data</h2>
+      <p class="lead">agent_synthetic_db = create_agent(&amp;quot;sqlite:////content/synthetic-sqlite.</p>
+      <p>agent_synthetic_db = create_agent(&quot;sqlite:////content/synthetic-sqlite.db&quot;)</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s8">
+      <h2>📈 Create SQL agent to interact with real-world IBM attrition data</h2>
+      <p class="lead">agent_real_db = create_agent(&amp;quot;sqlite:////content/real-sqlite.</p>
+      <p>agent_real_db = create_agent(&quot;sqlite:////content/real-sqlite.db&quot;)`</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s9">
+      <h2>🎯 **Querying the data**</h2>
+      <p class="lead">First, we&amp;#x27;ll create a helper function to compare the outputs of real data and synthetic data.</p>
+      <p>First, we&#x27;ll create a helper function to compare the outputs of real data and synthetic data.</p>
+<div class="code-block"><pre>def run_and_compare_queries(synthetic, real, query: str):
+    &amp;quot;&amp;quot;&amp;quot;Compare outputs of Langchain Agents running on real vs. synthetic data&amp;quot;&amp;quot;&amp;quot;
+    query_template = f&amp;quot;{query} Execute all necessary queries, and always return results to the query, no explanations or apologies please. Word wrap output every 50 characters.&amp;quot;</pre></div>
+<p>result1 = synthetic.run(query_template)
+    result2 = real.run(query_template)</p>
+<p>print(&quot;=== Comparing Results for Query ===&quot;)
+    print(f&quot;Query: {query}&quot;)</p>
+<p>table_data = [
+        {&quot;From Agent on Synthetic DB&quot;: result1, &quot;From Agent on Real DB&quot;: result2}
+    ]</p>
+<p>print(tabulate(table_data, headers=&quot;keys&quot;, tablefmt=&quot;pretty&quot;))`</p>
+      
+    </section>
+    <section class="section" id="s10">
+      <h2>🔬 **Sample queries**</h2>
+      <p class="lead">Which three departments have the highest attrition rates?
+
+&lt;code&gt;prompt = &amp;quot;Which 3 departments have the highest attrition rates? Return a list please.</p>
+      <p>Which three departments have the highest attrition rates?</p>
+<div class="code-block"><pre>prompt = &amp;quot;Which 3 departments have the highest attrition rates? Return a list please.&amp;quot;
+run_and_compare_queries(synthetic=agent_synthetic_db, real=agent_real_db, query=prompt)</pre></div>
+<p>Figure 1. Comparing real and synthetic results for query #1.</p>
+<p>The results were quite similar between the synthetic and real datasets, giving us confidence in the synthetic data&#x27;s reliability.</p>
+<p>What is the distribution of ages by 10-year increments across the entire dataset?</p>
+<div class="code-block"><pre>prompt = &amp;quot;Show me a distribution of ages by 10 year increments. Return in list format please.&amp;quot;
+run_and_compare_queries(synthetic=agent_synthetic_db, real=agent_real_db, query=prompt)</pre></div>
+<p>Again, the distributions were notably similar between the synthetic and real data sets.</p>
+<p>Which department travels the furthest from home?</p>
+<div class="code-block"><pre>prompt = &amp;quot;Which department travels the furthest from home?&amp;quot;
+run_and_compare_queries(synthetic=agent_synthetic_db, real=agent_real_db, query=prompt)</pre></div>
+<p>Figure 3. Comparing real and synthetic results for query #3.</p>
+<p>In this case, we get a perfect match.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s11">
+      <h2>📝 **Importance of privacy: Re-identification attack example**</h2>
+      <p class="lead">Here, we illustrate a &amp;quot;re-identification attack&amp;quot; where vulnerabilities in even de-identified datasets can allow an attacker to re-identify individuals by combining known attributes.</p>
+      <p>Here, we illustrate a &quot;re-identification attack&quot; where vulnerabilities in even de-identified datasets can allow an attacker to re-identify individuals by combining known attributes. Such risks emphasize the danger of sharing data stripped of direct identifiers yet containing attributes that, when combined, can lead to identification — such as the combination of an attacker who knew someone’s age, gender, and department in the example below.</p>
+<p>Synthetic data prevents direct linking of individual information as no record in the output is based on a single user’s data, effectively thwarting re-identification attacks and upholding privacy.</p>
+<div class="code-block"><pre>prompt = &amp;quot;Is there an employee who is Age 46, Female, and who works in Human Resources. If so, what is their monthly income, performance rating, and years since their last promotion?&amp;quot;
+run_and_compare_queries(synthetic=agent_synthetic_db, real=agent_real_db, query=prompt)</pre></div>
+      
+    </section>
+    <section class="section" id="s12">
+      <h2>🧪 **Conclusion**</h2>
+      <p class="lead">By using synthetic data, you not only protect privacy but also gain actionable insights—essential for any data-driven organization.</p>
+      <p>By using synthetic data, you not only protect privacy but also gain actionable insights—essential for any data-driven organization. When you blend this with agent-based approaches and large language models, you open the door for more and better stakeholder collaborations. No SQL expertise needed; simply use natural language to engage with your data across all levels of your organization.</p>
+<p>This scalable solution democratizes data access and ushers in a new era of smart, privacy-conscious data interaction. For businesses eager to maintain a competitive edge in today&#x27;s data-centric world, adopting these technologies isn&#x27;t just an option; it&#x27;s a must.</p>
+<p>If you&#x27;re ready to up your data game, sign up for Gretel today and start synthesizing.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s13">
+      <h2>🌐 Related content</h2>
+      <p class="lead">.</p>
+      <p>.png)PartnerDeep Agents</p>
+<p>#### Building a company due diligence agent with Deep Agents, LangSmith and Parallel</p>
+<p>Matt HarrisNick MartitschSrimanth TangedipalliKaran SinghMay 8, 20269min[](/blog/building-a-company-due-diligence-agent-with-deep-agents-langsmith-and-parallel).png)Agent ArchitecturePartner</p>
+<p>#### Agentic Engineering: How Swarms of AI Agents Are Redefining Software Engineering</p>
+<p>Renuka KumarPrashanth RamagopalApril 17, 202611min[](/blog/agentic-engineering-redefining-software-engineering).png)LangChainPartner</p>
+<p>#### A Developer’s First 10 Minutes: Secure LangChain Agents with Cisco AI Defense</p>
+<p>Siddhant DashApril 16, 20264min[](/blog/secure-agents-cisco-ai-defense)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s14">
+      <h2>📦 See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+<p>](/contact-sales)</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+  </div>
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/how-to-safely-query-enterprise-data-with-langchain-agents-sql-openai-gretel" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

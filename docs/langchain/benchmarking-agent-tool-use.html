@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deep Dive: Benchmarking Agent Tool Use</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafbfc;
+      --surface: #fff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --green: #059669;
+      --emerald: #10b981;
+      --teal: #14b8a6;
+      --blue: #3b82f6;
+      --purple: #6366f1;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --orange: #ea580c;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans SC', 'Inter', system-ui, sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: var(--sans); background: var(--bg); color: var(--text); line-height:1.7; }
+    .nav { position:sticky; top:0; z-index:100; background:rgba(15,23,42,.88); backdrop-filter:blur(14px); padding:14px 32px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,.08); }
+    .nav a { color:#f1f5f9; text-decoration:none; font-weight:500; font-size:14px; }
+    .nav .brand { font-weight:700; font-size:16px; color:#34d399; }
+    .hero { background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%); color:#fff; padding:80px 32px 60px; text-align:center; }
+    .hero h1 { font-size:clamp(1.8rem,4vw,2.6rem); font-weight:800; margin-bottom:12px; line-height:1.3; }
+    .hero .subtitle { font-size:17px; color:rgba(255,255,255,.82); max-width:720px; margin:0 auto 12px; }
+    .hero .meta { font-size:13px; color:rgba(255,255,255,.5); margin-bottom:32px; }
+    .hero .badge-cat { display:inline-block; padding:4px 14px; border-radius:20px; font-size:12px; font-weight:600; background:rgba(52,211,153,.18); color:#6ee7b7; border:1px solid rgba(52,211,153,.3); margin-bottom:16px; }
+    .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; max-width:780px; margin:0 auto; }
+    .stat { background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.11); border-radius:12px; padding:18px 14px; backdrop-filter:blur(8px); }
+    .stat .num { font-size:26px; font-weight:800; color:#34d399; font-family:var(--mono); }
+    .stat .label { font-size:12px; color:rgba(255,255,255,.65); margin-top:4px; }
+    .page { max-width:900px; margin:0 auto; padding:40px 24px; }
+    .toc { margin-bottom:48px; }
+    .toc h3 { font-size:13px; text-transform:uppercase; letter-spacing:1.5px; color:var(--text-secondary); margin-bottom:16px; }
+    .toc-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:10px; }
+    .toc-grid a { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--text); font-size:14px; font-weight:500; transition:all .2s; }
+    .toc-grid a:hover { border-color:var(--green); background:#ecfdf5; }
+    .toc-grid .num { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:8px; background:linear-gradient(135deg,#059669,#14b8a6); color:#fff; font-size:12px; font-weight:700; flex-shrink:0; }
+    .section { margin-bottom:56px; }
+    .section h2 { font-size:clamp(1.3rem,3vw,1.6rem); font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    .lead { color:var(--text-secondary); font-size:15px; margin-bottom:20px; line-height:1.7; }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:22px; margin-bottom:14px; }
+    .card h4 { font-size:15px; font-weight:600; margin-bottom:8px; }
+    .card p { font-size:14px; color:var(--text-secondary); line-height:1.7; }
+    .chart { margin:24px 0; }
+    .chart-row { display:flex; align-items:center; margin-bottom:10px; gap:12px; }
+    .chart-label { width:160px; font-size:13px; font-weight:500; text-align:right; flex-shrink:0; }
+    .chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:30px; overflow:hidden; }
+    .chart-bar { height:100%; border-radius:8px; display:flex; align-items:center; justify-content:flex-end; padding-right:10px; font-size:12px; font-weight:600; color:#fff; transition:width .6s ease; }
+    .chart-bar.green { background:linear-gradient(90deg,#059669,#34d399); }
+    .chart-bar.teal { background:linear-gradient(90deg,#14b8a6,#2dd4bf); }
+    .chart-bar.blue { background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+    .chart-bar.purple { background:linear-gradient(90deg,#6366f1,#a78bfa); }
+    .chart-bar.amber { background:linear-gradient(90deg,#f59e0b,#fbbf24); }
+    .chart-bar.orange { background:linear-gradient(90deg,#ea580c,#fb923c); }
+    .chart-bar.red { background:linear-gradient(90deg,#ef4444,#f87171); }
+    .timeline { position:relative; padding-left:32px; margin:24px 0; }
+    .timeline::before { content:''; position:absolute; left:8px; top:0; bottom:0; width:3px; background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6,#6366f1); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:20px; }
+    .tl-dot { position:absolute; left:-28px; top:4px; width:14px; height:14px; border-radius:50%; border:3px solid #059669; background:#fff; }
+    .tl-item:nth-child(2) .tl-dot { border-color:#14b8a6; }
+    .tl-item:nth-child(3) .tl-dot { border-color:#3b82f6; }
+    .tl-item:nth-child(4) .tl-dot { border-color:#6366f1; }
+    .tl-item:nth-child(5) .tl-dot { border-color:#f59e0b; }
+    .tl-item:nth-child(6) .tl-dot { border-color:#ea580c; }
+    .tl-item:nth-child(7) .tl-dot { border-color:#ef4444; }
+    .tl-phase { font-weight:700; font-size:15px; margin-bottom:4px; }
+    .tl-desc { font-size:13px; color:var(--text-secondary); line-height:1.6; }
+    .compare-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:24px 0; }
+    .compare-card { border-radius:var(--radius); padding:22px; }
+    .compare-card.old { background:#fef2f2; border:2px solid #fecaca; }
+    .compare-card.new { background:#ecfdf5; border:2px solid #a7f3d0; }
+    .compare-card h4 { font-size:15px; font-weight:700; margin-bottom:8px; }
+    .compare-card ul { list-style:none; padding:0; }
+    .compare-card ul li { font-size:13px; padding:4px 0; color:var(--text-secondary); }
+    .flow { display:flex; align-items:center; justify-content:center; gap:12px; margin:24px 0; flex-wrap:wrap; }
+    .flow-step { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px 18px; font-size:13px; font-weight:600; text-align:center; min-width:100px; }
+    .flow-step.green { background:linear-gradient(135deg,#059669,#10b981); color:#fff; border:none; }
+    .flow-step.blue { background:linear-gradient(135deg,#3b82f6,#60a5fa); color:#fff; border:none; }
+    .flow-step.purple { background:linear-gradient(135deg,#6366f1,#a78bfa); color:#fff; border:none; }
+    .flow-step.teal { background:linear-gradient(135deg,#14b8a6,#2dd4bf); color:#fff; border:none; }
+    .flow-step.orange { background:linear-gradient(135deg,#ea580c,#f59e0b); color:#fff; border:none; }
+    .flow-arrow { font-size:20px; color:var(--text-secondary); }
+    .block-q { background:linear-gradient(135deg,#ecfdf5,#d1fae5); border-left:4px solid #059669; border-radius:0 var(--radius) var(--radius) 0; padding:18px 22px; margin:20px 0; }
+    .block-q p { font-size:14px; font-style:italic; color:#064e3b; line-height:1.7; }
+    .badge { display:inline-block; padding:3px 10px; border-radius:6px; font-size:12px; font-weight:600; }
+    .badge-green { background:#ecfdf5; color:#059669; }
+    .badge-teal { background:#f0fdfa; color:#14b8a6; }
+    .badge-blue { background:#eff6ff; color:#3b82f6; }
+    .badge-purple { background:#eef2ff; color:#6366f1; }
+    .footer { text-align:center; padding:48px 24px; border-top:1px solid var(--border); margin-top:40px; }
+    .footer a { color:var(--green); text-decoration:none; font-weight:500; }
+    .footer a:hover { text-decoration:underline; }
+    .footer .foot-links { display:flex; justify-content:center; gap:24px; flex-wrap:wrap; margin-bottom:12px; }
+    .footer .copy { font-size:12px; color:var(--text-secondary); }
+    @media(max-width:768px) {
+      .hero { padding:48px 18px 36px; }
+      .hero h1 { font-size:1.5rem; }
+      .stats { grid-template-columns:1fr 1fr; gap:10px; }
+      .page { padding:28px 16px; }
+      .toc-grid { grid-template-columns:1fr; }
+      .compare-grid { grid-template-columns:1fr; }
+      .flow { flex-direction:column; gap:8px; }
+      .flow-arrow { transform:rotate(90deg); }
+      .chart-label { width:100px; font-size:11px; }
+      .nav { padding:12px 16px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain Blog Hub</a>
+    <a href="../langchain/">&#x2190; Back to Hub</a>
+  </nav>
+
+  <header class="hero">
+    <div class="badge-cat">LangSmith / Observability &amp; Evals</div>
+    <h1>Benchmarking Agent Tool Use</h1>
+    <p class="subtitle">LangChain Accounts &middot; 2023-12-20</p>
+    <p class="meta">Source: https://www.langchain.com/blog/benchmarking-agent-tool-use</p>
+    <div class="stats">
+        <div class="stat">
+          <div class="num">7</div>
+          <div class="label">Core Sections</div>
+        </div>
+        <div class="stat">
+          <div class="num">11 min</div>
+          <div class="label">Reading Time</div>
+        </div>
+        <div class="stat">
+          <div class="num">23</div>
+          <div class="label">Key Points</div>
+        </div>
+        <div class="stat">
+          <div class="num">44</div>
+          <div class="label">External Links</div>
+        </div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc">
+      <h3>&#x1F4D1; Table of Contents</h3>
+      <div class="toc-grid">
+        <a href="#experiment-overview"><span class="num">1</span>Experiment overview</a>
+        <a href="#typewriter-single-tool"><span class="num">2</span>⌨ Typewriter (Single tool)</a>
+        <a href="#typewriter-26-tools"><span class="num">3</span>⌨️ Typewriter (26 tools)</a>
+        <a href="#relational-data"><span class="num">4</span>🕸️ Relational Data</a>
+        <a href="#multiverse-math"><span class="num">5</span>🌌 Multiverse Math</a>
+        <a href="#additional-observations"><span class="num">6</span>Additional Observations:</a>
+        <a href="#conclusion"><span class="num">7</span>Conclusion</a>
+      </div>
+    </nav>
+
+    <section class="section" id="experiment-overview">
+      <h2>&#x1F4D6; Experiment overview</h2>
+      <p class="lead">In this release, we are sharing results and code to reproduce these experiments for 7 models across the 4 tool usage tasks:...</p>
+        <div class="card"><p>We calculate four metrics across these tasks:</p></div>
+        <div class="card"><p>We compared both closed source models as well as open source. Expand the section below for more details.</p></div>
+        <div class="card"><p>OpenAI - (Tool Calling Agent)</p></div>
+        <div class="card">
+          <ul style="list-style:disc;padding-left:20px;color:var(--text-secondary);font-size:14px;line-height:1.8;">
+            <li>Typewriter (Single tool): sequentially call a single tool to type out a word.</li>
+            <li>Typewriter (26 tools): call different tools in sequence to type out a word.</li>
+            <li>Relational Data: answer questions based on information in three tables.</li>
+            <li>Multiverse Math: use tools to answer math problems, where the underlying math rules have changed slightly.</li>
+            <li>Correctness (compared to the ground truth) - this uses an LLM as a judge. Since the answers for all these questions are concise and fairly binary, we found the judgements to correspond to our own deci</li>
+            <li>Correct final state (environment) - for the typewriter tasks, each tool invocation updates the world state. We directly check the equivalence of the environment at the end of each test row.</li>
+          </ul>
+        </div>
+      <div class="chart">
+        <div class="chart-row">
+          <div class="chart-label">Typewriter (Single tool): sequentia...</div>
+          <div class="chart-bar-wrap">
+            <div class="chart-bar green" style="width:95%">95%</div>
+          </div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-label">Typewriter (26 tools): call differe...</div>
+          <div class="chart-bar-wrap">
+            <div class="chart-bar teal" style="width:85%">85%</div>
+          </div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-label">Relational Data: answer questions b...</div>
+          <div class="chart-bar-wrap">
+            <div class="chart-bar blue" style="width:75%">75%</div>
+          </div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-label">Multiverse Math: use tools to answe...</div>
+          <div class="chart-bar-wrap">
+            <div class="chart-bar purple" style="width:65%">65%</div>
+          </div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-label">Correctness (compared to the ground...</div>
+          <div class="chart-bar-wrap">
+            <div class="chart-bar amber" style="width:55%">55%</div>
+          </div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-label">Correct final state (environment) -...</div>
+          <div class="chart-bar-wrap">
+            <div class="chart-bar orange" style="width:45%">45%</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="typewriter-single-tool">
+      <h2>&#x1F527; ⌨ Typewriter (Single tool)</h2>
+      <p class="lead">The typewriter tasks are simple: the agent must “type” a given word and then stop. Words range from easy (a or cat ) to a tad harder (communication an...</p>
+        <div class="card"><p>Example successful tool use for the single-tool typewriter task</p></div>
+        <div class="card"><p>You can check out the full dataset at this link to get a sense of what it looks like and see the doc for more information on how to run this task yourself.</p></div>
+        <div class="card"><p>Acing such a simple task is table stakes for any self-respecting agent, and you’d expect large models like gpt-4 with tool-calling to sail through with flying colors, but we found this to not always be the case! Take for instance this example, where the agent simply refuses to try to type the word &quot;keyboard&quot;, or this example, where it doesn't recognize the word provided (&quot;head&quot;).</p></div>
+        <div class="card"><p>GPT-4 fails to understand the provided word.</p></div>
+
+    </section>
+
+    <section class="section" id="typewriter-26-tools">
+      <h2>&#x1F527; ⌨️ Typewriter (26 tools)</h2>
+      <p class="lead">You’ll likely want your agent to be able to use more than one tool in your application, but will it be able to use them all effectively? How much is t...</p>
+        <div class="card"><p>The 26-tool typewriter task tests the same thing as the single-tool use case: is the agent able to type the provided word using the provided tools (and then stop)? The difference here is that the agent must select between each of 26 tools, 1 for each letter in the English alphabet. None of the tools accept any arguments. Our cat example above would be passed by doing the following:</p></div>
+        <div class="card"><p>Example successful tool use for the 26-tool typewriter task</p></div>
+        <div class="card"><p>The dataset for this task uses the same test input words as the dataset for the single-tool typewriter. You can check out the dataset at this link and review the task documentation for more details, including how to run your own agent on this benchmark.</p></div>
+        <div class="card"><p>Once again, you'd assume this task to be trivial for a powerful model like gpt-4, but you'd once again be proven incorrect. Take this run as an example. When asked to type &quot;aaaa&quot;, it types the four a's out at first but then fails to halt, typing &quot;a&quot; 4 more times before deciding it is done.</p></div>
+      <div class="compare-grid">
+        <div class="compare-card old">
+          <h4>&#x26A0; Challenges / Before</h4>
+          <ul>
+                        <li>You’ll likely want your agent to be able to use more than one tool in your application, but will it ...</li>
+            <li>Example successful tool use for the 26-tool typewriter task</li>
+            <li>Once again, you'd assume this task to be trivial for a powerful model like gpt-4, but you'd once aga...</li>
+          </ul>
+        </div>
+        <div class="compare-card new">
+          <h4>&#x2705; Solutions / After</h4>
+          <ul>
+                        <li>The 26-tool typewriter task tests the same thing as the single-tool use case: is the agent able to t...</li>
+            <li>The dataset for this task uses the same test input words as the dataset for the single-tool typewrit...</li>
+            <li>GPT-4 fails to return and continues calling extra functions.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="relational-data">
+      <h2>&#x1F4DA; 🕸️ Relational Data</h2>
+      <p class="lead">A helpful AI assistant should be able to reason about objects and their relationships. Answering a real-world question usually requires synthesizing r...</p>
+        <div class="card"><p>In the relational data task, the agent must answer questions based on data contained across 3 relational tables. To use the tools, it is given the following instructions:</p></div>
+        <div class="card"><p>Please answer the user's question by using the tools provided. Do not guess the answer. Keep in mind that entities like users, foods and locations have both a name and an ID, which are not the same.</p></div>
+        <div class="card"><p>The agent can query these tables for the correct answer using a set of 17 tools at its disposal. The three tables contain information about users, locations and foods, respectively. Of all the synthetic datasets released today, this dataset most closely resembles tool usage in real-life web applications.</p></div>
+        <div class="card"><p>Using the data in the tables, it’s possible to answer questions like: “what can you tell me about Alice?” or “is it likely that Alice needs an umbrella now?” (sample data shown below).</p></div>
+        <div class="card">
+          <ul style="list-style:disc;padding-left:20px;color:var(--text-secondary);font-size:14px;line-height:1.8;">
+            <li>find_users_by_name(name)→ search for users by name.</li>
+            <li>get_user_location(user_id) → look up the given user’s favorite color.</li>
+            <li>get_weather_at_location(location_id) → get the weather at the given location.</li>
+          </ul>
+        </div>
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Experiment overview</div>
+          <div class="tl-desc">In this release, we are sharing results and code to reproduce these experiments ...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">⌨ Typewriter (Single tool)</div>
+          <div class="tl-desc">The typewriter tasks are simple: the agent must “type” a given word and then sto...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">⌨️ Typewriter (26 tools)</div>
+          <div class="tl-desc">You’ll likely want your agent to be able to use more than one tool in your appli...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">🕸️ Relational Data</div>
+          <div class="tl-desc">A helpful AI assistant should be able to reason about objects and their relation...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">🌌 Multiverse Math</div>
+          <div class="tl-desc">LLMs are marketed as “reasoning machines,” but how well can they “reason” in pra...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Additional Observations:</div>
+          <div class="tl-desc">For these results, we communicated model quality, but building an AI app also re...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Conclusion</div>
+          <div class="tl-desc">Thanks for reading! We’d love to hear your feedback on what other models and arc...</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="multiverse-math">
+      <h2>&#x1F4CC; 🌌 Multiverse Math</h2>
+      <p class="lead">LLMs are marketed as “reasoning machines,” but how well can they “reason” in practice?...</p>
+        <div class="card"><p>In the multiverse math task, agents must answer simple math questions, such as add 2 and 3. The twist is that that in this “mathematical universe”, math operations are not the same as what you’d expect. Want to do 2 + 2? The answer is 5.2 . Subtract 5.2 and 2 ? The answer is 0.2.</p></div>
+        <div class="card"><p>The full task instructions provided to the LLM (provided in the system prompt where available) are provided below:</p></div>
+        <div class="card"><p>You are requested to solve math questions in an alternate mathematical universe. The operations have been altered to yield different results than expected. Do not guess the answer or rely on your innate knowledge of math. Use the provided tools to answer the question. While associativity and commutativity apply, distributivity does not. Answer the question using the fewest possible tools. Only include the numeric response without any clarifications.</p></div>
+        <div class="card"><p>Importantly, while these common operations (add, subtract, multiply, divide, cos, etc.) are all slightly altered, most mathematical properties still hold. Operations are still commutative and associative, though they are not distributive.</p></div>
+        <div class="card">
+          <ul style="list-style:disc;padding-left:20px;color:var(--text-secondary);font-size:14px;line-height:1.8;">
+            <li>How many divisions d will occur in the allotted time? (d = 120/20)</li>
+            <li>Then, for each cell c , how many cells will be produced? (c = 2**d)</li>
+            <li>Then how many cells will result f at the end (f = 5*c)</li>
+            <li>How well can it “reason” compositionally?</li>
+            <li>How well does it following instructions that may contradict the pre-trained knowledge?</li>
+          </ul>
+        </div>
+
+    </section>
+
+    <section class="section" id="additional-observations">
+      <h2>&#x1F50D; Additional Observations:</h2>
+      <p class="lead">For these results, we communicated model quality, but building an AI app also requires service reliability and stability. Despite the relatively small...</p>
+        <div class="card"><p>We originally planned to benchmark Google's gemini-pro model, but because of the rate of internal server errors it rose during evaluations, we decided to leave it out of our results. The API also rejected multiple data points for the Typewriter and Multiverse Math datasets as being &quot;unsafe&quot; (for instance &quot;what is the result of 2 to the power of 3&quot;)</p></div>
+        <div class="card"><p>Safety filters can be helpful, but if the false positive rate is too high, it can impact your service quality.</p></div>
+        <div class="card"><p>Finally, we have shown a clear need for better open-source alternatives for tool use. The open-source community is rapidly developing better function calling models, and we expect more competitive options to be broadly available soon. To test your function calling model on these benchmarks, follow the instructions here, or if you'd like us to run a specific model, open an issue in the GitHub repo. We'd love for these results to change!</p></div>
+
+    </section>
+
+    <section class="section" id="conclusion">
+      <h2>&#x2705; Conclusion</h2>
+      <p class="lead">Thanks for reading! We’d love to hear your feedback on what other models and architectures you’d like to see tested on these environments, and what ot...</p>
+
+      <div class="card">
+        <h4>&#x1F4A1; Key Insight</h4>
+        <p>Thanks for reading! We’d love to hear your feedback on what other models and architectures you’d like to see tested on these environments, and what other tests would help make your life easier when tr</p>
+      </div>
+    </section>
+
+  </div>
+
+  <footer class="footer">
+    <div class="foot-links">
+      <a href="../langchain/">&#x1F3E0; LangChain Hub</a>
+      <a href="https://www.langchain.com/blog/benchmarking-agent-tool-use" target="_blank">&#x1F517; Original Article</a>
+    </div>
+    <p class="copy">Auto-generated deep-dive page &middot; Content from LangChain Blog</p>
+  </footer>
+</body>
+</html>

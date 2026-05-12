@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：OpaquePrompts x LangChain: Enhance the privacy of your LangChain application with just one code change</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--green:#10b981;--emerald:#059669;--teal:#14b8a6;--blue:#3b82f6;--purple:#6366f1;--amber:#f59e0b;--red:#ef4444;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+    .nav{position:sticky;top:0;z-index:100;background:rgba(15,23,42,.85);backdrop-filter:blur(12px);padding:14px 32px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.08)}
+    .nav a{color:#f1f5f9;text-decoration:none;font-weight:500;font-size:14px}
+    .nav .brand{font-weight:700;font-size:16px;color:#10b981}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%);color:#fff;padding:80px 32px 60px;text-align:center}
+    .hero h1{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;margin-bottom:12px;line-height:1.3}
+    .hero .subtitle{font-size:18px;color:rgba(255,255,255,.8);max-width:720px;margin:0 auto 40px}
+    .hero .meta{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:32px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;max-width:800px;margin:0 auto}
+    .stat{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:20px 16px;backdrop-filter:blur(8px)}
+    .stat .num{font-size:28px;font-weight:800;color:#34d399}
+    .stat .label{font-size:13px;color:rgba(255,255,255,.7);margin-top:4px}
+    .page{max-width:900px;margin:0 auto;padding:40px 24px}
+    .toc{margin-bottom:48px}
+    .toc h3{font-size:14px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);margin-bottom:16px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .toc-grid a{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;transition:all .2s}
+    .toc-grid a:hover{border-color:var(--emerald);background:#ecfdf5}
+    .toc-grid .num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-size:12px;font-weight:700;flex-shrink:0}
+    .section{margin-bottom:56px}
+    .section h2{font-size:clamp(1.3rem,3vw,1.7rem);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+    .lead{color:var(--text-secondary);font-size:15px;margin-bottom:24px;line-height:1.6}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}
+    .card h4{font-size:16px;font-weight:600;margin-bottom:8px}
+    .card p,.card li{font-size:14px;color:var(--text-secondary);line-height:1.7}
+    .card ul,.card ol{padding-left:20px}
+    .card li{margin-bottom:4px}
+    p{font-size:15px;color:var(--text-secondary);line-height:1.8;margin-bottom:16px}
+    p code{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:13px;color:#059669}
+    .chart{margin:24px 0}
+    .chart-row{display:flex;align-items:center;margin-bottom:10px;gap:12px}
+    .chart-label{width:150px;font-size:13px;font-weight:500;text-align:right;flex-shrink:0}
+    .chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}
+    .chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;justify-content:flex-end;padding-right:10px;font-size:12px;font-weight:600;color:#fff;transition:width .6s ease}
+    .chart-bar.green{background:linear-gradient(90deg,#059669,#10b981)}
+    .chart-bar.teal{background:linear-gradient(90deg,#14b8a6,#2dd4bf)}
+    .chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+    .chart-bar.purple{background:linear-gradient(90deg,#6366f1,#a78bfa)}
+    .chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}
+    .flow{display:flex;align-items:center;justify-content:center;gap:12px;margin:24px 0;flex-wrap:wrap}
+    .flow-step{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;min-width:120px}
+    .flow-step.green{background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none}
+    .flow-step.teal{background:linear-gradient(135deg,#14b8a6,#2dd4bf);color:#fff;border:none}
+    .flow-step.blue{background:linear-gradient(135deg,#3b82f6,#60a5fa);color:#fff;border:none}
+    .flow-step.purple{background:linear-gradient(135deg,#6366f1,#a78bfa);color:#fff;border:none}
+    .flow-step.amber{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#fff;border:none}
+    .flow-arrow{font-size:20px;color:var(--text-secondary)}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}
+    .compare-card{border-radius:var(--radius);padding:24px}
+    .compare-card.old{background:#fef2f2;border:2px solid #fecaca}
+    .compare-card.new{background:#ecfdf5;border:2px solid #a7f3d0}
+    .compare-card h4{font-size:15px;font-weight:700;margin-bottom:8px}
+    .compare-card p{font-size:13px;color:var(--text-secondary)}
+    .timeline{position:relative;padding-left:32px;margin:24px 0}
+    .timeline::before{content:'';position:absolute;left:7px;top:8px;bottom:8px;width:3px;background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6);border-radius:2px}
+    .tl-item{position:relative;margin-bottom:24px}
+    .tl-dot{position:absolute;left:-29px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid #059669;background:#fff}
+    .tl-item:nth-child(2) .tl-dot{border-color:#14b8a6}
+    .tl-item:nth-child(3) .tl-dot{border-color:#3b82f6}
+    .tl-phase{font-weight:700;font-size:15px;color:var(--text)}
+    .tl-desc{font-size:13px;color:var(--text-secondary);margin-top:4px}
+    .code-block{background:#1e293b;border-radius:var(--radius);padding:20px;margin:16px 0;overflow-x:auto}
+    .code-block pre{color:#e2e8f0;font-family:var(--mono);font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-all}
+    .block-q{background:linear-gradient(135deg,#ecfdf5,#d1fae5);border-left:4px solid #059669;border-radius:0 var(--radius) var(--radius) 0;padding:20px 24px;margin:24px 0}
+    .block-q p{font-size:15px;font-style:italic;color:#064e3b;line-height:1.7}
+    .footer{background:#0f172a;color:#94a3b8;padding:40px 32px;text-align:center;font-size:14px}
+    .footer a{color:#34d399;text-decoration:none}
+    .footer a:hover{text-decoration:underline}
+    .footer .links{margin-top:12px;display:flex;justify-content:center;gap:24px;flex-wrap:wrap}
+    @media(max-width:768px){.compare-grid{grid-template-columns:1fr}.chart-label{width:100px;font-size:12px}.flow{flex-direction:column;gap:8px}.flow-arrow{transform:rotate(90deg)}.toc-grid{grid-template-columns:1fr}.hero{padding:60px 20px 40px}.nav{padding:12px 16px}.stats{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+  <header class="hero">
+    <div class="meta">🔧 Tools & Integrations · LangChain Accounts · 2023-09-12</div>
+    <h1>OpaquePrompts x LangChain: Enhance the privacy of your LangChain application with just one code change</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">10</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~5min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">6</div><div class="label">代码示例</div></div>
+      <div class="stat"><div class="num">11</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>OpaquePrompts x LangChain: Enh</a>
+      <a href="#s2"><span class="num">2</span>An introduction to OpaquePromp</a>
+      <a href="#s3"><span class="num">3</span>Modifying a chatbot built with</a>
+      <a href="#s4"><span class="num">4</span>Full source code can be found </a>
+      <a href="#s5"><span class="num">5</span>Actual template and build_memo</a>
+      <a href="#s6"><span class="num">6</span>repo linked below</a>
+      <a href="#s7"><span class="num">7</span>llm=OpenAI(),</a>
+      <a href="#s8"><span class="num">8</span>Conclusion</a>
+      <a href="#s9"><span class="num">9</span>Related content</a>
+      <a href="#s10"><span class="num">10</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+    <section class="section" id="s1">
+      <h2>🔍 OpaquePrompts x LangChain: Enhance the privacy of your LangChain application with just one code change</h2>
+      <p class="lead">The LangChain TeamSeptember 12, 20234min
+
+Go back to blogShare
+
+
+
+
+
+Editor&amp;#x27;s Note: This blog post was written in collaboration with the Opaque team.</p>
+      <p>The LangChain TeamSeptember 12, 20234min[</p>
+<p>Go back to blog](/blog)Share[</p>
+<p>](#)Editor&#x27;s Note: This blog post was written in collaboration with the Opaque team. As more apps get into production, we&#x27;ve been hearing more teams talk about solutions for data privacy. Opaque&#x27;s seamless integration with LangChain ensures personal information in your users’ prompts will be hidden from the LLM provider with just a few lines of code.</p>
+<p>We’ve been hearing growing feedback from our users that they want to keep their data private from LLM providers, whether it be OpenAI, Anthropic, Cohere, or others, for a number of reasons:</p>
+<div class="card"><ul><li>Concerns about data retention</li><li>Concerns about the LLM provider seeing the input data</li><li>Concerns about the provider using user inputs to continually train the LLM</li><li>Concerns about the LLM leaking data the model was trained on</li></ul></div>
+<p>The same is true for LLM application builders at companies of all sizes—from enterprise to small startups—across a variety of verticals. One startup we talked to is building a knowledge management solution that summarizes stored documents, but a potential customer, a law firm, doesn’t trust third-party providers with their legal documents. Another is building an application to generate targeted advertisements based off user data, but must strictly control how personal user information is shared and used by third-party providers. A large bank wants to automate risk assessment, which, in its manual form, requires meticulous analysis of sensitive documents whose contents cannot be shared with third-party providers in its plaintext form.</p>
+<p>All these use cases and more have one common theme: an LLM application developer wants to leverage an LLM to operate on sensitive data, but cannot do so because of concerns about or restrictions on the LLM provider’s ability to see, process, and store the sensitive data. This is where OpaquePrompts comes in.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s2">
+      <h2>⚡ An introduction to OpaquePrompts</h2>
+      <p class="lead">OpaquePrompts serves as a privacy layer around your LLM of choice.</p>
+      <p>OpaquePrompts serves as a privacy layer around your LLM of choice. With OpaquePrompts, you can:</p>
+<div class="card"><ul><li>Automatically identify sensitive tokens in your prompts with natural language processing (NLP)-based machine learning</li><li>Pre-process LLM inputs to hide sensitive inputs in your prompts from LLM providers via a sanitization mechanism</li><li>For example, in the prompt, every instance of the name <code>John Smith</code> will be deterministically replaced with <code>PERSON_1</code>.</li><li>Post-process LLM responses to replace all sanitized instances with the original sensitive information</li><li>For example, in the LLM response, all instances of <code>PERSON_1</code> will be replaced with <code>John Smith</code>.</li><li>Leverage the power of confidential computing to ensure that not even the OpaquePrompts service sees the underlying prompt</li><li>OpaquePrompts runs in an attestable trusted execution environment, meaning that you can cryptographically verify that not even Opaque can see any input to OpaquePrompts.</li><li>More on OpaquePrompts architecture and security guarantees can be found in the documentation.</li><li>Make your application privacy-preserving by modifying just one line of code in your LangChain application</li><li>See an example here.</li></ul></div>
+<p>An application built with OpaquePrompts works as follows:</p>
+<div class="card"><ul><li>The OpaquePrompts service takes in a constructed prompt.</li><li>Using a state-of-the-art model, OpaquePrompts identifies sensitive information in the prompt.</li><li>OpaquePrompts sanitizes the prompt by encrypting all identified personal information before returning the sanitized prompt to the LLM application.</li><li>The LLM application sends the sanitized prompt to its LLM provider of choice.</li><li>The LLM application receives a response from the LLM provider, which contains the post-sanitization identifiers.</li><li>The LLM application sends the response to OpaquePrompts, which de-sanitizes the response by decrypting previously encrypted personal information.</li><li>The LLM application returns the de-sanitized response to the user. From the user’s perspective, the response appears as if the original prompt were sent directly to the LLM.</li></ul></div>
+<p>Using GIFs, we compare LLM application workflows with and without OpaquePrompts. Without OpaquePrompts, the prompt goes directly from LLM application to the model provider, all in the clear.</p>
+<p>With OpaquePrompts, the prompt first gets securely sanitized by the OpaquePrompts service (and the service doesn’t see the contents of the prompt) before making its way to the LLM provider for a response.</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s3">
+      <h2>🏗️ Modifying a chatbot built with LangChain to incorporate OpaquePrompts</h2>
+      <p class="lead">Below, we walk through how we modified an existing GPT-based chat application built with LangChain to hide sensitive information from prompts sent to OpenAI.</p>
+      <p>Below, we walk through how we modified an existing GPT-based chat application built with LangChain to hide sensitive information from prompts sent to OpenAI.</p>
+<p>The server-side with a <code>/chat</code> endpoint of a vanilla chat application looks something like the following.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s4">
+      <h2>📊 Full source code can be found here: &amp;lt;https://github.com/opaque-systems/opaqueprompts-chat-server&amp;gt;</h2>
+      <p class="lead">class ChatRequest(BaseModel):
+    history: Optional[list[str]]
+    prompt: str
+
+class ChatResponse(BaseModel):
+    response: str
+
+async def chat(
+    chat_request: ChatRequest,
+) -&amp;gt; ChatResponse:
+	</p>
+      <p>class ChatRequest(BaseModel):
+    history: Optional[list[str]]
+    prompt: str</p>
+<p>class ChatResponse(BaseModel):
+    response: str</p>
+<p>async def chat(
+    chat_request: ChatRequest,
+) -&gt; ChatResponse:
+	  &quot;&quot;&quot;
+		Defines an endpoint that takes in a prompt and sends it to
+		GPT</p>
+<p>Parameters
+		----------
+		chat_request : ChatRequest
+        The request body, which contains the history of the conversation
+        and the prompt to be completed.</p>
+<p>Returns
+    -------
+    ChatResponse
+        The response body, which contains GPT&#x27;s response to the prompt.
+    &quot;&quot;&quot;</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s5">
+      <h2>🔗 Actual template and build_memory logic are omitted and can be found in the</h2>
+      <p class="lead"></p>
+      
+      
+    </section>
+    <section class="section" id="s6">
+      <h2>💡 repo linked below</h2>
+      <p class="lead">prompt = PromptTemplate.</p>
+      <p>prompt = PromptTemplate.from_template(CHAT_TEMPLATE)
+    memory = build_memory(chat_request.history)</p>
+<div class="code-block"><pre>chain = LLMChain(
+        prompt=prompt,
+        llm=OpenAI(),
+        memory=memory,
+    )
+    return ChatResponse(response=chain.run(chat_request.prompt))</pre></div>
+<p>To use OpaquePrompts, once we retrieve an API token from the OpaquePrompts website, all we have to do is wrap the <code>llm</code> passed into <code>LLMChain</code> with <code>OpaquePrompts</code>:</p>
+<p>`chain = LLMChain(
+	prompt=prompt,</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s7">
+      <h2>🛠️ llm=OpenAI(),</h2>
+      <p class="lead">llm=OpaquePrompts(base_llm=OpenAI()),
+	memory=memory,
+)
+`
+
+You can play with a working implementation of a chatbot built with LangChain and OpaquePrompts on the OpaquePrompts website, and find the ful</p>
+      <p>llm=OpaquePrompts(base_llm=OpenAI()),
+	memory=memory,
+)
+`</p>
+<p>You can play with a working implementation of a chatbot built with LangChain and OpaquePrompts on the OpaquePrompts website, and find the full source code from which we derived the example above on GitHub. Note that the source code also includes logic for authentication and for displaying intermediate (i.e., the sanitized prompt and sanitized response) steps.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s8">
+      <h2>📈 Conclusion</h2>
+      <p class="lead">With OpaquePrompts, you can bootstrap your existing LangChain-based application to add privacy for your users.</p>
+      <p>With OpaquePrompts, you can bootstrap your existing LangChain-based application to add privacy for your users. With your OpaquePrompts + LangChain application, any personal information in your users’ prompts will be hidden from the LLM provider, ensuring that you, as the LLM application developer, do not have to worry about the provider’s data retention or processing policies. Take a look at the documentation or try out OpaquePrompts Chat today!</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s9">
+      <h2>🎯 Related content</h2>
+      <p class="lead">.</p>
+      <p>.png)PartnerDeep Agents</p>
+<p>#### Building a company due diligence agent with Deep Agents, LangSmith and Parallel</p>
+<p>Matt HarrisNick MartitschSrimanth TangedipalliKaran SinghMay 8, 20269min[](/blog/building-a-company-due-diligence-agent-with-deep-agents-langsmith-and-parallel).png)Agent ArchitecturePartner</p>
+<p>#### Agentic Engineering: How Swarms of AI Agents Are Redefining Software Engineering</p>
+<p>Renuka KumarPrashanth RamagopalApril 17, 202611min[](/blog/agentic-engineering-redefining-software-engineering).png)LangChainPartner</p>
+<p>#### A Developer’s First 10 Minutes: Secure LangChain Agents with Cisco AI Defense</p>
+<p>Siddhant DashApril 16, 20264min[](/blog/secure-agents-cisco-ai-defense)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s10">
+      <h2>🔬 See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+<p>](/contact-sales)</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+  </div>
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/opaqueprompts-x-langchain-enhance-the-privacy-of-your-langchain-application-with-just-one-code-change" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

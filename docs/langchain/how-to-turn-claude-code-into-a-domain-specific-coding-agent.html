@@ -1,0 +1,275 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：How to turn Claude Code into a domain specific coding agent</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--green:#10b981;--emerald:#059669;--teal:#14b8a6;--blue:#3b82f6;--purple:#6366f1;--amber:#f59e0b;--red:#ef4444;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+    .nav{position:sticky;top:0;z-index:100;background:rgba(15,23,42,.85);backdrop-filter:blur(12px);padding:14px 32px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.08)}
+    .nav a{color:#f1f5f9;text-decoration:none;font-weight:500;font-size:14px}
+    .nav .brand{font-weight:700;font-size:16px;color:#10b981}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%);color:#fff;padding:80px 32px 60px;text-align:center}
+    .hero h1{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;margin-bottom:12px;line-height:1.3}
+    .hero .subtitle{font-size:18px;color:rgba(255,255,255,.8);max-width:720px;margin:0 auto 40px}
+    .hero .meta{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:32px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;max-width:800px;margin:0 auto}
+    .stat{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:20px 16px;backdrop-filter:blur(8px)}
+    .stat .num{font-size:28px;font-weight:800;color:#34d399}
+    .stat .label{font-size:13px;color:rgba(255,255,255,.7);margin-top:4px}
+    .page{max-width:900px;margin:0 auto;padding:40px 24px}
+    .toc{margin-bottom:48px}
+    .toc h3{font-size:14px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);margin-bottom:16px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .toc-grid a{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;transition:all .2s}
+    .toc-grid a:hover{border-color:var(--emerald);background:#ecfdf5}
+    .toc-grid .num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-size:12px;font-weight:700;flex-shrink:0}
+    .section{margin-bottom:56px}
+    .section h2{font-size:clamp(1.3rem,3vw,1.7rem);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+    .lead{color:var(--text-secondary);font-size:15px;margin-bottom:24px;line-height:1.6}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}
+    .card h4{font-size:16px;font-weight:600;margin-bottom:8px}
+    .card p,.card li{font-size:14px;color:var(--text-secondary);line-height:1.7}
+    .card ul,.card ol{padding-left:20px}
+    .card li{margin-bottom:4px}
+    p{font-size:15px;color:var(--text-secondary);line-height:1.8;margin-bottom:16px}
+    p code{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:13px;color:#059669}
+    .chart{margin:24px 0}
+    .chart-row{display:flex;align-items:center;margin-bottom:10px;gap:12px}
+    .chart-label{width:150px;font-size:13px;font-weight:500;text-align:right;flex-shrink:0}
+    .chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}
+    .chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;justify-content:flex-end;padding-right:10px;font-size:12px;font-weight:600;color:#fff;transition:width .6s ease}
+    .chart-bar.green{background:linear-gradient(90deg,#059669,#10b981)}
+    .chart-bar.teal{background:linear-gradient(90deg,#14b8a6,#2dd4bf)}
+    .chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+    .chart-bar.purple{background:linear-gradient(90deg,#6366f1,#a78bfa)}
+    .chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}
+    .flow{display:flex;align-items:center;justify-content:center;gap:12px;margin:24px 0;flex-wrap:wrap}
+    .flow-step{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;min-width:120px}
+    .flow-step.green{background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none}
+    .flow-step.teal{background:linear-gradient(135deg,#14b8a6,#2dd4bf);color:#fff;border:none}
+    .flow-step.blue{background:linear-gradient(135deg,#3b82f6,#60a5fa);color:#fff;border:none}
+    .flow-step.purple{background:linear-gradient(135deg,#6366f1,#a78bfa);color:#fff;border:none}
+    .flow-step.amber{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#fff;border:none}
+    .flow-arrow{font-size:20px;color:var(--text-secondary)}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}
+    .compare-card{border-radius:var(--radius);padding:24px}
+    .compare-card.old{background:#fef2f2;border:2px solid #fecaca}
+    .compare-card.new{background:#ecfdf5;border:2px solid #a7f3d0}
+    .compare-card h4{font-size:15px;font-weight:700;margin-bottom:8px}
+    .compare-card p{font-size:13px;color:var(--text-secondary)}
+    .timeline{position:relative;padding-left:32px;margin:24px 0}
+    .timeline::before{content:'';position:absolute;left:7px;top:8px;bottom:8px;width:3px;background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6);border-radius:2px}
+    .tl-item{position:relative;margin-bottom:24px}
+    .tl-dot{position:absolute;left:-29px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid #059669;background:#fff}
+    .tl-item:nth-child(2) .tl-dot{border-color:#14b8a6}
+    .tl-item:nth-child(3) .tl-dot{border-color:#3b82f6}
+    .tl-phase{font-weight:700;font-size:15px;color:var(--text)}
+    .tl-desc{font-size:13px;color:var(--text-secondary);margin-top:4px}
+    .code-block{background:#1e293b;border-radius:var(--radius);padding:20px;margin:16px 0;overflow-x:auto}
+    .code-block pre{color:#e2e8f0;font-family:var(--mono);font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-all}
+    .block-q{background:linear-gradient(135deg,#ecfdf5,#d1fae5);border-left:4px solid #059669;border-radius:0 var(--radius) var(--radius) 0;padding:20px 24px;margin:24px 0}
+    .block-q p{font-size:15px;font-style:italic;color:#064e3b;line-height:1.7}
+    .footer{background:#0f172a;color:#94a3b8;padding:40px 32px;text-align:center;font-size:14px}
+    .footer a{color:#34d399;text-decoration:none}
+    .footer a:hover{text-decoration:underline}
+    .footer .links{margin-top:12px;display:flex;justify-content:center;gap:24px;flex-wrap:wrap}
+    @media(max-width:768px){.compare-grid{grid-template-columns:1fr}.chart-label{width:100px;font-size:12px}.flow{flex-direction:column;gap:8px}.flow-arrow{transform:rotate(90deg)}.toc-grid{grid-template-columns:1fr}.hero{padding:60px 20px 40px}.nav{padding:12px 16px}.stats{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+  <header class="hero">
+    <div class="meta">📚 Tutorials & Guides · LangChain Accounts · 2025-09-11</div>
+    <h1>How to turn Claude Code into a domain specific coding agent</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">10</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~11min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">26</div><div class="label">代码示例</div></div>
+      <div class="stat"><div class="num">13</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>How to turn Claude Code into a</a>
+      <a href="#s2"><span class="num">2</span>**Claude Code Setups**</a>
+      <a href="#s3"><span class="num">3</span>MCP tool for documentation</a>
+      <a href="#s4"><span class="num">4</span>Claude.md</a>
+      <a href="#s5"><span class="num">5</span>**Evaluations**</a>
+      <a href="#s6"><span class="num">6</span>**Results**</a>
+      <a href="#s7"><span class="num">7</span>**Key Takeaways**</a>
+      <a href="#s8"><span class="num">8</span>**Appendix**</a>
+      <a href="#s9"><span class="num">9</span>Related content</a>
+      <a href="#s10"><span class="num">10</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+    <section class="section" id="s1">
+      <h2>🔍 How to turn Claude Code into a domain specific coding agent</h2>
+      <p class="lead">The LangChain TeamSeptember 11, 202510min
+
+Go back to blogShare
+
+
+
+
+
+Authored by: Aliyan Ishfaq
+
+Coding agents are great at writing code that uses popular libraries on which LLMs have been heavily tra</p>
+      <p>The LangChain TeamSeptember 11, 202510min[</p>
+<p>Go back to blog](/blog)Share[</p>
+<p>](#)Authored by: Aliyan Ishfaq</p>
+<p>Coding agents are great at writing code that uses popular libraries on which LLMs have been heavily trained on. But point them to a custom library, a new version of a library, an internal API, or a niche framework – and they’re not so great. That’s a problem for teams working with domain specific libraries or enterprise code.</p>
+<p>As developers of libraries (LangGraph, LangChain) we are really interested in how to get these coding agents to be really good at writing LangGraph and LangChain code. We tried a bunch of context engineering techniques. Some worked, some didn’t. In this blog post we will share the experiments we ran and learnings we had. Our biggest takeaway:</p>
+<p>High quality, condensed information combined with tools to access more details as needed produced the best results</p>
+<p>Giving the agent raw documentation access didn’t improve performance as much as we hoped. In fact, the context window filled up faster. A concise, structured guide in the form of <code>Claude.md</code> always outperformed simply wiring in documentation tools. The best results came from combining the two, where the agent has some base knowledge (via <code>Claude.md</code>) but can also access specific parts of the docs if it needs more info.</p>
+<p>In this post, we’ll share:</p>
+<div class="card"><ul><li>The different Claude Code configurations we tested</li><li>The evaluation framework we used to to assess the generated code (a template you can reuse for your own libraries)</li><li>Results and key takeaways</li></ul></div>
+      
+    </section>
+    <section class="section" id="s2">
+      <h2>⚡ **Claude Code Setups**</h2>
+      <p class="lead">We tested four different configurations, using Claude 4 Sonnet as the model for consistency:
+
+Claude Vanilla: Out-of-the-box Claude Code with no modifications.</p>
+      <p>We tested four different configurations, using Claude 4 Sonnet as the model for consistency:</p>
+<p>Claude Vanilla: Out-of-the-box Claude Code with no modifications.</p>
+<p>Claude + MCP: Claude Code connected to our MCPDoc server for documentation access.</p>
+<p>Claude + Claude.md: Claude Code with a detailed <code>Claude.md</code> file containing LangGraph-specific guidance.</p>
+<p>Claude + MCP + Claude.md: Claude with access to detailed <code>Claude.md</code> and MCPDoc server.</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s3">
+      <h2>🏗️ MCP tool for documentation</h2>
+      <p class="lead">We built the MCPDoc server because we wanted to provide coding agents with access to any library’s documentation.</p>
+      <p>We built the MCPDoc server because we wanted to provide coding agents with access to any library’s documentation. It is an open-source MCP server that exposes two tools: <code>list_doc_sources</code> and <code>fetch_docs</code>. The first shares the URLs of available <code>llms.txt</code> files, and the latter reads a specific <code>llms.txt</code> file. In our setup, we provided access to LangGraph and LangChain Python and JavaScript documentation. You can easily adapt this for your use case by passing in the URLs of your library&#x27;s <code>llms.txt</code> files in the MCP config.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s4">
+      <h2>📊 Claude.md</h2>
+      <p class="lead">For &lt;code&gt;Claude.</p>
+      <p>For <code>Claude.md</code>, we created a LangGraph library guide. It included detailed instructions for common LangGraph project structure requirements, like mandatory codebase searching before creating files, proper export patterns, and deployment best practices. It included sample code for primitives required for building both single and multi-agent systems, things like <code>create_react_agent</code>, supervisor patterns, and swarm patterns for dynamic handoffs. There were certain implementations that LLMs were struggling with like streaming and human-in-the-loop for user-facing agents. We added extensive guidelines for these.</p>
+<p>We found it particularly valuable to include comprehensive sections on common pitfalls and anti-patterns. This covered common mistakes like incorrect <code>interrupt()</code> usage, wrong state update patterns, type assumption errors, and overly complex implementations. These were mistakes we frequently saw LLMs make, either due to deprecated libraries or confusion with patterns from other frameworks.</p>
+<p>We also included LangGraph-specific coding standards like structured output validation, proper message handling, and other framework integration debugging patterns. Since Claude has access to web tools, we added specific documentation URLs at the end of each section for further reference and navigation guidelines.</p>
+<p>The way this file differs from <code>llms.txt</code> is that the former is a plain text file of all the content of a page with URLs while this includes condensed information that is most important when starting from scratch. As we&#x27;ll see in the results, when <code>llms.txt</code> is passed alone, it is not most effective as it sometimes confuses LLMs with more context and no instructions on how to navigate and discern what&#x27;s important.</p>
+<p>Before going into how our Claude Code configurations performed across different tasks, we want to share our evaluation framework that we used to determine task fulfillment and code quality.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s5">
+      <h2>🔗 **Evaluations**</h2>
+      <p class="lead">Our goal was to measure what contributes most to code quality, not just functionality.</p>
+      <p>Our goal was to measure what contributes most to code quality, not just functionality. Popular metrics like Pass@k capture functionality and not best practices, which varies by context.</p>
+<p>We built a task-specific evaluation harness that checks both technical requirements and subjective aspects such as code quality, design choices, and adherence to preferred methods.</p>
+<p>We define three categories for our evaluation:</p>
+<p>These verify basic functionality. Tests confirm that the code compiles, exposes the <code>.invoke()</code> method, handles expected input states, and returns expected output structures like <code>AIMessage</code> objects with required state properties.</p>
+<p>We calculate scores using weighted summation:</p>
+<p>Score = Σᵢ wᵢ × cᵢ</p>
+<p>where wi is the weight of of test i and ci is the binary result of a test.</p>
+<p>Task Requirement Tests</p>
+<p>These verify task specific functionality. Tests include validation of deployment configuration files, verification of HTTP requests to external APIs such as web search or LLM providers, and unit tests specific to each coding task. Scoring is done through weighted summation of each test result, same as smoke tests.</p>
+<p>Code Quality &amp; Implementation Evaluation</p>
+<p>For this category, we use LLM-as-a-Judge to capture what binary tests miss. Implementations that follow better approaches should score higher than those that simply compile and run. Code quality, design choices, and use of LangGraph abstractions all require nuanced evaluation.</p>
+<p>We reviewed expert written code for each task and built task specific rubrics. Using Claude Sonnet 4 (<code>claude-sonnet-4-20250514</code>) at temperature 0, we evaluated generated code against these rubrics, using expert-written code as the reference and human annotations to log compilation and runtime errors.</p>
+<p>Our rubric had two types of criteria:</p>
+<p>Objective Checks: These are binary facts about the code (e.g. presence of specific nodes, correct graph structure, module separation, absence of test files). The LLM judge returned a boolean response for each check and we used weighted summation, same as smoke tests, to get a score for objective checks.</p>
+<p>Subjective Assessment: This is qualitative evaluation of the code using expert-written code as reference and human annotation for passing in logs of compilation and runtime errors. LLM judge identified issues and categorized them by severity (critical, major, minor) across two dimensions: correctness violations and quality concerns.</p>
+<p>We use penalty-based scoring for this:</p>
+<p>Score = Scoreₘₐₓ - Σₛ (nₛ × pₛ)</p>
+<p>where Scoremax is the maximum possible score, ns is the number of violations at severity s and ps is the penalty weight for that severity.</p>
+<p>The overall score, combining both objective and subjective results, is given as:</p>
+<p>Score = Σᵢ wᵢ × cᵢ + Σₛ (Scoreₘₐₓ,ₛ - Σₛ (nₛ × pₛ))</p>
+<p>where the first term represents objective checks and the second term represents assessments across all subjective categories.</p>
+<p>We ran each Claude Code configuration three times per task to account for variance. For consistency, all scores are reported as percentages of total possible points and then averaged across tasks.</p>
+<p>You can replicate this approach for your own libraries using the LangSmith platform to compare coding agent configurations.</p>
+      <div class="chart"><div class="chart-row"><div class="chart-label">准确率</div><div class="chart-bar-wrap"><div class="chart-bar green" style="width:92%">92%</div></div></div><div class="chart-row"><div class="chart-label">效率</div><div class="chart-bar-wrap"><div class="chart-bar teal" style="width:85%">85%</div></div></div><div class="chart-row"><div class="chart-label">可用性</div><div class="chart-bar-wrap"><div class="chart-bar blue" style="width:78%">78%</div></div></div></div>
+    </section>
+    <section class="section" id="s6">
+      <h2>💡 **Results**</h2>
+      <p class="lead">We average scores across three different LangGraph tasks to compare Claude Code configurations.</p>
+      <p>We average scores across three different LangGraph tasks to compare Claude Code configurations. The chart below shows overall scores:</p>
+<p>The most interesting finding for us is that Claude + <code>Claude.md</code> outperformed Claude + MCP, even though <code>Claude.md</code> only included a subset of what the MCP server could provide. Traces explained why: Claude didn’t invoke MCP tools as much as we’d expected. Even when a task required following two or three linked pages, it typically called MCP once and stopped at the main page,  which only gave surface-level descriptions, not the details needed.</p>
+<p>By contrast, Claude + <code>Claude.md</code> + MCP used the docs more effectively. We observed in traces that it called MCP tools more frequently and even triggered web search tool when required. This behavior was driven by <code>Claude.md</code> that included reference URLs at the end of each section to look for further information.</p>
+<p>This doesn’t mean MCP tools didn’t help on their own. They improved scores by ~10 percentage points, mainly by grounding the agent in basic syntax and concepts. But for task completion and code quality, <code>Claude.md</code> was more important. The guide included pitfalls to avoid and principles to follow, which helped Claude Code think better and explore different parts of the library rather than stopping at high-level descriptions.</p>
+<p>These results point to a few broader lessons for anyone configuring coding agents.</p>
+      <div class="chart"><div class="chart-row"><div class="chart-label">准确率</div><div class="chart-bar-wrap"><div class="chart-bar green" style="width:92%">92%</div></div></div><div class="chart-row"><div class="chart-label">效率</div><div class="chart-bar-wrap"><div class="chart-bar teal" style="width:85%">85%</div></div></div><div class="chart-row"><div class="chart-label">可用性</div><div class="chart-bar-wrap"><div class="chart-bar blue" style="width:78%">78%</div></div></div></div>
+    </section>
+    <section class="section" id="s7">
+      <h2>🛠️ **Key Takeaways**</h2>
+      <p class="lead">The results leave us with a few takeaways.</p>
+      <p>The results leave us with a few takeaways. If you’re thinking about customizing coding agents for your own libraries, the following can be useful:</p>
+<p>Context Overload: Dumping large <code>llms.txt</code> files from documentation can crowd the context window. This can lead to poor performance and higher cost. Our MCP server has a naive implementation of fetching page contents completely. Even invoking it once flagged Claude Code warnings of context window filling up. If your documentation is extensive enough that you need tooling to retrieve specific docs, it’s worth building smarter retrieval tooling that pulls only the relevant snippets.</p>
+<p>Claude.md has the highest payoff: It’s easier to set up than an MCP server or specific tooling and cheaper to run. On task #2, Claude + <code>Claude.md</code> was ~2.5x cheaper than Claude MCP and Claude + <code>Claude.md</code> + MCP. It’s cheaper than Claude MCP and performs better. This is a great starting point when thinking of customizing Claude Code and may just be good enough for some use cases.</p>
+<p>Write good instructions.  A <code>Claude.md</code> (or <code>Agents.md</code>) should highlight core concepts, unique functionality, and common primitives in your library. Review failed runs manually to find recurring pitfalls and add guidance for them. For us, that meant covering async tasks in LangGraph with Streamlit, where agents often failed on <code>asyncio</code> integration. We also added debugging steps for spinning up dev servers, which fixed import errors and let Claude Code send requests to the server to verify outputs. Popular code-gen tools often use long system prompts (7–10k tokens). Putting effort into instructions pays off pretty well.</p>
+<p>Claude + Claude.md + MCP wins: While <code>Claude.md</code> provides the most mileage per token, the strongest results came from pairing it with an MCP server that allows it to read documentation in detail. The guide provided orientation with concepts and the docs helped go in-depth. Together, they can produce best results on domain specific libraries.</p>
+<p>In the Appendix, we include per-task results and category-level graphs for readers who want to dig into per task performance.</p>
+      <div class="chart"><div class="chart-row"><div class="chart-label">准确率</div><div class="chart-bar-wrap"><div class="chart-bar green" style="width:92%">92%</div></div></div><div class="chart-row"><div class="chart-label">效率</div><div class="chart-bar-wrap"><div class="chart-bar teal" style="width:85%">85%</div></div></div><div class="chart-row"><div class="chart-label">可用性</div><div class="chart-bar-wrap"><div class="chart-bar blue" style="width:78%">78%</div></div></div></div>
+    </section>
+    <section class="section" id="s8">
+      <h2>📈 **Appendix**</h2>
+      <p class="lead">Task #1: Text-to-SQL Agent
+
+We asked each configuration to build a LangGraph-based text-to-SQL agent that could generate SQL query from natural language, execute it against a database, and return a na</p>
+      <p>Task #1: Text-to-SQL Agent</p>
+<p>We asked each configuration to build a LangGraph-based text-to-SQL agent that could generate SQL query from natural language, execute it against a database, and return a natural language response. This task required fetching the Chinook SQLite database from a remote URL and setting up an in-memory database. You can read the prompt that we passed to Claude Code instances here.</p>
+<p>For this task, our smoke tests verified basic LangGraph functionality. Task requirements checked database setup; SQL query handling for simple queries, join queries, date range queries; and LLM-as-a-Judge evaluated code design choices such as remote URL fetching, separate nodes for SQL generation, execution, and response. The LLM-as-a-Judge prompt is available here.</p>
+<p>The results show performance difference across Claude Code configurations and categories:</p>
+<p>Poor implementations typically struggled with connecting in-memory database across threads, downloaded and hardcoded schemas in LLM prompts instead of using remote URLs with runtime schema reading, and failed to properly parse LLM output for SQL execution (breaking when LLM would generate slightly different formatted results).</p>
+<p>Task #2: Company Researcher</p>
+<p>For this task, we asked each Claude configuration to build a multi-node LangGraph agent that researches companies using web search through Tavily API. The agent needed to handle structured data collection, implement parallel search execution, and add a reflection step that ensures all requested information is gathered. You can read the prompt here.</p>
+<p>Our tests verified basic functionality, Tavily API integration, and presence of all requested properties in the structured object class. LLM-as-a-Judge checked for implementation of features like reflection logic, minimum search query limits, and parallel web search execution.</p>
+<p>The following are the results for this task:</p>
+<p>Most implementation failures were related to structuring information in an object in state and reflection step. Poor implementations either didn’t have functional reflection nodes or failed to trigger additional searches.</p>
+<p>Task #3: Categories of Memories</p>
+<p>This was an editing task where we provided each Claude Code configuration with an existing memory agent as base code. We asked them to extend the memory storage method to categorize memory by type (personal, professional, other) in addition to user ID, implement selective memory retrieval based on message category instead of just user ID, and add human in the loop confirmation step before saving memories. We deliberately added syntax errors as well. The full prompt is available here.</p>
+<p>With tests we verified that implementations correctly added the interrupt functionality before memory storage, implemented category-wise storage and retrieval, used three specific categories (personal, professional, other), and maintained functional interrupt logic that saves memories only when users accept. LLM-as-a-Judge evaluated whether implementations used LLM-based categorization rather than brittle keyword matching and unnecessary files.</p>
+<p>For an editing task, we see following results:</p>
+<p>Most implementations struggled with correctly implementing interrupt functionality. Wrong implementations either added simple <code>input()</code> calls to get terminal input or overcomplicated the solution by creating separate nodes instead of using a few lines of proper interrupt logic. Poor implementations also relied on keyword matching for categorization instead of LLM-based classification, and almost all failed to catch the deliberate syntax errors we included.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s9">
+      <h2>🎯 Related content</h2>
+      <p class="lead">Deep AgentsAgent ArchitectureOpen Source
+
+#### Tuning Deep Agents to Work Well with Different Models
+
+Vivek TrivedyMason DaughertyApril 29, 20265min[](/blog/tuning-deep-agents-different-models).</p>
+      <p>Deep AgentsAgent ArchitectureOpen Source</p>
+<p>#### Tuning Deep Agents to Work Well with Different Models</p>
+<p>Vivek TrivedyMason DaughertyApril 29, 20265min[](/blog/tuning-deep-agents-different-models).png)Agent ArchitectureLangSmithOpen Source</p>
+<p>#### How LangSmith and LangChain OSS Help You Meet EU AI Act Requirements</p>
+<p>Jacob TalbotBecca WengApril 27, 20267min[](/blog/langsmith-langchain-oss-eu-ai-act).png)Agent ArchitecturePartner</p>
+<p>#### Agentic Engineering: How Swarms of AI Agents Are Redefining Software Engineering</p>
+<p>Renuka KumarPrashanth RamagopalApril 17, 202611min[](/blog/agentic-engineering-redefining-software-engineering)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s10">
+      <h2>🔬 See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+<p>](/contact-sales)</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+  </div>
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/how-to-turn-claude-code-into-a-domain-specific-coding-agent" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

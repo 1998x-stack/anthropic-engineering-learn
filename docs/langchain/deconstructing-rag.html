@@ -1,0 +1,478 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Deconstructing RAG</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafbfc;
+      --surface: #fff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --green: #10b981;
+      --emerald: #059669;
+      --teal: #14b8a6;
+      --blue: #3b82f6;
+      --purple: #6366f1;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans SC', 'Inter', system-ui, sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: var(--sans); background: var(--bg); color: var(--text); line-height:1.7; }
+    .nav { position:sticky; top:0; z-index:100; background:rgba(15,23,42,.85); backdrop-filter:blur(12px); padding:14px 32px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,.08); }
+    .nav a { color:#f1f5f9; text-decoration:none; font-weight:500; font-size:14px; }
+    .nav .brand { font-weight:700; font-size:16px; color:#10b981; }
+    .hero { background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%); color:#fff; padding:80px 32px 60px; text-align:center; }
+    .hero h1 { font-size:clamp(1.8rem,4vw,2.8rem); font-weight:800; margin-bottom:12px; line-height:1.3; }
+    .hero .subtitle { font-size:18px; color:rgba(255,255,255,.8); max-width:720px; margin:0 auto 40px; }
+    .hero .meta { font-size:13px; color:rgba(255,255,255,.5); margin-bottom:32px; }
+    .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:16px; max-width:800px; margin:0 auto; }
+    .stat { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); border-radius:12px; padding:20px 16px; backdrop-filter:blur(8px); }
+    .stat .num { font-size:28px; font-weight:800; color:#34d399; }
+    .stat .label { font-size:13px; color:rgba(255,255,255,.7); margin-top:4px; }
+    .page { max-width:900px; margin:0 auto; padding:40px 24px; }
+    .toc { margin-bottom:48px; }
+    .toc h3 { font-size:14px; text-transform:uppercase; letter-spacing:1.5px; color:var(--text-secondary); margin-bottom:16px; }
+    .toc-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; }
+    .toc-grid a { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--text); font-size:14px; font-weight:500; transition:all .2s; }
+    .toc-grid a:hover { border-color:var(--emerald); background:#ecfdf5; }
+    .toc-grid .num { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:8px; background:linear-gradient(135deg,#059669,#10b981); color:#fff; font-size:12px; font-weight:700; flex-shrink:0; }
+    .section { margin-bottom:56px; }
+    .section h2 { font-size:clamp(1.3rem,3vw,1.7rem); font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:10px; }
+    .lead { color:var(--text-secondary); font-size:15px; margin-bottom:24px; line-height:1.6; }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:24px; margin-bottom:16px; }
+    .card h4 { font-size:16px; font-weight:600; margin-bottom:8px; }
+    .card p, .card li { font-size:14px; color:var(--text-secondary); line-height:1.7; }
+    .card ul, .card ol { padding-left:20px; }
+    .card li { margin-bottom:4px; }
+    p { font-size:15px; color:var(--text-secondary); line-height:1.8; margin-bottom:16px; }
+    p code { background:#f1f5f9; padding:2px 6px; border-radius:4px; font-family:var(--mono); font-size:13px; color:#059669; }
+    .chart { margin:24px 0; }
+    .chart-row { display:flex; align-items:center; margin-bottom:10px; gap:12px; }
+    .chart-label { width:150px; font-size:13px; font-weight:500; text-align:right; flex-shrink:0; }
+    .chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:32px; overflow:hidden; }
+    .chart-bar { height:100%; border-radius:8px; display:flex; align-items:center; justify-content:flex-end; padding-right:10px; font-size:12px; font-weight:600; color:#fff; transition:width .6s ease; }
+    .chart-bar.green { background:linear-gradient(90deg,#059669,#10b981); }
+    .chart-bar.teal { background:linear-gradient(90deg,#14b8a6,#2dd4bf); }
+    .chart-bar.blue { background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+    .chart-bar.purple { background:linear-gradient(90deg,#6366f1,#a78bfa); }
+    .chart-bar.amber { background:linear-gradient(90deg,#f59e0b,#fbbf24); }
+    .chart-bar.red { background:linear-gradient(90deg,#ef4444,#f87171); }
+    .flow { display:flex; align-items:center; justify-content:center; gap:12px; margin:24px 0; flex-wrap:wrap; }
+    .flow-step { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 20px; font-size:14px; font-weight:600; text-align:center; min-width:120px; }
+    .flow-step.green { background:linear-gradient(135deg,#059669,#10b981); color:#fff; border:none; }
+    .flow-step.teal { background:linear-gradient(135deg,#14b8a6,#2dd4bf); color:#fff; border:none; }
+    .flow-step.blue { background:linear-gradient(135deg,#3b82f6,#60a5fa); color:#fff; border:none; }
+    .flow-step.purple { background:linear-gradient(135deg,#6366f1,#a78bfa); color:#fff; border:none; }
+    .flow-step.amber { background:linear-gradient(135deg,#f59e0b,#fbbf24); color:#fff; border:none; }
+    .flow-arrow { font-size:20px; color:var(--text-secondary); }
+    .compare-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:24px 0; }
+    .compare-card { border-radius:var(--radius); padding:24px; }
+    .compare-card.old { background:#fef2f2; border:2px solid #fecaca; }
+    .compare-card.new { background:#ecfdf5; border:2px solid #a7f3d0; }
+    .compare-card h4 { font-size:15px; font-weight:700; margin-bottom:8px; }
+    .compare-card p { font-size:13px; color:var(--text-secondary); }
+    .timeline { position:relative; padding-left:32px; margin:24px 0; }
+    .timeline::before { content:''; position:absolute; left:7px; top:8px; bottom:8px; width:3px; background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:24px; }
+    .tl-dot { position:absolute; left:-29px; top:4px; width:14px; height:14px; border-radius:50%; border:3px solid #059669; background:#fff; }
+    .tl-item:nth-child(2) .tl-dot { border-color:#14b8a6; }
+    .tl-item:nth-child(3) .tl-dot { border-color:#3b82f6; }
+    .tl-item:nth-child(4) .tl-dot { border-color:#6366f1; }
+    .tl-item:nth-child(5) .tl-dot { border-color:#f59e0b; }
+    .tl-phase { font-weight:700; font-size:15px; color:var(--text); }
+    .tl-desc { font-size:13px; color:var(--text-secondary); margin-top:4px; }
+    .code-block { background:#1e293b; border-radius:var(--radius); padding:20px; margin:16px 0; overflow-x:auto; }
+    .code-block pre { color:#e2e8f0; font-family:var(--mono); font-size:13px; line-height:1.6; white-space:pre-wrap; word-break:break-all; }
+    .block-q { background:linear-gradient(135deg,#ecfdf5,#d1fae5); border-left:4px solid #059669; border-radius:0 var(--radius) var(--radius) 0; padding:20px 24px; margin:24px 0; }
+    .block-q p { font-size:15px; font-style:italic; color:#064e3b; line-height:1.7; }
+    .badge { display:inline-block; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600; }
+    .badge-green { background:#ecfdf5; color:#059669; }
+    .badge-teal { background:#f0fdfa; color:#14b8a6; }
+    .badge-blue { background:#eff6ff; color:#3b82f6; }
+    .badge-purple { background:#eef2ff; color:#6366f1; }
+    .badge-amber { background:#fffbeb; color:#d97706; }
+    .footer { background:#0f172a; color:#94a3b8; padding:40px 32px; text-align:center; font-size:14px; }
+    .footer a { color:#34d399; text-decoration:none; }
+    .footer a:hover { text-decoration:underline; }
+    .footer .links { margin-top:12px; display:flex; justify-content:center; gap:24px; flex-wrap:wrap; }
+    @media(max-width:768px) {
+      .compare-grid { grid-template-columns:1fr; }
+      .chart-label { width:100px; font-size:12px; }
+      .flow { flex-direction:column; gap:8px; }
+      .flow-arrow { transform:rotate(90deg); }
+      .toc-grid { grid-template-columns:1fr; }
+      .hero { padding:60px 20px 40px; }
+      .nav { padding:12px 16px; }
+      .stats { grid-template-columns:1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+
+  <header class="hero">
+    <div class="meta">🧠 RAG & Knowledge · LangChain Accounts · 2023-11-30</div>
+    <h1>Deconstructing RAG</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">26</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~8min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">16</div><div class="label">技术要点</div></div>
+      <div class="stat"><div class="num">56</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>Deconstructing RAG</a>
+      <a href="#s2"><span class="num">2</span>Context</a>
+      <a href="#s3"><span class="num">3</span>Challenge</a>
+      <a href="#s4"><span class="num">4</span>Query Transformations</a>
+      <a href="#s5"><span class="num">5</span>**Query expansion**</a>
+      <a href="#s6"><span class="num">6</span>**Query re-writing**</a>
+      <a href="#s7"><span class="num">7</span>**Query compression**</a>
+      <a href="#s8"><span class="num">8</span>**Further reading**</a>
+      <a href="#s9"><span class="num">9</span>Routing</a>
+      <a href="#s10"><span class="num">10</span>Query Construction</a>
+      <a href="#s11"><span class="num">11</span>**Text-to-SQL**</a>
+      <a href="#s12"><span class="num">12</span>**Text-to-Cypher**</a>
+      <a href="#s13"><span class="num">13</span>**Text-to-metadata filters**</a>
+      <a href="#s14"><span class="num">14</span>**Further reading**</a>
+      <a href="#s15"><span class="num">15</span>Indexing</a>
+      <a href="#s16"><span class="num">16</span>**Chunk size**</a>
+      <a href="#s17"><span class="num">17</span>**Document embedding strategy*</a>
+      <a href="#s18"><span class="num">18</span>**Further reading**</a>
+      <a href="#s19"><span class="num">19</span>Post-Processing</a>
+      <a href="#s20"><span class="num">20</span>**Re-ranking**</a>
+      <a href="#s21"><span class="num">21</span>**Classification**</a>
+      <a href="#s22"><span class="num">22</span>Future Plans</a>
+      <a href="#s23"><span class="num">23</span>Open source</a>
+      <a href="#s24"><span class="num">24</span>Benchmarks</a>
+      <a href="#s25"><span class="num">25</span>Related content</a>
+      <a href="#s26"><span class="num">26</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+
+    <section class="section" id="s1">
+      <h2>🔍 Deconstructing RAG</h2>
+      <p class="lead">The LangChain TeamNovember 30, 20237min
+
+Go back to blogShare
+
+[</p>
+      <p>The LangChain TeamNovember 30, 20237min[</p>
+<p>Go back to blog](/blog)Share[</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s2">
+      <h2>⚡ Context</h2>
+      <p class="lead">In a recent overview on the state of large language models (LLMs), Karpathy described LLMs as the kernel process of a new kind of operating system.</p>
+      <p>In a recent overview on the state of large language models (LLMs), Karpathy described LLMs as the kernel process of a new kind of operating system. Just as modern computers have RAM and access to files, LLMs have a context window that can be loaded with information retrieved from numerous data sources.</p>
+<p>Retrieval is a core component of the new LLM operating system</p>
+<p>This retrieved information is loaded into the context window and used in LLM output generation, a process typically called retrieval augmented generation (RAG). RAG is one of the most important concepts in LLM app development because it is an easy way to pass external information to an LLM with advantages over more complex / complex fine-tuning on problems that require factual recall.</p>
+<p>Typically, RAG systems involve: a question (often from a user) that determines what information to retrieve, a process of retrieving that information from a data source (or sources), and a process of passing the retrieved information directly to the LLM as part of the prompt (see an example prompt in LangChain hub here).</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s3">
+      <h2>🏗️ Challenge</h2>
+      <p class="lead">The landscape of RAG methods has expanded greatly in recent months, resulting in some degree of overload or confusion among users about where to start and how to think about the various approaches.</p>
+      <p>The landscape of RAG methods has expanded greatly in recent months, resulting in some degree of overload or confusion among users about where to start and how to think about the various approaches. Over the past few months, we have worked to group RAG concepts into a few categories and have released guides for each. Below we&#x27;ll provide a round-up of these concepts and present some future work.</p>
+      <div class="chart"><div class="chart-row">
+    <div class="chart-label">Method A</div>
+    <div class="chart-bar-wrap"><div class="chart-bar green" style="width:95%">95%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method B</div>
+    <div class="chart-bar-wrap"><div class="chart-bar teal" style="width:80%">80%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method C</div>
+    <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:65%">65%</div></div>
+  </div></div>
+    </section>
+
+    <section class="section" id="s4">
+      <h2>📊 Query Transformations</h2>
+      <p class="lead">A first question to ask when thinking about RAG: how can we make retrieval robust to variability in user input? For example, user questions may be poorly worded for the challenging task of retrieval.</p>
+      <p>A first question to ask when thinking about RAG: how can we make retrieval robust to variability in user input? For example, user questions may be poorly worded for the challenging task of retrieval. Query transformations are a set of approaches focused on modifying the user input in order to improve retrieval.</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s5">
+      <h2>🔗 **Query expansion**</h2>
+      <p class="lead">Consider the question &amp;quot;Who won a championship more recently, the Red Sox or the Patriots?&amp;quot; Answering this can benefit from asking two specific sub-questions:
+
+- &amp;quot;When was the last ti...</p>
+      <p>Consider the question &quot;Who won a championship more recently, the Red Sox or the Patriots?&quot; Answering this can benefit from asking two specific sub-questions:</p>
+<div class="card"><ul>
+  <li>&quot;When was the last time the Red Sox won a championship?&quot;</li>
+  <li>&quot;When was the last time the Patriots won a championship?&quot;</li>
+</ul></div>
+<p>Query expansion decomposes the input into sub-questions, each of which is a more narrow retrieval challenge. The multi-query retriever performs sub-question generation, retrieval, and returns the unique union of the retrieved docs. RAG fusion builds on by ranking of the returned docs from each of the sub-questions. Step-back prompting offers a third approach in this vein, generating a step-back question to ground an answer synthesis in higher-level concepts or principles (see paper). For example, a question about physics can be stepped-back into a question (and LLM-generated answer) about the physical principles behind the user query.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s6">
+      <h2>💡 **Query re-writing**</h2>
+      <p class="lead">To address poorly framed or worded user inputs, Rewrite-Retrieve-Read (see paper) is an approach re-writes user questions in order to improve retrieval.</p>
+      <p>To address poorly framed or worded user inputs, Rewrite-Retrieve-Read (see paper) is an approach re-writes user questions in order to improve retrieval.</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s7">
+      <h2>🛠️ **Query compression**</h2>
+      <p class="lead">In some RAG applications, such as WebLang (our open source research assistant), a user question follows a broader chat conversation.</p>
+      <p>In some RAG applications, such as WebLang (our open source research assistant), a user question follows a broader chat conversation. In order to properly answer the question, the full conversational context may be required. To address this, we use this prompt to compress chat history into a final question for retrieval.</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s8">
+      <h2>📈 **Further reading**</h2>
+      <p class="lead">- See our blog post on query transformations
+- See our blog post on OpenAI&amp;#x27;s RAG strategies</p>
+      <div class="card"><ul>
+  <li>See our blog post on query transformations</li>
+  <li>See our blog post on OpenAI&#x27;s RAG strategies</li>
+</ul></div>
+      
+    </section>
+
+    <section class="section" id="s9">
+      <h2>🎯 Routing</h2>
+      <p class="lead">A second question to ask when thinking about RAG: where does the data live? In many RAG demos, data lives in a single vectorstore but this is often not the case in production settings.</p>
+      <p>A second question to ask when thinking about RAG: where does the data live? In many RAG demos, data lives in a single vectorstore but this is often not the case in production settings. When operating across a set of various datastores, incoming queries need to be routed. LLMs can be used to support dynamic query routing effectively (see here), as discussed in our recent review of OpenAI&#x27;s RAG strategies.</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s10">
+      <h2>🔬 Query Construction</h2>
+      <p class="lead">A third question to ask when thinking about RAG: what syntax is needed to query the data? While routed questions are in natural language, data is stored in sources such as relational or graph datab...</p>
+      <p>A third question to ask when thinking about RAG: what syntax is needed to query the data? While routed questions are in natural language, data is stored in sources such as relational or graph databases that require specific syntax to retrieve. And even vectorstores utilize structured metadata for filtering. In all cases, natural language from the query needs to be converted into a query syntax for retrieval.</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s11">
+      <h2>📝 **Text-to-SQL**</h2>
+      <p class="lead">Considerable effort has focused on translating natural language into SQL requests.</p>
+      <p>Considerable effort has focused on translating natural language into SQL requests. Text-to-SQL can be done easily (here) by providing an LLM the natural language question along with relevant table information; open source LLMs have proven effective at this task, enabling data privacy (see our templates here and here).</p>
+<p>Mixed type (structured and unstructured) data storage in relational databases is increasingly common (see here); an embedded document column can be included using the open-source pgvector extension for PostgreSQL. It&#x27;s also possible to interact with this semi-structured data using natural language, marrying the expressiveness of SQL with semantic search (see our cookbook and template).</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s12">
+      <h2>🧪 **Text-to-Cypher**</h2>
+      <p class="lead">While vector stores readily handle unstructured data, they don&amp;#x27;t understand the relationships between vectors.</p>
+      <p>While vector stores readily handle unstructured data, they don&#x27;t understand the relationships between vectors. While SQL databases can model relationships, schema changes can be disruptive and costly. Knowledge graphs can address these challenges by modeling the relationships between data and extending the types of relationships without a major overhaul. They are desirable for data that has many-to-many relationships or hierarchies that are difficult to represent in tabular form.</p>
+<p>Like relational databases, graph databases benefit from a natural language interface using text-to-Cypher, a structured query language designed to provide a visual way of matching patterns and relationships (see templates here and here).</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s13">
+      <h2>🌐 **Text-to-metadata filters**</h2>
+      <p class="lead">Vectorstores equipped with metadata filtering enable structured queries to filter embedded unstructured documents.</p>
+      <p>Vectorstores equipped with metadata filtering enable structured queries to filter embedded unstructured documents. The self-query retriever can translate natural language into these structured queries with metadata filters using a specification for the metadata fields present in the vectorstore (see our self-query template).</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s14">
+      <h2>📦 **Further reading**</h2>
+      <p class="lead">- See our blog post on query construction</p>
+      <div class="card"><ul>
+  <li>See our blog post on query construction</li>
+</ul></div>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s15">
+      <h2>🔄 Indexing</h2>
+      <p class="lead">A fourth question to ask when thinking about RAG: how to design my index? For vectorstores, there is considerable opportunity to tune parameters like the chunk size and / or the document embedding ...</p>
+      <p>A fourth question to ask when thinking about RAG: how to design my index? For vectorstores, there is considerable opportunity to tune parameters like the chunk size and / or the document embedding strategy to support variable data types.</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s16">
+      <h2>🎨 **Chunk size**</h2>
+      <p class="lead">In our review of OpenAI&amp;#x27;s RAG strategies, we highlight the notable boost in performance that they saw simply from experimenting with the chunk size during document embedding.</p>
+      <p>In our review of OpenAI&#x27;s RAG strategies, we highlight the notable boost in performance that they saw simply from experimenting with the chunk size during document embedding. This makes sense, because chunk size controls how much information we load into the context window (or &quot;RAM&quot; in our LLM OS analogy).</p>
+<p>Since this is a central step in index building, we have an open source Streamlit app where you can test various chunk sizes to gain some intuition; in particular, it&#x27;s worth examining where the document is split using various split sizes or strategies and whether semantically related content is unnaturally split.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s17">
+      <h2>🏆 **Document embedding strategy**</h2>
+      <p class="lead">One of the simplest and most useful ideas in index design is to decouple what you embed (for retrieval) from what you pass to the LLM (for answer synthesis).</p>
+      <p>One of the simplest and most useful ideas in index design is to decouple what you embed (for retrieval) from what you pass to the LLM (for answer synthesis). For example, consider a large passage of text with lots of redundant detail. We can embed a few different representations of this to improve retrieval, such as a summary or small chunks to narrow the scope of information that is embedded. In either case, we can then retrieve the full text to pass to the LLM. These can be implemented using multi-vector and parent-document retriever, respectively.</p>
+<p>The multi-vector retriever also works well for semi-structured documents that contain a mix of text and tables (see our cookbook and template). In these cases, it&#x27;s possible to extract each table, produce a summary of the table that is well suited for retrieval, but return the raw table to the LLM for answer synthesis.</p>
+<p>We can take this one step further: with the advent of multi-modal LLMs, it&#x27;s possible to use generate and embed image summaries as one means of image retrieval for documents that contain text and images (see diagram below).</p>
+<p>This may be appropriate for cases where multi-modal embeddings are not expected to reliably retrieve the images, as may be the case with complex figures or table. As an example, in our cookbook we use this approach with figures from a financial analysis blog (@jaminball&#x27;s Clouded Judgement). However, we also have another cookbook using open source (OpenCLIP) multi-modal embeddings for retrieval of images based on more straightforward visual concepts.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s18">
+      <h2>🔑 **Further reading**</h2>
+      <p class="lead">- See our blog post on multi-vector retriever</p>
+      <div class="card"><ul>
+  <li>See our blog post on multi-vector retriever</li>
+</ul></div>
+      
+    </section>
+
+    <section class="section" id="s19">
+      <h2>📋 Post-Processing</h2>
+      <p class="lead">A final question to ask when thinking about RAG: how to combine the documents that I have retrieved? This is important, because the context window has limited size and redundant documents (e.</p>
+      <p>A final question to ask when thinking about RAG: how to combine the documents that I have retrieved? This is important, because the context window has limited size and redundant documents (e.g., from different sources) will utilize tokens without providing unique information to the LLM. A number of approaches for document post-processing (e.g., to improve diversity or filter for recency) have emerged, some of which we discuss in our blog post on OpenAI&#x27;s RAG strategies.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s20">
+      <h2>🚀 **Re-ranking**</h2>
+      <p class="lead">The Cohere ReRank endpoint can be used for document compression (reduce redundancy) in cases where we are retrieving a large number of documents.</p>
+      <p>The Cohere ReRank endpoint can be used for document compression (reduce redundancy) in cases where we are retrieving a large number of documents. Relatedly, RAG-fusion uses reciprocal rank fusion (see blog and implementation) to ReRank documents returned from a retriever (similar to multi-query).</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s21">
+      <h2>🔍 **Classification**</h2>
+      <p class="lead">OpenAI classified each retrieved document based upon its content and then chose a different prompt depending on that classification.</p>
+      <p>OpenAI classified each retrieved document based upon its content and then chose a different prompt depending on that classification. This marries tagging of text for classification with logical routing (in this case, for the prompt) based on a tag.</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s22">
+      <h2>⚡ Future Plans</h2>
+      <p class="lead">Going forward, we will focus on at least two areas that extend these themes.</p>
+      <p>Going forward, we will focus on at least two areas that extend these themes.</p>
+      
+    </section>
+
+    <section class="section" id="s23">
+      <h2>🏗️ Open source</h2>
+      <p class="lead">Many of these tasks to improve RAG are narrow and well-defined.</p>
+      <p>Many of these tasks to improve RAG are narrow and well-defined. For example, query expansion (sub-question generation) or structured query construction for metadata filtering are narrow, well-defined tasks that also may be done repeatedly. In turn, they may not require large (and most costly) generalist models to achieve acceptable performance. Instead, smaller open source models (potentially with fine-tuning) may be sufficient. We will be releasing a series of templates that showcases how to use open source models into the RAG stack where appropriate.</p>
+      <div class="chart"><div class="chart-row">
+    <div class="chart-label">Method A</div>
+    <div class="chart-bar-wrap"><div class="chart-bar green" style="width:95%">95%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method B</div>
+    <div class="chart-bar-wrap"><div class="chart-bar teal" style="width:80%">80%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method C</div>
+    <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:65%">65%</div></div>
+  </div></div>
+    </section>
+
+    <section class="section" id="s24">
+      <h2>📊 Benchmarks</h2>
+      <p class="lead">Hand-in-hand with our effort to test open source LLMs, we recently launched public datasets that can serve ground truth for evaluation.</p>
+      <p>Hand-in-hand with our effort to test open source LLMs, we recently launched public datasets that can serve ground truth for evaluation. We will be expanding these to include some more specific RAG challenges and using them to assess the merits of the above approaches as well as the incorporation of open source LLMs.</p>
+      <div class="chart"><div class="chart-row">
+    <div class="chart-label">Method A</div>
+    <div class="chart-bar-wrap"><div class="chart-bar green" style="width:95%">95%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method B</div>
+    <div class="chart-bar-wrap"><div class="chart-bar teal" style="width:80%">80%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method C</div>
+    <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:65%">65%</div></div>
+  </div></div>
+    </section>
+
+    <section class="section" id="s25">
+      <h2>🔗 Related content</h2>
+      <p class="lead">Company Announcements
+
+#### Interrupt Preview: Meet the MC
+
+Becca WengApril 28, 20267min[](/blog/interrupt-preview-meet-the-mc)Company Announcements
+
+#### April 2026: LangChain Newsletter
+
+The Lang...</p>
+      <p>Company Announcements</p>
+<p>#### Interrupt Preview: Meet the MC</p>
+<p>Becca WengApril 28, 20267min[](/blog/interrupt-preview-meet-the-mc)Company Announcements</p>
+<p>#### April 2026: LangChain Newsletter</p>
+<p>The LangChain TeamApril 27, 20264min[](/blog/april-2026-langchain-newsletter)Company Announcements</p>
+<p>#### Previewing Interrupt 2026: Agents at Enterprise Scale</p>
+<p>Becca WengApril 9, 20264min[](/blog/previewing-interrupt-2026-agents-at-enterprise-scale)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s26">
+      <h2>💡 See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+  </div>
+
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/deconstructing-rag" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

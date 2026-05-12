@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deep Dive: The Anatomy of an Agent Harness</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafbfc;
+      --surface: #fff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --green: #059669;
+      --emerald: #10b981;
+      --teal: #14b8a6;
+      --blue: #3b82f6;
+      --purple: #6366f1;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --orange: #ea580c;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans SC', 'Inter', system-ui, sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: var(--sans); background: var(--bg); color: var(--text); line-height:1.7; }
+    .nav { position:sticky; top:0; z-index:100; background:rgba(15,23,42,.88); backdrop-filter:blur(14px); padding:14px 32px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,.08); }
+    .nav a { color:#f1f5f9; text-decoration:none; font-weight:500; font-size:14px; }
+    .nav .brand { font-weight:700; font-size:16px; color:#34d399; }
+    .hero { background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%); color:#fff; padding:80px 32px 60px; text-align:center; }
+    .hero h1 { font-size:clamp(1.8rem,4vw,2.6rem); font-weight:800; margin-bottom:12px; line-height:1.3; }
+    .hero .subtitle { font-size:17px; color:rgba(255,255,255,.82); max-width:720px; margin:0 auto 12px; }
+    .hero .meta { font-size:13px; color:rgba(255,255,255,.5); margin-bottom:32px; }
+    .hero .badge-cat { display:inline-block; padding:4px 14px; border-radius:20px; font-size:12px; font-weight:600; background:rgba(52,211,153,.18); color:#6ee7b7; border:1px solid rgba(52,211,153,.3); margin-bottom:16px; }
+    .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; max-width:780px; margin:0 auto; }
+    .stat { background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.11); border-radius:12px; padding:18px 14px; backdrop-filter:blur(8px); }
+    .stat .num { font-size:26px; font-weight:800; color:#34d399; font-family:var(--mono); }
+    .stat .label { font-size:12px; color:rgba(255,255,255,.65); margin-top:4px; }
+    .page { max-width:900px; margin:0 auto; padding:40px 24px; }
+    .toc { margin-bottom:48px; }
+    .toc h3 { font-size:13px; text-transform:uppercase; letter-spacing:1.5px; color:var(--text-secondary); margin-bottom:16px; }
+    .toc-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:10px; }
+    .toc-grid a { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--text); font-size:14px; font-weight:500; transition:all .2s; }
+    .toc-grid a:hover { border-color:var(--green); background:#ecfdf5; }
+    .toc-grid .num { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:8px; background:linear-gradient(135deg,#059669,#14b8a6); color:#fff; font-size:12px; font-weight:700; flex-shrink:0; }
+    .section { margin-bottom:56px; }
+    .section h2 { font-size:clamp(1.3rem,3vw,1.6rem); font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    .lead { color:var(--text-secondary); font-size:15px; margin-bottom:20px; line-height:1.7; }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:22px; margin-bottom:14px; }
+    .card h4 { font-size:15px; font-weight:600; margin-bottom:8px; }
+    .card p { font-size:14px; color:var(--text-secondary); line-height:1.7; }
+    .chart { margin:24px 0; }
+    .chart-row { display:flex; align-items:center; margin-bottom:10px; gap:12px; }
+    .chart-label { width:160px; font-size:13px; font-weight:500; text-align:right; flex-shrink:0; }
+    .chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:30px; overflow:hidden; }
+    .chart-bar { height:100%; border-radius:8px; display:flex; align-items:center; justify-content:flex-end; padding-right:10px; font-size:12px; font-weight:600; color:#fff; transition:width .6s ease; }
+    .chart-bar.green { background:linear-gradient(90deg,#059669,#34d399); }
+    .chart-bar.teal { background:linear-gradient(90deg,#14b8a6,#2dd4bf); }
+    .chart-bar.blue { background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+    .chart-bar.purple { background:linear-gradient(90deg,#6366f1,#a78bfa); }
+    .chart-bar.amber { background:linear-gradient(90deg,#f59e0b,#fbbf24); }
+    .chart-bar.orange { background:linear-gradient(90deg,#ea580c,#fb923c); }
+    .chart-bar.red { background:linear-gradient(90deg,#ef4444,#f87171); }
+    .timeline { position:relative; padding-left:32px; margin:24px 0; }
+    .timeline::before { content:''; position:absolute; left:8px; top:0; bottom:0; width:3px; background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6,#6366f1); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:20px; }
+    .tl-dot { position:absolute; left:-28px; top:4px; width:14px; height:14px; border-radius:50%; border:3px solid #059669; background:#fff; }
+    .tl-item:nth-child(2) .tl-dot { border-color:#14b8a6; }
+    .tl-item:nth-child(3) .tl-dot { border-color:#3b82f6; }
+    .tl-item:nth-child(4) .tl-dot { border-color:#6366f1; }
+    .tl-item:nth-child(5) .tl-dot { border-color:#f59e0b; }
+    .tl-item:nth-child(6) .tl-dot { border-color:#ea580c; }
+    .tl-item:nth-child(7) .tl-dot { border-color:#ef4444; }
+    .tl-phase { font-weight:700; font-size:15px; margin-bottom:4px; }
+    .tl-desc { font-size:13px; color:var(--text-secondary); line-height:1.6; }
+    .compare-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:24px 0; }
+    .compare-card { border-radius:var(--radius); padding:22px; }
+    .compare-card.old { background:#fef2f2; border:2px solid #fecaca; }
+    .compare-card.new { background:#ecfdf5; border:2px solid #a7f3d0; }
+    .compare-card h4 { font-size:15px; font-weight:700; margin-bottom:8px; }
+    .compare-card ul { list-style:none; padding:0; }
+    .compare-card ul li { font-size:13px; padding:4px 0; color:var(--text-secondary); }
+    .flow { display:flex; align-items:center; justify-content:center; gap:12px; margin:24px 0; flex-wrap:wrap; }
+    .flow-step { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px 18px; font-size:13px; font-weight:600; text-align:center; min-width:100px; }
+    .flow-step.green { background:linear-gradient(135deg,#059669,#10b981); color:#fff; border:none; }
+    .flow-step.blue { background:linear-gradient(135deg,#3b82f6,#60a5fa); color:#fff; border:none; }
+    .flow-step.purple { background:linear-gradient(135deg,#6366f1,#a78bfa); color:#fff; border:none; }
+    .flow-step.teal { background:linear-gradient(135deg,#14b8a6,#2dd4bf); color:#fff; border:none; }
+    .flow-step.orange { background:linear-gradient(135deg,#ea580c,#f59e0b); color:#fff; border:none; }
+    .flow-arrow { font-size:20px; color:var(--text-secondary); }
+    .block-q { background:linear-gradient(135deg,#ecfdf5,#d1fae5); border-left:4px solid #059669; border-radius:0 var(--radius) var(--radius) 0; padding:18px 22px; margin:20px 0; }
+    .block-q p { font-size:14px; font-style:italic; color:#064e3b; line-height:1.7; }
+    .badge { display:inline-block; padding:3px 10px; border-radius:6px; font-size:12px; font-weight:600; }
+    .badge-green { background:#ecfdf5; color:#059669; }
+    .badge-teal { background:#f0fdfa; color:#14b8a6; }
+    .badge-blue { background:#eff6ff; color:#3b82f6; }
+    .badge-purple { background:#eef2ff; color:#6366f1; }
+    .footer { text-align:center; padding:48px 24px; border-top:1px solid var(--border); margin-top:40px; }
+    .footer a { color:var(--green); text-decoration:none; font-weight:500; }
+    .footer a:hover { text-decoration:underline; }
+    .footer .foot-links { display:flex; justify-content:center; gap:24px; flex-wrap:wrap; margin-bottom:12px; }
+    .footer .copy { font-size:12px; color:var(--text-secondary); }
+    @media(max-width:768px) {
+      .hero { padding:48px 18px 36px; }
+      .hero h1 { font-size:1.5rem; }
+      .stats { grid-template-columns:1fr 1fr; gap:10px; }
+      .page { padding:28px 16px; }
+      .toc-grid { grid-template-columns:1fr; }
+      .compare-grid { grid-template-columns:1fr; }
+      .flow { flex-direction:column; gap:8px; }
+      .flow-arrow { transform:rotate(90deg); }
+      .chart-label { width:100px; font-size:11px; }
+      .nav { padding:12px 16px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain Blog Hub</a>
+    <a href="../langchain/">&#x2190; Back to Hub</a>
+  </nav>
+
+  <header class="hero">
+    <div class="badge-cat">LangGraph Core</div>
+    <h1>The Anatomy of an Agent Harness</h1>
+    <p class="subtitle">LangChain Accounts &middot; 2026-03-11</p>
+    <p class="meta">Source: https://www.langchain.com/blog/the-anatomy-of-an-agent-harness</p>
+    <div class="stats">
+        <div class="stat">
+          <div class="num">12</div>
+          <div class="label">Core Sections</div>
+        </div>
+        <div class="stat">
+          <div class="num">9 min</div>
+          <div class="label">Reading Time</div>
+        </div>
+        <div class="stat">
+          <div class="num">17</div>
+          <div class="label">Key Points</div>
+        </div>
+        <div class="stat">
+          <div class="num">18</div>
+          <div class="label">External Links</div>
+        </div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc">
+      <h3>&#x1F4D1; Table of Contents</h3>
+      <div class="toc-grid">
+        <a href="#key-takeaways"><span class="num">1</span>Key Takeaways</a>
+        <a href="#can-someone-please-define-a-quotharnessq"><span class="num">2</span>Can Someone Please Define a &quot;Harness&quot;?</a>
+        <a href="#why-do-we-need-harnesses-from-a-modelx27"><span class="num">3</span>Why Do We Need Harnesses. From a Model's Pers</a>
+        <a href="#working-backwards-from-desired-agent-beh"><span class="num">4</span>Working Backwards from Desired Agent Behavior to H</a>
+        <a href="#filesystems-for-durable-storage-and-cont"><span class="num">5</span>Filesystems for Durable Storage and Context Manage</a>
+        <a href="#bash-code-as-a-general-purpose-tool"><span class="num">6</span>Bash + Code as a General Purpose Tool</a>
+        <a href="#sandboxes-and-tools-to-execute-amp-verif"><span class="num">7</span>Sandboxes and Tools to Execute &amp; Verify Work</a>
+        <a href="#memory-amp-search-for-continual-learning"><span class="num">8</span>Memory &amp; Search for Continual Learning</a>
+        <a href="#battling-context-rot"><span class="num">9</span>Battling Context Rot</a>
+        <a href="#long-horizon-autonomous-execution"><span class="num">10</span>Long Horizon Autonomous Execution</a>
+        <a href="#the-future-of-harnesses"><span class="num">11</span>The Future of Harnesses</a>
+        <a href="#where-harness-engineering-is-going"><span class="num">12</span>Where Harness Engineering is Going</a>
+      </div>
+    </nav>
+
+    <section class="section" id="key-takeaways">
+      <h2>&#x2705; Key Takeaways</h2>
+      <p class="lead">TLDR: Agent = Model + Harness.  Harness engineering is how we build systems around models to turn them into work engines.  The model contains the inte...</p>
+        <div class="card">
+          <ul style="list-style:disc;padding-left:20px;color:var(--text-secondary);font-size:14px;line-height:1.8;">
+            <li>Break down complex objectives: Planning tools let agents decompose tasks, track progress, and adapt as they learn</li>
+            <li>Delegate work in parallel: Spawn subagents for independent subtasks, each with isolated context</li>
+          </ul>
+        </div>
+      <div class="flow">
+                <div class="flow-step green">Concept</div>
+        <div class="flow-arrow">&#x2192;</div>
+        <div class="flow-step">Analysis</div>
+        <div class="flow-arrow">&#x2192;</div>
+        <div class="flow-step blue">Application</div>
+      </div>
+    </section>
+
+    <section class="section" id="can-someone-please-define-a-quotharnessq">
+      <h2>&#x1F536; Can Someone Please Define a &quot;Harness&quot;?</h2>
+      <p class="lead">Agent = Model + Harness...</p>
+        <div class="card"><p>If you're not the model, you're the harness.</p></div>
+        <div class="card"><p>A harness is every piece of code, configuration, and execution logic that isn't the model itself.  A raw model is not an agent. But it becomes one when a harness gives it things like state, tool execution, feedback loops, and enforceable constraints.</p></div>
+        <div class="card"><p>Concretely, a harness includes things like:</p></div>
+        <div class="card"><p>There are many messy ways to split the boundaries of an agent system between the model and the harness. But in my opinion, this is the cleanest definition because it forces us to think about designing systems around model intelligence.</p></div>
+        <div class="card">
+          <ul style="list-style:disc;padding-left:20px;color:var(--text-secondary);font-size:14px;line-height:1.8;">
+            <li>System Prompts</li>
+            <li>Tools, Skills, MCPs + and their descriptions</li>
+            <li>Bundled Infrastructure (filesystem, sandbox, browser)</li>
+            <li>Orchestration Logic (subagent spawning, handoffs, model routing)</li>
+            <li>Hooks/Middleware for deterministic execution (compaction, continuation, lint checks)</li>
+          </ul>
+        </div>
+
+    </section>
+
+    <section class="section" id="why-do-we-need-harnesses-from-a-modelx27">
+      <h2>&#x1F4A1; Why Do We Need Harnesses. From a Model's Perspective</h2>
+      <p class="lead">There are things we want an agent to do that a model cannot do out of the box. This is where a harness comes in.Models (mostly) take in data like text...</p>
+        <div class="card"><p>These are all harness level features. The structure of LLMs requires some sort of machinery that wraps them to do useful work.For example, to get a product UX like &quot;chatting&quot;, we wrap the model in a while loop to track previous messages and append new user messages. Everyone reading this has already used this kind of harness.  The main idea is that we want to convert a desired agent behavior into an actual feature in the harness.</p></div>
+        <div class="card">
+          <ul style="list-style:disc;padding-left:20px;color:var(--text-secondary);font-size:14px;line-height:1.8;">
+            <li>Maintain durable state across interactions</li>
+            <li>Execute code</li>
+            <li>Access realtime knowledge</li>
+            <li>Setup environments and install packages to complete work</li>
+          </ul>
+        </div>
+      <div class="compare-grid">
+        <div class="compare-card old">
+          <h4>&#x26A0; Challenges / Before</h4>
+          <ul>
+                        <li>There are things we want an agent to do that a model cannot do out of the box. This is where a harne...</li>
+          </ul>
+        </div>
+        <div class="compare-card new">
+          <h4>&#x2705; Solutions / After</h4>
+          <ul>
+                        <li>These are all harness level features. The structure of LLMs requires some sort of machinery that wra...</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="working-backwards-from-desired-agent-beh">
+      <h2>&#x1F916; Working Backwards from Desired Agent Behavior to Harness Engineering</h2>
+      <p class="lead">Harness Engineering helps humans inject useful priors to guide agent behavior. And as models have gotten more capable, harnesses have been used to sur...</p>
+        <div class="card"><p>We won’t go over an exhaustive list of every harness feature.  The goal is to derive a set of features from the starting point of helping models do useful work.  We’ll follow a pattern like this:</p></div>
+        <div class="card"><p>Behavior we want (or want to fix) → Harness Design to help the model achieve this.</p></div>
+
+    </section>
+
+    <section class="section" id="filesystems-for-durable-storage-and-cont">
+      <h2>&#x1F3D7; Filesystems for Durable Storage and Context Management</h2>
+      <p class="lead">We want agents to have durable storage to interface with real data, offload information that doesn't fit in context, and persist work across sessions....</p>
+        <div class="card"><p>Models can only directly operate on knowledge within their context window. Before filesystems, users had to copy/paste content directly to the model, that’s clunky UX and doesn't work for autonomous agents. The world was already using filesystems to do work so models were naturally trained on billions of tokens of how to use them. The natural solution became:</p></div>
+        <div class="card"><p>Harnesses ship with filesystem abstractions and tools for fs-ops.</p></div>
+        <div class="card"><p>The filesystem is arguably the most foundational harness primitive because of what it unlocks:</p></div>
+        <div class="card"><p>Git adds versioning to the filesystem so agents can track work, rollback errors, and branch experiments.  We revisit the filesystem more below, because it turns out to be a key harness primitive for other features we need.</p></div>
+        <div class="card">
+          <ul style="list-style:disc;padding-left:20px;color:var(--text-secondary);font-size:14px;line-height:1.8;">
+            <li>Agents get a workspace to read data, code, and documentation.</li>
+            <li>Work can be incrementally added and offloaded instead of holding everything in context. Agents can store intermediate outputs and maintain state that outlasts a single session.</li>
+            <li>The filesystem is a natural collaboration surface. Multiple agents and humans can coordinate through shared files.  Architectures like Agent Teams rely on this.</li>
+          </ul>
+        </div>
+
+    </section>
+
+    <section class="section" id="bash-code-as-a-general-purpose-tool">
+      <h2>&#x2699; Bash + Code as a General Purpose Tool</h2>
+      <p class="lead">We want agents to autonomously solve problems without humans needing to pre-design every tool....</p>
+        <div class="card"><p>The main agent execution pattern today is a ReAct loop, where a model reasons, takes an action via a tool call, observes the result, and repeats in a while loop. But harnesses can only execute the tools they have logic for.  Instead of forcing users to build tools for every possible action, a better solution is to give agents a general purpose tool like bash.</p></div>
+        <div class="card"><p>Harnesses ship with a bash tool so models can solve problems autonomously by writing &amp; executing code.</p></div>
+        <div class="card"><p>Bash + code exec is a big step towards giving models a computer and letting them figure out the rest autonomously. The model can design its own tools on the fly via code instead of being constrained to a fixed set of pre-configured tools.</p></div>
+        <div class="card"><p>Harnesses still ship with other tools, but code execution has become the default general-purpose strategy for autonomous problem solving.</p></div>
+
+    </section>
+
+    <section class="section" id="sandboxes-and-tools-to-execute-amp-verif">
+      <h2>&#x1F527; Sandboxes and Tools to Execute &amp; Verify Work</h2>
+      <p class="lead">Agents need an environment with the right defaults so they can safely act, observe results, and make progress....</p>
+        <div class="card"><p>We've given models storage and the ability to execute code, but all of that needs to happen somewhere.  Running agent-generated code locally is risky and a single local environment doesn’t scale to large agent workloads.</p></div>
+        <div class="card"><p>Sandboxes give agents safe operating environments. Instead of executing locally, the harness can connect to a sandbox to run code, inspect files, install dependencies, and complete tasks. This creates secure, isolated execution of code.  For more security, harnesses can allow-list commands and enforce network isolation.  Sandboxes also unlock scale because environments can be created on demand, fanned out across many tasks, and torn down when the work is done.</p></div>
+        <div class="card"><p>Good environments come with good default tooling. Harnesses are responsible for configuring tooling so agents can do useful work. This includes pre-installing language runtimes and packages, CLIs for git and testing, browsers for web interaction and verification.</p></div>
+        <div class="card"><p>Tools like browsers, logs, screenshots, and test runners give agents a way to observe and analyze their work. This helps them create self-verification loops where they can write application code, run tests, inspect logs, and fix errors.</p></div>
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Key Takeaways</div>
+          <div class="tl-desc">TLDR: Agent = Model + Harness.  Harness engineering is how we build systems arou...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Can Someone Please Define a &quot;Harnes</div>
+          <div class="tl-desc">Agent = Model + Harness...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Why Do We Need Harnesses. From a Model&amp;#</div>
+          <div class="tl-desc">There are things we want an agent to do that a model cannot do out of the box. T...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Working Backwards from Desired Agent Beh</div>
+          <div class="tl-desc">Harness Engineering helps humans inject useful priors to guide agent behavior. A...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Filesystems for Durable Storage and Cont</div>
+          <div class="tl-desc">We want agents to have durable storage to interface with real data, offload info...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Bash + Code as a General Purpose Tool</div>
+          <div class="tl-desc">We want agents to autonomously solve problems without humans needing to pre-desi...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Sandboxes and Tools to Execute &amp; Ver</div>
+          <div class="tl-desc">Agents need an environment with the right defaults so they can safely act, obser...</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="memory-amp-search-for-continual-learning">
+      <h2>&#x1F9E0; Memory &amp; Search for Continual Learning</h2>
+      <p class="lead">Agents should remember what they've seen and access information that didn't exist when they were trained....</p>
+        <div class="card"><p>Models have no additional knowledge beyond their weights and what's in their current context. Without access to edit model weights, the only way to &quot;add knowledge&quot; is via context injection.</p></div>
+        <div class="card"><p>For memory, the filesystem is again a core primitive. Harnesses support memory file standards like AGENTS.md which get injected into context on agent start.  As agents add and edit this file, harnesses load the updated file into context.  This is a form of continual learning where agents durably store knowledge from one session and inject that knowledge into future sessions.</p></div>
+        <div class="card"><p>Knowledge cutoffs mean that models can't directly access new data like updated library versions without the user providing them directly. For up-to-date knowledge, Web Search and MCP tools like Context7 help agents access information beyond the knowledge cutoff like new library versions or current data that didn't exist when training stopped.</p></div>
+        <div class="card"><p>Web Search and tools for querying up-to-date context are useful primitives to bake into a harness.</p></div>
+
+    </section>
+
+    <section class="section" id="battling-context-rot">
+      <h2>&#x1F539; Battling Context Rot</h2>
+      <p class="lead">Agent performance shouldn’t degrade over the course of work....</p>
+        <div class="card"><p>Context Rot describes how models become worse at reasoning and completing tasks as their context window fills up.  Context is a precious and scarce resource, so harnesses need strategies to manage it.</p></div>
+        <div class="card"><p>Harnesses today are largely delivery mechanisms for good context engineering.</p></div>
+        <div class="card"><p>Compaction addresses what to do when the context window is close to filling up.  Without compaction, what happens when a conversation exceeds the context window?  One option is that the API errors, that’s not good. The harness has to use some strategy for this case.  So compaction intelligently offloads and summarizes the existing context window so the agent can continue working.</p></div>
+        <div class="card"><p>Tool call offloading helps reduce the impact of large tool outputs that can noisily clutter the context window without providing useful information. The harness keeps the head and tail tokens of tool outputs above a threshold number of tokens and offloads the full output to the filesystem so the model can access it if needed.</p></div>
+
+    </section>
+
+    <section class="section" id="long-horizon-autonomous-execution">
+      <h2>&#x1F916; Long Horizon Autonomous Execution</h2>
+      <p class="lead">We want agents to complete complex work, autonomously, correctly, over long time horizons....</p>
+        <div class="card"><p>Autonomous software creation is the holy grail for coding agents. But today's models suffer from early stopping, issues decomposing complex problems, and incoherence as work stretches across multiple context windows.  A good harness has to design around all of this.</p></div>
+        <div class="card"><p>This is where the earlier harness primitives start to compound. Long-horizon work requires durable state, planning, observation, and verification to keep working across multiple context windows.</p></div>
+        <div class="card"><p>Ralph Loops for continuing work. The Ralph Loop is a harness pattern that intercepts the model's exit attempt via a hook and reinjects the original prompt in a clean context window, forcing the agent to continue its work against a completion goal. The filesystem makes this possible because each iteration starts with fresh context but reads state from the previous iteration.</p></div>
+        <div class="card"><p>Planning and self-verification to stay on track.  Planning is when a model decomposes a goal into a series of steps.  Harnesses support this via good prompting and injecting reminders how to use a plan file in the filesystem.  After completing each step, agents benefit from the checking correctness of their work via self-verification.  Hooks in harnesses can run a pre-defined test suite and loop back to the model on failure with the error message or models can be prompted to self-evaluate their </p></div>
+
+    </section>
+
+    <section class="section" id="the-future-of-harnesses">
+      <h2>&#x1F52E; The Future of Harnesses</h2>
+      <p class="lead">The Coupling of Model Training and Harness Design...</p>
+        <div class="card"><p>Today's agent products like Claude Code and Codex are post-trained with models and harnesses in the loop. This helps models improve at actions that the harness designers think they should be natively good at like filesystem operations, bash execution, planning, or parallelizing work with subagents.</p></div>
+        <div class="card"><p>This creates a feedback loop.  Useful primitives are discovered, added to the harness, and then used when training the next generation of models. As this cycle repeats, models become more capable within the harness they were trained in.</p></div>
+        <div class="card"><p>But this co-evolution has interesting side effects for generalization. It shows up in ways like how changing tool logic leads to worse model performance. A good example is described here in the Codex-5.3 prompting guide with the apply_patch tool logic for editing files.  A truly intelligent model should have little trouble switching between patch methods, but training with a harness in the loop creates this overfitting.</p></div>
+        <div class="card"><p>But this doesn't mean that the best harness for your task is the one a model was post-trained with. The Terminal Bench 2.0 Leaderboard is a good example. Opus 4.6 in Claude Code scores far below Opus 4.6 in other harnesses.  In a previous blog, we showed how we improved our coding agent Top 30 to Top 5 on Terminal Bench 2.0 by only changing the harness.  There's a lot of juice to be squeezed out of optimizing the harness for your task.</p></div>
+
+    </section>
+
+    <section class="section" id="where-harness-engineering-is-going">
+      <h2>&#x1F4CC; Where Harness Engineering is Going</h2>
+      <p class="lead">As models get more capable, some of what lives in the harness today will get absorbed into the model. Models will get better at planning, self-verific...</p>
+        <div class="card"><p>That suggests harnesses should matter less over time.  But just as prompt engineering continues to be valuable today, it’s likely that harness engineering will continue to be useful for building good agents.</p></div>
+        <div class="card"><p>It’s true that harnesses today patch over model deficiencies, but they also engineer systems around model intelligence to make them more effective.  A well-configured environment, the right tools, durable state, and verification loops make any model more efficient regardless of its base intelligence.</p></div>
+        <div class="card"><p>Harness engineering is a very active area of research that we use to improve our harness building library deepagents at LangChain. Here are a few open and interesting problems we’re exploring today:</p></div>
+        <div class="card"><p>This blog was an exercise in defining what a harness is and how it’s shaped by the work we want models to do.</p></div>
+        <div class="card">
+          <ul style="list-style:disc;padding-left:20px;color:var(--text-secondary);font-size:14px;line-height:1.8;">
+            <li>orchestrating hundreds of agents working in parallel on a shared codebase</li>
+            <li>agents that analyze their own traces to identify and fix harness-level failure modes</li>
+            <li>harnesses that dynamically assemble the right tools and context just-in-time for a given task instead of being pre-configured</li>
+          </ul>
+        </div>
+      <div class="compare-grid">
+        <div class="compare-card old">
+          <h4>&#x26A0; Challenges / Before</h4>
+          <ul>
+                        <li>As models get more capable, some of what lives in the harness today will get absorbed into the model...</li>
+            <li>It’s true that harnesses today patch over model deficiencies, but they also engineer systems around ...</li>
+            <li>This blog was an exercise in defining what a harness is and how it’s shaped by the work we want mode...</li>
+          </ul>
+        </div>
+        <div class="compare-card new">
+          <h4>&#x2705; Solutions / After</h4>
+          <ul>
+                        <li>That suggests harnesses should matter less over time.  But just as prompt engineering continues to b...</li>
+            <li>Harness engineering is a very active area of research that we use to improve our harness building li...</li>
+            <li>The model contains the intelligence and the harness is the system that makes that intelligence usefu...</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <footer class="footer">
+    <div class="foot-links">
+      <a href="../langchain/">&#x1F3E0; LangChain Hub</a>
+      <a href="https://www.langchain.com/blog/the-anatomy-of-an-agent-harness" target="_blank">&#x1F517; Original Article</a>
+    </div>
+    <p class="copy">Auto-generated deep-dive page &middot; Content from LangChain Blog</p>
+  </footer>
+</body>
+</html>

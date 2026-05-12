@@ -1,0 +1,264 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deep Dive: Two different types of agent authorization</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafbfc;
+      --surface: #fff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --green: #059669;
+      --emerald: #10b981;
+      --teal: #14b8a6;
+      --blue: #3b82f6;
+      --purple: #6366f1;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --orange: #ea580c;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans SC', 'Inter', system-ui, sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: var(--sans); background: var(--bg); color: var(--text); line-height:1.7; }
+    .nav { position:sticky; top:0; z-index:100; background:rgba(15,23,42,.88); backdrop-filter:blur(14px); padding:14px 32px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,.08); }
+    .nav a { color:#f1f5f9; text-decoration:none; font-weight:500; font-size:14px; }
+    .nav .brand { font-weight:700; font-size:16px; color:#34d399; }
+    .hero { background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%); color:#fff; padding:80px 32px 60px; text-align:center; }
+    .hero h1 { font-size:clamp(1.8rem,4vw,2.6rem); font-weight:800; margin-bottom:12px; line-height:1.3; }
+    .hero .subtitle { font-size:17px; color:rgba(255,255,255,.82); max-width:720px; margin:0 auto 12px; }
+    .hero .meta { font-size:13px; color:rgba(255,255,255,.5); margin-bottom:32px; }
+    .hero .badge-cat { display:inline-block; padding:4px 14px; border-radius:20px; font-size:12px; font-weight:600; background:rgba(52,211,153,.18); color:#6ee7b7; border:1px solid rgba(52,211,153,.3); margin-bottom:16px; }
+    .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; max-width:780px; margin:0 auto; }
+    .stat { background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.11); border-radius:12px; padding:18px 14px; backdrop-filter:blur(8px); }
+    .stat .num { font-size:26px; font-weight:800; color:#34d399; font-family:var(--mono); }
+    .stat .label { font-size:12px; color:rgba(255,255,255,.65); margin-top:4px; }
+    .page { max-width:900px; margin:0 auto; padding:40px 24px; }
+    .toc { margin-bottom:48px; }
+    .toc h3 { font-size:13px; text-transform:uppercase; letter-spacing:1.5px; color:var(--text-secondary); margin-bottom:16px; }
+    .toc-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:10px; }
+    .toc-grid a { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--text); font-size:14px; font-weight:500; transition:all .2s; }
+    .toc-grid a:hover { border-color:var(--green); background:#ecfdf5; }
+    .toc-grid .num { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:8px; background:linear-gradient(135deg,#059669,#14b8a6); color:#fff; font-size:12px; font-weight:700; flex-shrink:0; }
+    .section { margin-bottom:56px; }
+    .section h2 { font-size:clamp(1.3rem,3vw,1.6rem); font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    .lead { color:var(--text-secondary); font-size:15px; margin-bottom:20px; line-height:1.7; }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:22px; margin-bottom:14px; }
+    .card h4 { font-size:15px; font-weight:600; margin-bottom:8px; }
+    .card p { font-size:14px; color:var(--text-secondary); line-height:1.7; }
+    .chart { margin:24px 0; }
+    .chart-row { display:flex; align-items:center; margin-bottom:10px; gap:12px; }
+    .chart-label { width:160px; font-size:13px; font-weight:500; text-align:right; flex-shrink:0; }
+    .chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:30px; overflow:hidden; }
+    .chart-bar { height:100%; border-radius:8px; display:flex; align-items:center; justify-content:flex-end; padding-right:10px; font-size:12px; font-weight:600; color:#fff; transition:width .6s ease; }
+    .chart-bar.green { background:linear-gradient(90deg,#059669,#34d399); }
+    .chart-bar.teal { background:linear-gradient(90deg,#14b8a6,#2dd4bf); }
+    .chart-bar.blue { background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+    .chart-bar.purple { background:linear-gradient(90deg,#6366f1,#a78bfa); }
+    .chart-bar.amber { background:linear-gradient(90deg,#f59e0b,#fbbf24); }
+    .chart-bar.orange { background:linear-gradient(90deg,#ea580c,#fb923c); }
+    .chart-bar.red { background:linear-gradient(90deg,#ef4444,#f87171); }
+    .timeline { position:relative; padding-left:32px; margin:24px 0; }
+    .timeline::before { content:''; position:absolute; left:8px; top:0; bottom:0; width:3px; background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6,#6366f1); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:20px; }
+    .tl-dot { position:absolute; left:-28px; top:4px; width:14px; height:14px; border-radius:50%; border:3px solid #059669; background:#fff; }
+    .tl-item:nth-child(2) .tl-dot { border-color:#14b8a6; }
+    .tl-item:nth-child(3) .tl-dot { border-color:#3b82f6; }
+    .tl-item:nth-child(4) .tl-dot { border-color:#6366f1; }
+    .tl-item:nth-child(5) .tl-dot { border-color:#f59e0b; }
+    .tl-item:nth-child(6) .tl-dot { border-color:#ea580c; }
+    .tl-item:nth-child(7) .tl-dot { border-color:#ef4444; }
+    .tl-phase { font-weight:700; font-size:15px; margin-bottom:4px; }
+    .tl-desc { font-size:13px; color:var(--text-secondary); line-height:1.6; }
+    .compare-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:24px 0; }
+    .compare-card { border-radius:var(--radius); padding:22px; }
+    .compare-card.old { background:#fef2f2; border:2px solid #fecaca; }
+    .compare-card.new { background:#ecfdf5; border:2px solid #a7f3d0; }
+    .compare-card h4 { font-size:15px; font-weight:700; margin-bottom:8px; }
+    .compare-card ul { list-style:none; padding:0; }
+    .compare-card ul li { font-size:13px; padding:4px 0; color:var(--text-secondary); }
+    .flow { display:flex; align-items:center; justify-content:center; gap:12px; margin:24px 0; flex-wrap:wrap; }
+    .flow-step { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px 18px; font-size:13px; font-weight:600; text-align:center; min-width:100px; }
+    .flow-step.green { background:linear-gradient(135deg,#059669,#10b981); color:#fff; border:none; }
+    .flow-step.blue { background:linear-gradient(135deg,#3b82f6,#60a5fa); color:#fff; border:none; }
+    .flow-step.purple { background:linear-gradient(135deg,#6366f1,#a78bfa); color:#fff; border:none; }
+    .flow-step.teal { background:linear-gradient(135deg,#14b8a6,#2dd4bf); color:#fff; border:none; }
+    .flow-step.orange { background:linear-gradient(135deg,#ea580c,#f59e0b); color:#fff; border:none; }
+    .flow-arrow { font-size:20px; color:var(--text-secondary); }
+    .block-q { background:linear-gradient(135deg,#ecfdf5,#d1fae5); border-left:4px solid #059669; border-radius:0 var(--radius) var(--radius) 0; padding:18px 22px; margin:20px 0; }
+    .block-q p { font-size:14px; font-style:italic; color:#064e3b; line-height:1.7; }
+    .badge { display:inline-block; padding:3px 10px; border-radius:6px; font-size:12px; font-weight:600; }
+    .badge-green { background:#ecfdf5; color:#059669; }
+    .badge-teal { background:#f0fdfa; color:#14b8a6; }
+    .badge-blue { background:#eff6ff; color:#3b82f6; }
+    .badge-purple { background:#eef2ff; color:#6366f1; }
+    .footer { text-align:center; padding:48px 24px; border-top:1px solid var(--border); margin-top:40px; }
+    .footer a { color:var(--green); text-decoration:none; font-weight:500; }
+    .footer a:hover { text-decoration:underline; }
+    .footer .foot-links { display:flex; justify-content:center; gap:24px; flex-wrap:wrap; margin-bottom:12px; }
+    .footer .copy { font-size:12px; color:var(--text-secondary); }
+    @media(max-width:768px) {
+      .hero { padding:48px 18px 36px; }
+      .hero h1 { font-size:1.5rem; }
+      .stats { grid-template-columns:1fr 1fr; gap:10px; }
+      .page { padding:28px 16px; }
+      .toc-grid { grid-template-columns:1fr; }
+      .compare-grid { grid-template-columns:1fr; }
+      .flow { flex-direction:column; gap:8px; }
+      .flow-arrow { transform:rotate(90deg); }
+      .chart-label { width:100px; font-size:11px; }
+      .nav { padding:12px 16px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain Blog Hub</a>
+    <a href="../langchain/">&#x2190; Back to Hub</a>
+  </nav>
+
+  <header class="hero">
+    <div class="badge-cat">LangGraph Core</div>
+    <h1>Two different types of agent authorization</h1>
+    <p class="subtitle">LangChain Accounts &middot; 2026-03-23</p>
+    <p class="meta">Source: https://www.langchain.com/blog/two-different-types-of-agent-authorization</p>
+    <div class="stats">
+        <div class="stat">
+          <div class="num">5</div>
+          <div class="label">Core Sections</div>
+        </div>
+        <div class="stat">
+          <div class="num">3 min</div>
+          <div class="label">Reading Time</div>
+        </div>
+        <div class="stat">
+          <div class="num">2</div>
+          <div class="label">Key Points</div>
+        </div>
+        <div class="stat">
+          <div class="num">10</div>
+          <div class="label">External Links</div>
+        </div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc">
+      <h3>&#x1F4D1; Table of Contents</h3>
+      <div class="toc-grid">
+        <a href="#on-behalf-of"><span class="num">1</span>On-behalf-of</a>
+        <a href="#then-came-openclaw"><span class="num">2</span>Then came OpenClaw</a>
+        <a href="#langsmith-fleet"><span class="num">3</span>LangSmith Fleet</a>
+        <a href="#examples"><span class="num">4</span>Examples</a>
+        <a href="#future-work"><span class="num">5</span>Future work</a>
+      </div>
+    </nav>
+
+    <section class="section" id="on-behalf-of">
+      <h2>&#x1F4CC; On-behalf-of</h2>
+      <p class="lead">The standard way that most people thought of agents until recently is that they operate “on-behalf-of” a user....</p>
+        <div class="card"><p>Let’s imagine an onboarding agent with access to Notion and Rippling. When Alice interacts with it, it should be able to look up information about Alice in Rippling and see all pages in Notion that Alice has access to. Alice should not be able to use this onboarding agent to look up any private information about Bob in Rippling, or see any private Notion pages Bob might have. When Bob uses the onboarding agent, he should be able to access all his information in Rippling and all his private pages</p></div>
+        <div class="card"><p>In order to implement this, you need a few things. You need a way to know who is using the agent - is it Alice or is it Bob? You then need to map those user IDs to some auth credentials that are passed into tools at runtime.</p></div>
+      <div class="flow">
+                <div class="flow-step green">Concept</div>
+        <div class="flow-arrow">&#x2192;</div>
+        <div class="flow-step">Analysis</div>
+        <div class="flow-arrow">&#x2192;</div>
+        <div class="flow-step blue">Application</div>
+      </div>
+    </section>
+
+    <section class="section" id="then-came-openclaw">
+      <h2>&#x1F4CC; Then came OpenClaw</h2>
+      <p class="lead">On-behalf-of was the primary way that people thought of agents until OpenClaw came around. With OpenClaw, Alice would create an agent. Maybe she would...</p>
+        <div class="card"><p>When others interacted with that agent, it didn’t use the credentials of the end user - it used the authorization that Alice had given it.</p></div>
+        <div class="card"><p>Sometimes this could be Alice’s own credentials, but that might not be that desirable. If the agent had Alice’s credentials, it could look up anything in Notion that Alice had access to. That might include private documents that he may not want others to be able to ask the agent about.</p></div>
+        <div class="card"><p>This lead to people creating dedicated accounts in Notion, Rippling, etc specifically for that agent, so they could control what that agent had access to. Everyone interacting with that agent would then effectively be using the same set of credentials.</p></div>
+
+    </section>
+
+    <section class="section" id="langsmith-fleet">
+      <h2>&#x1F4CC; LangSmith Fleet</h2>
+      <p class="lead">When launching LangSmith Fleet, we saw that people wanted both types of agents. Sometimes they wanted to create an agent and let others use it with th...</p>
+        <div class="card"><p>Channels and these different authorization types also highlight the need for human in the loop. If you are creating an agent with a fixed set of credentials, and exposing it via a channel. You are opening it up to be used in a variety of ways. If that agent can take actions that may potentially be dangerous or sensitive, you might want to use some “human-in-the-loop” guardrails to ensure that those actions are gated.</p></div>
+        <div class="card">
+          <ul style="list-style:disc;padding-left:20px;color:var(--text-secondary);font-size:14px;line-height:1.8;">
+            <li>Assistants: act “on-behalf-of” their end user</li>
+            <li>Claws: have their own fixed credentials</li>
+          </ul>
+        </div>
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">On-behalf-of</div>
+          <div class="tl-desc">The standard way that most people thought of agents until recently is that they ...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Then came OpenClaw</div>
+          <div class="tl-desc">On-behalf-of was the primary way that people thought of agents until OpenClaw ca...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">LangSmith Fleet</div>
+          <div class="tl-desc">When launching LangSmith Fleet, we saw that people wanted both types of agents. ...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Examples</div>
+          <div class="tl-desc">To make this concrete, let’s take a look at a few of the real agents we’ve creat...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Future work</div>
+          <div class="tl-desc">We’re excited to rollout these two different agent types in LangSmith Fleet. We ...</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="examples">
+      <h2>&#x1F4CB; Examples</h2>
+      <p class="lead">To make this concrete, let’s take a look at a few of the real agents we’ve created and their authorization types....</p>
+        <div class="card"><p>Onboarding Agent: Assistant. Has access to Slack and Notion, and is exposed in Slack. Uses the end user’s Slack and Notion credentials.</p></div>
+        <div class="card"><p>Email Agent: Claw. This agent responds to incoming emails. Regardless of who is emailing, this agent will look at my calendar to determine meeting availability and attempt to respond on my behalf. Sending emails and calendar invites is gated behind a human-in-the-loop guardrail.</p></div>
+        <div class="card"><p>Product agent: Claw. This agent monitors competitors and help with product questions and roadmap. It has it’s own Notion account and is exposed via a custom Slack bot.</p></div>
+
+    </section>
+
+    <section class="section" id="future-work">
+      <h2>&#x1F52E; Future work</h2>
+      <p class="lead">We’re excited to rollout these two different agent types in LangSmith Fleet. We think this is just the start, however, of agent authorization. Read th...</p>
+        <div class="card"><p>Try out LangSmith Fleet today.</p></div>
+      <div class="compare-grid">
+        <div class="compare-card old">
+          <h4>&#x26A0; Challenges / Before</h4>
+          <ul>
+                        <li>We’re excited to rollout these two different agent types in LangSmith Fleet. We think this is just t...</li>
+          </ul>
+        </div>
+        <div class="compare-card new">
+          <h4>&#x2705; Solutions / After</h4>
+          <ul>
+                        <li>Try out LangSmith Fleet today.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <footer class="footer">
+    <div class="foot-links">
+      <a href="../langchain/">&#x1F3E0; LangChain Hub</a>
+      <a href="https://www.langchain.com/blog/two-different-types-of-agent-authorization" target="_blank">&#x1F517; Original Article</a>
+    </div>
+    <p class="copy">Auto-generated deep-dive page &middot; Content from LangChain Blog</p>
+  </footer>
+</body>
+</html>

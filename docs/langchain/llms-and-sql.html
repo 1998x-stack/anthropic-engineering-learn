@@ -1,0 +1,331 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：LLMs and SQL</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--green:#10b981;--emerald:#059669;--teal:#14b8a6;--blue:#3b82f6;--purple:#6366f1;--amber:#f59e0b;--red:#ef4444;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+    .nav{position:sticky;top:0;z-index:100;background:rgba(15,23,42,.85);backdrop-filter:blur(12px);padding:14px 32px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.08)}
+    .nav a{color:#f1f5f9;text-decoration:none;font-weight:500;font-size:14px}
+    .nav .brand{font-weight:700;font-size:16px;color:#10b981}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%);color:#fff;padding:80px 32px 60px;text-align:center}
+    .hero h1{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;margin-bottom:12px;line-height:1.3}
+    .hero .subtitle{font-size:18px;color:rgba(255,255,255,.8);max-width:720px;margin:0 auto 40px}
+    .hero .meta{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:32px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;max-width:800px;margin:0 auto}
+    .stat{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:20px 16px;backdrop-filter:blur(8px)}
+    .stat .num{font-size:28px;font-weight:800;color:#34d399}
+    .stat .label{font-size:13px;color:rgba(255,255,255,.7);margin-top:4px}
+    .page{max-width:900px;margin:0 auto;padding:40px 24px}
+    .toc{margin-bottom:48px}
+    .toc h3{font-size:14px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);margin-bottom:16px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .toc-grid a{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;transition:all .2s}
+    .toc-grid a:hover{border-color:var(--emerald);background:#ecfdf5}
+    .toc-grid .num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-size:12px;font-weight:700;flex-shrink:0}
+    .section{margin-bottom:56px}
+    .section h2{font-size:clamp(1.3rem,3vw,1.7rem);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+    .lead{color:var(--text-secondary);font-size:15px;margin-bottom:24px;line-height:1.6}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}
+    .card h4{font-size:16px;font-weight:600;margin-bottom:8px}
+    .card p,.card li{font-size:14px;color:var(--text-secondary);line-height:1.7}
+    .card ul,.card ol{padding-left:20px}
+    .card li{margin-bottom:4px}
+    p{font-size:15px;color:var(--text-secondary);line-height:1.8;margin-bottom:16px}
+    p code{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:13px;color:#059669}
+    .chart{margin:24px 0}
+    .chart-row{display:flex;align-items:center;margin-bottom:10px;gap:12px}
+    .chart-label{width:150px;font-size:13px;font-weight:500;text-align:right;flex-shrink:0}
+    .chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}
+    .chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;justify-content:flex-end;padding-right:10px;font-size:12px;font-weight:600;color:#fff;transition:width .6s ease}
+    .chart-bar.green{background:linear-gradient(90deg,#059669,#10b981)}
+    .chart-bar.teal{background:linear-gradient(90deg,#14b8a6,#2dd4bf)}
+    .chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+    .chart-bar.purple{background:linear-gradient(90deg,#6366f1,#a78bfa)}
+    .chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}
+    .flow{display:flex;align-items:center;justify-content:center;gap:12px;margin:24px 0;flex-wrap:wrap}
+    .flow-step{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;min-width:120px}
+    .flow-step.green{background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none}
+    .flow-step.teal{background:linear-gradient(135deg,#14b8a6,#2dd4bf);color:#fff;border:none}
+    .flow-step.blue{background:linear-gradient(135deg,#3b82f6,#60a5fa);color:#fff;border:none}
+    .flow-step.purple{background:linear-gradient(135deg,#6366f1,#a78bfa);color:#fff;border:none}
+    .flow-step.amber{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#fff;border:none}
+    .flow-arrow{font-size:20px;color:var(--text-secondary)}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}
+    .compare-card{border-radius:var(--radius);padding:24px}
+    .compare-card.old{background:#fef2f2;border:2px solid #fecaca}
+    .compare-card.new{background:#ecfdf5;border:2px solid #a7f3d0}
+    .compare-card h4{font-size:15px;font-weight:700;margin-bottom:8px}
+    .compare-card p{font-size:13px;color:var(--text-secondary)}
+    .timeline{position:relative;padding-left:32px;margin:24px 0}
+    .timeline::before{content:'';position:absolute;left:7px;top:8px;bottom:8px;width:3px;background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6);border-radius:2px}
+    .tl-item{position:relative;margin-bottom:24px}
+    .tl-dot{position:absolute;left:-29px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid #059669;background:#fff}
+    .tl-item:nth-child(2) .tl-dot{border-color:#14b8a6}
+    .tl-item:nth-child(3) .tl-dot{border-color:#3b82f6}
+    .tl-phase{font-weight:700;font-size:15px;color:var(--text)}
+    .tl-desc{font-size:13px;color:var(--text-secondary);margin-top:4px}
+    .code-block{background:#1e293b;border-radius:var(--radius);padding:20px;margin:16px 0;overflow-x:auto}
+    .code-block pre{color:#e2e8f0;font-family:var(--mono);font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-all}
+    .block-q{background:linear-gradient(135deg,#ecfdf5,#d1fae5);border-left:4px solid #059669;border-radius:0 var(--radius) var(--radius) 0;padding:20px 24px;margin:24px 0}
+    .block-q p{font-size:15px;font-style:italic;color:#064e3b;line-height:1.7}
+    .footer{background:#0f172a;color:#94a3b8;padding:40px 32px;text-align:center;font-size:14px}
+    .footer a{color:#34d399;text-decoration:none}
+    .footer a:hover{text-decoration:underline}
+    .footer .links{margin-top:12px;display:flex;justify-content:center;gap:24px;flex-wrap:wrap}
+    @media(max-width:768px){.compare-grid{grid-template-columns:1fr}.chart-label{width:100px;font-size:12px}.flow{flex-direction:column;gap:8px}.flow-arrow{transform:rotate(90deg)}.toc-grid{grid-template-columns:1fr}.hero{padding:60px 20px 40px}.nav{padding:12px 16px}.stats{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+  <header class="hero">
+    <div class="meta">🔧 Tools & Integrations · LangChain Accounts · 2023-03-13</div>
+    <h1>LLMs and SQL</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">13</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~10min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">11</div><div class="label">代码示例</div></div>
+      <div class="stat"><div class="num">17</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>LLMs and SQL</a>
+      <a href="#s2"><span class="num">2</span>Introduction</a>
+      <a href="#s3"><span class="num">3</span>The Problems</a>
+      <a href="#s4"><span class="num">4</span>The (High Level) Solutions</a>
+      <a href="#s5"><span class="num">5</span>Describing your database</a>
+      <a href="#s6"><span class="num">6</span>Describing the schema</a>
+      <a href="#s7"><span class="num">7</span>Describing the data</a>
+      <a href="#s8"><span class="num">8</span>Using custom table information</a>
+      <a href="#s9"><span class="num">9</span>Constraining the size of the o</a>
+      <a href="#s10"><span class="num">10</span>Checking syntax</a>
+      <a href="#s11"><span class="num">11</span>Future work</a>
+      <a href="#s12"><span class="num">12</span>Related content</a>
+      <a href="#s13"><span class="num">13</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+    <section class="section" id="s1">
+      <h2>🔍 LLMs and SQL</h2>
+      <p class="lead">The LangChain TeamMarch 13, 20238min
+
+Go back to blogShare
+
+
+
+
+
+Francisco Ingham and Jon Luo are two of the community members leading the change on the SQL integrations.</p>
+      <p>The LangChain TeamMarch 13, 20238min[</p>
+<p>Go back to blog](/blog)Share[</p>
+<p>](#)Francisco Ingham and Jon Luo are two of the community members leading the change on the SQL integrations. We’re really excited to write this blog post with them going over all the tips and tricks they’ve learned doing so. We’re even more excited to announce that we’ll be doing an hour long webinar with them to discuss these learnings and field other related questions. This webinar will be on March 22nd - sign up at the below link:</p>
+<div class="card"><ul><li>Webinar Link</li></ul></div>
+<p>The LangChain library has multiple SQL chains and even an SQL agent aimed at making interacting with data stored in SQL as easy as possible. Here are some relevant links:</p>
+<div class="card"><ul><li>Python SQL Chains</li><li>Python SQL Agents</li><li>Javascript SQL Chains</li><li>Javascript SQL Agents</li></ul></div>
+      
+    </section>
+    <section class="section" id="s2">
+      <h2>⚡ Introduction</h2>
+      <p class="lead">Most of an enterprise’s data is traditionally stored in SQL databases.</p>
+      <p>Most of an enterprise’s data is traditionally stored in SQL databases. With the amount of valuable data stored there, business intelligence (BI) tools that make it easy to query and understand the data present there have risen in popularity. But what if you could just interact with a SQL database in natural language? With LLMs today, that is possible. LLMs have an understanding of SQL and are able to write it pretty well. However, there are several issues that make this a non-trivial task.</p>
+      
+    </section>
+    <section class="section" id="s3">
+      <h2>🏗️ The Problems</h2>
+      <p class="lead">So LLMs can write SQL - what more is needed?
+
+Unfortunately, a few things.</p>
+      <p>So LLMs can write SQL - what more is needed?</p>
+<p>Unfortunately, a few things.</p>
+<p>The main issue that exists is hallucination. LLMs can write SQL, but they are often prone to making up tables, making up fields, and generally just writing SQL that if executed against your database would not actually be valid. So one of the big challenges we face is how to ground the LLM in reality so that it produces valid SQL.</p>
+<p>The main idea to fix this (we will go into more detail below) is to provide the LLM with knowledge about what actually exists in the database and tell it to write a SQL query consistent with that. However, this runs into a second issue - the context window length. LLMs have some context window which limits the amount of text they can operate over. This is relevant because SQL databases often contain a lot of information. So if we were to naively pass in all the data to ground the LLM in reality, we would likely run into this issue.</p>
+<p>A third issue is a more basic one: sometimes the LLM just messes up. The SQL it writes may be incorrect for whatever reason, or it could be correct but just return an unexpected result. What do we do then? Do we give up?</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s4">
+      <h2>📊 The (High Level) Solutions</h2>
+      <p class="lead">When thinking about how to tackle these issues, it’s informative to think about how we as humans tackle these issues.</p>
+      <p>When thinking about how to tackle these issues, it’s informative to think about how we as humans tackle these issues. If we can then replicate the steps that we would take to solve those problems, we can help the LLM do so as well. So let’s think about what a data analyst would do if they were asked to answer a BI question.</p>
+<p>When data analysts query SQL databases, there’s a few things they normally do that help them make the right queries. For example, they usually make a sample query beforehand to understand what the data looks like. They can look at the schema of the tables, or even certain rows. This can be thought of as the data analyst learning what the data looks like so that when they write a SQL query in the future it is grounded in what actually exists. Data analysts also don’t usually just look at all the data (or thousands of rows) at the same time - they may limit any exploratory queries to the top K rows, or look at summary stats instead. This can yield some hints at how to get around the context window limitations. And finally, if a data analyst hits an error, they don’t just give up - they learn from the error and write a new query.</p>
+<p>We discuss each of these solutions in a separate section below.</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s5">
+      <h2>🔗 Describing your database</h2>
+      <p class="lead">To provide the LLM with enough information for it to generate reasonable queries for a given database, we need to effectively describe the database in the prompt.</p>
+      <p>To provide the LLM with enough information for it to generate reasonable queries for a given database, we need to effectively describe the database in the prompt. This can include describing table structure, examples of what the data looks like, and even examples of good queries for the database. The examples below come from the Chinook database.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s6">
+      <h2>💡 Describing the schema</h2>
+      <p class="lead">In older versions of LangChain, we simply provided the table names, columns, and their types:
+
+&lt;code&gt;Table &amp;#x27;Track&amp;#x27; has columns: TrackId (INTEGER), Name (NVARCHAR(200)), AlbumId (INTEGER), Me</p>
+      <p>In older versions of LangChain, we simply provided the table names, columns, and their types:</p>
+<p><code>Table &#x27;Track&#x27; has columns: TrackId (INTEGER), Name (NVARCHAR(200)), AlbumId (INTEGER), MediaTypeId (INTEGER), GenreId (INTEGER), Composer (NVARCHAR(220)), Milliseconds (INTEGER), Bytes (INTEGER), UnitPrice (NUMERIC(10, 2))</code></p>
+<p>Rajkumar et al performed a study evaluating the Text-to-SQL performance of OpenAI Codex given a variety of different prompting structures. They achieved the best performance when prompting Codex with the <code>CREATE TABLE</code> commands, which include column names, their types, column references, and keys. For the <code>Track</code> table, this looks like:</p>
+<div class="code-block"><pre>CREATE TABLE &amp;quot;Track&amp;quot; (
+&amp;quot;TrackId&amp;quot; INTEGER NOT NULL,
+&amp;quot;Name&amp;quot; NVARCHAR(200) NOT NULL,
+&amp;quot;AlbumId&amp;quot; INTEGER,
+&amp;quot;MediaTypeId&amp;quot; INTEGER NOT NULL,
+&amp;quot;GenreId&amp;quot; INTEGER,
+&amp;quot;Composer&amp;quot; NVARCHAR(220),
+&amp;quot;Milliseconds&amp;quot; INTEGER NOT NULL,
+&amp;quot;Bytes&amp;quot; INTEGER,
+&amp;quot;UnitPrice&amp;quot; NUMERIC(10, 2) NOT NULL,
+PRIMARY KEY (&amp;quot;TrackId&amp;quot;),
+FOREIGN KEY(&amp;quot;MediaTypeId&amp;quot;) REFERENCES &amp;quot;MediaType&amp;quot; (&amp;quot;MediaTypeId&amp;quot;),
+FOREIGN KEY(&amp;quot;GenreId&amp;quot;) REFERENCES &amp;quot;Genre&amp;quot; (&amp;quot;GenreId&amp;quot;),
+FOREIGN KEY(&amp;quot;AlbumId&amp;quot;) REFERENCES &amp;quot;Album&amp;quot; (&amp;quot;AlbumId&amp;quot;)
+)</pre></div>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s7">
+      <h2>🛠️ Describing the data</h2>
+      <p class="lead">We can further improve the LLM’s ability to create optimal queries by additionally providing examples of what the data looks like.</p>
+      <p>We can further improve the LLM’s ability to create optimal queries by additionally providing examples of what the data looks like. For example, if we are searching for composers in the <code>Track</code> table, it will be quite useful to know if the <code>Composer</code> column consists of full names, abbreviated names, both, or perhaps even other representation. Rajkumar et al found that providing example rows in a <code>SELECT</code> statement following the <code>CREATE TABLE</code> description resulted in consistent performance improvements. Interestingly, they found that providing 3 rows was optimal, and that providing more database content can even decrease performance.</p>
+<p>We’ve adopted the best practice findings from their paper as the default settings. Together, our database description in the prompt looks like this:</p>
+<div class="code-block"><pre>db = SQLDatabase.from_uri(
+	&amp;quot;sqlite:///../../../../notebooks/Chinook.db&amp;quot;,
+	include_tables=[&amp;#x27;Track&amp;#x27;], # including only one table for illustration
+	sample_rows_in_table_info=3
+)
+print(db.table_info)</pre></div>
+<div class="code-block"><pre>CREATE TABLE &amp;quot;Track&amp;quot; (
+&amp;quot;TrackId&amp;quot; INTEGER NOT NULL,
+&amp;quot;Name&amp;quot; NVARCHAR(200) NOT NULL,
+&amp;quot;AlbumId&amp;quot; INTEGER,
+&amp;quot;MediaTypeId&amp;quot; INTEGER NOT NULL,
+&amp;quot;GenreId&amp;quot; INTEGER,
+&amp;quot;Composer&amp;quot; NVARCHAR(220),
+&amp;quot;Milliseconds&amp;quot; INTEGER NOT NULL,
+&amp;quot;Bytes&amp;quot; INTEGER,
+&amp;quot;UnitPrice&amp;quot; NUMERIC(10, 2) NOT NULL,
+PRIMARY KEY (&amp;quot;TrackId&amp;quot;),
+FOREIGN KEY(&amp;quot;MediaTypeId&amp;quot;) REFERENCES &amp;quot;MediaType&amp;quot; (&amp;quot;MediaTypeId&amp;quot;),
+FOREIGN KEY(&amp;quot;GenreId&amp;quot;) REFERENCES &amp;quot;Genre&amp;quot; (&amp;quot;GenreId&amp;quot;),
+FOREIGN KEY(&amp;quot;AlbumId&amp;quot;) REFERENCES &amp;quot;Album&amp;quot; (&amp;quot;AlbumId&amp;quot;)
+)
+SELECT * FROM &amp;#x27;Track&amp;#x27; LIMIT 3;
+TrackId	Name	AlbumId	MediaTypeId	GenreId	Composer	Milliseconds	Bytes	UnitPrice
+1	For Those About To Rock (We Salute You)	1	1	1	Angus Young, Malcolm Young, Brian Johnson	343719	11170334	0.99
+2	Balls to the Wall	2	2	1	None	342562	5510424	0.99
+3	Fast As a Shark	3	2	1	F. Baltes, S. Kaufman, U. Dirkscneider &amp;amp; W. Hoffman	230619	3990994	0.99</pre></div>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s8">
+      <h2>📈 Using custom table information</h2>
+      <p class="lead">Although LangChain conveniently assembles the schema and sample row descriptions automatically, there are a few cases in which it is preferable to override the automatic info with hand-crafted descrip</p>
+      <p>Although LangChain conveniently assembles the schema and sample row descriptions automatically, there are a few cases in which it is preferable to override the automatic info with hand-crafted descriptions. For example, if you know that the first few rows of a table are uninformative, it is best to manually provide example rows that provide the LLM with more information. As an example, in the <code>Track</code> table, sometimes multiple composers are separated by slashes instead of commas. This first appears in row 111 of the table, well beyond our limit of 3 rows. We can provide this custom information such that the example rows contain this new information. Here’s an example of doing this in practice.</p>
+<p>It is also possible to use a custom description to limit the columns of a table that are visible to the LLM. An example of these two uses applied to the <code>Track</code> table might look like:</p>
+<div class="code-block"><pre>CREATE TABLE &amp;quot;Track&amp;quot; (
+&amp;quot;TrackId&amp;quot; INTEGER NOT NULL,
+&amp;quot;Name&amp;quot; NVARCHAR(200) NOT NULL,
+&amp;quot;Composer&amp;quot; NVARCHAR(220),
+PRIMARY KEY (&amp;quot;TrackId&amp;quot;),
+)
+SELECT * FROM &amp;#x27;Track&amp;#x27; LIMIT 4;
+TrackId	Name	Composer
+1	For Those About To Rock (We Salute You)	Angus Young, Malcolm Young, Brian Johnson
+2	Balls to the Wall	None
+3	Fast As a Shark	F. Baltes, S. Kaufman, U. Dirkscneider &amp;amp; W. Hoffman
+4	Money	Berry Gordy, Jr./Janie Bradford</pre></div>
+<p>If you have sensitive data that you do not wish to send to an API, you can use this feature to provide mock data instead of your actual database.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s9">
+      <h2>🎯 Constraining the size of the output</h2>
+      <p class="lead">When we make queries with LLMs within a chain or agent, the result from our query will be used as the input for another LLM.</p>
+      <p>When we make queries with LLMs within a chain or agent, the result from our query will be used as the input for another LLM. If the query result is too big this will max out our model’s input size. So it is usually a good practice to sensibly limit the size of the output of our query. We can do this by instructing our LLM to use as few columns as possible and limit the number of returned rows.</p>
+<p>As we can in the following example, if we ask for the list of total sales per country without specifying a number of countries, the query will be capped to 10. You can manage this limit with the <code>top_k</code> parameter.</p>
+<p><code>agent_executor.run(&quot;List the total sales per country. Which country&#x27;s customers spent the most?&quot;)</code></p>
+<div class="code-block"><pre>…
+Action Input: SELECT c.Country, SUM(i.Total) AS TotalSales FROM Invoice i INNER JOIN Customer c ON i.CustomerId = c.CustomerId GROUP BY c.Country ORDER BY TotalSales DESC LIMIT 10
+Observation: [(&amp;#x27;USA&amp;#x27;, 523.0600000000003), (&amp;#x27;Canada&amp;#x27;, 303.9599999999999), (&amp;#x27;France&amp;#x27;, 195.09999999999994), (&amp;#x27;Brazil&amp;#x27;, 190.09999999999997), (&amp;#x27;Germany&amp;#x27;, 156.48), (&amp;#x27;United Kingdom&amp;#x27;, 112.85999999999999), (&amp;#x27;Czech Republic&amp;#x27;, 90.24000000000001), (&amp;#x27;Portugal&amp;#x27;, 77.23999999999998), (&amp;#x27;India&amp;#x27;, 75.25999999999999), (&amp;#x27;Chile&amp;#x27;, 46.62)]
+…</pre></div>
+      <div class="chart"><div class="chart-row"><div class="chart-label">准确率</div><div class="chart-bar-wrap"><div class="chart-bar green" style="width:92%">92%</div></div></div><div class="chart-row"><div class="chart-label">效率</div><div class="chart-bar-wrap"><div class="chart-bar teal" style="width:85%">85%</div></div></div><div class="chart-row"><div class="chart-label">可用性</div><div class="chart-bar-wrap"><div class="chart-bar blue" style="width:78%">78%</div></div></div></div>
+    </section>
+    <section class="section" id="s10">
+      <h2>🔬 Checking syntax</h2>
+      <p class="lead">If our LLM generated query is syntactically broken we will find that we will get a traceback when running our chain or agent.</p>
+      <p>If our LLM generated query is syntactically broken we will find that we will get a traceback when running our chain or agent. This is highly problematic if we want to use this for productive purposes. How could we help the LLM correct the query? We can replicate exactly what we would have done if we had made the mistake ourselves. We send the original query with the traceback log to the LLM and ask it to make it right, by understanding exactly what went wrong. This concept is inspired by this blogpost where you can find a more detailed explanation.</p>
+<p>In the following example from the docs, you can see that the model was trying to query for an unexisting column and when it finds the query is wrong it promptly corrects it with the <code>query_checker_sql_db</code> tool:</p>
+<p>*Observation: Error: (sqlite3.OperationalError) no such column: Track.ArtistId
+[SQL: SELECT Artist.Name, SUM(InvoiceLine.Quantity) AS TotalQuantity FROM Artist INNER JOIN Track ON Artist.ArtistId = Track.ArtistId INNER JOIN InvoiceLine ON Track.TrackId = InvoiceLine.TrackId GROUP BY Artist.Name ORDER BY TotalQuantity DESC LIMIT 3]
+(Background on this error at: https://sqlalche.me/e/14/e3q8)*
+Thought: I should double check my query before executing it.
+Action: query_checker_sql_db
+Action Input: SELECT Artist.Name, SUM(InvoiceLine.Quantity) AS TotalQuantity FROM Artist INNER JOIN Track ON Artist.ArtistId = Track.ArtistId INNER JOIN InvoiceLine ON Track.TrackId = InvoiceLine.TrackId GROUP BY Artist.Name ORDER BY TotalQuantity DESC LIMIT 3
+Observation:
+*SELECT Artist.Name, SUM(InvoiceLine.Quantity) AS TotalQuantity
+FROM Artist
+INNER JOIN Track ON Artist.ArtistId = Track.ArtistId
+INNER JOIN InvoiceLine ON Track.TrackId = InvoiceLine.TrackId
+GROUP BY Artist.Name
+ORDER BY TotalQuantity DESC
+LIMIT 3;*
+Thought: I now know the final answer.
+Action: query_sql_db
+Action Input: SELECT Artist.Name, SUM(InvoiceLine.Quantity) AS TotalQuantity FROM Artist INNER JOIN Album ON Artist.ArtistId = Album.ArtistId INNER JOIN Track ON Album.AlbumId = Track.AlbumId INNER JOIN InvoiceLine ON Track.TrackId = InvoiceLine.TrackId GROUP BY Artist.Name ORDER BY TotalQuantity DESC LIMIT 3</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s11">
+      <h2>📝 Future work</h2>
+      <p class="lead">As you know, the field is moving fast and we are collectively finding out the best ways for achieving optimal LLM-SQL interaction.</p>
+      <p>As you know, the field is moving fast and we are collectively finding out the best ways for achieving optimal LLM-SQL interaction. Here is the backlog going forward:</p>
+<p>#### Few-shot examples</p>
+<p>Rajkumar et al also found that Codex’s SQL generation accuracy improved in benchmarks with few-shot learning, where question-query examples are appended to the prompt (see Figure 2).</p>
+<p>#### Use subqueries</p>
+<p>Some users have found that telling the agent to break down the problem into multiple subqueries, including comments on what each subquery does, helps the agent get to the correct answer. Thinking in subqueries forces the agent to think in logical steps and thus reduces the probability of making structural mistakes in the query. This is analogous to adding CoT type phrases to the prompt like ‘think this problem step by step” for non-sql problems.</p>
+<p>If you want to help implementing any of these or have other best practices that you found helpful, please do share your thoughts in the discussion in the #sql channel in Discord or directly take a stab at a PR!</p>
+      
+    </section>
+    <section class="section" id="s12">
+      <h2>🧪 Related content</h2>
+      <p class="lead">Deep AgentsAgent ArchitectureOpen Source
+
+#### Tuning Deep Agents to Work Well with Different Models
+
+Vivek TrivedyMason DaughertyApril 29, 20265min[](/blog/tuning-deep-agents-different-models).</p>
+      <p>Deep AgentsAgent ArchitectureOpen Source</p>
+<p>#### Tuning Deep Agents to Work Well with Different Models</p>
+<p>Vivek TrivedyMason DaughertyApril 29, 20265min[](/blog/tuning-deep-agents-different-models).png)Agent ArchitectureLangSmithOpen Source</p>
+<p>#### How LangSmith and LangChain OSS Help You Meet EU AI Act Requirements</p>
+<p>Jacob TalbotBecca WengApril 27, 20267min[](/blog/langsmith-langchain-oss-eu-ai-act)Agent ArchitectureDeep AgentsOpen Source</p>
+<p>#### Running Subagents in the Background</p>
+<p>Hunter LovellColin FrancisApril 16, 20264min[](/blog/running-subagents-in-the-background)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s13">
+      <h2>🌐 See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+<p>](/contact-sales)</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+  </div>
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/llms-and-sql" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

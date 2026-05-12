@@ -1,0 +1,276 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Tutorial: ChatGPT Over Your Data</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--green:#10b981;--emerald:#059669;--teal:#14b8a6;--blue:#3b82f6;--purple:#6366f1;--amber:#f59e0b;--red:#ef4444;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+    .nav{position:sticky;top:0;z-index:100;background:rgba(15,23,42,.85);backdrop-filter:blur(12px);padding:14px 32px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.08)}
+    .nav a{color:#f1f5f9;text-decoration:none;font-weight:500;font-size:14px}
+    .nav .brand{font-weight:700;font-size:16px;color:#10b981}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%);color:#fff;padding:80px 32px 60px;text-align:center}
+    .hero h1{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;margin-bottom:12px;line-height:1.3}
+    .hero .subtitle{font-size:18px;color:rgba(255,255,255,.8);max-width:720px;margin:0 auto 40px}
+    .hero .meta{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:32px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;max-width:800px;margin:0 auto}
+    .stat{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:20px 16px;backdrop-filter:blur(8px)}
+    .stat .num{font-size:28px;font-weight:800;color:#34d399}
+    .stat .label{font-size:13px;color:rgba(255,255,255,.7);margin-top:4px}
+    .page{max-width:900px;margin:0 auto;padding:40px 24px}
+    .toc{margin-bottom:48px}
+    .toc h3{font-size:14px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);margin-bottom:16px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .toc-grid a{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;transition:all .2s}
+    .toc-grid a:hover{border-color:var(--emerald);background:#ecfdf5}
+    .toc-grid .num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-size:12px;font-weight:700;flex-shrink:0}
+    .section{margin-bottom:56px}
+    .section h2{font-size:clamp(1.3rem,3vw,1.7rem);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+    .lead{color:var(--text-secondary);font-size:15px;margin-bottom:24px;line-height:1.6}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}
+    .card h4{font-size:16px;font-weight:600;margin-bottom:8px}
+    .card p,.card li{font-size:14px;color:var(--text-secondary);line-height:1.7}
+    .card ul,.card ol{padding-left:20px}
+    .card li{margin-bottom:4px}
+    p{font-size:15px;color:var(--text-secondary);line-height:1.8;margin-bottom:16px}
+    p code{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:13px;color:#059669}
+    .chart{margin:24px 0}
+    .chart-row{display:flex;align-items:center;margin-bottom:10px;gap:12px}
+    .chart-label{width:150px;font-size:13px;font-weight:500;text-align:right;flex-shrink:0}
+    .chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}
+    .chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;justify-content:flex-end;padding-right:10px;font-size:12px;font-weight:600;color:#fff;transition:width .6s ease}
+    .chart-bar.green{background:linear-gradient(90deg,#059669,#10b981)}
+    .chart-bar.teal{background:linear-gradient(90deg,#14b8a6,#2dd4bf)}
+    .chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+    .chart-bar.purple{background:linear-gradient(90deg,#6366f1,#a78bfa)}
+    .chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}
+    .flow{display:flex;align-items:center;justify-content:center;gap:12px;margin:24px 0;flex-wrap:wrap}
+    .flow-step{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;min-width:120px}
+    .flow-step.green{background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none}
+    .flow-step.teal{background:linear-gradient(135deg,#14b8a6,#2dd4bf);color:#fff;border:none}
+    .flow-step.blue{background:linear-gradient(135deg,#3b82f6,#60a5fa);color:#fff;border:none}
+    .flow-step.purple{background:linear-gradient(135deg,#6366f1,#a78bfa);color:#fff;border:none}
+    .flow-step.amber{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#fff;border:none}
+    .flow-arrow{font-size:20px;color:var(--text-secondary)}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}
+    .compare-card{border-radius:var(--radius);padding:24px}
+    .compare-card.old{background:#fef2f2;border:2px solid #fecaca}
+    .compare-card.new{background:#ecfdf5;border:2px solid #a7f3d0}
+    .compare-card h4{font-size:15px;font-weight:700;margin-bottom:8px}
+    .compare-card p{font-size:13px;color:var(--text-secondary)}
+    .timeline{position:relative;padding-left:32px;margin:24px 0}
+    .timeline::before{content:'';position:absolute;left:7px;top:8px;bottom:8px;width:3px;background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6);border-radius:2px}
+    .tl-item{position:relative;margin-bottom:24px}
+    .tl-dot{position:absolute;left:-29px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid #059669;background:#fff}
+    .tl-item:nth-child(2) .tl-dot{border-color:#14b8a6}
+    .tl-item:nth-child(3) .tl-dot{border-color:#3b82f6}
+    .tl-phase{font-weight:700;font-size:15px;color:var(--text)}
+    .tl-desc{font-size:13px;color:var(--text-secondary);margin-top:4px}
+    .code-block{background:#1e293b;border-radius:var(--radius);padding:20px;margin:16px 0;overflow-x:auto}
+    .code-block pre{color:#e2e8f0;font-family:var(--mono);font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-all}
+    .block-q{background:linear-gradient(135deg,#ecfdf5,#d1fae5);border-left:4px solid #059669;border-radius:0 var(--radius) var(--radius) 0;padding:20px 24px;margin:24px 0}
+    .block-q p{font-size:15px;font-style:italic;color:#064e3b;line-height:1.7}
+    .footer{background:#0f172a;color:#94a3b8;padding:40px 32px;text-align:center;font-size:14px}
+    .footer a{color:#34d399;text-decoration:none}
+    .footer a:hover{text-decoration:underline}
+    .footer .links{margin-top:12px;display:flex;justify-content:center;gap:24px;flex-wrap:wrap}
+    @media(max-width:768px){.compare-grid{grid-template-columns:1fr}.chart-label{width:100px;font-size:12px}.flow{flex-direction:column;gap:8px}.flow-arrow{transform:rotate(90deg)}.toc-grid{grid-template-columns:1fr}.hero{padding:60px 20px 40px}.nav{padding:12px 16px}.stats{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+  <header class="hero">
+    <div class="meta">📚 Tutorials & Guides · LangChain Accounts · 2023-02-06</div>
+    <h1>Tutorial: ChatGPT Over Your Data</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">15</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~7min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">10</div><div class="label">代码示例</div></div>
+      <div class="stat"><div class="num">9</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>Tutorial: ChatGPT Over Your Da</a>
+      <a href="#s2"><span class="num">2</span>High Level Walkthrough</a>
+      <a href="#s3"><span class="num">3</span>Ingestion of data</a>
+      <a href="#s4"><span class="num">4</span>Querying of Data</a>
+      <a href="#s5"><span class="num">5</span>Ingestion of data</a>
+      <a href="#s6"><span class="num">6</span>Load Data</a>
+      <a href="#s7"><span class="num">7</span>Split Text</a>
+      <a href="#s8"><span class="num">8</span>Create embeddings and store in</a>
+      <a href="#s9"><span class="num">9</span>Query data</a>
+      <a href="#s10"><span class="num">10</span>Condense Question Prompt</a>
+      <a href="#s11"><span class="num">11</span>Question-Answering Prompt</a>
+      <a href="#s12"><span class="num">12</span>Language Model</a>
+      <a href="#s13"><span class="num">13</span>Putting it all together</a>
+      <a href="#s14"><span class="num">14</span>Related content</a>
+      <a href="#s15"><span class="num">15</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+    <section class="section" id="s1">
+      <h2>🔍 Tutorial: ChatGPT Over Your Data</h2>
+      <p class="lead">The LangChain TeamFebruary 5, 20236min
+
+Go back to blogShare
+
+
+
+
+
+Note: See the accompanying GitHub repo for this blogpost here.</p>
+      <p>The LangChain TeamFebruary 5, 20236min[</p>
+<p>Go back to blog](/blog)Share[</p>
+<p>](#)Note: See the accompanying GitHub repo for this blogpost here.</p>
+<p>ChatGPT has taken the world by storm. Millions are using it. But while it’s great for general purpose knowledge, it only knows information about what it has been trained on, which is pre-2021 generally available internet data. It doesn’t know about your private data, it doesn’t know about recent sources of data.</p>
+<p>Wouldn’t it be useful if it did?</p>
+<p>This blog post is a tutorial on how to set up your own version of ChatGPT over a specific corpus of data. There is an accompanying GitHub repo that has the relevant code referenced in this post. Specifically, this deals with text data. For how to interact with other sources of data with a natural language layer, see the below tutorials:</p>
+<div class="card"><ul><li>SQL Database</li><li>APIs</li></ul></div>
+      
+    </section>
+    <section class="section" id="s2">
+      <h2>⚡ High Level Walkthrough</h2>
+      <p class="lead">At a high level, there are two components to setting up ChatGPT over your own data: (1) ingestion of the data, (2) chatbot over the data.</p>
+      <p>At a high level, there are two components to setting up ChatGPT over your own data: (1) ingestion of the data, (2) chatbot over the data. Walking through the steps of each at a high level here:</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s3">
+      <h2>🏗️ Ingestion of data</h2>
+      <p class="lead">Diagram of ingestion process
+
+This can be broken in a few sub steps.</p>
+      <p>Diagram of ingestion process</p>
+<p>This can be broken in a few sub steps. All of these steps are highly modular and as part of this tutorial we will go over how to substitute steps out. The steps are:</p>
+<div class="card"><ul><li>Load data sources to text: this involves loading your data from arbitrary sources to text in a form that it can be used downstream. This is one place where we hope the community will help out!</li><li>Chunk text: this involves chunking the loaded text into smaller chunks. This is necessary because language models generally have a limit to the amount of text they can deal with, so creating as small chunks of text as possible is necessary.</li><li>Embed text: this involves creating a numerical embedding for each chunk of text. This is necessary because we only want to select the most relevant chunks of text for a given question, and we will do this by finding the most similar chunks in the embedding space.</li><li>Load embeddings to vectorstore: this involves putting embeddings and documents into a vectorstore. Vecstorstores help us find the most similar chunks in the embedding space quickly and efficiently.</li></ul></div>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s4">
+      <h2>📊 Querying of Data</h2>
+      <p class="lead">Diagram of query process
+
+This can also be broken into a few steps.</p>
+      <p>Diagram of query process</p>
+<p>This can also be broken into a few steps. Again, these steps are highly modular, and mostly rely on prompts that can be substituted out. The steps are:</p>
+<div class="card"><ul><li>Combine chat history and a new question into a single standalone question. This is necessary because we want to allow for the ability to ask follow up questions (an important UX consideration).</li><li>Lookup relevant documents. Using the embeddings and vectorstore created during ingestion, we can look up relevant documents for the answer</li><li>Generate a response. Given the standalone question and the relevant documents, we can use a language model to generate a response</li></ul></div>
+<p>We will also briefly touch on deployment of this chatbot, though not spend too much time on that (future post!)</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s5">
+      <h2>🔗 Ingestion of data</h2>
+      <p class="lead">This section dives into more detail on the steps necessary to ingest data.</p>
+      <p>This section dives into more detail on the steps necessary to ingest data.</p>
+<p>Diagram of ingestion process</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s6">
+      <h2>💡 Load Data</h2>
+      <p class="lead">First, we need to load data into a standard format.</p>
+      <p>First, we need to load data into a standard format. Again, because this tutorial is focused on text data, the common format will be a LangChain Document object. This object is pretty simple and consists of (1) the text itself, (2) any metadata associated with that text (where it came from, etc).</p>
+<p>Because there are so many potential places to load data from, this is one area we hope will be driven a lot by the community. At the very least, we hope to get a lot of example notebooks on how to load data from sources. Ideally, we will add the loading logic into the core library. See here for existing example notebooks, and see here for the underlying code. If you want to contribute, feel free to open a PR directly or open a GitHub issue with a snippet of your work.</p>
+<p>The line below contains the line of code responsible for loading the relevant documents. If you want to change the logic for how the documents are loading, this is the line of code you should change.</p>
+<div class="code-block"><pre>loader = UnstructuredFileLoader(&amp;quot;state_of_the_union.txt&amp;quot;)
+raw_documents = loader.load()</pre></div>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s7">
+      <h2>🛠️ Split Text</h2>
+      <p class="lead">In addition to just loading the text, we also need to make sure to chunk it up into small pieces.</p>
+      <p>In addition to just loading the text, we also need to make sure to chunk it up into small pieces. This is necessary in order to make sure we only pass the smallest, most relevant pieces of text to the language model. In order to split up the text, we will need to initialize a text splitter and then call it on the raw documents.</p>
+<p>The lines below are responsible for this. If you want to change how to the text is split, you should change these lines</p>
+<div class="code-block"><pre>text_splitter = RecursiveCharacterTextSplitter()
+documents = text_splitter.split_documents(raw_documents)</pre></div>
+      
+    </section>
+    <section class="section" id="s8">
+      <h2>📈 Create embeddings and store in vectorstore</h2>
+      <p class="lead">Next, now that we have small chunks of text we need to create embeddings for each piece of text and store them in a vectorstore.</p>
+      <p>Next, now that we have small chunks of text we need to create embeddings for each piece of text and store them in a vectorstore. This is done so that we can use the embeddings to find only the most relevant pieces of text to send to the language model.</p>
+<p>This is done with the following lines. Here we use OpenAI’s embeddings and a FAISS vectorstore. If we wanted to change either the embeddings used or the vectorstore used, this is where we would change them.</p>
+<div class="code-block"><pre>embeddings = OpenAIEmbeddings()
+vectorstore = FAISS.from_documents(documents, embeddings)</pre></div>
+<p>Finally, we save the created vectorstore so we can use it later. That way, we only need to run this ingest script once.</p>
+<div class="code-block"><pre>with open(&amp;quot;vectorstore.pkl&amp;quot;, &amp;quot;wb&amp;quot;) as f:
+	pickle.dump(vectorstore, f)</pre></div>
+<p>This is the entirety of the ingestion script! After you’ve modified this according to your preferences, you can then run <code>python ingest_data.py</code> to run the script. This should generate a <code>vectorstore.pkl</code> file.</p>
+      
+    </section>
+    <section class="section" id="s9">
+      <h2>🎯 Query data</h2>
+      <p class="lead">So now that we’ve ingested the data, we can now use it in a chatbot interface.</p>
+      <p>So now that we’ve ingested the data, we can now use it in a chatbot interface. In order to do this, we will use the ChatVectorDBChain. In order to customize this chain, there are a few things we can change.</p>
+<p>Diagram of ChatVectorDBChain</p>
+      
+    </section>
+    <section class="section" id="s10">
+      <h2>🔬 Condense Question Prompt</h2>
+      <p class="lead">The first thing we can control is the prompt that takes in the chat history and new question and produces a standalone question.</p>
+      <p>The first thing we can control is the prompt that takes in the chat history and new question and produces a standalone question. This is necessary because this standalone question is then used to look up relevant documents.</p>
+<p>This is a sneaky important step. If you just used the new question to look up relevant documents, your chatbot will not work well for follow up questions (because there may be information in the previous exchange that is needed to look up relevant docs). If you embed the whole chat history along with the new question to look up relevant documents, you may pull in documents no longer relevant to the conversation (if the new question is not related at all). Therefor, this step of condensing the chat history and a new question to a standalone question is very important.</p>
+<p>This prompt is the CONDENSE_QUESTION_PROMPT in the <code>query_data.py</code> file.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s11">
+      <h2>📝 Question-Answering Prompt</h2>
+      <p class="lead">The other lever you can pull is the prompt that takes in documents and the standalone question to answer the question.</p>
+      <p>The other lever you can pull is the prompt that takes in documents and the standalone question to answer the question. This can be customized to give your chatbot a particular conversational style.</p>
+<p>This prompt is the QA_PROMPT in the <code>query_data.py</code> file</p>
+<p>Note: when working off of the GitHub repo, you MUST change this prompt. The current prompt in there specifies that they should only answer questions about the state of the union address, which works for the dummy example but is probably not good for your use case.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s12">
+      <h2>🧪 Language Model</h2>
+      <p class="lead">The final lever to pull is what language model you use to power your chatbot.</p>
+      <p>The final lever to pull is what language model you use to power your chatbot. In our example we use the OpenAI LLM, but this can easily be substituted to other language models that LangChain supports, or you can even write your own wrapper.</p>
+      
+    </section>
+    <section class="section" id="s13">
+      <h2>🌐 Putting it all together</h2>
+      <p class="lead">After making all the necessary customizations, and running &lt;code&gt;python ingest_data.</p>
+      <p>After making all the necessary customizations, and running <code>python ingest_data.py</code>, how do you interact with this chatbot?</p>
+<p>We’ve exposed a really simple interface through which you can do. You can access this just by running <code>python cli_app.py</code> and this will open in the terminal a way to ask questions and get back answers. Try it out!</p>
+<p>We also have an example of deploying this app via Gradio! You can do so by running <code>python app.py</code>. This can also easily be deployed to Hugging Face spaces - see example space here.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s14">
+      <h2>📦 Related content</h2>
+      <p class="lead">.</p>
+      <p>.png)LangChainPartner</p>
+<p>#### A Developer’s First 10 Minutes: Secure LangChain Agents with Cisco AI Defense</p>
+<p>Siddhant DashApril 16, 20264min[](/blog/secure-agents-cisco-ai-defense)Tutorials &amp; How-Tos</p>
+<p>#### How we built LangChain’s GTM Agent</p>
+<p>The LangChain TeamMarch 9, 202611min[](/blog/how-we-built-langchains-gtm-agent)Company AnnouncementsLangChain</p>
+<p>#### LangChain Skills</p>
+<p>The LangChain TeamMarch 4, 20262min[](/blog/langchain-skills)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s15">
+      <h2>🔄 See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+<p>](/contact-sales)</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+  </div>
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/tutorial-chatgpt-over-your-data" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

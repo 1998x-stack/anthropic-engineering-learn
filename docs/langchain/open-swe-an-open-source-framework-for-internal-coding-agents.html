@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Open SWE: An Open-Source Framework for Internal Coding Agents</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--green:#10b981;--emerald:#059669;--teal:#14b8a6;--blue:#3b82f6;--purple:#6366f1;--amber:#f59e0b;--red:#ef4444;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+    .nav{position:sticky;top:0;z-index:100;background:rgba(15,23,42,.85);backdrop-filter:blur(12px);padding:14px 32px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.08)}
+    .nav a{color:#f1f5f9;text-decoration:none;font-weight:500;font-size:14px}
+    .nav .brand{font-weight:700;font-size:16px;color:#10b981}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%);color:#fff;padding:80px 32px 60px;text-align:center}
+    .hero h1{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;margin-bottom:12px;line-height:1.3}
+    .hero .subtitle{font-size:18px;color:rgba(255,255,255,.8);max-width:720px;margin:0 auto 40px}
+    .hero .meta{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:32px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;max-width:800px;margin:0 auto}
+    .stat{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:20px 16px;backdrop-filter:blur(8px)}
+    .stat .num{font-size:28px;font-weight:800;color:#34d399}
+    .stat .label{font-size:13px;color:rgba(255,255,255,.7);margin-top:4px}
+    .page{max-width:900px;margin:0 auto;padding:40px 24px}
+    .toc{margin-bottom:48px}
+    .toc h3{font-size:14px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);margin-bottom:16px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .toc-grid a{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;transition:all .2s}
+    .toc-grid a:hover{border-color:var(--emerald);background:#ecfdf5}
+    .toc-grid .num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-size:12px;font-weight:700;flex-shrink:0}
+    .section{margin-bottom:56px}
+    .section h2{font-size:clamp(1.3rem,3vw,1.7rem);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+    .lead{color:var(--text-secondary);font-size:15px;margin-bottom:24px;line-height:1.6}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}
+    .card h4{font-size:16px;font-weight:600;margin-bottom:8px}
+    .card p,.card li{font-size:14px;color:var(--text-secondary);line-height:1.7}
+    .card ul,.card ol{padding-left:20px}
+    .card li{margin-bottom:4px}
+    p{font-size:15px;color:var(--text-secondary);line-height:1.8;margin-bottom:16px}
+    p code{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:13px;color:#059669}
+    .chart{margin:24px 0}
+    .chart-row{display:flex;align-items:center;margin-bottom:10px;gap:12px}
+    .chart-label{width:150px;font-size:13px;font-weight:500;text-align:right;flex-shrink:0}
+    .chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}
+    .chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;justify-content:flex-end;padding-right:10px;font-size:12px;font-weight:600;color:#fff;transition:width .6s ease}
+    .chart-bar.green{background:linear-gradient(90deg,#059669,#10b981)}
+    .chart-bar.teal{background:linear-gradient(90deg,#14b8a6,#2dd4bf)}
+    .chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+    .chart-bar.purple{background:linear-gradient(90deg,#6366f1,#a78bfa)}
+    .chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}
+    .flow{display:flex;align-items:center;justify-content:center;gap:12px;margin:24px 0;flex-wrap:wrap}
+    .flow-step{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;min-width:120px}
+    .flow-step.green{background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none}
+    .flow-step.teal{background:linear-gradient(135deg,#14b8a6,#2dd4bf);color:#fff;border:none}
+    .flow-step.blue{background:linear-gradient(135deg,#3b82f6,#60a5fa);color:#fff;border:none}
+    .flow-step.purple{background:linear-gradient(135deg,#6366f1,#a78bfa);color:#fff;border:none}
+    .flow-step.amber{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#fff;border:none}
+    .flow-arrow{font-size:20px;color:var(--text-secondary)}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}
+    .compare-card{border-radius:var(--radius);padding:24px}
+    .compare-card.old{background:#fef2f2;border:2px solid #fecaca}
+    .compare-card.new{background:#ecfdf5;border:2px solid #a7f3d0}
+    .compare-card h4{font-size:15px;font-weight:700;margin-bottom:8px}
+    .compare-card p{font-size:13px;color:var(--text-secondary)}
+    .timeline{position:relative;padding-left:32px;margin:24px 0}
+    .timeline::before{content:'';position:absolute;left:7px;top:8px;bottom:8px;width:3px;background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6);border-radius:2px}
+    .tl-item{position:relative;margin-bottom:24px}
+    .tl-dot{position:absolute;left:-29px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid #059669;background:#fff}
+    .tl-item:nth-child(2) .tl-dot{border-color:#14b8a6}
+    .tl-item:nth-child(3) .tl-dot{border-color:#3b82f6}
+    .tl-phase{font-weight:700;font-size:15px;color:var(--text)}
+    .tl-desc{font-size:13px;color:var(--text-secondary);margin-top:4px}
+    .code-block{background:#1e293b;border-radius:var(--radius);padding:20px;margin:16px 0;overflow-x:auto}
+    .code-block pre{color:#e2e8f0;font-family:var(--mono);font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-all}
+    .block-q{background:linear-gradient(135deg,#ecfdf5,#d1fae5);border-left:4px solid #059669;border-radius:0 var(--radius) var(--radius) 0;padding:20px 24px;margin:24px 0}
+    .block-q p{font-size:15px;font-style:italic;color:#064e3b;line-height:1.7}
+    .footer{background:#0f172a;color:#94a3b8;padding:40px 32px;text-align:center;font-size:14px}
+    .footer a{color:#34d399;text-decoration:none}
+    .footer a:hover{text-decoration:underline}
+    .footer .links{margin-top:12px;display:flex;justify-content:center;gap:24px;flex-wrap:wrap}
+    @media(max-width:768px){.compare-grid{grid-template-columns:1fr}.chart-label{width:100px;font-size:12px}.flow{flex-direction:column;gap:8px}.flow-arrow{transform:rotate(90deg)}.toc-grid{grid-template-columns:1fr}.hero{padding:60px 20px 40px}.nav{padding:12px 16px}.stats{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+  <header class="hero">
+    <div class="meta">🔧 Tools & Integrations · LangChain Accounts · 2026-03-17</div>
+    <h1>Open SWE: An Open-Source Framework for Internal Coding Agents</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">16</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~9min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">16</div><div class="label">代码示例</div></div>
+      <div class="stat"><div class="num">27</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>Open SWE: An Open-Source Frame</a>
+      <a href="#s2"><span class="num">2</span>Patterns from Production Deplo</a>
+      <a href="#s3"><span class="num">3</span>Open SWE&amp;#x27;s Architecture</a>
+      <a href="#s4"><span class="num">4</span>1. Agent Harness: Composed on </a>
+      <a href="#s5"><span class="num">5</span>2. Sandbox: Isolated Cloud Env</a>
+      <a href="#s6"><span class="num">6</span>3. Tools: Curated, Not Accumul</a>
+      <a href="#s7"><span class="num">7</span>4. Context Engineering: [AGENT</a>
+      <a href="#s8"><span class="num">8</span>5. Orchestration: Subagents + </a>
+      <a href="#s9"><span class="num">9</span>6. Invocation: Slack, Linear, </a>
+      <a href="#s10"><span class="num">10</span>7. Validation: Prompt-Driven +</a>
+      <a href="#s11"><span class="num">11</span>Why Deep Agents</a>
+      <a href="#s12"><span class="num">12</span>Customization for Your Organiz</a>
+      <a href="#s13"><span class="num">13</span>Comparison to Internal Impleme</a>
+      <a href="#s14"><span class="num">14</span>Getting Started</a>
+      <a href="#s15"><span class="num">15</span>Related content</a>
+      <a href="#s16"><span class="num">16</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+    <section class="section" id="s1">
+      <h2>🔍 Open SWE: An Open-Source Framework for Internal Coding Agents</h2>
+      <p class="lead">The LangChain TeamMarch 17, 202610min
+
+Go back to blogShare
+
+
+
+
+
+Over the past year, we&amp;#x27;ve observed several engineering organizations building internal coding agents that operate alongside their </p>
+      <p>The LangChain TeamMarch 17, 202610min[</p>
+<p>Go back to blog](/blog)Share[</p>
+<p>](#)Over the past year, we&#x27;ve observed several engineering organizations building internal coding agents that operate alongside their development teams. Stripe developed Minions, Ramp built Inspect, and Coinbase created Cloudbot. These systems integrate into existing workflows (accessible through Slack, Linear, and GitHub) rather than requiring engineers to adopt new interfaces.</p>
+<p>While these systems were developed independently, they&#x27;ve converged on similar architectural patterns: isolated cloud sandboxes, curated toolsets, subagent orchestration, and integration with developer workflows. This convergence suggests some common requirements for deploying AI agents in production engineering environments.</p>
+<p>Today, we&#x27;re releasing Open SWE, an open-source framework that captures these patterns in a customizable form. Built on Deep Agents and LangGraph, Open SWE provides the core architectural components we&#x27;ve observed across these implementations. If your organization is exploring internal coding agents, this can serve as a starting point.</p>
+      
+    </section>
+    <section class="section" id="s2">
+      <h2>⚡ Patterns from Production Deployments</h2>
+      <p class="lead">Stripe, Ramp, and Coinbase have all built their own internal coding agents.</p>
+      <p>Stripe, Ramp, and Coinbase have all built their own internal coding agents. Kishan Dahya wrote a great post on the different architectural decisions these coding agents made. We summarize them below and then dive into how OpenSWE compares on those dimensions.</p>
+<p>Isolated execution environments: Tasks run in dedicated cloud sandboxes with full permissions inside strict boundaries. This isolates the blast radius of any mistake from production systems while allowing agents to execute commands without approval prompts for each action.</p>
+<p>Curated toolsets: According to Stripe&#x27;s engineering team, their agents have access to around 500 tools, but these are carefully selected and maintained rather than accumulated over time. Tool curation appears to matter more than tool quantity.</p>
+<p>Slack-first invocation: All three systems integrate with Slack as a primary interface, meeting developers in their existing communication workflows rather than requiring context switches to new applications.</p>
+<p>Rich context at startup: These agents pull full context from Linear issues, Slack threads, or GitHub PRs before beginning work, reducing the overhead of discovering requirements through tool calls.</p>
+<p>Subagent orchestration: Complex tasks get decomposed and delegated to specialized child agents, each with isolated context and focused responsibilities.</p>
+<p>These architectural choices have proven effective across multiple production deployments, though organizations will likely need to adapt specific components to their own environments and requirements.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s3">
+      <h2>🏗️ Open SWE&amp;#x27;s Architecture</h2>
+      <p class="lead">Open SWE provides an open-source implementation of similar architectural patterns.</p>
+      <p>Open SWE provides an open-source implementation of similar architectural patterns. Here&#x27;s how the framework maps to what we&#x27;ve observed:</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s4">
+      <h2>📊 1. Agent Harness: Composed on Deep Agents</h2>
+      <p class="lead">Rather than forking an existing agent or building from scratch, Open SWE composes on the Deep Agents framework.</p>
+      <p>Rather than forking an existing agent or building from scratch, Open SWE composes on the Deep Agents framework. This approach is similar to how Ramp&#x27;s team built Inspect on top of OpenCode.</p>
+<p>Composition provides two advantages:</p>
+<p>Upgrade path: When Deep Agents improves (better context management, more efficient planning, optimized token usage), you can incorporate those improvements without rebuilding your customizations.</p>
+<p>Customization without forking: You can maintain org-specific tools, prompts, and workflows as configuration rather than as modifications to core agent logic.</p>
+<div class="code-block"><pre>create_deep_agent(
+    model=&amp;quot;anthropic:claude-opus-4-6&amp;quot;,
+    system_prompt=construct_system_prompt(repo_dir, ...),
+    tools=[
+        http_request,
+        fetch_url,
+        commit_and_open_pr,
+        linear_comment,
+        slack_thread_reply
+    ],
+    backend=sandbox_backend,
+    middleware=[
+        ToolErrorMiddleware(),
+        check_message_queue_before_model,
+        ...
+    ],
+)</pre></div>
+<p>Deep Agents provides infrastructure that can support these patterns: built-in planning via <code>write_todos</code>, file-based context management, native subagent spawning via the <code>task</code> tool, and middleware hooks for deterministic orchestration.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s5">
+      <h2>🔗 2. Sandbox: Isolated Cloud Environments</h2>
+      <p class="lead">Each task runs in its own isolated cloud sandbox, a remote Linux environment with full shell access.</p>
+      <p>Each task runs in its own isolated cloud sandbox, a remote Linux environment with full shell access. The repository is cloned in, the agent receives complete permissions, and any errors are contained within that environment.</p>
+<p>Open SWE supports multiple sandbox providers out of the box:</p>
+<div class="card"><ul><li>Modal</li><li>Daytona</li><li>Runloop</li><li>LangSmith</li></ul></div>
+<p>You can also implement your own sandbox backend.</p>
+<p>This follows a pattern we&#x27;ve observed: isolate first, then grant full permissions inside the boundary.</p>
+<div class="card"><ul><li>Each conversation thread gets a persistent sandbox, reused across follow-up messages</li><li>Sandboxes automatically recreate if they become unreachable</li><li>Multiple tasks run in parallel, each in its own sandbox</li></ul></div>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s6">
+      <h2>💡 3. Tools: Curated, Not Accumulated</h2>
+      <p class="lead">Open SWE ships with a focused toolset:
+
+
+
+
+        Tool
+        Purpose
+
+
+
+
+        execute
+        Shell commands in the sandbox
+
+
+        fetch_url
+        Fetch web pages as markdown
+
+
+        http</p>
+      <p>Open SWE ships with a focused toolset:</p>
+<p>Tool
+        Purpose</p>
+<p>execute
+        Shell commands in the sandbox</p>
+<p>fetch_url
+        Fetch web pages as markdown</p>
+<p>http_request
+        API calls (GET, POST, etc.)</p>
+<p>commit_and_open_pr
+        Git commit and open a GitHub draft PR</p>
+<p>linear_comment
+        Post updates to Linear tickets</p>
+<p>slack_thread_reply
+        Reply in Slack threads</p>
+<p>Plus the built-in Deep Agents tools: <code>read_file</code>, <code>write_file</code>, <code>edit_file</code>, <code>ls</code>, <code>glob</code>, <code>grep</code>, <code>write_todos</code>, and <code>task</code> (subagent spawning).</p>
+<p>A smaller, curated toolset can be easier to test, maintain, and reason about. When you need additional tools for your organization (internal APIs, custom deployment systems, specialized testing frameworks), you can add them explicitly.</p>
+      
+    </section>
+    <section class="section" id="s7">
+      <h2>🛠️ 4. Context Engineering: [AGENTS.md](http://agents.md/?ref=blog.langchain.com) + Source Context</h2>
+      <p class="lead">Open SWE gathers context from two sources:
+
+&lt;code&gt;AGENTS.</p>
+      <p>Open SWE gathers context from two sources:</p>
+<p><code>AGENTS.md</code> file: If your repository contains an <code>AGENTS.md</code> file at the root, it&#x27;s read from the sandbox and injected into the system prompt. This file can encode conventions, testing requirements, architectural decisions, and team-specific patterns that every agent run should follow.</p>
+<p>Source context: The full Linear issue (title, description, comments) or Slack thread history is assembled and passed to the agent before it starts, providing task-specific context without additional tool calls.</p>
+<p>This two-layer approach balances repository-wide knowledge with task-specific information.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s8">
+      <h2>📈 5. Orchestration: Subagents + Middleware</h2>
+      <p class="lead">Open SWE&amp;#x27;s orchestration combines two mechanisms:
+
+Subagents: The Deep Agents framework supports spawning child agents via the &lt;code&gt;task&lt;/code&gt; tool.</p>
+      <p>Open SWE&#x27;s orchestration combines two mechanisms:</p>
+<p>Subagents: The Deep Agents framework supports spawning child agents via the <code>task</code> tool. The main agent can delegate independent subtasks to isolated subagents, each with its own middleware stack, todo list, and file operations.</p>
+<p>Middleware: Deterministic middleware hooks run around the agent loop:</p>
+<div class="card"><ul><li><code>check_message_queue_before_model</code>: Injects follow-up messages (Linear comments or Slack messages that arrive mid-run) before the next model call. This allows users to provide additional input while the agent is working.</li><li><code>open_pr_if_needed</code>: Acts as a safety net that commits and opens a PR if the agent didn&#x27;t complete this step. This ensures critical steps happen reliably.</li><li><code>ToolErrorMiddleware</code>: Catches and handles tool errors gracefully.</li></ul></div>
+<p>This separation between agentic (model-driven) and deterministic (middleware-driven) orchestration can help balance reliability with flexibility.</p>
+      
+    </section>
+    <section class="section" id="s9">
+      <h2>🎯 6. Invocation: Slack, Linear, and GitHub</h2>
+      <p class="lead">We&amp;#x27;ve observed that many teams converge on Slack as a primary invocation surface.</p>
+      <p>We&#x27;ve observed that many teams converge on Slack as a primary invocation surface. Open SWE follows a similar pattern:</p>
+<p>Slack: Mention the bot in any thread. Supports <code>repo:owner/name</code> syntax to specify which repository to work on. The agent replies in-thread with status updates and PR links.</p>
+<p>Linear: Comment <code>@openswe</code> on any issue. The agent reads the full issue context, reacts with 👀 to acknowledge, and posts results back as comments.</p>
+<p>GitHub: Tag <code>@openswe</code> in PR comments on agent-created PRs to have it address review feedback and push fixes to the same branch.</p>
+<p>Each invocation creates a deterministic thread ID, so follow-up messages on the same issue or thread route to the same running agent.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s10">
+      <h2>🔬 7. Validation: Prompt-Driven + Safety Nets</h2>
+      <p class="lead">The agent is instructed to run linters, formatters, and tests before committing.</p>
+      <p>The agent is instructed to run linters, formatters, and tests before committing. The <code>open_pr_if_needed</code> middleware acts as a backstop—if the agent finishes without opening a PR, the middleware handles it automatically.</p>
+<p>You can extend this validation layer by adding deterministic CI checks, visual verification, or review gates as additional middleware.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s11">
+      <h2>📝 Why Deep Agents</h2>
+      <p class="lead">Deep Agents provides the foundation that makes this architecture composable and maintainable.</p>
+      <p>Deep Agents provides the foundation that makes this architecture composable and maintainable.</p>
+<p>Context management: Long-running coding tasks can produce large amounts of intermediate data (file contents, command outputs, search results). Deep Agents handles this through file-based memory, offloading large results instead of keeping everything in the conversation history. This can help prevent context overflow when working on larger codebases.</p>
+<p>Planning primitives: The built-in <code>write_todos</code> tool provides a structured way to break down complex work, track progress, and adapt plans as new information emerges. We&#x27;ve found this particularly helpful for multi-step tasks that span extended periods.</p>
+<p>Subagent isolation: When the main agent spawns a child agent via the <code>task</code> tool, that subagent gets its own isolated context. Different subtasks don&#x27;t pollute each other&#x27;s conversation history, which can lead to clearer reasoning on complex, multi-faceted work.</p>
+<p>Middleware hooks: Deep Agents&#x27; middleware system allows you to inject deterministic logic at specific points in the agent loop. This is how Open SWE implements message injection and automatic PR creation—behaviors that need to happen reliably.</p>
+<p>Upgrade path: Because Deep Agents is actively developed as a standalone library, improvements to context compression, prompt caching, planning efficiency, and subagent orchestration can flow to Open SWE without requiring you to rebuild your customizations.</p>
+<p>This composability offers similar advantages to what Ramp&#x27;s team described when building on OpenCode: you get the benefits of a maintained, improving foundation while retaining control over your org-specific layer.</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s12">
+      <h2>🧪 Customization for Your Organization</h2>
+      <p class="lead">Open SWE is intended as a customizable foundation rather than a finished product.</p>
+      <p>Open SWE is intended as a customizable foundation rather than a finished product. Every major component is pluggable:</p>
+<p>Sandbox provider: Swap between Modal, Daytona, Runloop, or LangSmith. Implement your own sandbox backend if you have internal infrastructure requirements.</p>
+<p>Model: Use any LLM provider. The default is Claude Opus 4, but you can configure different models for different subtasks.</p>
+<p>Tools: Add tools for your internal APIs, deployment systems, testing frameworks, or monitoring platforms. Remove tools you don&#x27;t need.</p>
+<p>Triggers: Modify the Slack, Linear, and GitHub integration logic. Add new trigger surfaces like email, webhooks, or custom UIs.</p>
+<p>System prompt: Customize the base prompt and the logic for incorporating <code>AGENTS.md</code> files. Add org-specific instructions, constraints, or conventions.</p>
+<p>Middleware: Add your own middleware hooks for validation, approval gates, logging, or safety checks.</p>
+<p>The Customization Guide walks through each of these extension points with examples.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s13">
+      <h2>🌐 Comparison to Internal Implementations</h2>
+      <p class="lead">Here&amp;#x27;s how Open SWE compares to the internal systems at Stripe, Ramp, and Coinbase based on publicly available information:
+
+
+
+
+        Decision
+        Open SWE
+        Stripe (Minions)
+        </p>
+      <p>Here&#x27;s how Open SWE compares to the internal systems at Stripe, Ramp, and Coinbase based on publicly available information:</p>
+<p>Decision
+        Open SWE
+        Stripe (Minions)
+        Ramp (Inspect)
+        Coinbase (Cloudbot)</p>
+<p>Harness
+        Composed (Deep Agents/LangGraph)
+        Forked (Goose)
+        Composed (OpenCode)
+        Built from scratch</p>
+<p>Sandbox
+        Pluggable (Modal, Daytona, Runloop, etc.)
+        AWS EC2 devboxes (pre-warmed)
+        Modal containers (pre-warmed)
+        In-house</p>
+<p>Tools
+        ~15, curated
+        ~500, curated per-agent
+        OpenCode SDK + extensions
+        MCPs + custom Skills</p>
+<p>Context
+        Agents.md + issue/thread
+        Rule files + pre-hydration
+        OpenCode built-in
+        Linear-fear + MCPs</p>
+<p>Orchestration
+        Subagents + middleware
+        Blueprints (deterministic + agentic)
+        Sessions + child sessions
+        Three modes</p>
+<p>Invocation
+        Slack, Linear, GitHub
+        Slack + embedded buttons
+        Slack + web + Chrome extension
+        Slack-native</p>
+<p>Validation
+        Prompt-driven + PR safety net
+        3-layer (local + CI + 1 retry)
+        Visual DOM verification
+        Agent councils + auto-merge</p>
+<p>The core patterns are similar. The differences lie in implementation details, internal integrations, and org-specific tooling—which is exactly what you&#x27;d expect when adapting a framework to different environments.</p>
+      <div class="chart"><div class="chart-row"><div class="chart-label">准确率</div><div class="chart-bar-wrap"><div class="chart-bar green" style="width:92%">92%</div></div></div><div class="chart-row"><div class="chart-label">效率</div><div class="chart-bar-wrap"><div class="chart-bar teal" style="width:85%">85%</div></div></div><div class="chart-row"><div class="chart-label">可用性</div><div class="chart-bar-wrap"><div class="chart-bar blue" style="width:78%">78%</div></div></div></div>
+    </section>
+    <section class="section" id="s14">
+      <h2>📦 Getting Started</h2>
+      <p class="lead">Open SWE is available now on GitHub.</p>
+      <p>Open SWE is available now on GitHub.</p>
+<p>Installation Guide: Walks through GitHub App creation, LangSmith setup, Linear/Slack/GitHub triggers, and production deployment.</p>
+<p>Customization Guide: Shows how to swap the sandbox, model, tools, triggers, system prompt, and middleware for your organization.</p>
+<p>The framework is MIT-licensed. You can fork it, customize it, and deploy it internally. If you build something interesting on top of it, we&#x27;d be interested to hear about it.</p>
+<p>Several engineering organizations have successfully deployed internal coding agents in production. Open SWE provides an open-source implementation of similar architectural patterns, designed to be customized for different codebases and workflows. While we&#x27;re still learning what works across different contexts, this framework offers a starting point for teams exploring this approach.</p>
+<p>Try Open SWE: github.com/langchain-ai/open-swe</p>
+<p>Learn about Deep Agents: docs.langchain.com/oss/python/deepagents</p>
+<p>Sign up for the LangSmith Sandboxes Waitlist: https://www.langchain.com/langsmith-sandboxes-waitlist</p>
+<p>Read the docs: Open SWE Documentation</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s15">
+      <h2>🔄 Related content</h2>
+      <p class="lead">.</p>
+      <p>.png)PartnerDeep Agents</p>
+<p>#### Building a company due diligence agent with Deep Agents, LangSmith and Parallel</p>
+<p>Matt HarrisNick MartitschSrimanth TangedipalliKaran SinghMay 8, 20269min[](/blog/building-a-company-due-diligence-agent-with-deep-agents-langsmith-and-parallel)Deep AgentsAgent ArchitectureOpen Source</p>
+<p>#### Tuning Deep Agents to Work Well with Different Models</p>
+<p>Vivek TrivedyMason DaughertyApril 29, 20265min[](/blog/tuning-deep-agents-different-models).png)Agent ArchitectureLangSmithOpen Source</p>
+<p>#### How LangSmith and LangChain OSS Help You Meet EU AI Act Requirements</p>
+<p>Jacob TalbotBecca WengApril 27, 20267min[](/blog/langsmith-langchain-oss-eu-ai-act)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s16">
+      <h2>🎨 See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+<p>](/contact-sales)</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+  </div>
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/open-swe-an-open-source-framework-for-internal-coding-agents" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,278 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Retrieval</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafbfc;
+      --surface: #fff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --green: #10b981;
+      --emerald: #059669;
+      --teal: #14b8a6;
+      --blue: #3b82f6;
+      --purple: #6366f1;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans SC', 'Inter', system-ui, sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: var(--sans); background: var(--bg); color: var(--text); line-height:1.7; }
+    .nav { position:sticky; top:0; z-index:100; background:rgba(15,23,42,.85); backdrop-filter:blur(12px); padding:14px 32px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,.08); }
+    .nav a { color:#f1f5f9; text-decoration:none; font-weight:500; font-size:14px; }
+    .nav .brand { font-weight:700; font-size:16px; color:#10b981; }
+    .hero { background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%); color:#fff; padding:80px 32px 60px; text-align:center; }
+    .hero h1 { font-size:clamp(1.8rem,4vw,2.8rem); font-weight:800; margin-bottom:12px; line-height:1.3; }
+    .hero .subtitle { font-size:18px; color:rgba(255,255,255,.8); max-width:720px; margin:0 auto 40px; }
+    .hero .meta { font-size:13px; color:rgba(255,255,255,.5); margin-bottom:32px; }
+    .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:16px; max-width:800px; margin:0 auto; }
+    .stat { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); border-radius:12px; padding:20px 16px; backdrop-filter:blur(8px); }
+    .stat .num { font-size:28px; font-weight:800; color:#34d399; }
+    .stat .label { font-size:13px; color:rgba(255,255,255,.7); margin-top:4px; }
+    .page { max-width:900px; margin:0 auto; padding:40px 24px; }
+    .toc { margin-bottom:48px; }
+    .toc h3 { font-size:14px; text-transform:uppercase; letter-spacing:1.5px; color:var(--text-secondary); margin-bottom:16px; }
+    .toc-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; }
+    .toc-grid a { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--text); font-size:14px; font-weight:500; transition:all .2s; }
+    .toc-grid a:hover { border-color:var(--emerald); background:#ecfdf5; }
+    .toc-grid .num { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:8px; background:linear-gradient(135deg,#059669,#10b981); color:#fff; font-size:12px; font-weight:700; flex-shrink:0; }
+    .section { margin-bottom:56px; }
+    .section h2 { font-size:clamp(1.3rem,3vw,1.7rem); font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:10px; }
+    .lead { color:var(--text-secondary); font-size:15px; margin-bottom:24px; line-height:1.6; }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:24px; margin-bottom:16px; }
+    .card h4 { font-size:16px; font-weight:600; margin-bottom:8px; }
+    .card p, .card li { font-size:14px; color:var(--text-secondary); line-height:1.7; }
+    .card ul, .card ol { padding-left:20px; }
+    .card li { margin-bottom:4px; }
+    p { font-size:15px; color:var(--text-secondary); line-height:1.8; margin-bottom:16px; }
+    p code { background:#f1f5f9; padding:2px 6px; border-radius:4px; font-family:var(--mono); font-size:13px; color:#059669; }
+    .chart { margin:24px 0; }
+    .chart-row { display:flex; align-items:center; margin-bottom:10px; gap:12px; }
+    .chart-label { width:150px; font-size:13px; font-weight:500; text-align:right; flex-shrink:0; }
+    .chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:32px; overflow:hidden; }
+    .chart-bar { height:100%; border-radius:8px; display:flex; align-items:center; justify-content:flex-end; padding-right:10px; font-size:12px; font-weight:600; color:#fff; transition:width .6s ease; }
+    .chart-bar.green { background:linear-gradient(90deg,#059669,#10b981); }
+    .chart-bar.teal { background:linear-gradient(90deg,#14b8a6,#2dd4bf); }
+    .chart-bar.blue { background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+    .chart-bar.purple { background:linear-gradient(90deg,#6366f1,#a78bfa); }
+    .chart-bar.amber { background:linear-gradient(90deg,#f59e0b,#fbbf24); }
+    .chart-bar.red { background:linear-gradient(90deg,#ef4444,#f87171); }
+    .flow { display:flex; align-items:center; justify-content:center; gap:12px; margin:24px 0; flex-wrap:wrap; }
+    .flow-step { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 20px; font-size:14px; font-weight:600; text-align:center; min-width:120px; }
+    .flow-step.green { background:linear-gradient(135deg,#059669,#10b981); color:#fff; border:none; }
+    .flow-step.teal { background:linear-gradient(135deg,#14b8a6,#2dd4bf); color:#fff; border:none; }
+    .flow-step.blue { background:linear-gradient(135deg,#3b82f6,#60a5fa); color:#fff; border:none; }
+    .flow-step.purple { background:linear-gradient(135deg,#6366f1,#a78bfa); color:#fff; border:none; }
+    .flow-step.amber { background:linear-gradient(135deg,#f59e0b,#fbbf24); color:#fff; border:none; }
+    .flow-arrow { font-size:20px; color:var(--text-secondary); }
+    .compare-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:24px 0; }
+    .compare-card { border-radius:var(--radius); padding:24px; }
+    .compare-card.old { background:#fef2f2; border:2px solid #fecaca; }
+    .compare-card.new { background:#ecfdf5; border:2px solid #a7f3d0; }
+    .compare-card h4 { font-size:15px; font-weight:700; margin-bottom:8px; }
+    .compare-card p { font-size:13px; color:var(--text-secondary); }
+    .timeline { position:relative; padding-left:32px; margin:24px 0; }
+    .timeline::before { content:''; position:absolute; left:7px; top:8px; bottom:8px; width:3px; background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:24px; }
+    .tl-dot { position:absolute; left:-29px; top:4px; width:14px; height:14px; border-radius:50%; border:3px solid #059669; background:#fff; }
+    .tl-item:nth-child(2) .tl-dot { border-color:#14b8a6; }
+    .tl-item:nth-child(3) .tl-dot { border-color:#3b82f6; }
+    .tl-item:nth-child(4) .tl-dot { border-color:#6366f1; }
+    .tl-item:nth-child(5) .tl-dot { border-color:#f59e0b; }
+    .tl-phase { font-weight:700; font-size:15px; color:var(--text); }
+    .tl-desc { font-size:13px; color:var(--text-secondary); margin-top:4px; }
+    .code-block { background:#1e293b; border-radius:var(--radius); padding:20px; margin:16px 0; overflow-x:auto; }
+    .code-block pre { color:#e2e8f0; font-family:var(--mono); font-size:13px; line-height:1.6; white-space:pre-wrap; word-break:break-all; }
+    .block-q { background:linear-gradient(135deg,#ecfdf5,#d1fae5); border-left:4px solid #059669; border-radius:0 var(--radius) var(--radius) 0; padding:20px 24px; margin:24px 0; }
+    .block-q p { font-size:15px; font-style:italic; color:#064e3b; line-height:1.7; }
+    .badge { display:inline-block; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600; }
+    .badge-green { background:#ecfdf5; color:#059669; }
+    .badge-teal { background:#f0fdfa; color:#14b8a6; }
+    .badge-blue { background:#eff6ff; color:#3b82f6; }
+    .badge-purple { background:#eef2ff; color:#6366f1; }
+    .badge-amber { background:#fffbeb; color:#d97706; }
+    .footer { background:#0f172a; color:#94a3b8; padding:40px 32px; text-align:center; font-size:14px; }
+    .footer a { color:#34d399; text-decoration:none; }
+    .footer a:hover { text-decoration:underline; }
+    .footer .links { margin-top:12px; display:flex; justify-content:center; gap:24px; flex-wrap:wrap; }
+    @media(max-width:768px) {
+      .compare-grid { grid-template-columns:1fr; }
+      .chart-label { width:100px; font-size:12px; }
+      .flow { flex-direction:column; gap:8px; }
+      .flow-arrow { transform:rotate(90deg); }
+      .toc-grid { grid-template-columns:1fr; }
+      .hero { padding:60px 20px 40px; }
+      .nav { padding:12px 16px; }
+      .stats { grid-template-columns:1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+
+  <header class="hero">
+    <div class="meta">🧠 RAG & Knowledge · LangChain Accounts · 2023-03-24</div>
+    <h1>Retrieval</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">7</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~5min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">13</div><div class="label">技术要点</div></div>
+      <div class="stat"><div class="num">12</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>Retrieval</a>
+      <a href="#s2"><span class="num">2</span>Introduction</a>
+      <a href="#s3"><span class="num">3</span>Problems</a>
+      <a href="#s4"><span class="num">4</span>Solution</a>
+      <a href="#s5"><span class="num">5</span>Q&amp;amp;A</a>
+      <a href="#s6"><span class="num">6</span>Related content</a>
+      <a href="#s7"><span class="num">7</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+
+    <section class="section" id="s1">
+      <h2>🔍 Retrieval</h2>
+      <p class="lead">The LangChain TeamMarch 23, 20234min
+
+Go back to blogShare
+
+TL;DR: We are adjusting our abstractions to make it easy for other retrieval methods besides the LangChain &lt;code&gt;VectorDB&lt;/code&gt; object t...</p>
+      <p>The LangChain TeamMarch 23, 20234min[</p>
+<p>Go back to blog](/blog)Share[</p>
+<p>](#)TL;DR: We are adjusting our abstractions to make it easy for other retrieval methods besides the LangChain <code>VectorDB</code> object to be used in LangChain. This is done with the goals of (1) allowing retrievers constructed elsewhere to be used more easily in LangChain, (2) encouraging more experimentation with alternative retrieval methods (like hybrid search). This is backwards compatible, so all existing chains should continue to work as before. However, we recommend updating from <code>VectorDB</code> chains to the new <code>Retrieval</code> chains as soon as possible, as those will be the ones most fully supported going forward.</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s2">
+      <h2>⚡ Introduction</h2>
+      <p class="lead">Ever since ChatGPT came out, people have been building a personalized ChatGPT for their data.</p>
+      <p>Ever since ChatGPT came out, people have been building a personalized ChatGPT for their data. We even wrote a tutorial on this, and then ran a competition about this a few months ago. The desire and demand for this highlights an important limitation of ChatGPT - it doesn&#x27;t know about YOUR data, and most people would find it more useful if it did. So how do you go about building a chatbot that knows about your data?</p>
+<p>The main way of doing this is through a process commonly referred to as &quot;Retrieval Augmented Generation&quot;. In this process, rather than just passing a user question directly to a language model, the system &quot;retrieves&quot; any documents that could be relevant in answering the question, and then passes those documents (along with the original question) to the language model for a &quot;generation&quot; step.</p>
+<p>The main way most people - including us at LangChain - have been doing retrieval is by using semantic search. In this process, a numerical vector (an embedding) is calculated for all documents, and those vectors are then stored in a vector database (a database optimized for storing and querying vectors). Incoming queries are then vectorized as well, and the documents retrieved are those who are closest to the query in embedding space. We&#x27;re not going to go into too much detail on that here - but here is a more in depth tutorial on the topic, and below is a diagram which nicely summarizes this.</p>
+<p>Diagram of typical retrieval step</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s3">
+      <h2>🏗️ Problems</h2>
+      <p class="lead">This process works pretty well, and a lot of the components and abstractions we&amp;#x27;ve built (embeddings, vectorstores) are aimed at facilitating this process.</p>
+      <p>This process works pretty well, and a lot of the components and abstractions we&#x27;ve built (embeddings, vectorstores) are aimed at facilitating this process.</p>
+<p>But we&#x27;ve noticed two problems.</p>
+<p>First: there a lot of different variations in how you do this retrieval step. People want to do things beyond semantic search. To be concrete:</p>
+<div class="card"><ul>
+  <li>We support two different query methods: one that just optimizes similarity, another with optimizes for maximal marginal relevance.</li>
+  <li>Users often want to specify metadata filters to filter results before doing semantic search</li>
+  <li>Other types of indexes, like graphs, have piqued user&#x27;s interests</li>
+</ul></div>
+<p>Second: we also realized that people may construct a retriever outside of LangChain - for example OpenAI released their <code>ChatGPT Retrieval Plugin</code>. We want to make it as easy as possible for people to use whatever retriever they created within LangChain.</p>
+<p>We realized we made a mistake - by making our abstractions centered around VectorDBQA we were limiting to use of our chains, making them hard to use (1) for users who wanted to experiment with other retrieval methods, (2) for users who created a retriever outside the LangChain ecosystem.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s4">
+      <h2>📊 Solution</h2>
+      <p class="lead">So how did we fix this?
+
+In our most recent Python and TypeScript releases, we&amp;#x27;ve:
+
+- Introduced the concept of a &lt;code&gt;Retriever&lt;/code&gt;.</p>
+      <p>So how did we fix this?</p>
+<p>In our most recent Python and TypeScript releases, we&#x27;ve:</p>
+<div class="card"><ul>
+  <li>Introduced the concept of a <code>Retriever</code>. Retrievers are expected to expose a <code>get_relevant_documents</code> method with the following signature: <code>def get_relevant_documents(self, query: str) -&gt; List[Document]</code>. That&#x27;s the only assumption we make about Retrievers. See more about this interface below.</li>
+  <li>Changed all our chains that used VectorDBs to now use Retrievers. <code>VectorDBQA</code> is now <code>RetrievalQA</code>, <code>ChatVectorDBChain</code> is now <code>ConversationalRetrievalChain</code>, etc. Note that, moving forward, we are intentionally using the <code>Conversational</code> prefix to indicate that the chain is using memory and the <code>Chat</code> prefix to indicate the chain is using a chat model.</li>
+  <li>Added the first instance of a non-LangChain Retriever - the <code>ChatGPT Retrieval Plugin</code>. This was a module open-sourced yesterday by OpenAI to help companies expose retrieval endpoints to hook into ChatGPT. NB: for all intents and purposes, the inner workings of the <code>ChatGPT Retrieval Plugin</code> are extremely similar to our VectorStores, but we are still extremely excited to integrate this as a way highlighting the new flexibility that exists.</li>
+</ul></div>
+<p>Expanding on the <code>Retriever</code> interface:</p>
+<div class="card"><ul>
+  <li>We purposefully only require one method (<code>get_relevant_documents</code>) in order to be as permissive as possible. We do not (yet) require any uniform methods around construction of these retrievers.</li>
+  <li>We purposefully enforce <code>query: str</code> as the only argument. For all other parameters - including metadata filtering - this should be stored as parameters on the retriever itself. This is because we anticipate the retrievers often being used nested inside chains, and we do not want to have plumb around other parameters.</li>
+</ul></div>
+<p>This is all done with the end goal of making it easier for alternative retrievers (besides the LangChain VectorStore) to be used in chains and agents, and encouraging innovation in alternative retrieval methods.</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s5">
+      <h2>🔗 Q&amp;amp;A</h2>
+      <p class="lead">Q: What&amp;#x27;s the difference between an index and a retriever?
+
+A: An index is a data structure that supports efficient searching, and a retriever is the component that uses the index to find and ...</p>
+      <p>Q: What&#x27;s the difference between an index and a retriever?</p>
+<p>A: An index is a data structure that supports efficient searching, and a retriever is the component that uses the index to find and return relevant documents in response to a user&#x27;s query. The index is a key component that the retriever relies on to perform its function.</p>
+<p>Q: If I was using a VectorStore before in <code>VectorDBQA</code> chain (or other <code>VectorDB</code>-type chains), what do I now use in <code>RetrievalQA</code> chain?</p>
+<p>A: You can use a <code>VectorStoreRetriever</code>, which you can create from an existing vectorstore by doing <code>vectorstore.as_retriever()</code></p>
+<p>Q: Does <code>VectorDBQA</code> chain (or other <code>VectorDB</code>-type chains) still exist?</p>
+<p>A: Yes, although we will be no be focusing on it any more. Expect any future development to be done on <code>RetrievalQA</code> chain.</p>
+<p>Q: Can I contribute a new retrieval method to the library?</p>
+<p>A: Yes! We started a new <code>langchain/retrievers</code> module exactly for this purpose</p>
+<p>Q: What are real world examples this enables?</p>
+<p>A: The main one is better question-answering over your documents. However, if start to ingest and then retrieve previous messages, this can then be thought of as better long term memory for AI.</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s6">
+      <h2>💡 Related content</h2>
+      <p class="lead">Deep AgentsAgent ArchitectureOpen Source
+
+#### Tuning Deep Agents to Work Well with Different Models
+
+Vivek TrivedyMason DaughertyApril 29, 20265min[](/blog/tuning-deep-agents-different-models).</p>
+      <p>Deep AgentsAgent ArchitectureOpen Source</p>
+<p>#### Tuning Deep Agents to Work Well with Different Models</p>
+<p>Vivek TrivedyMason DaughertyApril 29, 20265min[](/blog/tuning-deep-agents-different-models).png)Agent ArchitectureLangSmithOpen Source</p>
+<p>#### How LangSmith and LangChain OSS Help You Meet EU AI Act Requirements</p>
+<p>Jacob TalbotBecca WengApril 27, 20267min[](/blog/langsmith-langchain-oss-eu-ai-act).png)Agent ArchitecturePartner</p>
+<p>#### Agentic Engineering: How Swarms of AI Agents Are Redefining Software Engineering</p>
+<p>Renuka KumarPrashanth RamagopalApril 17, 202611min[](/blog/agentic-engineering-redefining-software-engineering)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s7">
+      <h2>🛠️ See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+  </div>
+
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/retrieval" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

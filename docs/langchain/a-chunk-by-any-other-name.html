@@ -1,0 +1,265 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deep Dive: A Chunk by Any Other Name: Structured Text Splitting and Metadata-enhanced RAG</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafbfc;
+      --surface: #fff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --green: #059669;
+      --emerald: #10b981;
+      --teal: #14b8a6;
+      --blue: #3b82f6;
+      --purple: #6366f1;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --orange: #ea580c;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans SC', 'Inter', system-ui, sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: var(--sans); background: var(--bg); color: var(--text); line-height:1.7; }
+    .nav { position:sticky; top:0; z-index:100; background:rgba(15,23,42,.88); backdrop-filter:blur(14px); padding:14px 32px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,.08); }
+    .nav a { color:#f1f5f9; text-decoration:none; font-weight:500; font-size:14px; }
+    .nav .brand { font-weight:700; font-size:16px; color:#34d399; }
+    .hero { background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%); color:#fff; padding:80px 32px 60px; text-align:center; }
+    .hero h1 { font-size:clamp(1.8rem,4vw,2.6rem); font-weight:800; margin-bottom:12px; line-height:1.3; }
+    .hero .subtitle { font-size:17px; color:rgba(255,255,255,.82); max-width:720px; margin:0 auto 12px; }
+    .hero .meta { font-size:13px; color:rgba(255,255,255,.5); margin-bottom:32px; }
+    .hero .badge-cat { display:inline-block; padding:4px 14px; border-radius:20px; font-size:12px; font-weight:600; background:rgba(52,211,153,.18); color:#6ee7b7; border:1px solid rgba(52,211,153,.3); margin-bottom:16px; }
+    .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; max-width:780px; margin:0 auto; }
+    .stat { background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.11); border-radius:12px; padding:18px 14px; backdrop-filter:blur(8px); }
+    .stat .num { font-size:26px; font-weight:800; color:#34d399; font-family:var(--mono); }
+    .stat .label { font-size:12px; color:rgba(255,255,255,.65); margin-top:4px; }
+    .page { max-width:900px; margin:0 auto; padding:40px 24px; }
+    .toc { margin-bottom:48px; }
+    .toc h3 { font-size:13px; text-transform:uppercase; letter-spacing:1.5px; color:var(--text-secondary); margin-bottom:16px; }
+    .toc-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:10px; }
+    .toc-grid a { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--text); font-size:14px; font-weight:500; transition:all .2s; }
+    .toc-grid a:hover { border-color:var(--green); background:#ecfdf5; }
+    .toc-grid .num { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:8px; background:linear-gradient(135deg,#059669,#14b8a6); color:#fff; font-size:12px; font-weight:700; flex-shrink:0; }
+    .section { margin-bottom:56px; }
+    .section h2 { font-size:clamp(1.3rem,3vw,1.6rem); font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    .lead { color:var(--text-secondary); font-size:15px; margin-bottom:20px; line-height:1.7; }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:22px; margin-bottom:14px; }
+    .card h4 { font-size:15px; font-weight:600; margin-bottom:8px; }
+    .card p { font-size:14px; color:var(--text-secondary); line-height:1.7; }
+    .chart { margin:24px 0; }
+    .chart-row { display:flex; align-items:center; margin-bottom:10px; gap:12px; }
+    .chart-label { width:160px; font-size:13px; font-weight:500; text-align:right; flex-shrink:0; }
+    .chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:30px; overflow:hidden; }
+    .chart-bar { height:100%; border-radius:8px; display:flex; align-items:center; justify-content:flex-end; padding-right:10px; font-size:12px; font-weight:600; color:#fff; transition:width .6s ease; }
+    .chart-bar.green { background:linear-gradient(90deg,#059669,#34d399); }
+    .chart-bar.teal { background:linear-gradient(90deg,#14b8a6,#2dd4bf); }
+    .chart-bar.blue { background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+    .chart-bar.purple { background:linear-gradient(90deg,#6366f1,#a78bfa); }
+    .chart-bar.amber { background:linear-gradient(90deg,#f59e0b,#fbbf24); }
+    .chart-bar.orange { background:linear-gradient(90deg,#ea580c,#fb923c); }
+    .chart-bar.red { background:linear-gradient(90deg,#ef4444,#f87171); }
+    .timeline { position:relative; padding-left:32px; margin:24px 0; }
+    .timeline::before { content:''; position:absolute; left:8px; top:0; bottom:0; width:3px; background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6,#6366f1); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:20px; }
+    .tl-dot { position:absolute; left:-28px; top:4px; width:14px; height:14px; border-radius:50%; border:3px solid #059669; background:#fff; }
+    .tl-item:nth-child(2) .tl-dot { border-color:#14b8a6; }
+    .tl-item:nth-child(3) .tl-dot { border-color:#3b82f6; }
+    .tl-item:nth-child(4) .tl-dot { border-color:#6366f1; }
+    .tl-item:nth-child(5) .tl-dot { border-color:#f59e0b; }
+    .tl-item:nth-child(6) .tl-dot { border-color:#ea580c; }
+    .tl-item:nth-child(7) .tl-dot { border-color:#ef4444; }
+    .tl-phase { font-weight:700; font-size:15px; margin-bottom:4px; }
+    .tl-desc { font-size:13px; color:var(--text-secondary); line-height:1.6; }
+    .compare-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:24px 0; }
+    .compare-card { border-radius:var(--radius); padding:22px; }
+    .compare-card.old { background:#fef2f2; border:2px solid #fecaca; }
+    .compare-card.new { background:#ecfdf5; border:2px solid #a7f3d0; }
+    .compare-card h4 { font-size:15px; font-weight:700; margin-bottom:8px; }
+    .compare-card ul { list-style:none; padding:0; }
+    .compare-card ul li { font-size:13px; padding:4px 0; color:var(--text-secondary); }
+    .flow { display:flex; align-items:center; justify-content:center; gap:12px; margin:24px 0; flex-wrap:wrap; }
+    .flow-step { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px 18px; font-size:13px; font-weight:600; text-align:center; min-width:100px; }
+    .flow-step.green { background:linear-gradient(135deg,#059669,#10b981); color:#fff; border:none; }
+    .flow-step.blue { background:linear-gradient(135deg,#3b82f6,#60a5fa); color:#fff; border:none; }
+    .flow-step.purple { background:linear-gradient(135deg,#6366f1,#a78bfa); color:#fff; border:none; }
+    .flow-step.teal { background:linear-gradient(135deg,#14b8a6,#2dd4bf); color:#fff; border:none; }
+    .flow-step.orange { background:linear-gradient(135deg,#ea580c,#f59e0b); color:#fff; border:none; }
+    .flow-arrow { font-size:20px; color:var(--text-secondary); }
+    .block-q { background:linear-gradient(135deg,#ecfdf5,#d1fae5); border-left:4px solid #059669; border-radius:0 var(--radius) var(--radius) 0; padding:18px 22px; margin:20px 0; }
+    .block-q p { font-size:14px; font-style:italic; color:#064e3b; line-height:1.7; }
+    .badge { display:inline-block; padding:3px 10px; border-radius:6px; font-size:12px; font-weight:600; }
+    .badge-green { background:#ecfdf5; color:#059669; }
+    .badge-teal { background:#f0fdfa; color:#14b8a6; }
+    .badge-blue { background:#eff6ff; color:#3b82f6; }
+    .badge-purple { background:#eef2ff; color:#6366f1; }
+    .footer { text-align:center; padding:48px 24px; border-top:1px solid var(--border); margin-top:40px; }
+    .footer a { color:var(--green); text-decoration:none; font-weight:500; }
+    .footer a:hover { text-decoration:underline; }
+    .footer .foot-links { display:flex; justify-content:center; gap:24px; flex-wrap:wrap; margin-bottom:12px; }
+    .footer .copy { font-size:12px; color:var(--text-secondary); }
+    @media(max-width:768px) {
+      .hero { padding:48px 18px 36px; }
+      .hero h1 { font-size:1.5rem; }
+      .stats { grid-template-columns:1fr 1fr; gap:10px; }
+      .page { padding:28px 16px; }
+      .toc-grid { grid-template-columns:1fr; }
+      .compare-grid { grid-template-columns:1fr; }
+      .flow { flex-direction:column; gap:8px; }
+      .flow-arrow { transform:rotate(90deg); }
+      .chart-label { width:100px; font-size:11px; }
+      .nav { padding:12px 16px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain Blog Hub</a>
+    <a href="../langchain/">&#x2190; Back to Hub</a>
+  </nav>
+
+  <header class="hero">
+    <div class="badge-cat">RAG &amp; Knowledge</div>
+    <h1>A Chunk by Any Other Name: Structured Text Splitting and Metadata-enhanced RAG</h1>
+    <p class="subtitle">LangChain Accounts &middot; 2023-10-18</p>
+    <p class="meta">Source: https://www.langchain.com/blog/a-chunk-by-any-other-name</p>
+    <div class="stats">
+        <div class="stat">
+          <div class="num">4</div>
+          <div class="label">Core Sections</div>
+        </div>
+        <div class="stat">
+          <div class="num">23 min</div>
+          <div class="label">Reading Time</div>
+        </div>
+        <div class="stat">
+          <div class="num">2</div>
+          <div class="label">Key Points</div>
+        </div>
+        <div class="stat">
+          <div class="num">1</div>
+          <div class="label">Code Examples</div>
+        </div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc">
+      <h3>&#x1F4D1; Table of Contents</h3>
+      <div class="toc-grid">
+        <a href="#a-chunk-by-any-other-name-structured-tex"><span class="num">1</span>A Chunk by Any Other Name: Structured Text Splitti</a>
+        <a href="#assign-chat-and-embeddings-modelsllm-cha"><span class="num">2</span>assign chat and embeddings modelsllm = ChatOpenAI(</a>
+        <a href="#select-headers-to-split-on-and-map-these"><span class="num">3</span>select headers to split on, and map these to metad</a>
+        <a href="#example-queries-contain-misspellings-imp"><span class="num">4</span>example queries contain misspellings / imprecise p</a>
+      </div>
+    </nav>
+
+    <section class="section" id="a-chunk-by-any-other-name-structured-tex">
+      <h2>&#x1F3D7; A Chunk by Any Other Name: Structured Text Splitting and Metadata-enhanced RAG</h2>
+      <p class="lead">Editor's note: this is a guest entry by Martin Zirulnik, who recently contributed the HTML Header Text Splitter to LangChain. For more of Martin's wri...</p>
+        <div class="card"><p>There's something of a structural irony in the fact that building context-aware LLM applications typically begins with a systematic process of decontextualization, wherein</p></div>
+        <div class="card"><p>Not altogether unlike the way human readers interact with natural language, AI applications that rely on Retrieval Augmented Generation (RAG) must balance the analytic precision of drawing inferences from short sequences of characters (what your English teacher would call &quot;close reading&quot;) against the comprehension of context-bound structures of meaning that emerge more or less continuously as those sequences increase in length (what your particularly cool English teacher would call &amp;qu</p></div>
+        <div class="card"><p>This blog explores a novel approach to striking this balance with HTML content, leveraging important contextual information inherent to document structures that is typically lost when LLM applications are built over web-scraped data or other HTML sources. In particular, we will test some methods of combining Self-querying with LangChain's new HTML Header Text Splitter, a &quot;structure-aware&quot; chunker that splits text at the element level and adds metadata for each chunk based on header tex</p></div>
+        <div class="card"><p>Imports and Environment Setup¶</p></div>
+        <div class="card">
+          <ul style="list-style:disc;padding-left:20px;color:var(--text-secondary);font-size:14px;line-height:1.8;">
+            <li>source text is divided into more or less arbitrarily-sized pieces before</li>
+            <li>each piece undergoes a vector embedding process designed to comprehend context, to capture information inherent in relations between pieces of text.</li>
+          </ul>
+        </div>
+      <div class="flow">
+                <div class="flow-step green">Chunk</div>
+        <div class="flow-arrow">&#x2192;</div>
+        <div class="flow-step">Any</div>
+        <div class="flow-arrow">&#x2192;</div>
+        <div class="flow-step blue">Other</div>
+        <div class="flow-arrow">&#x2192;</div>
+        <div class="flow-step">Name:</div>
+        <div class="flow-arrow">&#x2192;</div>
+        <div class="flow-step purple">Structured</div>
+      </div>
+    </section>
+
+    <section class="section" id="assign-chat-and-embeddings-modelsllm-cha">
+      <h2>&#x1F3D7; assign chat and embeddings modelsllm = ChatOpenAI(    model='gpt-4',    temperature=0)embeddings = OpenAIEmbeddings()# load and split unstructured text content from web URLloader = UnstructuredURLLoader(['https://plato.stanford.edu/entries/goedel/'])splitter = RecursiveCharacterTextSplitter(    chunk_size=1000,    chunk_overlap=0)doc = loader.load()docs = splitter.split_documents(doc)# create vectorstore and QA retrievervectorstore = Redis.from_documents(    docs,    embeddings,    # running Redis server locally with Docker    redis_url='redis://localhost:6379')retriever = RetrievalQA.from_chain_type(    llm=llm,    chain_type=&quot;stuff&quot;,    retriever=vectorstore.as_retriever(),    # we'll want to see source documents for comparison    return_source_documents=True)</h2>
+      <p class="lead">Now we can run a test query and print the results along with the source documents, so that we can see how the retriever performed, i.e. which chunks o...</p>
+        <div class="card"><p>def print_result(response_obj):    print(&quot;SOURCES: \n&quot;)    cnt = 1    for source_doc in response_obj[&quot;source_documents&quot;]:        print(f&quot;Chunk #{cnt}&quot;)        cnt += 1        print(&quot;Source Metadata: &quot;, source_doc.metadata)        print(&quot;Source Text:&quot;)        print(source_doc.page_content)        print(&quot;\n&quot;)    print(&quot;RESULT: \n&quot;)    print(response_obj[&quot;result&quot;] + &quot;\n\n&quot;)query = &quot;explain godel's first i</p></div>
+        <div class="card"><p>SOURCES:Chunk #1Source Metadata:  {'id': 'doc:1c6f3e3f7ee14027bc856822871572dc:26e9aac7d5494208a56ff0c6cbbfda20', 'source': 'https://plato.stanford.edu/entries/goedel/'}Source Text:2.2.1 The First Incompleteness TheoremIn his Logical Journey (Wang 1996) Hao Wang published thefull text of material Gödel had written (at Wang’s request)about his discovery of the incompleteness theorems. This material hadformed the basis of Wang’s “Some Facts about KurtGödel,” and was read and approved by Gödel:We s</p></div>
+        <div class="card"><p>On first gloss, this looks like a pretty solid output from our naive QA chain. While robust RAG evaluation is outside the scope of this blog, we can observe loosely that the generated answer itself sounds reasonable, i.e. it would likely grade well in evaluations for faithfulness and relavancey, and each of the chunks do appear to contain signal regarding Gödel's First Incompleteness Theorem.</p></div>
+        <div class="card"><p>But in terms of context precision and recall, the retriever performed quite poorly—in large part because the chunks extend willy-nilly across section breaks indicated in the source document.</p></div>
+
+    </section>
+
+    <section class="section" id="select-headers-to-split-on-and-map-these">
+      <h2>&#x1F4DA; select headers to split on, and map these to metadata field namesheaders_to_split_on = [    (&quot;h1&quot;, &quot;article_h1_main&quot;),    (&quot;h2&quot;, &quot;article_h2_subsection&quot;),    (&quot;h3&quot;, &quot;article_h3_subsection&quot;),    (&quot;h4&quot;, &quot;article_h4_subsection&quot;),]html_splitter = HTMLHeaderTextSplitter(    headers_to_split_on=headers_to_split_on,    # combine elements with the same metadata by setting return_each_element to False (default)    return_each_element=False)docs = html_splitter.split_text_from_url('https://plato.stanford.edu/entries/goedel/' )# print sample chunk page content and metadatafor attr in docs[12]:    print(attr, &quot;\n&quot;)</h2>
+      <p class="lead">('page_content', 'Gödel’s proof of the consistency of the continuum hypothesis with the axioms of Zermelo-Fraenkel set theory is a tour de force and a...</p>
+        <div class="card"><p>In its current configuration, the splitter aggregates the text of all elements with the same header metadata to a single document chunk—with the text of the related h4-level heading (if there is one) assigned to the metadata field &quot;article_h4_subsection&quot; and the text of each prior related heading assigned to the fields for h3, h2, and h1 respectively.</p></div>
+        <div class="card"><p>If desired, smaller chunk size can be achieved either by having the HTML Header Text Splitter return documents element by element or by pipelining the output to another splitter; but in any case, the hierarchical structure of the element tree of the source document will be preserved as such in the chunk metadata:</p></div>
+        <div class="card"><p>for doc in docs:    if doc.metadata:        print(doc.metadata, &quot;\n&quot;)</p></div>
+        <div class="card"><p>{'article_h1_main': 'Kurt Gödel'}{'article_h1_main': 'Kurt Gödel', 'article_h2_subsection': '1. Biographical Sketch'}{'article_h1_main': 'Kurt Gödel', 'article_h2_subsection': '2. Gödel’s Mathematical Work'}{'article_h1_main': 'Kurt Gödel', 'article_h2_subsection': '2. Gödel’s Mathematical Work', 'article_h3_subsection': '2.1 The Completeness Theorem', 'article_h4_subsection': '2.1.1 Introduction'}{'article_h1_main': 'Kurt Gödel', 'article_h2_subsection': '2. Gödel’s Mathematical Work', 'article</p></div>
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">A Chunk by Any Other Name: Structured Te</div>
+          <div class="tl-desc">Editor's note: this is a guest entry by Martin Zirulnik, who recently contribute...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">assign chat and embeddings modelsllm = C</div>
+          <div class="tl-desc">Now we can run a test query and print the results along with the source document...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">select headers to split on, and map thes</div>
+          <div class="tl-desc">('page_content', 'Gödel’s proof of the consistency of the continuum hypothesis w...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">example queries contain misspellings / i</div>
+          <div class="tl-desc">Now let's take a look at the full prompt that will be built for the query constr...</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="example-queries-contain-misspellings-imp">
+      <h2>&#x1F4CB; example queries contain misspellings / imprecise phrases# example filters use the spelling / phrasing from the metadata values rather than the queryexamples = [    (        &quot;what does russell say about descriptors?&quot;,        {&quot;query&quot;: &quot;russell, descriptors&quot;,         &quot;filter&quot;: 'and(contain(&quot;article_h1_main&quot;, &quot;Bertrand Russell&quot;), or(contain(&quot;article_h2_subsection&quot;, &quot;descriptions&quot;), '                   'contain(&quot;article_h3_subsection&quot;, &quot;descriptions&quot;), contain(&quot;article_h4_subsection&quot;, &quot;descriptions&quot;)))'}    ),    (        &quot;explain leibniz's idea of sufficient reason.&quot;,        {&quot;query&quot;: &quot;leibniz, idea of sufficient reason&quot;,         &quot;filter&quot;: 'and(contain(&quot;article_h1_main&quot;, &quot;Gottfried Wilhelm Leibniz&quot;), or(contain(&quot;article_h2_subsection&quot;, &quot;Principle of Sufficient Reason&quot;), '                   'contain(&quot;article_h3_subsection&quot;, &quot;Principle of Sufficient Reason&quot;), contain(&quot;article_h4_subsection&quot;, &quot;Principle of Sufficient Reason&quot;)))'}    ),    (        &quot;what was goodel's continuum theory?&quot;,        {&quot;query&quot;: &quot;goodel, continuum theory&quot;,         &quot;filter&quot;: 'and(contain(&quot;article_h1_main&quot;, &quot;Kurt Gödel&quot;), or(contain(&quot;article_h2_subsection&quot;, &quot;Continuum Hypothesis&quot;), '                   'contain(&quot;article_h3_subsection&quot;, &quot;Continuum Hypothesis&quot;), contain(&quot;article_h4_subsection&quot;, &quot;Continuum Hypothesis&quot;)))'}    ),]</h2>
+      <p class="lead">Now let's take a look at the full prompt that will be built for the query constructor:...</p>
+        <div class="card"><p>prompt = get_query_constructor_prompt(    document_content_description,    metadata_field_info,    examples=examples)print(prompt.format(query=&quot;{query}&quot;))</p></div>
+        <div class="card"><p>Your goal is to structure the user's query to match the request schema provided below.&lt;&lt; Structured Request Schema &gt;&gt;When responding use a markdown code snippet with a JSON object formatted in the following schema:The query string should contain only text that is expected to match the contents of documents. Any conditions in the filter should not be mentioned in the query as well.A logical condition statement is composed of one or more comparison and logical operation statements.A co</p></div>
+        <div class="card"><p>---
+Content truncated.</p></div>
+      <div class="compare-grid">
+        <div class="compare-card old">
+          <h4>&#x26A0; Challenges / Before</h4>
+          <ul>
+                        <li>Now let's take a look at the full prompt that will be built for the query constructor:</li>
+            <li>Your goal is to structure the user's query to match the request schema provided below.&lt;&lt; Struc...</li>
+          </ul>
+        </div>
+        <div class="compare-card new">
+          <h4>&#x2705; Solutions / After</h4>
+          <ul>
+                        <li>prompt = get_query_constructor_prompt(    document_content_description,    metadata_field_info,    e...</li>
+            <li>---
+Content truncated.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <footer class="footer">
+    <div class="foot-links">
+      <a href="../langchain/">&#x1F3E0; LangChain Hub</a>
+      <a href="https://www.langchain.com/blog/a-chunk-by-any-other-name" target="_blank">&#x1F517; Original Article</a>
+    </div>
+    <p class="copy">Auto-generated deep-dive page &middot; Content from LangChain Blog</p>
+  </footer>
+</body>
+</html>

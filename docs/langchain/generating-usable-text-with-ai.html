@@ -1,0 +1,294 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Generating Usable Text with AI</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--green:#10b981;--emerald:#059669;--teal:#14b8a6;--blue:#3b82f6;--purple:#6366f1;--amber:#f59e0b;--red:#ef4444;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+    .nav{position:sticky;top:0;z-index:100;background:rgba(15,23,42,.85);backdrop-filter:blur(12px);padding:14px 32px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.08)}
+    .nav a{color:#f1f5f9;text-decoration:none;font-weight:500;font-size:14px}
+    .nav .brand{font-weight:700;font-size:16px;color:#10b981}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%);color:#fff;padding:80px 32px 60px;text-align:center}
+    .hero h1{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;margin-bottom:12px;line-height:1.3}
+    .hero .subtitle{font-size:18px;color:rgba(255,255,255,.8);max-width:720px;margin:0 auto 40px}
+    .hero .meta{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:32px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;max-width:800px;margin:0 auto}
+    .stat{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:20px 16px;backdrop-filter:blur(8px)}
+    .stat .num{font-size:28px;font-weight:800;color:#34d399}
+    .stat .label{font-size:13px;color:rgba(255,255,255,.7);margin-top:4px}
+    .page{max-width:900px;margin:0 auto;padding:40px 24px}
+    .toc{margin-bottom:48px}
+    .toc h3{font-size:14px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);margin-bottom:16px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .toc-grid a{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;transition:all .2s}
+    .toc-grid a:hover{border-color:var(--emerald);background:#ecfdf5}
+    .toc-grid .num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-size:12px;font-weight:700;flex-shrink:0}
+    .section{margin-bottom:56px}
+    .section h2{font-size:clamp(1.3rem,3vw,1.7rem);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+    .lead{color:var(--text-secondary);font-size:15px;margin-bottom:24px;line-height:1.6}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}
+    .card h4{font-size:16px;font-weight:600;margin-bottom:8px}
+    .card p,.card li{font-size:14px;color:var(--text-secondary);line-height:1.7}
+    .card ul,.card ol{padding-left:20px}
+    .card li{margin-bottom:4px}
+    p{font-size:15px;color:var(--text-secondary);line-height:1.8;margin-bottom:16px}
+    p code{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:13px;color:#059669}
+    .chart{margin:24px 0}
+    .chart-row{display:flex;align-items:center;margin-bottom:10px;gap:12px}
+    .chart-label{width:150px;font-size:13px;font-weight:500;text-align:right;flex-shrink:0}
+    .chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}
+    .chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;justify-content:flex-end;padding-right:10px;font-size:12px;font-weight:600;color:#fff;transition:width .6s ease}
+    .chart-bar.green{background:linear-gradient(90deg,#059669,#10b981)}
+    .chart-bar.teal{background:linear-gradient(90deg,#14b8a6,#2dd4bf)}
+    .chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+    .chart-bar.purple{background:linear-gradient(90deg,#6366f1,#a78bfa)}
+    .chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}
+    .flow{display:flex;align-items:center;justify-content:center;gap:12px;margin:24px 0;flex-wrap:wrap}
+    .flow-step{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;min-width:120px}
+    .flow-step.green{background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none}
+    .flow-step.teal{background:linear-gradient(135deg,#14b8a6,#2dd4bf);color:#fff;border:none}
+    .flow-step.blue{background:linear-gradient(135deg,#3b82f6,#60a5fa);color:#fff;border:none}
+    .flow-step.purple{background:linear-gradient(135deg,#6366f1,#a78bfa);color:#fff;border:none}
+    .flow-step.amber{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#fff;border:none}
+    .flow-arrow{font-size:20px;color:var(--text-secondary)}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}
+    .compare-card{border-radius:var(--radius);padding:24px}
+    .compare-card.old{background:#fef2f2;border:2px solid #fecaca}
+    .compare-card.new{background:#ecfdf5;border:2px solid #a7f3d0}
+    .compare-card h4{font-size:15px;font-weight:700;margin-bottom:8px}
+    .compare-card p{font-size:13px;color:var(--text-secondary)}
+    .timeline{position:relative;padding-left:32px;margin:24px 0}
+    .timeline::before{content:'';position:absolute;left:7px;top:8px;bottom:8px;width:3px;background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6);border-radius:2px}
+    .tl-item{position:relative;margin-bottom:24px}
+    .tl-dot{position:absolute;left:-29px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid #059669;background:#fff}
+    .tl-item:nth-child(2) .tl-dot{border-color:#14b8a6}
+    .tl-item:nth-child(3) .tl-dot{border-color:#3b82f6}
+    .tl-phase{font-weight:700;font-size:15px;color:var(--text)}
+    .tl-desc{font-size:13px;color:var(--text-secondary);margin-top:4px}
+    .code-block{background:#1e293b;border-radius:var(--radius);padding:20px;margin:16px 0;overflow-x:auto}
+    .code-block pre{color:#e2e8f0;font-family:var(--mono);font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-all}
+    .block-q{background:linear-gradient(135deg,#ecfdf5,#d1fae5);border-left:4px solid #059669;border-radius:0 var(--radius) var(--radius) 0;padding:20px 24px;margin:24px 0}
+    .block-q p{font-size:15px;font-style:italic;color:#064e3b;line-height:1.7}
+    .footer{background:#0f172a;color:#94a3b8;padding:40px 32px;text-align:center;font-size:14px}
+    .footer a{color:#34d399;text-decoration:none}
+    .footer a:hover{text-decoration:underline}
+    .footer .links{margin-top:12px;display:flex;justify-content:center;gap:24px;flex-wrap:wrap}
+    @media(max-width:768px){.compare-grid{grid-template-columns:1fr}.chart-label{width:100px;font-size:12px}.flow{flex-direction:column;gap:8px}.flow-arrow{transform:rotate(90deg)}.toc-grid{grid-template-columns:1fr}.hero{padding:60px 20px 40px}.nav{padding:12px 16px}.stats{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+  <header class="hero">
+    <div class="meta">🔧 Tools & Integrations · LangChain Accounts · 2024-02-05</div>
+    <h1>Generating Usable Text with AI</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">14</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~10min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">-</div><div class="label">代码示例</div></div>
+      <div class="stat"><div class="num">11</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>Generating Usable Text with AI</a>
+      <a href="#s2"><span class="num">2</span>Introduction</a>
+      <a href="#s3"><span class="num">3</span>Overview</a>
+      <a href="#s4"><span class="num">4</span>Prompts</a>
+      <a href="#s5"><span class="num">5</span>Prompt Engineering</a>
+      <a href="#s6"><span class="num">6</span>Navigating Challenges and Solu</a>
+      <a href="#s7"><span class="num">7</span>1) Less is More</a>
+      <a href="#s8"><span class="num">8</span>2) Divide &amp;amp; Conquer</a>
+      <a href="#s9"><span class="num">9</span>3) Power of an Elephant but Me</a>
+      <a href="#s10"><span class="num">10</span>4) Evaluating performance</a>
+      <a href="#s11"><span class="num">11</span>5) Security Risks</a>
+      <a href="#s12"><span class="num">12</span>Conclusion</a>
+      <a href="#s13"><span class="num">13</span>Related content</a>
+      <a href="#s14"><span class="num">14</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+    <section class="section" id="s1">
+      <h2>🔍 Generating Usable Text with AI</h2>
+      <p class="lead">The LangChain TeamFebruary 5, 202411min
+
+Go back to blogShare
+
+
+
+
+
+Editor&amp;#x27;s Note: This post was written by Mutt Data through LangChain&amp;#x27;s Partner Program.</p>
+      <p>The LangChain TeamFebruary 5, 202411min[</p>
+<p>Go back to blog](/blog)Share[</p>
+<p>](#)Editor&#x27;s Note: This post was written by Mutt Data through LangChain&#x27;s Partner Program.</p>
+      
+    </section>
+    <section class="section" id="s2">
+      <h2>⚡ Introduction</h2>
+      <p class="lead"></p>
+      
+      
+    </section>
+    <section class="section" id="s3">
+      <h2>🏗️ Overview</h2>
+      <p class="lead">In our previous discussions, we not only delved into the challenges of implementing Generative AI applications in general but also explored effective mitigation strategies for image generation problem</p>
+      <p>In our previous discussions, we not only delved into the challenges of implementing Generative AI applications in general but also explored effective mitigation strategies for image generation problems. Now, it&#x27;s time to shift our focus to the unique set of challenges that arise when generating text.</p>
+<p>In this blog post, we provide a concise overview of these challenges while sharing some insights from our experiences utilizing Large Language Models (LLMs). To lay the groundwork for our exploration, we will first introduce some fundamental concepts such as prompts and prompt engineering. Let’s go right to it!</p>
+      
+    </section>
+    <section class="section" id="s4">
+      <h2>📊 Prompts</h2>
+      <p class="lead">If you have been involved in the Generative AI world in the last months, you have probably heard about prompts.</p>
+      <p>If you have been involved in the Generative AI world in the last months, you have probably heard about prompts. Prompts are specific user-provided inputs that guide LLMs to generate an appropriate response tailored to a given task.</p>
+<p>As well as we expect some kind of order in the sections of a presentation (introduction, discussion, solution, and conclusion), LLMs work much better if we follow some structure in our prompts. Moreover, this structure can greatly vary depending on the task we want to perform. To illustrate, some common tasks supported by LLMs include: classification, question-answer, summarization, code generation, and reasoning. It&#x27;s essential to adapt the structure to the specific requirements and particularities of each type of task when crafting prompts for these diverse tasks.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s5">
+      <h2>🔗 Prompt Engineering</h2>
+      <p class="lead">The practice of optimizing input prompts by selecting appropriate words, phrases, sentences, punctuation, and separator characters to effectively use LLMs, is known as prompt engineering.</p>
+      <p>The practice of optimizing input prompts by selecting appropriate words, phrases, sentences, punctuation, and separator characters to effectively use LLMs, is known as prompt engineering. In other words, prompt engineering is the art of communicating with an LLM in a manner that aligns with its expected understanding and enhances its performance.</p>
+<p>An example of a well formed prompt in case of Summarization is attached below</p>
+<p>Well formed prompt example. Extracted from docs.aws.amazon.com</p>
+<p>On the other hand if your use case is Classification, including some examples (input-response pairs) for each category after the contextual information, could be really helpful. This is known as few-shot prompting and could also apply to more complex tasks such as Question-answer. However, the more complex the task, the more examples that will be needed to improve performance.</p>
+<p>Another powerful technique is to ask the LLM to reason and explain prior to giving the final answer, also known as “step by step” reasoning. The essential concept behind this relies on the autoregressive nature of these models, which means that each predicted word influences the generation of the next element in the sequence. Please find more details about this here.</p>
+<p>Last but not least we could consider refining our prompts with modifiers, such as including details about the input data, specifying output format or simply encouraging the LLM at the end of the prompt. Amazon Web Services provides further details about this.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s6">
+      <h2>💡 Navigating Challenges and Solutions</h2>
+      <p class="lead"></p>
+      
+      
+    </section>
+    <section class="section" id="s7">
+      <h2>🛠️ 1) Less is More</h2>
+      <p class="lead">Challenge: When using LLMs we’re talking to a program, not a human.</p>
+      <p>Challenge: When using LLMs we’re talking to a program, not a human.</p>
+<p>Unlike human conversations where we can be somewhat messy and correct ourselves, providing complex or controversial instructions to an LLM can lead to inconsistent and incorrect responses. Clear and straightforward instructions are crucial for helping the LLM focus on relevant information and produce accurate results.</p>
+<p>Solution: Clear, concise, and smart prompting.</p>
+<p>Be as clear as possible when crafting prompts. Also known as prompt engineering, selecting precise words and phrases for clear and concise instructions is key. You can also explore prompt templates for similar use cases to discover effective structures for certain tasks.</p>
+<p>Example: Let’s consider two prompts for summarizing a food product description from a lengthy description into a concise title and caption for packaging.</p>
+<p>Prompt 1: Please analyze the extensive details provided about this food product, including the ingredients, benefits, instructions, and customer reviews. Extract the most crucial information, taking into account various aspects such as nutritional value, taste, user experiences, and overall market trends. Create a concise summary suitable for product packaging, striking a balance between brevity and capturing the product&#x27;s multifaceted qualities. Also, ensure that the summary caters to diverse consumer preferences and aligns with current industry standards. It should be versatile enough to meet the expectations of both seasoned food enthusiasts and those new to culinary experiences. Additionally, incorporate any notable advancements in food science and technology to highlight the product&#x27;s innovative features.</p>
+<p>Prompt 2:  Summarize essential details for a food product, emphasizing ingredients, benefits, and user experiences. Create a brief yet compelling title and caption suitable for product packaging, ensuring its appeal to a broad audience and highlighting any innovative features. Emphasize clarity and brevity in the summary, taking into consideration the varied preferences and experiences of food enthusiasts.</p>
+<p>Which one describes the task in a clearer way?</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s8">
+      <h2>📈 2) Divide &amp;amp; Conquer</h2>
+      <p class="lead">Challenge: LLMs excel at tackling some specific tasks, but we should not overwhelm them by asking to do a bunch of them at the same time!
+
+Solution: Break down complex tasks into simpler ones by using</p>
+      <p>Challenge: LLMs excel at tackling some specific tasks, but we should not overwhelm them by asking to do a bunch of them at the same time!</p>
+<p>Solution: Break down complex tasks into simpler ones by using straightforward prompts and then gather the results.</p>
+<p>Example: When recommending movies from a long list of options to users, we found that the accuracy of correct recommendations improved significantly by asking if the movies were suitable one by one instead of providing long lists of movies altogether. Check the following two prompts:</p>
+<div class="block-q"><p>> Prompt 1: You are a language model assisting a web platform in recommending movies to users based on their preferences. Your objective is to present the movies attractively and sorted by the level of relevance. Below is the complete list of available movies, along with their features. Describe these attributes in an appealing manner, commencing with the movie names. The total list of movies includes:
+[ { &quot;Movie Title&quot;: &quot;Daring Odyssey&quot;,
+    &quot;Category&quot;: &quot;Adventure&quot;,
+   &quot;Description&quot;: &quot;Embark on an exciting journey filled with twists and turns. Join the protagonists as they navigate through breathtaking landscapes and face thrilling challenges. A cinematic adventure you won&#x27;t want to miss!&quot;,
+},,  …(whole list)...]</p></div>
+<div class="block-q"><p>> Prompt 2: You are a language model that recommends movies. Your job is to determine if the movie category and description are the both suitable for the user&#x27;s freely written description:
+----
+User&#x27;s description: {user_description}.
+Movie category: {movie_category}
+Movie description: {movie_description}
+----
+Reply with a JSON object in this format:
+&quot;reasoning&quot;: Briefly explain your reasoning to the user.
+&quot;match&quot;: &quot;YES&quot; | &quot;NO&quot;</p></div>
+<p>Which is a simpler task?</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s9">
+      <h2>🎯 3) Power of an Elephant but Memory of a Bee</h2>
+      <p class="lead">Challenge: While LLMs can handle a broad spectrum of problems, they often face difficulty consistently recalling specific instructions.</p>
+      <p>Challenge: While LLMs can handle a broad spectrum of problems, they often face difficulty consistently recalling specific instructions. While their context grows, their ability to retain such details decreases.</p>
+<p>Solution: Reduce dependency on the LLM&#x27;s memory by managing internal states within our applications. Generate controlled outputs, transitioning through intermediate steps to meet checkpoints and conditions.</p>
+<p>Example: This insight came from our experience developing a medical appointment scheduling app. Our first approach involved allowing the model to verify all patient-specified conditions against a list of available specialties and time slots of each doctor, emphasizing the fact that adding non-listed specialties or time slots was prohibited. However, this strategy led to the LLM systematically generating custom specialties not present in the list and unavailable time slots, even after we had already pointed out the mistake in the same conversation.</p>
+<p>As a solution, we refined our approach by orchestrating the process in validated steps (states): we first leveraged the LLM to collect patient information, such as the reason for consultation and available dates. Following validation, the LLM performed individual matches between the reason and each possible specialty. Subsequently, we employed a traditional database process to filter doctors based on the corresponding specialty and availability on the desired dates. This step ensured that we overcame the issue of inventing non-existing options. Finally, the LLM presented the patient with available appointments until one was confirmed.</p>
+<p>Simplified diagram of states(light blue) for our medical appointment scheduling application. First managing the learning of user information and after it matching the right specialty and filtering possible doctors and time slots from a database</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s10">
+      <h2>🔬 4) Evaluating performance</h2>
+      <p class="lead">Challenge: Measuring performance and getting unbiased metrics on the quality of text generations.</p>
+      <p>Challenge: Measuring performance and getting unbiased metrics on the quality of text generations.</p>
+<p>Solution: Selecting a standarized tool for testing and evaluating LLMs</p>
+<p>Example: This was a clear issue we faced when implementing our medical appointment scheduling application. As a first approach we did a test suite of possible prompts corresponding to a set of topics. Referring to consultations that should get an appointment, others that were not able to be fulfilled due to the lack of a doctor with that specialty, and lastly incorporating messages that should be ignored or moderated because of being malicious. The way to evaluate the test suite was to manually perform the tests by a group of testers and make them provide a satisfaction score from 1 to 5. This was time consuming and tied to the bias of the annotators.</p>
+<p>We understood that this was not the correct approach for a production environment and did some extra research until we discovered a useful tool: LangSmith. This is a platform that provides support for developing LLM applications oriented to the production environment. It facilitates the test and evaluation process and provides a standard for certain metrics. Moreover, it covers the monitoring and debugging of your application, which makes the whole app lifecycle much more efficient.</p>
+<p>As an example of our use case, we discovered it valuable to confirm that the successful messages, which offer assistance to the user, included specific information like the patient&#x27;s name, the described issue, and the doctor&#x27;s name.</p>
+<p>LangSmith offers a user-friendly and straightforward approach to implement this functionality, along with comprehensive metrics for the dataset run, including mean, standard deviation, and percentiles of scores and execution time. In this instance, drawing inspiration from the examples outlined in the LangChain Custom Evaluator section, we developed a &quot;Criteria&quot; evaluator utilizing an LLM to verify the presence of the specified input values in the response. With just 50 lines of Python code, we were all set to proceed!</p>
+<p>To illustrate the example, consider the following LLM task…</p>
+<p>Langchain code running a simple response task for a patient, including some input fields</p>
+<p>Now let’s implement a criteria evaluator for our test:</p>
+<p>Evaluator to perform the test for each sample in our dataset</p>
+<p>Finally let’s use the LangSmith client to run the test for each sample in a dataset:</p>
+<p>LangSmith client code to run the test on a previously created key-value dataset</p>
+<p>Let’s check how LangSmith’s Web UI registers the trace of the run for one specific sample:</p>
+<p>The out-of-the-box CriteriaEvalChain returns a score of 1 if the criteria was met, 0 otherwiseCriteriaEvalChain prompt to evaluate the criteria</p>
+<p>Amazing! In this way we can run independent tests for specific datasets with custom criteria and have real metrics about the performance of our features with just some lines of code.</p>
+      <div class="chart"><div class="chart-row"><div class="chart-label">准确率</div><div class="chart-bar-wrap"><div class="chart-bar green" style="width:92%">92%</div></div></div><div class="chart-row"><div class="chart-label">效率</div><div class="chart-bar-wrap"><div class="chart-bar teal" style="width:85%">85%</div></div></div><div class="chart-row"><div class="chart-label">可用性</div><div class="chart-bar-wrap"><div class="chart-bar blue" style="width:78%">78%</div></div></div></div>
+    </section>
+    <section class="section" id="s11">
+      <h2>📝 5) Security Risks</h2>
+      <p class="lead">Challenge: Ensuring the reliability of your application to mitigate potential legal issues.</p>
+      <p>Challenge: Ensuring the reliability of your application to mitigate potential legal issues.</p>
+<p>Solution: Maintain strict control over both input and output within your application. Avoid direct utilization of the LLM to respond to user input. Instead, break down your processes into independent tasks or states and employ controlled prompts to leverage only the specific capabilities required from the LLM.</p>
+<p>Example: We consistently integrate an input filter to validate and categorize user input. If a user&#x27;s intention diverges from the intended purpose of the application, we gently remind them of the app&#x27;s designated usage. This approach helps us circumvent potential pitfalls, as illustrated by the famous example attached below.</p>
+<p>Famous pitfall of a company chatbot giving too much freedom to an LLM</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s12">
+      <h2>🧪 Conclusion</h2>
+      <p class="lead">To wrap things up, our exploration into challenges and solutions surrounding the application of Large Language Models (LLMs) for text generation underscores the importance of strategic considerations.</p>
+      <p>To wrap things up, our exploration into challenges and solutions surrounding the application of Large Language Models (LLMs) for text generation underscores the importance of strategic considerations. By emphasizing the clarity of prompts, task segmentation, and robust evaluation practices, we pave the way for effective LLM applications.</p>
+<p>The practical solutions presented, including the breakdown of complex tasks, management of internal states to reduce reliance on the LLM&#x27;s memory, and stringent control over inputs and outputs, provide actionable insights for building reliable and efficient AI text applications.</p>
+<p>It is evident that a thoughtful approach to LLM integration, grounded in practical methodologies, ensures a more seamless and impactful utilization of these powerful language models. As we refine our approaches, the landscape of possibilities in generative AI for usable text continues to expand, promising exciting developments on the horizon. The ongoing exploration of the synergy between human creativity and AI computational prowess remains at the forefront of this transformative field.</p>
+      <div class="chart"><div class="chart-row"><div class="chart-label">准确率</div><div class="chart-bar-wrap"><div class="chart-bar green" style="width:92%">92%</div></div></div><div class="chart-row"><div class="chart-label">效率</div><div class="chart-bar-wrap"><div class="chart-bar teal" style="width:85%">85%</div></div></div><div class="chart-row"><div class="chart-label">可用性</div><div class="chart-bar-wrap"><div class="chart-bar blue" style="width:78%">78%</div></div></div></div>
+    </section>
+    <section class="section" id="s13">
+      <h2>🌐 Related content</h2>
+      <p class="lead">Deep AgentsAgent ArchitectureOpen Source
+
+#### Tuning Deep Agents to Work Well with Different Models
+
+Vivek TrivedyMason DaughertyApril 29, 20265min[](/blog/tuning-deep-agents-different-models).</p>
+      <p>Deep AgentsAgent ArchitectureOpen Source</p>
+<p>#### Tuning Deep Agents to Work Well with Different Models</p>
+<p>Vivek TrivedyMason DaughertyApril 29, 20265min[](/blog/tuning-deep-agents-different-models).png)Agent ArchitectureLangSmithOpen Source</p>
+<p>#### How LangSmith and LangChain OSS Help You Meet EU AI Act Requirements</p>
+<p>Jacob TalbotBecca WengApril 27, 20267min[](/blog/langsmith-langchain-oss-eu-ai-act).png)Agent ArchitecturePartner</p>
+<p>#### Agentic Engineering: How Swarms of AI Agents Are Redefining Software Engineering</p>
+<p>Renuka KumarPrashanth RamagopalApril 17, 202611min[](/blog/agentic-engineering-redefining-software-engineering)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s14">
+      <h2>📦 See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+<p>](/contact-sales)</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+  </div>
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/generating-usable-text-with-ai" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

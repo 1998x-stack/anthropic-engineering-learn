@@ -1,0 +1,828 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Building a Data Visualization Agent with LangGraph Cloud</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--green:#10b981;--emerald:#059669;--teal:#14b8a6;--blue:#3b82f6;--purple:#6366f1;--amber:#f59e0b;--red:#ef4444;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+    .nav{position:sticky;top:0;z-index:100;background:rgba(15,23,42,.85);backdrop-filter:blur(12px);padding:14px 32px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.08)}
+    .nav a{color:#f1f5f9;text-decoration:none;font-weight:500;font-size:14px}
+    .nav .brand{font-weight:700;font-size:16px;color:#10b981}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%);color:#fff;padding:80px 32px 60px;text-align:center}
+    .hero h1{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;margin-bottom:12px;line-height:1.3}
+    .hero .subtitle{font-size:18px;color:rgba(255,255,255,.8);max-width:720px;margin:0 auto 40px}
+    .hero .meta{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:32px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;max-width:800px;margin:0 auto}
+    .stat{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:20px 16px;backdrop-filter:blur(8px)}
+    .stat .num{font-size:28px;font-weight:800;color:#34d399}
+    .stat .label{font-size:13px;color:rgba(255,255,255,.7);margin-top:4px}
+    .page{max-width:900px;margin:0 auto;padding:40px 24px}
+    .toc{margin-bottom:48px}
+    .toc h3{font-size:14px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);margin-bottom:16px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .toc-grid a{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;transition:all .2s}
+    .toc-grid a:hover{border-color:var(--emerald);background:#ecfdf5}
+    .toc-grid .num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-size:12px;font-weight:700;flex-shrink:0}
+    .section{margin-bottom:56px}
+    .section h2{font-size:clamp(1.3rem,3vw,1.7rem);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+    .lead{color:var(--text-secondary);font-size:15px;margin-bottom:24px;line-height:1.6}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}
+    .card h4{font-size:16px;font-weight:600;margin-bottom:8px}
+    .card p,.card li{font-size:14px;color:var(--text-secondary);line-height:1.7}
+    .card ul,.card ol{padding-left:20px}
+    .card li{margin-bottom:4px}
+    p{font-size:15px;color:var(--text-secondary);line-height:1.8;margin-bottom:16px}
+    p code{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:13px;color:#059669}
+    .chart{margin:24px 0}
+    .chart-row{display:flex;align-items:center;margin-bottom:10px;gap:12px}
+    .chart-label{width:150px;font-size:13px;font-weight:500;text-align:right;flex-shrink:0}
+    .chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}
+    .chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;justify-content:flex-end;padding-right:10px;font-size:12px;font-weight:600;color:#fff;transition:width .6s ease}
+    .chart-bar.green{background:linear-gradient(90deg,#059669,#10b981)}
+    .chart-bar.teal{background:linear-gradient(90deg,#14b8a6,#2dd4bf)}
+    .chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+    .chart-bar.purple{background:linear-gradient(90deg,#6366f1,#a78bfa)}
+    .chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}
+    .flow{display:flex;align-items:center;justify-content:center;gap:12px;margin:24px 0;flex-wrap:wrap}
+    .flow-step{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;min-width:120px}
+    .flow-step.green{background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none}
+    .flow-step.teal{background:linear-gradient(135deg,#14b8a6,#2dd4bf);color:#fff;border:none}
+    .flow-step.blue{background:linear-gradient(135deg,#3b82f6,#60a5fa);color:#fff;border:none}
+    .flow-step.purple{background:linear-gradient(135deg,#6366f1,#a78bfa);color:#fff;border:none}
+    .flow-step.amber{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#fff;border:none}
+    .flow-arrow{font-size:20px;color:var(--text-secondary)}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}
+    .compare-card{border-radius:var(--radius);padding:24px}
+    .compare-card.old{background:#fef2f2;border:2px solid #fecaca}
+    .compare-card.new{background:#ecfdf5;border:2px solid #a7f3d0}
+    .compare-card h4{font-size:15px;font-weight:700;margin-bottom:8px}
+    .compare-card p{font-size:13px;color:var(--text-secondary)}
+    .timeline{position:relative;padding-left:32px;margin:24px 0}
+    .timeline::before{content:'';position:absolute;left:7px;top:8px;bottom:8px;width:3px;background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6);border-radius:2px}
+    .tl-item{position:relative;margin-bottom:24px}
+    .tl-dot{position:absolute;left:-29px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid #059669;background:#fff}
+    .tl-item:nth-child(2) .tl-dot{border-color:#14b8a6}
+    .tl-item:nth-child(3) .tl-dot{border-color:#3b82f6}
+    .tl-phase{font-weight:700;font-size:15px;color:var(--text)}
+    .tl-desc{font-size:13px;color:var(--text-secondary);margin-top:4px}
+    .code-block{background:#1e293b;border-radius:var(--radius);padding:20px;margin:16px 0;overflow-x:auto}
+    .code-block pre{color:#e2e8f0;font-family:var(--mono);font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-all}
+    .block-q{background:linear-gradient(135deg,#ecfdf5,#d1fae5);border-left:4px solid #059669;border-radius:0 var(--radius) var(--radius) 0;padding:20px 24px;margin:24px 0}
+    .block-q p{font-size:15px;font-style:italic;color:#064e3b;line-height:1.7}
+    .footer{background:#0f172a;color:#94a3b8;padding:40px 32px;text-align:center;font-size:14px}
+    .footer a{color:#34d399;text-decoration:none}
+    .footer a:hover{text-decoration:underline}
+    .footer .links{margin-top:12px;display:flex;justify-content:center;gap:24px;flex-wrap:wrap}
+    @media(max-width:768px){.compare-grid{grid-template-columns:1fr}.chart-label{width:100px;font-size:12px}.flow{flex-direction:column;gap:8px}.flow-arrow{transform:rotate(90deg)}.toc-grid{grid-template-columns:1fr}.hero{padding:60px 20px 40px}.nav{padding:12px 16px}.stats{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+  <header class="hero">
+    <div class="meta">🔧 Tools & Integrations · LangChain Accounts · 2024-09-12</div>
+    <h1>Building a Data Visualization Agent with LangGraph Cloud</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">34</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~22min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">16</div><div class="label">代码示例</div></div>
+      <div class="stat"><div class="num">8</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>Building a Data Visualization </a>
+      <a href="#s2"><span class="num">2</span>**Schema and Metadata Extracti</a>
+      <a href="#s3"><span class="num">3</span>**Embedding Creation:**</a>
+      <a href="#s4"><span class="num">4</span>**Entity and Context Retrieval</a>
+      <a href="#s5"><span class="num">5</span>**Relevant Table Extraction us</a>
+      <a href="#s6"><span class="num">6</span>**Large Schema Handling :**</a>
+      <a href="#s7"><span class="num">7</span>**Table and Relevance Validati</a>
+      <a href="#s8"><span class="num">8</span>**SQL Query Generation:**</a>
+      <a href="#s9"><span class="num">9</span>**Query Structure Validation:*</a>
+      <a href="#s10"><span class="num">10</span>Setting up the graph</a>
+      <a href="#s11"><span class="num">11</span>Add nodes to the graph</a>
+      <a href="#s12"><span class="num">12</span>Define edges</a>
+      <a href="#s13"><span class="num">13</span>**1. Schema and Metadata Extra</a>
+      <a href="#s14"><span class="num">14</span>**2. Parsing the user&amp;#x27;s q</a>
+      <a href="#s15"><span class="num">15</span>**3. Getting the unique nouns:</a>
+      <a href="#s16"><span class="num">16</span>**4. Generating the SQL query:</a>
+      <a href="#s17"><span class="num">17</span>**5. Validating and fixing the</a>
+      <a href="#s18"><span class="num">18</span>**6. Executing the SQL query:*</a>
+      <a href="#s19"><span class="num">19</span>**7. Choosing an appropriate v</a>
+      <a href="#s20"><span class="num">20</span>**8. Formatting the data for v</a>
+      <a href="#s21"><span class="num">21</span>Use LLM to get a relevant labe</a>
+      <a href="#s22"><span class="num">22</span>Group data by label</a>
+      <a href="#s23"><span class="num">23</span>Determine which item is the la</a>
+      <a href="#s24"><span class="num">24</span>Create yValues array</a>
+      <a href="#s25"><span class="num">25</span>Use LLM to get a relevant labe</a>
+      <a href="#s26"><span class="num">26</span>Add the y-axis label to the fo</a>
+      <a href="#s27"><span class="num">27</span>Determine which item is the la</a>
+      <a href="#s28"><span class="num">28</span>Simple bar chart with one seri</a>
+      <a href="#s29"><span class="num">29</span>Use LLM to get a relevant labe</a>
+      <a href="#s30"><span class="num">30</span>Grouped bar chart with multipl</a>
+      <a href="#s31"><span class="num">31</span>**Frontend**</a>
+      <a href="#s32"><span class="num">32</span>**Conclusion**</a>
+      <a href="#s33"><span class="num">33</span>Related content</a>
+      <a href="#s34"><span class="num">34</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+    <section class="section" id="s1">
+      <h2>🔍 Building a Data Visualization Agent with LangGraph Cloud</h2>
+      <p class="lead">The LangChain TeamSeptember 12, 202423min
+
+Go back to blogShare
+
+
+
+
+
+Editor&amp;#x27;s Note: This is a guest blog post by Dhruv Ateja.</p>
+      <p>The LangChain TeamSeptember 12, 202423min[</p>
+<p>Go back to blog](/blog)Share[</p>
+<p>](#)Editor&#x27;s Note: This is a guest blog post by Dhruv Ateja. It covers building a full stack application that uses an agent to both query data as well as choose how to display that data. It leverages LangGraph and LangGraph Cloud.</p>
+<div class="card"><ul><li>YouTube Video</li><li>GitHub Repo</li><li>Hosted Application</li></ul></div>
+<p>Let&#x27;s explore an exciting project that leverages LangGraph Cloud&#x27;s streaming API to create a data visualization agent. You can upload an SQLite database or CSV file, ask questions about your data, and the agent will generate appropriate visualizations. This blog is a brief dive into the agent’s workflow and key features.</p>
+<p>0:00                            /0:281×</p>
+<p>The entire workflow is orchestrated using LangGraph Cloud, which provides a framework for easily building complex AI agents, a streaming API for real-time updates, and a visual studio for monitoring and experimenting with the agent&#x27;s behavior.</p>
+<p>First, let us see the current SOTA text to sql workflow:</p>
+      
+    </section>
+    <section class="section" id="s2">
+      <h2>⚡ **Schema and Metadata Extraction:**</h2>
+      <p class="lead">- The system processes the provided database (e.</p>
+      <div class="card"><ul><li>The system processes the provided database (e.g., SQLite or CSV) to extract crucial information like table structure and column details.</li><li>This initial step grants a comprehensive understanding of the database&#x27;s organization.</li></ul></div>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s3">
+      <h2>🏗️ **Embedding Creation:**</h2>
+      <p class="lead">- For larger datasets, embeddings for schema elements (tables, columns) and sample data are generated.</p>
+      <div class="card"><ul><li>For larger datasets, embeddings for schema elements (tables, columns) and sample data are generated. These embeddings improve efficiency during retrieval and matching tasks later on.</li></ul></div>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s4">
+      <h2>📊 **Entity and Context Retrieval:**</h2>
+      <p class="lead">- The user&amp;#x27;s query is analyzed to identify entities and the overall context.</p>
+      <div class="card"><ul><li>The user&#x27;s query is analyzed to identify entities and the overall context.</li><li>For database values, a syntactic search leveraging a Locality Sensitive Hashing (LSH) index can be implemented.</li></ul></div>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s5">
+      <h2>🔗 **Relevant Table Extraction using Retrieval-Augmented Generation (RAG):**</h2>
+      <p class="lead">- This step utilizes RAG to pinpoint the relevant tables that hold the information the user seeks.</p>
+      <div class="card"><ul><li>This step utilizes RAG to pinpoint the relevant tables that hold the information the user seeks.</li><li>Experimental Approaches:</li><li>Exploring a Knowledge Graph-based RAG for multi-hop functionalities is a potential avenue for future development.</li><li>Extracting relevant columns can be fed into the RAG for more precise table extraction.</li></ul></div>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s6">
+      <h2>💡 **Large Schema Handling :**</h2>
+      <p class="lead">- When dealing with massive table schemas, techniques can be employed to manage them effectively:
+Reducing schema details to essential information ensures efficient processing.</p>
+      <div class="card"><ul><li>When dealing with massive table schemas, techniques can be employed to manage them effectively:</li><li>Pruning columns based on metadata tags streamlines the analysis.</li><li>The pruned schema can then be presented to the Language Model (LLM) to assess table relevance.</li></ul></div>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s7">
+      <h2>🛠️ **Table and Relevance Validation:**</h2>
+      <p class="lead">- The extracted tables are meticulously verified to ensure they are truly relevant to the user&amp;#x27;s query.</p>
+      <div class="card"><ul><li>The extracted tables are meticulously verified to ensure they are truly relevant to the user&#x27;s query.</li></ul></div>
+      
+    </section>
+    <section class="section" id="s8">
+      <h2>📈 **SQL Query Generation:**</h2>
+      <p class="lead">- The relevant tables, their schema, and sample data rows are fed into the LLM to generate the SQL query.</p>
+      <div class="card"><ul><li>The relevant tables, their schema, and sample data rows are fed into the LLM to generate the SQL query.</li><li>Experimentation: Prompting the LLM to evaluate the necessity of each column in filtered tables, coupled with a chain-of-thought explanation, can provide valuable insights into the reasoning behind the generated query.</li></ul></div>
+      <div class="chart"><div class="chart-row"><div class="chart-label">准确率</div><div class="chart-bar-wrap"><div class="chart-bar green" style="width:92%">92%</div></div></div><div class="chart-row"><div class="chart-label">效率</div><div class="chart-bar-wrap"><div class="chart-bar teal" style="width:85%">85%</div></div></div><div class="chart-row"><div class="chart-label">可用性</div><div class="chart-bar-wrap"><div class="chart-bar blue" style="width:78%">78%</div></div></div></div>
+    </section>
+    <section class="section" id="s9">
+      <h2>🎯 **Query Structure Validation:**</h2>
+      <p class="lead">- A workflow validates and corrects the generated SQL query&amp;#x27;s structure, ensuring its correctness before execution.</p>
+      <div class="card"><ul><li>A workflow validates and corrects the generated SQL query&#x27;s structure, ensuring its correctness before execution.</li></ul></div>
+<p>For our project, we&#x27;ve focused on smaller datasets, eliminating the need for RAG or LSH techniques. However, the core workflow remains consistent. To explore text-to-SQL implementations for larger datasets, check out this insightful article from Pinterest Engineering.</p>
+<p>Here are is an overview of the implementation of the text to sql workflow:</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s10">
+      <h2>🔬 Setting up the graph</h2>
+      <p class="lead">`
+    def create_workflow(self) -&amp;gt; StateGraph:
+        &amp;quot;&amp;quot;&amp;quot;Create and configure the workflow graph.</p>
+      <div class="code-block"><pre>def create_workflow(self) -&amp;gt; StateGraph:
+        &amp;quot;&amp;quot;&amp;quot;Create and configure the workflow graph.&amp;quot;&amp;quot;&amp;quot;
+        workflow = StateGraph(State)</pre></div>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s11">
+      <h2>📝 Add nodes to the graph</h2>
+      <p class="lead">workflow.</p>
+      <p>workflow.add_node(&quot;parse_question&quot;, self.sql_agent.parse_question)
+        workflow.add_node(&quot;get_unique_nouns&quot;, self.sql_agent.get_unique_nouns)
+        workflow.add_node(&quot;generate_sql&quot;, self.sql_agent.generate_sql)
+        workflow.add_node(&quot;validate_and_fix_sql&quot;, self.sql_agent.validate_and_fix_sql)
+        workflow.add_node(&quot;execute_sql&quot;, self.sql_agent.execute_sql)
+        workflow.add_node(&quot;format_results&quot;, self.sql_agent.format_results)
+        workflow.add_node(&quot;choose_visualization&quot;, self.sql_agent.choose_visualization)
+        workflow.add_node(&quot;format_data_for_visualization&quot;, self.data_formatter.format_data_for_visualization)</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s12">
+      <h2>🧪 Define edges</h2>
+      <p class="lead">workflow.</p>
+      <p>workflow.add_edge(&quot;parse_question&quot;, &quot;get_unique_nouns&quot;)
+        workflow.add_edge(&quot;get_unique_nouns&quot;, &quot;generate_sql&quot;)
+        workflow.add_edge(&quot;generate_sql&quot;, &quot;validate_and_fix_sql&quot;)
+        workflow.add_edge(&quot;validate_and_fix_sql&quot;, &quot;execute_sql&quot;)
+        workflow.add_edge(&quot;execute_sql&quot;, &quot;format_results&quot;)
+        workflow.add_edge(&quot;execute_sql&quot;, &quot;choose_visualization&quot;)
+        workflow.add_edge(&quot;choose_visualization&quot;, &quot;format_data_for_visualization&quot;)
+        workflow.set_entry_point(&quot;parse_question&quot;)</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s13">
+      <h2>🌐 **1. Schema and Metadata Extraction:**</h2>
+      <p class="lead">- We&amp;#x27;ve developed a server to store and query SQLite files for this project: https://github.</p>
+      <div class="card"><ul><li>We&#x27;ve developed a server to store and query SQLite files for this project: https://github.com/DhruvAtreja/sqllite-server</li><li>This server has two main functions: querying the database and retrieving its schema.</li><li>We extract the schema for all tables, including the first three rows of each table for context.</li></ul></div>
+<p>Extracting schema</p>
+<p>`
+  const db = new sqlite3.Database(dbPath);</p>
+<p>db.all(
+    &quot;SELECT name, sql FROM sqlite_master WHERE type=&#x27;table&#x27;;&quot;,
+    [],
+    (err, tables) =&gt; {
+      if (err) {
+        db.close();
+        return res.status(500).json({ error: err.message });
+      }</p>
+<p>const schema = [];</p>
+<p>const processTable = (index) =&gt; {
+        if (index &gt;= tables.length) {
+          db.close();
+          return res.json({ schema: schema.join(&quot;\\n&quot;) });
+        }</p>
+<div class="code-block"><pre>const { name: tableName, sql: createStatement } = tables[index];
+        schema.push(`Table: ${tableName}`);
+        schema.push(`CREATE statement: ${createStatement}\\n`);</pre></div>
+<div class="code-block"><pre>db.all(`SELECT * FROM &amp;#x27;${tableName}&amp;#x27; LIMIT 3;`, [], (err, rows) =&amp;gt; {
+          if (err) {
+            console.error(`Error fetching rows for table ${tableName}:`, err);
+          } else if (rows.length &amp;gt; 0) {
+            schema.push(&amp;quot;Example rows:&amp;quot;);
+            rows.forEach((row) =&amp;gt; schema.push(JSON.stringify(row)));
+          }
+          schema.push(&amp;quot;&amp;quot;); // Add a blank line between tables
+          processTable(index + 1);
+        });
+      };</pre></div>
+<p>processTable(0);
+    }
+  );</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s14">
+      <h2>📦 **2. Parsing the user&amp;#x27;s question:**</h2>
+      <p class="lead">- We pass the user&amp;#x27;s question to the SQLAgent along with the schema of the database.</p>
+      <div class="card"><ul><li>We pass the user&#x27;s question to the SQLAgent along with the schema of the database. Using this data we extract the relevant tables and columns.</li><li>We also identify columns which contain nouns. We&#x27;ll see why this is important in the next step.</li><li>If the question is not relevant to the database or if there is not enough information to answer the question, we set is_relevant to false and end the workflow.</li></ul></div>
+<div class="code-block"><pre>You are a data analyst that can help summarize SQL tables and parse user questions about a database.
+Given the question and database schema, identify the relevant tables and columns.
+If the question is not relevant to the database or if there is not enough information to answer the question, set is_relevant to false.</pre></div>
+<div class="code-block"><pre>The &amp;quot;noun_columns&amp;quot; field should contain only the columns that are relevant to the question and contain nouns or names, for example, the column &amp;quot;Artist name&amp;quot; contains nouns relevant to the question &amp;quot;What are the top selling artists?&amp;quot;, but the column &amp;quot;Artist ID&amp;quot; is not relevant because it does not contain a noun. Do not include columns that contain numbers.</pre></div>
+<p>Response Format:</p>
+<p>&quot;is_relevant&quot;: boolean,</p>
+<p>&quot;relevant_tables&quot;: [</p>
+<p>&quot;table_name&quot;: string,</p>
+<p>&quot;columns&quot;: [string],</p>
+<p>&quot;noun_columns&quot;: [string]</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s15">
+      <h2>🔄 **3. Getting the unique nouns:**</h2>
+      <p class="lead">- If the user asks &amp;quot;What are the top selling artists?&amp;quot; or &amp;quot;What is the market share of each category?&amp;quot;, we need to know which artists are being referred to or which categories are </p>
+      <div class="card"><ul><li>If the user asks &quot;What are the top selling artists?&quot; or &quot;What is the market share of each category?&quot;, we need to know which artists are being referred to or which categories are being referred to in order to generate the correct SQL query.</li><li>What if the user asks &quot;Top selling ac dc songs?&quot; (We all know it has to be Thunderstruck) but the table contains the name &quot;AC/DC&quot; instead of &quot;ac dc&quot;? We need to get the correct spelling of the artist&#x27;s name in order to generate the correct SQL query.</li><li>This is where the unique nouns come in. We extract the unique nouns from the question and the schema and match them. We can get the correct spelling of the artist&#x27;s name and the list of entities using the unique nouns.</li></ul></div>
+<div class="code-block"><pre>def get_unique_nouns(self, state: dict) -&amp;gt; dict:
+        &amp;quot;&amp;quot;&amp;quot;Find unique nouns in relevant tables and columns.&amp;quot;&amp;quot;&amp;quot;
+        parsed_question = state[&amp;#x27;parsed_question&amp;#x27;]</pre></div>
+<p>if not parsed_question[&#x27;is_relevant&#x27;]:
+            return {&quot;unique_nouns&quot;: []}</p>
+<p>unique_nouns = set()
+        for table_info in parsed_question[&#x27;relevant_tables&#x27;]:
+            table_name = table_info[&#x27;table_name&#x27;]
+            noun_columns = table_info[&#x27;noun_columns&#x27;]</p>
+<div class="code-block"><pre>if noun_columns:
+                column_names = &amp;#x27;, &amp;#x27;.join(f&amp;quot;`{col}`&amp;quot; for col in noun_columns)
+                query = f&amp;quot;SELECT DISTINCT {column_names} FROM `{table_name}`&amp;quot;
+                results = self.db_manager.execute_query(state[&amp;#x27;uuid&amp;#x27;], query)
+                for row in results:
+                    unique_nouns.update(str(value) for value in row if value)</pre></div>
+<p>return {&quot;unique_nouns&quot;: list(unique_nouns)}
+`</p>
+      
+    </section>
+    <section class="section" id="s16">
+      <h2>🎨 **4. Generating the SQL query:**</h2>
+      <p class="lead">We pass the schema, the user&amp;#x27;s question, the parsed question and the unique nouns to the SQLAgent.</p>
+      <p>We pass the schema, the user&#x27;s question, the parsed question and the unique nouns to the SQLAgent. We skip the rows where any column is null, &quot;N/A&quot; or &quot;&quot;.</p>
+<p>`You are an AI assistant that generates SQL queries based on user questions, database schema, and unique nouns found in the relevant tables. Generate a valid SQL query to answer the user&#x27;s question.</p>
+<p>If there is not enough information to write a SQL query, respond with &quot;NOT_ENOUGH_INFO&quot;.</p>
+<p>Here are some examples:</p>
+<div class="card"><ol><li>What is the top selling product?</li></ol></div>
+<div class="card"><ol><li>What is the total revenue for each product?</li></ol></div>
+<div class="card"><ol><li>What is the market share of each product?</li></ol></div>
+<div class="card"><ol><li>Plot the distribution of income over time</li></ol></div>
+<p>THE RESULTS SHOULD ONLY BE IN THE FOLLOWING FORMAT, SO MAKE SURE TO ONLY GIVE TWO OR THREE COLUMNS:
+[[x, y]]
+or
+[[label, x, y]]</p>
+<p>For questions like &quot;plot a distribution of the fares for men and women&quot;, count the frequency of each fare and plot it. The x axis should be the fare and the y axis should be the count of people who paid that fare.
+SKIP ALL ROWS WHERE ANY COLUMN IS NULL or &quot;N/A&quot; or &quot;&quot;.
+Just give the query string. Do not format it. Make sure to use the correct spellings of nouns as provided in the unique nouns list.</p>
+<p>`===Database schema:
+{schema}</p>
+<p>===User question:</p>
+<p>===Relevant tables and columns:</p>
+<p>{parsed_question}</p>
+<p>===Unique nouns in relevant tables:</p>
+<p>{unique_nouns}
+`</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s17">
+      <h2>🏆 **5. Validating and fixing the SQL query:**</h2>
+      <p class="lead">- We pass the SQL query to the SQLAgent.</p>
+      <div class="card"><ul><li>We pass the SQL query to the SQLAgent. It checks if the query is valid and all the tables and columns used in the query are relevant and if it is, it returns the SQL query.</li><li>For example, there are cases when the data needs to be converted from string to date or integer, this is fixed in this step.</li></ul></div>
+<div class="code-block"><pre>You are an AI assistant that validates and fixes SQL queries. Your task is to:
+1. Check if the SQL query is valid.
+2. Ensure all table and column names are correctly spelled and exist in the schema.
+3. If there are any issues, fix them and provide the corrected SQL query.
+4. If no issues are found, return the original query.</pre></div>
+<p>Respond in JSON format with the following structure. Only respond with the JSON:
+{{
+    &quot;valid&quot;: boolean,
+    &quot;issues&quot;: string or null,
+    &quot;corrected_query&quot;: string
+}}
+&#x27;&#x27;&#x27;),
+            (&quot;human&quot;, &#x27;&#x27;&#x27;===Database schema:
+{schema}</p>
+<p>===Generated SQL query:
+{sql_query}</p>
+<p>Respond in JSON format with the following structure. Only respond with the JSON:
+{{
+    &quot;valid&quot;: boolean,
+    &quot;issues&quot;: string or null,
+    &quot;corrected_query&quot;: string
+}}</p>
+<p>For example:
+1. {{
+    &quot;valid&quot;: true,
+    &quot;issues&quot;: null,
+    &quot;corrected_query&quot;: &quot;None&quot;
+}}</p>
+<div class="card"><ol><li>{{</li></ol></div>
+      
+    </section>
+    <section class="section" id="s18">
+      <h2>🔑 **6. Executing the SQL query:**</h2>
+      <p class="lead">We pass the SQL query to the DatabaseManager.</p>
+      <p>We pass the SQL query to the DatabaseManager. It passes the query to the remote database and returns the results.</p>
+      <div class="chart"><div class="chart-row"><div class="chart-label">准确率</div><div class="chart-bar-wrap"><div class="chart-bar green" style="width:92%">92%</div></div></div><div class="chart-row"><div class="chart-label">效率</div><div class="chart-bar-wrap"><div class="chart-bar teal" style="width:85%">85%</div></div></div><div class="chart-row"><div class="chart-label">可用性</div><div class="chart-bar-wrap"><div class="chart-bar blue" style="width:78%">78%</div></div></div></div>
+    </section>
+    <section class="section" id="s19">
+      <h2>📋 **7. Choosing an appropriate visualization:**</h2>
+      <p class="lead">I think it is a good idea to reverse engineer this process.</p>
+      <p>I think it is a good idea to reverse engineer this process. Assuming that we are adding support for the following graphs/charts:</p>
+<div class="card"><ul><li>Column Graphs</li><li>Bar Graphs</li><li>Scatter Plots</li><li>Line Graphs</li><li>Pie Charts</li></ul></div>
+<p>Here’s a breakdown of the types of questions we would need to support</p>
+<div class="card"><ul><li>Bar/Column Graphs:</li><li>Use Case: Best for comparing categorical data or showing changes over time when categories are discrete.</li></ul></div>
+<div class="card"><ul><li>Scatter Plots:</li><li>Use Case: Useful for identifying relationships or correlations between two numerical variables.</li></ul></div>
+<div class="card"><ul><li>Pie Charts:</li><li>Use Case: Ideal for showing proportions or percentages within a whole.</li></ul></div>
+<div class="card"><ul><li>Line Graphs:</li><li>Use Case: Best for showing trends over time with continuous data.</li></ul></div>
+<p>This identifies the following lines of questioning:</p>
+<div class="card"><ul><li>Aggregations and Summarizations:</li><li>&quot;Show the total sales by product category.&quot; (Bar/Column Graph)</li></ul></div>
+<div class="card"><ul><li>Comparisons:</li></ul></div>
+<div class="card"><ul><li>Trends Over Time:</li></ul></div>
+<div class="card"><ul><li>Proportions:</li></ul></div>
+<div class="card"><ul><li>Correlations:</li></ul></div>
+<p>`You are an AI assistant that recommends appropriate data visualizations. Based on the user&#x27;s question, SQL query, and query results, suggest the most suitable type of graph or chart to visualize the data. If no visualization is appropriate, indicate that.</p>
+<p>Available chart types and their use cases:</p>
+<div class="card"><ul><li>Bar Graphs: Best for comparing categorical data or showing changes over time when categories are discrete and the number of categories is more than 2. Use for questions like &quot;What are the sales figures for each product?&quot; or &quot;How does the population of cities compare? or &quot;What percentage of each city is male?&quot;</li><li>Horizontal Bar Graphs: Best for comparing categorical data or showing changes over time when the number of categories is small or the disparity between categories is large. Use for questions like &quot;Show the revenue of A and B?&quot; or &quot;How does the population of 2 cities compare?&quot; or &quot;How many men and women got promoted?&quot; or &quot;What percentage of men and what percentage of women got promoted?&quot; when the disparity between categories is large.</li><li>Scatter Plots: Useful for identifying relationships or correlations between two numerical variables or plotting distributions of data. Best used when both x axis and y axis are continuous. Use for questions like &quot;Plot a distribution of the fares (where the x axis is the fare and the y axis is the count of people who paid that fare)&quot; or &quot;Is there a relationship between advertising spend and sales?&quot; or &quot;How do height and weight correlate in the dataset? Do not use it for questions that do not have a continuous x axis.&quot;</li><li>Pie Charts: Ideal for showing proportions or percentages within a whole. Use for questions like &quot;What is the market share distribution among different companies?&quot; or &quot;What percentage of the total revenue comes from each product?&quot;</li><li>Line Graphs: Best for showing trends and distributionsover time. Best used when both x axis and y axis are continuous. Used for questions like &quot;How have website visits changed over the year?&quot; or &quot;What is the trend in temperature over the past decade?&quot;. Do not use it for questions that do not have a continuous x axis or a time based x axis.</li></ul></div>
+<p>Consider these types of questions when recommending a visualization:</p>
+<div class="card"><ol><li>Aggregations and Summarizations (e.g., &quot;What is the average revenue by month?&quot; - Line Graph)</li></ol></div>
+<div class="card"><ol><li>Comparisons (e.g., &quot;Compare the sales figures of Product A and Product B over the last year.&quot; - Line or Column Graph)</li></ol></div>
+<div class="card"><ol><li>Plotting Distributions (e.g., &quot;Plot a distribution of the age of users&quot; - Scatter Plot)</li></ol></div>
+<div class="card"><ol><li>Trends Over Time (e.g., &quot;What is the trend in the number of active users over the past year?&quot; - Line Graph)</li></ol></div>
+<div class="card"><ol><li>Proportions (e.g., &quot;What is the market share of the products?&quot; - Pie Chart)</li></ol></div>
+<div class="card"><ol><li>Correlations (e.g., &quot;Is there a correlation between marketing spend and revenue?&quot; - Scatter Plot)</li></ol></div>
+<p>Provide your response in the following format:</p>
+<p>Recommended Visualization: [Chart type or &quot;None&quot;]. ONLY use the following names: bar, horizontal_bar, line, pie, scatter, none</p>
+<p>Reason: [Brief explanation for your recommendation]
+`</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s20">
+      <h2>🚀 **8. Formatting the data for visualization:**</h2>
+      <p class="lead">We pass the SQL query results to the DataFormatter.</p>
+      <p>We pass the SQL query results to the DataFormatter. It formats the data according to the visualization type. If the results are in a predictable format, we have implemented rule based logic to format the data and only use llms to come up with labels, which speeds up the process especially in the cases of bar graphs, line graphs and scatter plots. Else we pass the results to a LLM to format the data.</p>
+<p>Formatting instructions</p>
+<p>`
+barGraphIntstruction = &#x27;&#x27;&#x27;</p>
+<p>Where data is: {
+    labels: string[]
+    values: {\\data: number[], label: string}[]
+  }</p>
+<p>// Examples of usage:
+Each label represents a column on the x axis.
+Each array in values represents a different entity.</p>
+<p>Here we are looking at average income for each month.
+1. data = {
+  labels: [&#x27;Jan&#x27;, &#x27;Feb&#x27;, &#x27;Mar&#x27;, &#x27;Apr&#x27;, &#x27;May&#x27;, &#x27;Jun&#x27;],
+  values: [{data:[21.5, 25.0, 47.5, 64.8, 105.5, 133.2], label: &#x27;Income&#x27;}],
+}</p>
+<p>Here we are looking at the performance of american and european players for each series. Since there are two entities, we have two arrays in values.
+2. data = {
+  labels: [&#x27;series A&#x27;, &#x27;series B&#x27;, &#x27;series C&#x27;],
+  values: [{data:[10, 15, 20], label: &#x27;American&#x27;}, {data:[20, 25, 30], label: &#x27;European&#x27;}],
+}
+&#x27;&#x27;&#x27;</p>
+<p>horizontalBarGraphIntstruction = &#x27;&#x27;&#x27;</p>
+<p>Where data is: {
+    labels: string[]
+    values: {\\data: number[], label: string}[]
+  }</p>
+<p>// Examples of usage:
+Each label represents a column on the x axis.
+Each array in values represents a different entity.</p>
+<p>Here we are looking at average income for each month.
+1. data = {
+  labels: [&#x27;Jan&#x27;, &#x27;Feb&#x27;, &#x27;Mar&#x27;, &#x27;Apr&#x27;, &#x27;May&#x27;, &#x27;Jun&#x27;],
+  values: [{data:[21.5, 25.0, 47.5, 64.8, 105.5, 133.2], label: &#x27;Income&#x27;}],
+}</p>
+<p>Here we are looking at the performance of american and european players for each series. Since there are two entities, we have two arrays in values.
+2. data = {
+  labels: [&#x27;series A&#x27;, &#x27;series B&#x27;, &#x27;series C&#x27;],
+  values: [{data:[10, 15, 20], label: &#x27;American&#x27;}, {data:[20, 25, 30], label: &#x27;European&#x27;}],
+}</p>
+<p>&#x27;&#x27;&#x27;</p>
+<p>lineGraphIntstruction = &#x27;&#x27;&#x27;</p>
+<p>Where data is: {
+  xValues: number[] | string[]
+  yValues: { data: number[]; label: string }[]
+}</p>
+<p>// Examples of usage:</p>
+<p>Here we are looking at the momentum of a body as a function of mass.
+1. data = {
+  xValues: [&#x27;2020&#x27;, &#x27;2021&#x27;, &#x27;2022&#x27;, &#x27;2023&#x27;, &#x27;2024&#x27;],
+  yValues: [
+    { data: [2, 5.5, 2, 8.5, 1.5]},
+  ],
+}</p>
+<p>Here we are looking at the performance of american and european players for each year. Since there are two entities, we have two arrays in yValues.
+2. data = {
+  xValues: [&#x27;2020&#x27;, &#x27;2021&#x27;, &#x27;2022&#x27;, &#x27;2023&#x27;, &#x27;2024&#x27;],
+  yValues: [
+    { data: [2, 5.5, 2, 8.5, 1.5], label: &#x27;American&#x27; },
+    { data: [2, 5.5, 2, 8.5, 1.5], label: &#x27;European&#x27; },
+  ],
+}
+&#x27;&#x27;&#x27;</p>
+<p>pieChartIntstruction = &#x27;&#x27;&#x27;</p>
+<p>Where data is: {
+    labels: string
+    values: number
+  }[]</p>
+<p>// Example usage:
+ data = [
+        { id: 0, value: 10, label: &#x27;series A&#x27; },
+        { id: 1, value: 15, label: &#x27;series B&#x27; },
+        { id: 2, value: 20, label: &#x27;series C&#x27; },
+      ],
+&#x27;&#x27;&#x27;</p>
+<p>scatterPlotIntstruction = &#x27;&#x27;&#x27;
+Where data is: {
+  series: {
+    data: { x: number; y: number; id: number }[]
+    label: string
+  }[]
+}</p>
+<p>// Examples of usage:
+1. Here each data array represents the points for a different entity.
+We are looking for correlation between amount spent and quantity bought for men and women.
+data = {
+  series: [
+    {
+      data: [
+        { x: 100, y: 200, id: 1 },
+        { x: 120, y: 100, id: 2 },
+        { x: 170, y: 300, id: 3 },
+      ],
+      label: &#x27;Men&#x27;,
+    },
+    {
+      data: [
+        { x: 300, y: 300, id: 1 },
+        { x: 400, y: 500, id: 2 },
+        { x: 200, y: 700, id: 3 },
+      ],
+      label: &#x27;Women&#x27;,
+    }
+  ],
+}</p>
+<div class="card"><ol><li>Here we are looking for correlation between the height and weight of players.</li></ol></div>
+<p>// Note: Each object in the &#x27;data&#x27; array represents a point on the scatter plot.
+// The &#x27;x&#x27; and &#x27;y&#x27; values determine the position of the point, and &#x27;id&#x27; is a unique identifier.
+// Multiple series can be represented, each as an object in the outer array.
+&#x27;&#x27;&#x27;</p>
+<div class="code-block"><pre>graph_instructions = {
+    &amp;quot;bar&amp;quot;: barGraphIntstruction,
+    &amp;quot;horizontal_bar&amp;quot;: horizontalBarGraphIntstruction,
+    &amp;quot;line&amp;quot;: lineGraphIntstruction,
+    &amp;quot;pie&amp;quot;: pieChartIntstruction,
+    &amp;quot;scatter&amp;quot;: scatterPlotIntstruction
+}</pre></div>
+<div class="code-block"><pre>class DataFormatter:
+    def __init__(self):
+        self.llm_manager = LLMManager()</pre></div>
+<p>def format_data_for_visualization(self, state: dict) -&gt; dict:
+        &quot;&quot;&quot;Format the data for the chosen visualization type.&quot;&quot;&quot;
+        visualization = state[&#x27;visualization&#x27;]
+        results = state[&#x27;results&#x27;]
+        question = state[&#x27;question&#x27;]
+        sql_query = state[&#x27;sql_query&#x27;]</p>
+<p>if visualization == &quot;none&quot;:
+            return {&quot;formatted_data_for_visualization&quot;: None}</p>
+<p>if visualization == &quot;scatter&quot;:
+            try:
+                return self._format_scatter_data(results)
+            except Exception as e:
+                return self._format_other_visualizations(visualization, question, sql_query, results)</p>
+<p>if visualization == &quot;bar&quot; or visualization == &quot;horizontal_bar&quot;:
+            try:
+                return self._format_bar_data(results, question)
+            except Exception as e:
+                return self._format_other_visualizations(visualization, question, sql_query, results)</p>
+<p>if visualization == &quot;line&quot;:
+            try:
+                return self._format_line_data(results, question)
+            except Exception as e:
+                return self._format_other_visualizations(visualization, question, sql_query, results)</p>
+<p>return self._format_other_visualizations(visualization, question, sql_query, results)</p>
+<p>def _format_line_data(self, results, question):
+        if isinstance(results, str):
+            results = eval(results)</p>
+<p>if len(results[0]) == 2:</p>
+<p>x_values = [str(row[0]) for row in results]
+            y_values = [float(row[1]) for row in results]</p>
+      <div class="chart"><div class="chart-row"><div class="chart-label">准确率</div><div class="chart-bar-wrap"><div class="chart-bar green" style="width:92%">92%</div></div></div><div class="chart-row"><div class="chart-label">效率</div><div class="chart-bar-wrap"><div class="chart-bar teal" style="width:85%">85%</div></div></div><div class="chart-row"><div class="chart-label">可用性</div><div class="chart-bar-wrap"><div class="chart-bar blue" style="width:78%">78%</div></div></div></div>
+    </section>
+    <section class="section" id="s21">
+      <h2>🔍 Use LLM to get a relevant label</h2>
+      <p class="lead">prompt = ChatPromptTemplate.</p>
+      <p>prompt = ChatPromptTemplate.from_messages([
+                (&quot;system&quot;, &quot;You are a data labeling expert. Given a question and some data, provide a concise and relevant label for the data series.&quot;),
+                (&quot;human&quot;, &quot;Question: {question}\\n Data (first few rows): {data}\\n\\nProvide a concise label for this y axis. For example, if the data is the sales figures over time, the label could be &#x27;Sales&#x27;. If the data is the population growth, the label could be &#x27;Population&#x27;. If the data is the revenue trend, the label could be &#x27;Revenue&#x27;.&quot;),
+            ])
+            label = self.llm_manager.invoke(prompt, question=question, data=str(results[:2]))</p>
+<p>formatted_data = {
+                &quot;xValues&quot;: x_values,
+                &quot;yValues&quot;: [
+                    {
+                        &quot;data&quot;: y_values,
+                        &quot;label&quot;: label.strip()
+                    }
+                ]
+            }
+        elif len(results[0]) == 3:</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s22">
+      <h2>⚡ Group data by label</h2>
+      <p class="lead">data_by_label = {}
+            x_values = []
+
+            for item1, item2, item3 in results:</p>
+      <p>data_by_label = {}
+            x_values = []</p>
+<p>for item1, item2, item3 in results:</p>
+      <div class="chart"><div class="chart-row"><div class="chart-label">准确率</div><div class="chart-bar-wrap"><div class="chart-bar green" style="width:92%">92%</div></div></div><div class="chart-row"><div class="chart-label">效率</div><div class="chart-bar-wrap"><div class="chart-bar teal" style="width:85%">85%</div></div></div><div class="chart-row"><div class="chart-label">可用性</div><div class="chart-bar-wrap"><div class="chart-bar blue" style="width:78%">78%</div></div></div></div>
+    </section>
+    <section class="section" id="s23">
+      <h2>🏗️ Determine which item is the label (string not convertible to float and not containing &amp;quot;/&amp;quot;)</h2>
+      <p class="lead">if isinstance(item1, str) and not item1.</p>
+      <p>if isinstance(item1, str) and not item1.replace(&quot;.&quot;, &quot;&quot;).isdigit() and &quot;/&quot; not in item1:
+                    label, x, y = item1, item2, item3
+                else:
+                    x, label, y = item1, item2, item3</p>
+<p>if str(x) not in x_values:
+                    x_values.append(str(x))
+                if label not in data_by_label:
+                    data_by_label[label] = []
+                data_by_label[label].append(float(y))</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s24">
+      <h2>📊 Create yValues array</h2>
+      <p class="lead">y_values = [
+                {
+                    &amp;quot;data&amp;quot;: data,
+                    &amp;quot;label&amp;quot;: label
+                }
+                for label, data in data_by_label.</p>
+      <p>y_values = [
+                {
+                    &quot;data&quot;: data,
+                    &quot;label&quot;: label
+                }
+                for label, data in data_by_label.items()
+            ]</p>
+<p>formatted_data = {
+                &quot;xValues&quot;: x_values,
+                &quot;yValues&quot;: y_values
+            }</p>
+      
+    </section>
+    <section class="section" id="s25">
+      <h2>🔗 Use LLM to get a relevant label for the y-axis</h2>
+      <p class="lead">prompt = ChatPromptTemplate.</p>
+      <p>prompt = ChatPromptTemplate.from_messages([
+                (&quot;system&quot;, &quot;You are a data labeling expert. Given a question and some data, provide a concise and relevant label for the y-axis.&quot;),
+                (&quot;human&quot;, &quot;Question: {question}\\n Data (first few rows): {data}\\n\\nProvide a concise label for the y-axis. For example, if the data represents sales figures over time for different categories, the label could be &#x27;Sales&#x27;. If it&#x27;s about population growth for different groups, it could be &#x27;Population&#x27;.&quot;),
+            ])
+            y_axis_label = self.llm_manager.invoke(prompt, question=question, data=str(results[:2]))</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s26">
+      <h2>💡 Add the y-axis label to the formatted data</h2>
+      <p class="lead">formatted_data[&amp;quot;yAxisLabel&amp;quot;] = y_axis_label.</p>
+      <p>formatted_data[&quot;yAxisLabel&quot;] = y_axis_label.strip()</p>
+<p>return {&quot;formatted_data_for_visualization&quot;: formatted_data}</p>
+<p>def _format_scatter_data(self, results):
+        if isinstance(results, str):
+            results = eval(results)</p>
+<p>formatted_data = {&quot;series&quot;: []}</p>
+<p>if len(results[0]) == 2:
+            formatted_data[&quot;series&quot;].append({
+                &quot;data&quot;: [
+                    {&quot;x&quot;: float(x), &quot;y&quot;: float(y), &quot;id&quot;: i+1}
+                    for i, (x, y) in enumerate(results)
+                ],
+                &quot;label&quot;: &quot;Data Points&quot;
+            })
+        elif len(results[0]) == 3:
+            entities = {}
+            for item1, item2, item3 in results:</p>
+      <div class="chart"><div class="chart-row"><div class="chart-label">准确率</div><div class="chart-bar-wrap"><div class="chart-bar green" style="width:92%">92%</div></div></div><div class="chart-row"><div class="chart-label">效率</div><div class="chart-bar-wrap"><div class="chart-bar teal" style="width:85%">85%</div></div></div><div class="chart-row"><div class="chart-label">可用性</div><div class="chart-bar-wrap"><div class="chart-bar blue" style="width:78%">78%</div></div></div></div>
+    </section>
+    <section class="section" id="s27">
+      <h2>🛠️ Determine which item is the label (string not convertible to float and not containing &amp;quot;/&amp;quot;)</h2>
+      <p class="lead">if isinstance(item1, str) and not item1.</p>
+      <p>if isinstance(item1, str) and not item1.replace(&quot;.&quot;, &quot;&quot;).isdigit() and &quot;/&quot; not in item1:
+                    label, x, y = item1, item2, item3
+                else:
+                    x, label, y = item1, item2, item3
+                if label not in entities:
+                    entities[label] = []
+                entities[label].append({&quot;x&quot;: float(x), &quot;y&quot;: float(y), &quot;id&quot;: len(entities[label])+1})</p>
+<p>for label, data in entities.items():
+                formatted_data[&quot;series&quot;].append({
+                    &quot;data&quot;: data,
+                    &quot;label&quot;: label
+                })
+        else:
+            raise ValueError(&quot;Unexpected data format in results&quot;)</p>
+<p>return {&quot;formatted_data_for_visualization&quot;: formatted_data}</p>
+<p>def _format_bar_data(self, results, question):
+        if isinstance(results, str):
+            results = eval(results)</p>
+<p>if len(results[0]) == 2:</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s28">
+      <h2>📈 Simple bar chart with one series</h2>
+      <p class="lead">labels = [str(row[0]) for row in results]
+            data = [float(row[1]) for row in results]</p>
+      <p>labels = [str(row[0]) for row in results]
+            data = [float(row[1]) for row in results]</p>
+      <div class="chart"><div class="chart-row"><div class="chart-label">准确率</div><div class="chart-bar-wrap"><div class="chart-bar green" style="width:92%">92%</div></div></div><div class="chart-row"><div class="chart-label">效率</div><div class="chart-bar-wrap"><div class="chart-bar teal" style="width:85%">85%</div></div></div><div class="chart-row"><div class="chart-label">可用性</div><div class="chart-bar-wrap"><div class="chart-bar blue" style="width:78%">78%</div></div></div></div>
+    </section>
+    <section class="section" id="s29">
+      <h2>🎯 Use LLM to get a relevant label</h2>
+      <p class="lead">prompt = ChatPromptTemplate.</p>
+      <p>prompt = ChatPromptTemplate.from_messages([
+                (&quot;system&quot;, &quot;You are a data labeling expert. Given a question and some data, provide a concise and relevant label for the data series.&quot;),
+                (&quot;human&quot;, &quot;Question: {question}\\nData (first few rows): {data}\\n\\nProvide a concise label for this y axis. For example, if the data is the sales figures for products, the label could be &#x27;Sales&#x27;. If the data is the population of cities, the label could be &#x27;Population&#x27;. If the data is the revenue by region, the label could be &#x27;Revenue&#x27;.&quot;),
+            ])
+            label = self.llm_manager.invoke(prompt, question=question, data=str(results[:2]))</p>
+<p>values = [{&quot;data&quot;: data, &quot;label&quot;: label}]
+        elif len(results[0]) == 3:</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s30">
+      <h2>🔬 Grouped bar chart with multiple series</h2>
+      <p class="lead">categories = set(row[1] for row in results)
+            labels = list(categories)
+            entities = set(row[0] for row in results)
+            values = []
+            for entity in entities:
+    </p>
+      <p>categories = set(row[1] for row in results)
+            labels = list(categories)
+            entities = set(row[0] for row in results)
+            values = []
+            for entity in entities:
+                entity_data = [float(row[2]) for row in results if row[0] == entity]
+                values.append({&quot;data&quot;: entity_data, &quot;label&quot;: str(entity)})
+        else:
+            raise ValueError(&quot;Unexpected data format in results&quot;)</p>
+<p>formatted_data = {
+            &quot;labels&quot;: labels,
+            &quot;values&quot;: values
+        }</p>
+<p>return {&quot;formatted_data_for_visualization&quot;: formatted_data}</p>
+<p>def _format_other_visualizations(self, visualization, question, sql_query, results):
+        instructions = graph_instructions[visualization]
+        prompt = ChatPromptTemplate.from_messages([
+            (&quot;system&quot;, &quot;You are a Data expert who formats data according to the required needs. You are given the question asked by the user, it&#x27;s sql query, the result of the query and the format you need to format it in.&quot;),
+            (&quot;human&quot;, &#x27;For the given question: {question}\\n\\nSQL query: {sql_query}\\n\\Result: {results}\\n\\nUse the following example to structure the data: {instructions}. Just give the json string. Do not format it&#x27;),
+        ])
+        response = self.llm_manager.invoke(prompt, question=question, sql_query=sql_query, results=results, instructions=instructions)</p>
+<p>try:
+            formatted_data_for_visualization = json.loads(response)
+            return {&quot;formatted_data_for_visualization&quot;: formatted_data_for_visualization}
+        except json.JSONDecodeError:
+            return {&quot;error&quot;: &quot;Failed to format data for visualization&quot;, &quot;raw_response&quot;: response}</p>
+<p>Throughout the workflow, this was our state:</p>
+<div class="code-block"><pre>class State(TypedDict):
+    question: str
+    uuid: str
+    parsed_question: Dict[str, Any]
+    unique_nouns: List[str]
+    sql_query: str
+    sql_valid: bool
+    sql_issues: str
+    results: List[Any]
+    answer: Annotated[str, operator.add]
+    error: str
+    visualization: Annotated[str, operator.add]
+    visualization_reason: Annotated[str, operator.add]
+    formatted_data_for_visualization: Dict[str, Any]</pre></div>
+      <div class="chart"><div class="chart-row"><div class="chart-label">准确率</div><div class="chart-bar-wrap"><div class="chart-bar green" style="width:92%">92%</div></div></div><div class="chart-row"><div class="chart-label">效率</div><div class="chart-bar-wrap"><div class="chart-bar teal" style="width:85%">85%</div></div></div><div class="chart-row"><div class="chart-label">可用性</div><div class="chart-bar-wrap"><div class="chart-bar blue" style="width:78%">78%</div></div></div></div>
+    </section>
+    <section class="section" id="s31">
+      <h2>📝 **Frontend**</h2>
+      <p class="lead">On the frontend, we have prebuilt graph templates which are used to show the visualization.</p>
+      <p>On the frontend, we have prebuilt graph templates which are used to show the visualization.</p>
+<p>We use langgraph&#x27;s streaming api to get the state of the workflow and updates in real time, to provide a nice UI where user can see the progress of the workflow.</p>
+<p>Once the visualization is generated, the user can see the traces of the workflow along with the final visualization.</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s32">
+      <h2>🧪 **Conclusion**</h2>
+      <p class="lead">By combining the power of LangGraph Cloud&amp;#x27;s streaming API, parallel processing capabilities, and interactive studio, we&amp;#x27;ve created a flexible and powerful data visualization agent.</p>
+      <p>By combining the power of LangGraph Cloud&#x27;s streaming API, parallel processing capabilities, and interactive studio, we&#x27;ve created a flexible and powerful data visualization agent. This project demonstrates how modern AI tools can be leveraged to create intuitive interfaces for database querying and data visualization.</p>
+<p>The ability to ask natural language questions about your data and receive instant, visually appealing results opens up new possibilities for data exploration and analysis. Whether you&#x27;re a data scientist, business analyst, or just someone curious about your data, this tool provides an accessible and powerful way to gain insights.</p>
+<p>We encourage you to try out this project, connect it to your own database, and explore the possibilities of agentic workflows with LangGraph Cloud!</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s33">
+      <h2>🌐 Related content</h2>
+      <p class="lead">Case StudiesLangGraphObservability &amp;amp; Evals
+
+#### How Kensho built a multi-agent framework with LangGraph to solve trusted financial data retrieval
+
+The LangChain TeamMarch 26, 20264min[](/blog/cus</p>
+      <p>Case StudiesLangGraphObservability &amp; Evals</p>
+<p>#### How Kensho built a multi-agent framework with LangGraph to solve trusted financial data retrieval</p>
+<p>The LangChain TeamMarch 26, 20264min[](/blog/customers-kensho)Case StudiesLangChainLangGraph</p>
+<p>#### How Remote uses LangChain and LangGraph to onboard thousands of customers with AI</p>
+<p>The LangChain TeamJanuary 19, 20265min[](/blog/customers-remote)Case StudiesLangGraphLangSmith</p>
+<p>#### Fastweb + Vodafone: Transforming Customer Experience with AI Agents using LangGraph and LangSmith</p>
+<p>The LangChain TeamDecember 16, 20257min[](/blog/customers-vodafone-italy)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s34">
+      <h2>📦 See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+<p>](/contact-sales)</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+  </div>
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/data-viz-agent" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

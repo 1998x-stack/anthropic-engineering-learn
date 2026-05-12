@@ -1,0 +1,209 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Summarizing and Querying Data from Excel Spreadsheets Using eparse and a Large Language Model</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--green:#10b981;--emerald:#059669;--teal:#14b8a6;--blue:#3b82f6;--purple:#6366f1;--amber:#f59e0b;--red:#ef4444;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+    .nav{position:sticky;top:0;z-index:100;background:rgba(15,23,42,.85);backdrop-filter:blur(12px);padding:14px 32px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.08)}
+    .nav a{color:#f1f5f9;text-decoration:none;font-weight:500;font-size:14px}
+    .nav .brand{font-weight:700;font-size:16px;color:#10b981}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%);color:#fff;padding:80px 32px 60px;text-align:center}
+    .hero h1{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;margin-bottom:12px;line-height:1.3}
+    .hero .subtitle{font-size:18px;color:rgba(255,255,255,.8);max-width:720px;margin:0 auto 40px}
+    .hero .meta{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:32px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;max-width:800px;margin:0 auto}
+    .stat{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:20px 16px;backdrop-filter:blur(8px)}
+    .stat .num{font-size:28px;font-weight:800;color:#34d399}
+    .stat .label{font-size:13px;color:rgba(255,255,255,.7);margin-top:4px}
+    .page{max-width:900px;margin:0 auto;padding:40px 24px}
+    .toc{margin-bottom:48px}
+    .toc h3{font-size:14px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);margin-bottom:16px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .toc-grid a{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;transition:all .2s}
+    .toc-grid a:hover{border-color:var(--emerald);background:#ecfdf5}
+    .toc-grid .num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-size:12px;font-weight:700;flex-shrink:0}
+    .section{margin-bottom:56px}
+    .section h2{font-size:clamp(1.3rem,3vw,1.7rem);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+    .lead{color:var(--text-secondary);font-size:15px;margin-bottom:24px;line-height:1.6}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}
+    .card h4{font-size:16px;font-weight:600;margin-bottom:8px}
+    .card p,.card li{font-size:14px;color:var(--text-secondary);line-height:1.7}
+    .card ul,.card ol{padding-left:20px}
+    .card li{margin-bottom:4px}
+    p{font-size:15px;color:var(--text-secondary);line-height:1.8;margin-bottom:16px}
+    p code{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:13px;color:#059669}
+    .chart{margin:24px 0}
+    .chart-row{display:flex;align-items:center;margin-bottom:10px;gap:12px}
+    .chart-label{width:150px;font-size:13px;font-weight:500;text-align:right;flex-shrink:0}
+    .chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}
+    .chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;justify-content:flex-end;padding-right:10px;font-size:12px;font-weight:600;color:#fff;transition:width .6s ease}
+    .chart-bar.green{background:linear-gradient(90deg,#059669,#10b981)}
+    .chart-bar.teal{background:linear-gradient(90deg,#14b8a6,#2dd4bf)}
+    .chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+    .chart-bar.purple{background:linear-gradient(90deg,#6366f1,#a78bfa)}
+    .chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}
+    .flow{display:flex;align-items:center;justify-content:center;gap:12px;margin:24px 0;flex-wrap:wrap}
+    .flow-step{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;min-width:120px}
+    .flow-step.green{background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none}
+    .flow-step.teal{background:linear-gradient(135deg,#14b8a6,#2dd4bf);color:#fff;border:none}
+    .flow-step.blue{background:linear-gradient(135deg,#3b82f6,#60a5fa);color:#fff;border:none}
+    .flow-step.purple{background:linear-gradient(135deg,#6366f1,#a78bfa);color:#fff;border:none}
+    .flow-step.amber{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#fff;border:none}
+    .flow-arrow{font-size:20px;color:var(--text-secondary)}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}
+    .compare-card{border-radius:var(--radius);padding:24px}
+    .compare-card.old{background:#fef2f2;border:2px solid #fecaca}
+    .compare-card.new{background:#ecfdf5;border:2px solid #a7f3d0}
+    .compare-card h4{font-size:15px;font-weight:700;margin-bottom:8px}
+    .compare-card p{font-size:13px;color:var(--text-secondary)}
+    .timeline{position:relative;padding-left:32px;margin:24px 0}
+    .timeline::before{content:'';position:absolute;left:7px;top:8px;bottom:8px;width:3px;background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6);border-radius:2px}
+    .tl-item{position:relative;margin-bottom:24px}
+    .tl-dot{position:absolute;left:-29px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid #059669;background:#fff}
+    .tl-item:nth-child(2) .tl-dot{border-color:#14b8a6}
+    .tl-item:nth-child(3) .tl-dot{border-color:#3b82f6}
+    .tl-phase{font-weight:700;font-size:15px;color:var(--text)}
+    .tl-desc{font-size:13px;color:var(--text-secondary);margin-top:4px}
+    .code-block{background:#1e293b;border-radius:var(--radius);padding:20px;margin:16px 0;overflow-x:auto}
+    .code-block pre{color:#e2e8f0;font-family:var(--mono);font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-all}
+    .block-q{background:linear-gradient(135deg,#ecfdf5,#d1fae5);border-left:4px solid #059669;border-radius:0 var(--radius) var(--radius) 0;padding:20px 24px;margin:24px 0}
+    .block-q p{font-size:15px;font-style:italic;color:#064e3b;line-height:1.7}
+    .footer{background:#0f172a;color:#94a3b8;padding:40px 32px;text-align:center;font-size:14px}
+    .footer a{color:#34d399;text-decoration:none}
+    .footer a:hover{text-decoration:underline}
+    .footer .links{margin-top:12px;display:flex;justify-content:center;gap:24px;flex-wrap:wrap}
+    @media(max-width:768px){.compare-grid{grid-template-columns:1fr}.chart-label{width:100px;font-size:12px}.flow{flex-direction:column;gap:8px}.flow-arrow{transform:rotate(90deg)}.toc-grid{grid-template-columns:1fr}.hero{padding:60px 20px 40px}.nav{padding:12px 16px}.stats{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+  <header class="hero">
+    <div class="meta">🔧 Tools & Integrations · LangChain Accounts · 2023-08-24</div>
+    <h1>Summarizing and Querying Data from Excel Spreadsheets Using eparse and a Large Language Model</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">3</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~9min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">-</div><div class="label">代码示例</div></div>
+      <div class="stat"><div class="num">10</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>Summarizing and Querying Data </a>
+      <a href="#s2"><span class="num">2</span>Related content</a>
+      <a href="#s3"><span class="num">3</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+    <section class="section" id="s1">
+      <h2>🔍 Summarizing and Querying Data from Excel Spreadsheets Using eparse and a Large Language Model</h2>
+      <p class="lead">The LangChain TeamAugust 24, 20238min
+
+Go back to blogShare
+
+
+
+
+
+Editor&amp;#x27;s Note: This post was written by Chris Pappalardo, a Senior Director at Alvarez &amp;amp; Marsal, a leading global professional</p>
+      <p>The LangChain TeamAugust 24, 20238min[</p>
+<p>Go back to blog](/blog)Share[</p>
+<p>](#)Editor&#x27;s Note: This post was written by Chris Pappalardo, a Senior Director at Alvarez &amp; Marsal, a leading global professional services firm. The standard processes for building with LLM work well for documents that contain mostly text, but do not work as well for documents that contain tabular data (like spreadsheets). We wrote about our latest thinking on Q&amp;A over csvs on the blog a couple weeks ago, and we loved reading Chris&#x27;s exploration of working with csvs and LangChain using agents, chains, RAG, and metadata. Lots of great learnings in here!</p>
+<p>When I first sat down to write eparse, the objective was to create a library that could crawl and parse a large set of Excel files and extract information in context into storage for later consumption.  To this end, we were fairly successful – eparse can extract sub-tabular information using a rules-based search algorithm and store labeled cells as rows in a database.  Assuming the user has a good idea of what is contained in the source files, SQL queries or the eparse CLI can be used to retrieve specific data.</p>
+<p>However, document Extraction, Transformation, and Loading (“ETL”) activities are becoming more generative AI-oriented to facilitate activities like document summarization and Retrieval-Augmented Generation (“RAG”).  Given that most documents in question mostly contain text, which Large Language Models (“LLMs”) are well suited for, many of the ETL tools were built for this case.  A typical “quickstart” workflow for these purposes is as follows:</p>
+<p>Figure 1 - Typical AI-oriented ETL Workflow (source: langchain.com).</p>
+<p>The process begins with using an ETL tool set like unstructured, which identifies the document type, extracts content as text, cleans the text, and returns one or more text elements.  A second library, in this case langchain, will then “chunk” the text elements into one or more documents that are then stored, usually in a vectorstore such as Chroma.  Finally, an LLM can be used to query the vectorstore to answer questions or summarize the content of the document.</p>
+<p>This process works well for documents that contain mostly text.  It does not work well for documents that contain mostly tabular data, such as spreadsheets.</p>
+<p>To better understand this problem, let’s consider an example.  In the eparse code repository there is a unit test data file called eparse_unit_test_data.xlsx which contains the following sub-tables, each with different types of financial data:</p>
+<p>Figure 2 - Financial Statement Data by Date with Duplicate ColumnsFigure 3 - Principal Repayment Schedules for Multiple Unidentified Debt Instruments</p>
+<p>For this demonstration, I wrote a Gradio app to display the extracted and chunked text data so it is easier to figure out what the libraries are doing behind the scenes.  If we use unstructured and langchain without any modifications, the ETL workflow would produce text chunks from this file that look as follows:</p>
+<p>Figure 4 - Extracted Data from Figure 2 Spreadsheet Table in Gradio</p>
+<p>Unstructured produces a single text element which LangChain chunks up into 14 pieces, with the 3rd piece (“3 – Document”) containing the first sub-table I depicted above.  Each cell in this table is a separate line, and the 3rd piece contains about 40 lines, which is not the entire table.</p>
+<p>When I first tried to ask an LLM to summarize the document using the vectorstore, I received a context window overrun error due to the number of tokens (loosely words) exceeding the LLM’s context window size (in this case 2k tokens).  This is a common problem with working with LLMs, which I will touch on later in the article.  So, to handle that problem, I used a larger context window LLM running on a bigger server and extended the API timeout to 10 minutes.  This time we get a decent result:</p>
+<p>Figure 5 - Summarization Using a Large Context LLM with a Default Implementation</p>
+<p>With default implementations, the LLM understood some aspects of the file but did not get a good general sense of the content.  Also, the amounts are off, the loan amount appears to be 10x higher than the amount in the file, ignores the other loans, and the LLM is misunderstanding the unformatted Excel date value (a 44,621 day maturity would be 122+ years).</p>
+<p>How does eparse perform on the same task?</p>
+<p>eparse does things a little differently.  Instead of passing entire sheets to LangChain, eparse will find and pass sub-tables, which appears to produce better segmentation in LangChain.  Using eparse, LangChain returns 9 document chunks, with the 2nd piece (“2 – Document”) containing the entire first sub-table.  Asking the LLM to summarize the spreadsheet using these vectors produces a more comprehensive view of what is contained in the spreadsheet, including the nuances of the sub-tables, and without any erroneous data.</p>
+<p>Figure 6 - Summarization Using eparse and Sub-table Chunking</p>
+<p>However, the LLM gets sidetracked by pedantic things like row structure on a single table, and still gets basic questions about amounts incorrect:</p>
+<p>And the dates are still in the wrong format:</p>
+<p>To recap, these are the issues with feeding Excel files to an LLM using default implementations of unstructured, eparse, and LangChain and the current state of those tools:</p>
+<div class="card"><ul><li>Excel sheets are passed as a single table and default chunking schemes break up logical collections</li><li>Larger chunks strain constraints such as context window size, GPU memory, and timeout settings</li><li>Broken logical collections and default retrieval schemes produce incomplete summaries</li><li>Discrete value lookup performance by the LLM on vectorized data is poor</li><li>Default data cleaning does not handle certain things like Excel numeric date encoding</li></ul></div>
+<p>The basic problem with summarization is that it is a reduction from many things to one statement.  The default configuration for a single document retrieval Q&amp;A application is to find 4 similar parts of the document and “stuff” them into the context window before asking for a summary.</p>
+<p>To improve retrieval and summarization performance on spreadsheets, we need to consider other retrieval strategies.  Damien Benveniste recently posted the following graphic on LinkedIn that addresses handling summaries of multiple documents that are too large to fit into the context window:</p>
+<p>Adding options for chain type, search type, and k-documents settings to my Gradio app, I am now able to test each of these strategies in different configurations against different LLMs:</p>
+<p>Figure 8 - Adding Options for Chain Type, Search Type, and K-documents</p>
+<p>Setting chain type to “map reduce” (the second strategy in Figure 7) and increasing the number of retrieved documents produces a much better result:</p>
+<p>Figure 9 - Map-reduced Summarization with 10 Table Elements</p>
+<p>The LLM hits on all major themes in the various extracted sub-tables, acknowledges the instrument type in the document (debt), and even mentions the amortization schedule.  All sans nonsensical data elements.</p>
+<p>Turning on chain verbosity, we can get an idea of what is happening behind the scenes (apologies for the small text):</p>
+<p>Figure 10 – The Final Prompt in the Map Reduce Chain</p>
+<p>Each extracted sub-table is being summarized by the LLM before it is injected into a final prompt for a collective summary at the end, just like the map-reduce diagram depicts.  Expanding the K-document size ensures that smaller nuances of the file are considered.</p>
+<p>You may be wondering about the “refine” strategy and perhaps wonder what happened to the small context model we started with.  I tried various strategies and combinations with the smaller model including refine and, while I was able to eventually deal with the context window limitation, that model with and without the refine strategy just did not deliver quality responses.  I believe this result is the combination of a worse foundational model and 8-bit quantization.  Bottom line is that it pays to have at least one LLM running on outsized hardware with a solid foundation to test against.</p>
+<p>What about specific data retrieval?</p>
+<p>The solution to the problem of extracting specific data from spreadsheet tables using an LLM will involve the Agent design pattern, where LLMs are taught to use functions that they can call.  The demonstration of agents is beyond the scope of this article.  However, we recently added something to eparse that will assist in this effort that I am excited to share.</p>
+<p>In version 0.7.0 of eparse we introduced utility functions and a new interface to seamlessly transition from HTML tables to an eparse data interface backed by Sqlite.  What this means is that users can interface their LLMs to structured table data captured by the ETL process, which is stored as metadata in the objects that are uploaded to vector storage.  For example, the following HTML table was generated as a by-product from eparsing the unit test spreadsheet:</p>
+<p>Figure 11 - HTML Tabular Metadata</p>
+<p>To facilitate an ETL pipeline powered by eparse, a drop-in replacement of the unstructured auto partitioner and the Excel partitioner are provided starting with v0.7.1 (see the README for more details on how to incorporate these functions into your project):</p>
+<p>Figure 12 - Custom Excel Partitioner for Unstructured Using eparse</p>
+<p>Using HTML tabular data in an LLM chain with agent tools is as easy as instantiating the following new HTML interface and then using it like any other database ORM:</p>
+<p>Figure 13 - eparse HTML Tabular Data Interface</p>
+<p>And handling conversion of numeric Excel formatting data?</p>
+<p>The solution to the problem of handling things like recasting Excel numeric date information into the proper format would best be handled by a custom cleaning or staging brick using the unstructured library.  A discussion of cleaning bricks and how to apply them is here.</p>
+<p>In conclusion, extracting information from Excel spreadsheets presents unique problems not contemplated by many ETL systems and the typical LLM tool sets.  Key points to consider when designing your own solutions include:</p>
+<div class="card"><ul><li>Spreadsheets present unique problems on both the ingestion / chunking side and in retrieval</li><li>Chain selection is important, default settings may (and often) do not work well</li><li>LLMs are good at text, not great at data, so you will likely need an agent solution to get accurate information from queries</li><li>Not all LLMs are the same when it comes to summarization performance</li><li>Metadata is valuable and you may have underutilized data in your vectorstore</li></ul></div>
+      
+    </section>
+    <section class="section" id="s2">
+      <h2>⚡ Related content</h2>
+      <p class="lead">Deep AgentsAgent ArchitectureOpen Source
+
+#### Tuning Deep Agents to Work Well with Different Models
+
+Vivek TrivedyMason DaughertyApril 29, 20265min[](/blog/tuning-deep-agents-different-models).</p>
+      <p>Deep AgentsAgent ArchitectureOpen Source</p>
+<p>#### Tuning Deep Agents to Work Well with Different Models</p>
+<p>Vivek TrivedyMason DaughertyApril 29, 20265min[](/blog/tuning-deep-agents-different-models).png)Agent ArchitectureLangSmithOpen Source</p>
+<p>#### How LangSmith and LangChain OSS Help You Meet EU AI Act Requirements</p>
+<p>Jacob TalbotBecca WengApril 27, 20267min[](/blog/langsmith-langchain-oss-eu-ai-act).png)Agent ArchitecturePartner</p>
+<p>#### Agentic Engineering: How Swarms of AI Agents Are Redefining Software Engineering</p>
+<p>Renuka KumarPrashanth RamagopalApril 17, 202611min[](/blog/agentic-engineering-redefining-software-engineering)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s3">
+      <h2>🏗️ See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+<p>](/contact-sales)</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="viz1">
+      <h2>📊 技术分析 1</h2>
+      <p class="lead">关键技术指标与架构分析</p>
+      <div class="flow"><div class="flow-step green">数据输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理引擎</div><div class="flow-arrow">→</div><div class="flow-step blue">LLM 推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+  </div>
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/summarizing-and-querying-data-from-excel-spreadsheets-using-eparse-and-a-large-language-model" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

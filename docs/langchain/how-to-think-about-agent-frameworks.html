@@ -1,0 +1,418 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：How to think about agent frameworks</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--green:#10b981;--emerald:#059669;--teal:#14b8a6;--blue:#3b82f6;--purple:#6366f1;--amber:#f59e0b;--red:#ef4444;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+    .nav{position:sticky;top:0;z-index:100;background:rgba(15,23,42,.85);backdrop-filter:blur(12px);padding:14px 32px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.08)}
+    .nav a{color:#f1f5f9;text-decoration:none;font-weight:500;font-size:14px}
+    .nav .brand{font-weight:700;font-size:16px;color:#10b981}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%);color:#fff;padding:80px 32px 60px;text-align:center}
+    .hero h1{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;margin-bottom:12px;line-height:1.3}
+    .hero .subtitle{font-size:18px;color:rgba(255,255,255,.8);max-width:720px;margin:0 auto 40px}
+    .hero .meta{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:32px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;max-width:800px;margin:0 auto}
+    .stat{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:20px 16px;backdrop-filter:blur(8px)}
+    .stat .num{font-size:28px;font-weight:800;color:#34d399}
+    .stat .label{font-size:13px;color:rgba(255,255,255,.7);margin-top:4px}
+    .page{max-width:900px;margin:0 auto;padding:40px 24px}
+    .toc{margin-bottom:48px}
+    .toc h3{font-size:14px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);margin-bottom:16px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .toc-grid a{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;transition:all .2s}
+    .toc-grid a:hover{border-color:var(--emerald);background:#ecfdf5}
+    .toc-grid .num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-size:12px;font-weight:700;flex-shrink:0}
+    .section{margin-bottom:56px}
+    .section h2{font-size:clamp(1.3rem,3vw,1.7rem);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+    .lead{color:var(--text-secondary);font-size:15px;margin-bottom:24px;line-height:1.6}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}
+    .card h4{font-size:16px;font-weight:600;margin-bottom:8px}
+    .card p,.card li{font-size:14px;color:var(--text-secondary);line-height:1.7}
+    .card ul,.card ol{padding-left:20px}
+    .card li{margin-bottom:4px}
+    p{font-size:15px;color:var(--text-secondary);line-height:1.8;margin-bottom:16px}
+    p code{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:13px;color:#059669}
+    .chart{margin:24px 0}
+    .chart-row{display:flex;align-items:center;margin-bottom:10px;gap:12px}
+    .chart-label{width:150px;font-size:13px;font-weight:500;text-align:right;flex-shrink:0}
+    .chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}
+    .chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;justify-content:flex-end;padding-right:10px;font-size:12px;font-weight:600;color:#fff;transition:width .6s ease}
+    .chart-bar.green{background:linear-gradient(90deg,#059669,#10b981)}
+    .chart-bar.teal{background:linear-gradient(90deg,#14b8a6,#2dd4bf)}
+    .chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+    .chart-bar.purple{background:linear-gradient(90deg,#6366f1,#a78bfa)}
+    .chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}
+    .flow{display:flex;align-items:center;justify-content:center;gap:12px;margin:24px 0;flex-wrap:wrap}
+    .flow-step{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;min-width:120px}
+    .flow-step.green{background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none}
+    .flow-step.teal{background:linear-gradient(135deg,#14b8a6,#2dd4bf);color:#fff;border:none}
+    .flow-step.blue{background:linear-gradient(135deg,#3b82f6,#60a5fa);color:#fff;border:none}
+    .flow-step.purple{background:linear-gradient(135deg,#6366f1,#a78bfa);color:#fff;border:none}
+    .flow-step.amber{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#fff;border:none}
+    .flow-arrow{font-size:20px;color:var(--text-secondary)}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}
+    .compare-card{border-radius:var(--radius);padding:24px}
+    .compare-card.old{background:#fef2f2;border:2px solid #fecaca}
+    .compare-card.new{background:#ecfdf5;border:2px solid #a7f3d0}
+    .compare-card h4{font-size:15px;font-weight:700;margin-bottom:8px}
+    .compare-card p{font-size:13px;color:var(--text-secondary)}
+    .timeline{position:relative;padding-left:32px;margin:24px 0}
+    .timeline::before{content:'';position:absolute;left:7px;top:8px;bottom:8px;width:3px;background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6);border-radius:2px}
+    .tl-item{position:relative;margin-bottom:24px}
+    .tl-dot{position:absolute;left:-29px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid #059669;background:#fff}
+    .tl-item:nth-child(2) .tl-dot{border-color:#14b8a6}
+    .tl-item:nth-child(3) .tl-dot{border-color:#3b82f6}
+    .tl-phase{font-weight:700;font-size:15px;color:var(--text)}
+    .tl-desc{font-size:13px;color:var(--text-secondary);margin-top:4px}
+    .code-block{background:#1e293b;border-radius:var(--radius);padding:20px;margin:16px 0;overflow-x:auto}
+    .code-block pre{color:#e2e8f0;font-family:var(--mono);font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-all}
+    .block-q{background:linear-gradient(135deg,#ecfdf5,#d1fae5);border-left:4px solid #059669;border-radius:0 var(--radius) var(--radius) 0;padding:20px 24px;margin:24px 0}
+    .block-q p{font-size:15px;font-style:italic;color:#064e3b;line-height:1.7}
+    .footer{background:#0f172a;color:#94a3b8;padding:40px 32px;text-align:center;font-size:14px}
+    .footer a{color:#34d399;text-decoration:none}
+    .footer a:hover{text-decoration:underline}
+    .footer .links{margin-top:12px;display:flex;justify-content:center;gap:24px;flex-wrap:wrap}
+    @media(max-width:768px){.compare-grid{grid-template-columns:1fr}.chart-label{width:100px;font-size:12px}.flow{flex-direction:column;gap:8px}.flow-arrow{transform:rotate(90deg)}.toc-grid{grid-template-columns:1fr}.hero{padding:60px 20px 40px}.nav{padding:12px 16px}.stats{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+  <header class="hero">
+    <div class="meta">📚 Tutorials & Guides · LangChain Accounts · 2025-04-20</div>
+    <h1>How to think about agent frameworks</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">18</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~26min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">-</div><div class="label">代码示例</div></div>
+      <div class="stat"><div class="num">42</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>How to think about agent frame</a>
+      <a href="#s2"><span class="num">2</span>Background info</a>
+      <a href="#s3"><span class="num">3</span>What is an agent</a>
+      <a href="#s4"><span class="num">4</span>What is hard about building ag</a>
+      <a href="#s5"><span class="num">5</span>What is LangGraph</a>
+      <a href="#s6"><span class="num">6</span>Flavors of agentic frameworks</a>
+      <a href="#s7"><span class="num">7</span>Workflows vs Agents</a>
+      <a href="#s8"><span class="num">8</span>Declarative vs non-declarative</a>
+      <a href="#s9"><span class="num">9</span>Agent Abstractions</a>
+      <a href="#s10"><span class="num">10</span>Multi Agent</a>
+      <a href="#s11"><span class="num">11</span>Common Questions</a>
+      <a href="#s12"><span class="num">12</span>What is the value of a framewo</a>
+      <a href="#s13"><span class="num">13</span>As the models get better, will</a>
+      <a href="#s14"><span class="num">14</span>What did OpenAI get wrong in t</a>
+      <a href="#s15"><span class="num">15</span>Comparing Agent Frameworks</a>
+      <a href="#s16"><span class="num">16</span>Conclusion</a>
+      <a href="#s17"><span class="num">17</span>Related content</a>
+      <a href="#s18"><span class="num">18</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+    <section class="section" id="s1">
+      <h2>🔍 How to think about agent frameworks</h2>
+      <p class="lead">Harrison ChaseApril 20, 202520min
+
+Go back to blogShare
+
+
+
+
+
+TL;DR:
+
+- The hard part of building reliable agentic systems is making sure the LLM has the appropriate context at each step.</p>
+      <p>Harrison ChaseApril 20, 202520min[</p>
+<p>Go back to blog](/blog)Share[</p>
+<div class="card"><ul><li>The hard part of building reliable agentic systems is making sure the LLM has the appropriate context at each step. This includes both controlling the exact content that goes into the LLM, as well as running the appropriate steps to generate relevant content.</li><li>Agentic systems consist of both workflows and agents (and everything in between).</li><li>Most agentic frameworks are neither declarative or imperative orchestration frameworks, but rather just a set of agent abstractions.</li><li>Agent abstractions can make it easy to get started, but they can often obfuscate and make it hard to make sure the LLM has the appropriate context at each step.</li><li>Agentic systems of all shapes and sizes (agents or workflows) all benefit from the same set of helpful features, which can be provided by a framework, or built from scratch.</li><li>LangGraph is best thought of as a orchestration framework (with both declarative and imperative APIs), with a series of agent abstractions built on top.</li></ul></div>
+<p>OpenAI recently released a guide on building agents which contains some misguided takes like the below:</p>
+<p>This callout initially angered me, but after starting to write a response I realized: thinking about agent frameworks is complicated! There are probably 100 different agent frameworks, there are a lot of different axes to compare them on, sometimes they get conflated (like in this quote). There is a lot of hype, posturing, and noise out there. There is very little precise analysis or thinking being done about agent frameworks. This blog is our attempt to do so. We will cover:</p>
+<div class="card"><ul><li>Background Info</li><li>What is hard about building agents?</li><li>What is LangGraph?</li></ul></div>
+<div class="card"><ul><li>Flavors of agentic frameworks</li><li>Declarative vs non-declarative</li><li>Agent abstractions</li><li>Multi agent</li></ul></div>
+<div class="card"><ul><li>Common Questions</li><li>As the models get better, will everything become agents instead of workflows?</li><li>What did OpenAI get wrong in their take?</li><li>How do all the agent frameworks compare?</li></ul></div>
+<p>Throughout this blog I will make repeated references to a few materials:</p>
+<div class="card"><ul><li>OpenAI’s guide on building agents (which I don’t think is particularly good)</li><li>Anthropic’s guide on building effective agents (which I like a lot)</li><li>LangGraph (our framework for building reliable agents)</li></ul></div>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s2">
+      <h2>⚡ Background info</h2>
+      <p class="lead">Helpful context to set the stage for the rest of the blog.</p>
+      <p>Helpful context to set the stage for the rest of the blog.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s3">
+      <h2>🏗️ What is an agent</h2>
+      <p class="lead">There is no consistent definition of an agent, and they are often offered through different lenses.</p>
+      <p>There is no consistent definition of an agent, and they are often offered through different lenses.</p>
+<p>OpenAI takes a higher level, more thought-leadery approach to defining an agent.</p>
+<div class="block-q"><p>> Agents are systems that independently accomplish tasks on your behalf.</p></div>
+<p>I am personally not a fan of this. This is a vague statement that doesn’t really help me understand what an agent is. It’s just thought-leadership and not practical at all.</p>
+<p>Compare this to Anthropic’s definition:</p>
+<div class="block-q"><p>> &quot;Agent&quot; can be defined in several ways. Some customers define agents as fully autonomous systems that operate independently over extended periods, using various tools to accomplish complex tasks. Others use the term to describe more prescriptive implementations that follow predefined workflows. At Anthropic, we categorize all these variations as agentic systems, but draw an important architectural distinction between workflows and agents:</p></div>
+<p>Workflows are systems where LLMs and tools are orchestrated through predefined code paths.</p>
+<p>Agents, on the other hand, are systems where LLMs dynamically direct their own processes and tool usage, maintaining control over how they accomplish tasks.</p>
+<p>I like Anthropic’s definition better for a few reasons:</p>
+<div class="card"><ul><li>Their definition of an agent is much more precise and technical.</li><li>They also make reference to the concept of “agentic systems”, and categorize both workflows and agents as variants of this. I love this.</li></ul></div>
+<p>Nearly all of the “agentic systems” we see in production are a combination of “workflows” and “agents”.</p>
+<p>Later in the blog post, Anthropic defines agents as “… typically just LLMs using tools based on environmental feedback in a loop.”</p>
+<p>Despite their grandiose definition of an agent at the start, this is basically what OpenAI means as well.</p>
+<p>These types of agents are parameterized by:</p>
+<div class="card"><ul><li>The model to use</li><li>The instructions (system prompt) to use</li><li>The tools to use</li></ul></div>
+<p>You call the model in a loop. If/when it decides to call a tool, you run that tool, get some observation/feedback, and then pass that back into the LLM. You run until the LLM decides to not call a tool (or it calls a tool that triggers a stopping criteria).</p>
+<p>Both OpenAI and Anthropic call out workflows as being a different design pattern than agents. The LLM is less in control there, the flow is more deterministic. This is a helpful distinction!</p>
+<p>Both OpenAI and Anthropic explicitly call out that you do not always need agents. In many cases, workflows are simpler, more reliable, cheaper, faster, and more performant. A great quote from the Anthropic post:</p>
+<div class="block-q"><p>> When building applications with LLMs, we recommend finding the simplest solution possible, and only increasing complexity when needed. This might mean not building agentic systems at all. Agentic systems often trade latency and cost for better task performance, and you should consider when this tradeoff makes sense.</p></div>
+<p>When more complexity is warranted, workflows offer predictability and consistency for well-defined tasks, whereas agents are the better option when flexibility and model-driven decision-making are needed at scale.</p>
+<p>OpenAI says something similar:</p>
+<div class="block-q"><p>> Before committing to building an agent, validate that your use case can meet these criteria clearly. Otherwise, a deterministic solution may suffice.</p></div>
+<p>In practice, we see that most “agentic systems” are a combination of workflows and agents. This is why I actually hate talking about whether something is an agent, but prefer talking about how agentic a system is. h/t the great Andrew Ng for this way of thinking about things:</p>
+<div class="block-q"><p>> Rather than having to choose whether or not something is an agent in a binary way, I thought, it would be more useful to think of systems as being agent-like to different degrees. Unlike the noun “agent,” the adjective “agentic” allows us to contemplate such systems and include all of them in this growing movement.</p></div>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s4">
+      <h2>📊 What is hard about building agents?</h2>
+      <p class="lead">I think most people would agree that building agents is hard.</p>
+      <p>I think most people would agree that building agents is hard. Or rather - building an agent as a prototype is easy, but a reliable one, that can power business-critical applications? That is hard.</p>
+<p>The tricky part is exactly that - making it reliable. You can make a demo that looks good on Twitter easily. But can you run it to power a business critical application? Not without a lot of work.</p>
+<p>We did a survey of agent builders a few months ago and asked them: “What is your biggest limitation of putting more agents in production?” The number one response by far was “performance quality” - it’s still really hard to make these agents work.</p>
+<p>What causes agents to perform poorly sometimes? The LLM messes up.</p>
+<p>Why does the LLM mess up? Two reasons: (a) the model is not good enough, (b) the wrong (or incomplete) context is being passed to the model.</p>
+<p>From our experience, it is very frequently the second use case. What causes this?</p>
+<div class="card"><ul><li>Incomplete or short system messages</li><li>Vague user input</li><li>Not having access to the right tools</li><li>Poor tool descriptions</li><li>Not passing in the right context</li><li>Poorly formatted tool responses</li></ul></div>
+<p>The hard part of building reliable agentic systems is making sure the LLM has the appropriate context at each step. This includes both controlling the exact content that goes into the LLM, as well as running the appropriate steps to generate relevant content.</p>
+<p>As we discuss agent frameworks, it’s helpful to keep this in mind. Any framework that makes it harder to control exactly what is being passed to the LLM is just getting in your way. It’s already hard enough to pass the correct context to the LLM - why would you make it harder on yourself?</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s5">
+      <h2>🔗 What is LangGraph</h2>
+      <p class="lead">💡
+
+LangGraph is best thought of as a orchestration framework (with both declarative and imperative APIs), with a series of agent abstractions built on top.</p>
+      <p>LangGraph is best thought of as a orchestration framework (with both declarative and imperative APIs), with a series of agent abstractions built on top.</p>
+<p>LangGraph is an event-driven framework for building agentic systems. The two most common ways of using it are through:</p>
+<div class="card"><ul><li>a declarative, graph-based syntax</li><li>agent abstractions (built on top of the lower level framework)</li></ul></div>
+<p>LangGraph also supports a functional API, as well as the underlying event-driven API. There exist both Python and Typescript variants.</p>
+<p>Agentic systems can be represented as nodes and edges. Nodes represent units of work, while edges represent transitions. Nodes and edges are nothing more than normal Python or TypeScript code - so while the structure of the graph is represented in a declarative manner, the inner functioning of the graph’s logic is normal, imperative code. Edges can be either fixed or conditional. So while the structure of the graph is declarative, the path through the graph can be completely dynamic.</p>
+<p>LangGraph comes with a built-in persistence layer. This enables fault tolerance, short-term memory, and long-term memory.</p>
+<p>This persistence layer also enables “human-in-the-loop” and “human-on-the-loop” patterns, such as interrupt, approve, resume, and time travel.</p>
+<p>LangGraph has built-in support for streaming: of tokens, node updates, and arbitrary events.</p>
+<p>LangGraph integrates seamlessly with LangSmith for debugging, evaluation, and observability.</p>
+      
+    </section>
+    <section class="section" id="s6">
+      <h2>💡 Flavors of agentic frameworks</h2>
+      <p class="lead">Agentic frameworks are different across a few dimensions.</p>
+      <p>Agentic frameworks are different across a few dimensions. Understanding - and not conflating - these dimensions is key to being able to properly compare agentic frameworks.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s7">
+      <h2>🛠️ Workflows vs Agents</h2>
+      <p class="lead">Most frameworks contain higher level agent abstractions.</p>
+      <p>Most frameworks contain higher level agent abstractions. Some frameworks include some abstraction for common workflows. LangGraph is a low level orchestration framework for building agentic systems. LangGraph supports workflows, agents, and anything in-between. We think this is crucial. As mentioned, most agentic systems in production are a combination of workflows and agents. A production-ready framework needs to support both.</p>
+<p>Let’s remember what is hard about building reliable agents - making sure the LLM has the right context. Part of why workflows are useful is that they make it easy to pass the right context to LLMs. You decide exactly how the data flows.</p>
+<p>As you think about where on spectrum of “workflow” to “agent” you want to build your application, there are two things to think about:</p>
+<div class="card"><ul><li>Predictability vs agency</li><li>Low floor, high ceiling</li></ul></div>
+<p>Predictability vs agency</p>
+<p>As your system becomes more agentic, it will become less predictable.</p>
+<p>Sometimes you want or need your system to be predictable - for user trust, regulatory reasons, or other.</p>
+<p>Reliability does not track 100% with predictability, but in practice they can be closely related.</p>
+<p>Where you want to be on this curve is pretty specific to your application. LangGraph can be used to build applications anywhere on this curve, allowing you to move to the point on the curve that you want to be.</p>
+<p>High floor, low ceiling</p>
+<p>When thinking about frameworks, it can be helpful to think about their floors and ceilings:</p>
+<div class="card"><ul><li>Low floor: A low floor framework is beginner-friendly and easy to get started with</li><li>High floor: A framework with a high floor means it has a steep learning curve and requires significant knowledge or expertise to begin using it effectively.</li><li>Low ceiling: A framework with a low ceiling means it has limitations on what can be accomplished with it (you will quickly outgrow it).</li><li>High ceiling: A high ceiling framework offers extensive capabilities and flexibility for advanced use cases (it grows with you?).</li></ul></div>
+<p>Workflow frameworks offer a high ceiling, but come with a high floor - you have to write lot of the agent logic yourself.</p>
+<p>Agent frameworks are low floor, but low ceiling - easy to get started with, but not enough for non-trivial use cases.</p>
+<p>LangGraph aims to have aspects that are low floor (built-in agent abstractions that make it easy to get started) but also high ceiling (low-level functionality to achieve advanced use cases).</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s8">
+      <h2>📈 Declarative vs non-declarative</h2>
+      <p class="lead">There are benefits to declarative frameworks.</p>
+      <p>There are benefits to declarative frameworks. There are also downsides. This is a seemingly endless debate among programmers, and everyone has their own preferences.</p>
+<p>When people say non-declarative, they are usually implying imperative as the alternative.</p>
+<p>Most people would describe LangGraph as a declarative framework. This is only partially true.</p>
+<p>First - while the connections between the nodes and edges are done in a declarative manner, the actual nodes and edges are nothing more than Python or TypeScript functions. Therefore, LangGraph is kind of a blend between declarative and imperative.</p>
+<p>Second - we actually support other APIs besides the recommended declarative API. Specifically, we support both functional and event-driven APIs. While we think the declarative API is a useful mental model, we also recognize it is not for everyone.</p>
+<p>A common comment about LangGraph is that is like Tensorflow (a declarative deep learning framework), while frameworks like Agents SDK are like Pytorch (an imperative deep learning framework).</p>
+<p>This is just incorrect. Frameworks like Agents SDK (and original LangChain, CrewAI, etc) are neither declarative or imperative - they are just abstractions. They have an agent abstraction (a Python class) and it contains a bunch of internal logic that runs the agent. They’re not really orchestration frameworks. They are just abstractions.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s9">
+      <h2>🎯 Agent Abstractions</h2>
+      <p class="lead">Most agent frameworks contain an agent abstraction.</p>
+      <p>Most agent frameworks contain an agent abstraction. They usually start as a class that involves a prompt, model, and tools. Then they add in a few more parameters… then a few more… then even more. Eventually you end up with a litany of parameters that control a multitude of behaviors, all abstracted behind a class. If you want to see what’s going on, or change the logic, you have to go into the class and modify the source code.</p>
+<p>These abstractions end up making it really really hard to understand or control exactly what is going into the LLM at all steps. This is important - having this control is crucial for building reliable agents (as discussed above). This is the danger of agent abstractions.</p>
+<p>We learned this the hard way. This was the issue with the original LangChain chains and agents. They provided abstractions that got in the way. One of those original abstractions from two years ago was an agent class that took in a model, prompt, and tools. This isn’t a new concept. It didn’t provide enough control back then, and it doesn’t now.</p>
+<p>To be clear, there is some value in these agent abstractions. It makes it easier to get started. But I don’t think these agent abstractions are good enough to build reliable agents yet (and maybe ever).</p>
+<p>We think the best way to think about these agent abstractions is like Keras. They provide higher level abstractions to get started easily. But it’s crucial to make sure they are built on top of a lower level framework so you don’t outgrow it.</p>
+<p>That is why we have built agent abstractions on top of LangGraph. This provides an easy way to get started with agents, but if you need to escape to lower-level LangGraph you easily can.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s10">
+      <h2>🔬 Multi Agent</h2>
+      <p class="lead">Oftentimes agentic systems won’t just contain one agent, they will contain multiple.</p>
+      <p>Oftentimes agentic systems won’t just contain one agent, they will contain multiple. OpenAI says in their report:</p>
+<div class="block-q"><p>> For many complex workflows, splitting up prompts and tools across multiple agents allows for improved performance and scalability. When your agents fail to follow complicated instructions or consistently select incorrect tools, you may need to further divide your system and introduce more distinct agents.</p></div>
+<p>The key part of multi agent systems is how they communicate. Again, the hard part of building agents is getting the right context to LLMs. Communication between these agents is important.</p>
+<p>There a bunch of ways to do this! Handoffs are one way. This is an agent abstraction from Agents SDK that I actually quite like.</p>
+<p>But the best way for these agents to communicate can sometimes be workflows. Take all the workflow diagrams in Anthropic’s blog post, and replace the LLM calls with agents. This blend of workflows and agents often gives the best reliability.</p>
+<p>Again - agentic systems are not just workflows, or just an agent. They can be - and often are - a combination of the two. As Anthropic points out in their blog post:</p>
+<div class="block-q"><p>> Combining and customizing these patterns</p></div>
+<p>These building blocks aren&#x27;t prescriptive. They&#x27;re common patterns that developers can shape and combine to fit different use cases.</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s11">
+      <h2>📝 Common Questions</h2>
+      <p class="lead">Having defined and explored the different axes that you should be evaluating frameworks on, let’s now try to answer some common questions.</p>
+      <p>Having defined and explored the different axes that you should be evaluating frameworks on, let’s now try to answer some common questions.</p>
+      <div class="chart"><div class="chart-row"><div class="chart-label">准确率</div><div class="chart-bar-wrap"><div class="chart-bar green" style="width:92%">92%</div></div></div><div class="chart-row"><div class="chart-label">效率</div><div class="chart-bar-wrap"><div class="chart-bar teal" style="width:85%">85%</div></div></div><div class="chart-row"><div class="chart-label">可用性</div><div class="chart-bar-wrap"><div class="chart-bar blue" style="width:78%">78%</div></div></div></div>
+    </section>
+    <section class="section" id="s12">
+      <h2>🧪 What is the value of a framework?</h2>
+      <p class="lead">We often see people questioning whether they need a framework to build agentic systems.</p>
+      <p>We often see people questioning whether they need a framework to build agentic systems. What value can agent frameworks provide?</p>
+<p>Agent abstractions</p>
+<p>Frameworks are generically useful because they contain useful abstractions which make it easy to get started and provide a common way for engineers to build, making it easier to onboard and maintain projects. As mentioned above, there are real downsides to agent abstractions as well. For most agent frameworks, this is the sole value they provide. We worked really hard to make sure this was not case for LangGraph.</p>
+<p>Short term memory</p>
+<p>Most agentic applications today involve some sort of multi-turn (e.g. chat) component. LangGraph provides production ready storage to enable multi-turn experiences (threads).</p>
+<p>Long term memory</p>
+<p>While still early, I am very bullish on agentic systems learning from their experiences (e.g. remembering things across conversations). LangGraph provides production ready storage for cross-thread memory.</p>
+<p>Human-in-the-loop</p>
+<p>Many agentic systems are made better with some human-in-the-loop component. Examples include getting feedback from the user, approving a tool call, or editing tool call arguments. LangGraph provides built in support to enable these workflows in a production system.</p>
+<p>Human-on-the-loop</p>
+<p>Besides allowing the user to affect the agent as it is running, it can also be useful to allow the user to inspect the agent’s trajectory after the fact, and even go back to earlier steps and then rerun (with changes) from there. We call this human-on-the-loop, and LangGraph provides built in support for this.</p>
+<p>Most agentic applications take a while to run, and so providing updates to the end user can be critical for providing a good user experience. LangGraph provides built in streaming of tokens, graph steps, and arbitrary streams.</p>
+<p>Debugging/observability</p>
+<p>The hard part of building reliable agents is making sure you are passing the right context to the LLM. Being able to inspect the exact steps taken by an agent, and the exact inputs/outputs at each step is crucial for building reliable agents. LangGraph integrates seamlessly with LangSmith for best in class debugging and observability. Note: AI observability is different from traditional software observability (this deserves a separate post).</p>
+<p>Fault tolerance is a key component of traditional frameworks (like Temporal) for building distributed applications. LangGraph makes fault tolerance easier with durable workflows and configurable retries.</p>
+<p>Rather than tweaking prompts manually by hand, it can sometimes be easier to define an evaluation dataset and then automatically optimize your agent based on this. LangGraph currently does not support this out of the box - we think it is a little early for this. But I wanted to include this because I think it is an interesting dimension to consider, and something we are constantly keeping our eyes on. <code>dspy</code> is the best framework for this currently.</p>
+<p>All of these value props (aside from the agent abstractions) provide value for both agents, workflows, and everything in between.</p>
+<p>So - do you really need an agentic framework?</p>
+<p>If your application does not require all of these features, and/or if you want to build them yourself, then you may not need one. Some of them (like short term memory) aren’t terribly complicated. Others of them (like human-on-the-loop, or LLM specific observability) are more complicated.</p>
+<p>And regarding agent abstractions: I agree with what Anthropic says in their post:</p>
+<div class="block-q"><p>> If you do use a framework, ensure you understand the underlying code. Incorrect assumptions about what&#x27;s under the hood are a common source of customer error.</p></div>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s13">
+      <h2>🌐 As the models get better, will everything become agents instead of workflows?</h2>
+      <p class="lead">One common argument in favor of agents (compared to workflows) is that while they don’t work now, they will work in the future, and therefore you will just need the simple, tool-calling agents.</p>
+      <p>One common argument in favor of agents (compared to workflows) is that while they don’t work now, they will work in the future, and therefore you will just need the simple, tool-calling agents.</p>
+<p>I think multiple things can be true:</p>
+<div class="card"><ul><li>The performance of these tool-calling agents will rise</li><li>It will still really important to be able to control what goes into the LLM (garbage in, garbage out)</li><li>For some applications, this tool calling loop will be enough</li><li>For other applications, workflows will just be simpler, cheaper, faster, and better</li><li>For most applications, the production agentic system will be a combination of workflows and agents</li></ul></div>
+<p>I don’t think OpenAI or Anthropic would debate any of these points? From Anthropic’s post:</p>
+<div class="block-q"><p>> When building applications with LLMs, we recommend finding the simplest solution possible, and only increasing complexity when needed. This might mean not building agentic systems at all. Agentic systems often trade latency and cost for better task performance, and you should consider when this tradeoff makes sense.</p></div>
+<p>And from OpenAI&#x27;s post:</p>
+<div class="block-q"><p>> Before committing to building an agent, validate that your use case can meet these criteria clearly. Otherwise, a deterministic solution may suffice.</p></div>
+<p>Will there be applications where this simple tool calling loop will be enough? I think this will likely only be true if you are using a model trained/finetuned/RL’d on lots of data that is specific to your use case. This can happen in two ways:</p>
+<div class="card"><ul><li>Your task is unique. You gather a lot of data and train/finetune/RL your own model.</li><li>Your task is not unique. The large model labs are training/finetuning/RL’ing on data representative of your task.</li></ul></div>
+<p>(Side note: if I was building a vertical startup in an area where my task was not unique, I would be pretty worried about the long term viability of my startup).</p>
+<p>Your task is unique</p>
+<p>I would bet that most use cases (certainly most enterprise use cases) fall into this category. How AirBnb handles customer support is different from how Klarna handles customer support which is different from how Rakuten handles customer support. There is a ton of subtlety in these tasks. Sierra - a leading agent company in the customer support space - is not building a single customer support agent, but rather a customer support agent platform:</p>
+<div class="block-q"><p>> The Sierra Agent SDK enables developers to use a declarative programming language to build powerful, flexible agents using composable skills to express procedural knowledge</p></div>
+<p>They need to do this because each company’s customer support experience is unique enough where a generic agent is not performant enough.</p>
+<p>One example of an agent that is a simple tool calling loop using a model trained on a specific task: OpenAI’s Deep Research. So it can be done, and it can produce amazing agents.</p>
+<p>If you can train a SOTA model on your specific task - then yes, you probably don’t need a framework that enables arbitrary workflows, you’ll just use a simple tool calling loop. In this case, agents will be preferred over workflows.</p>
+<p>A very open question in my mind is: how many agent companies will have the data, tools, or knowledge to train a SOTA model for their task? At this exact moment, I think only the large model labs are able to do this. But will that change? Will a small vertical startup be able to train a SOTA model for their task? I am very interested in this question. If you are currently doing this - please reach out!</p>
+<p>Your task is not unique</p>
+<p>I think some tasks are generic enough that the large model labs will be able to provide models that are good enough to do the simple tool-calling loop on these non-generic tasks.</p>
+<p>OpenAI released their Computer Use model via the API, which is a model finetuned on generic computer use data aiming to be good enough at that generic task. (Side note: I don’t think it is close to good enough yet).</p>
+<p>Code is an interesting example of this. Coding is relatively generic, and coding has definitely been a break out use case for agents so far. Claude code and OpenAI’s Codex CLI are two examples of coding agents that use this simple tool calling loop. I would bet heavily that the base models are trained on lots of coding data and tasks (see evidence here that Anthropic does this).</p>
+<p>Interestingly - as the general models are trained on this data, how much does the exact shape of this data matter? Ben Hylak had an interesting tweet the other day that seemed to resonate with folks:</p>
+<div class="block-q"><p>> models don&#x27;t know how to use cursor anymore.</p></div>
+<p>they&#x27;re all being optimized for terminal. that&#x27;s why 3.7 is and o3 are so awful in Cursor, and so amazing outside of it.</p>
+<p>This could suggest two things:</p>
+<div class="card"><ul><li>Your task has to be very very close to the task the general models are trained on. The less similar your task is, the less likely it is that the general models will be good enough for your use case.</li><li>Training the general models on other specific tasks may decrease performance on your task. I’m sure there is just as much (if not more) data similar to Cursor’s use case used to train the new models. But if there is this influx of new data of a slightly different shape, it outweighs any other type of data. This implies it is currently hard for the general models to be really amazing at a large number of tasks.</li></ul></div>
+<p>Even for applications where agents are preferred to anything workflow-like, you will still benefit features of a framework that don’t have to do with low level workflow control: short term memory storage, long term memory storage, human-in-the-loop, human-on-the-loop, streaming, fault tolerance, debugging/observability.</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s14">
+      <h2>📦 What did OpenAI get wrong in their take?</h2>
+      <p class="lead">If we revisit OpenAI&amp;#x27;s stance, we find it to be premised on false dichotomies that conflate different dimensions of &amp;quot;agentic frameworks&amp;quot; in order to inflate the value of their singular </p>
+      <p>If we revisit OpenAI&#x27;s stance, we find it to be premised on false dichotomies that conflate different dimensions of &quot;agentic frameworks&quot; in order to inflate the value of their singular abstraction. Specifically, it conflates “declarative vs imperative” with “agent abstractions” as well as “workflows vs agents”.</p>
+<p>Ultimately it misses the mark on what the main challenge is for building production agentic systems and the main value that should be provided by a framework, which is: a reliable orchestration layer that gives developers explicit control over what context reaches their LLMs while seamlessly handling production concerns like persistence, fault tolerance, and human-in-the-loop interactions.</p>
+<p>Let&#x27;s break down specific parts I take issue with:</p>
+<p>”Declarative vs non-declarative graphs”</p>
+<p>LangGraph is not fully declarative - but it’s declarative enough so that’s not my main gripe. My main gripe would be that “non-declarative” is doing a lot of work and misleading. Normally when people criticize declarative frameworks they would prefer a more imperative framework. But Agents SDK is NOT an imperative framework. It’s an abstraction. A more proper title would be “Declarative vs imperative” or “Do you need an orchestration framework” or “Why agent abstractions are all you need” or “Workflows vs Agents” depending on what they want to argue (they seem to argue both below).</p>
+<p>”this approach can quickly become cumbersome and challenging as workflows grow more dynamic and complex”</p>
+<p>This doesn’t have anything to do with declarative or non-declarative. This has everything to do with workflows vs agents. You can easily express the agent logic in Agents SDK as a declarative graph, and that graph is just as dynamic and flexible as Agents SDK.</p>
+<p>And on the point of workflows vs agents. A lot of workflows do not require this level of dynamism and complexity. Both OpenAI and Anthropic acknowledge this. You should use workflows when you can use workflows. Most agentic systems are a combination. Yes, if a workflow is really dynamic and complex then use an agent. But don’t use an agent for everything. OpenAI literally says this earlier in the paper.</p>
+<p>”often necessitating the learning of specialized domain-specific languages”</p>
+<p>Again - Agents SDK is not an imperative framework. It is an abstraction. It also has a domain specific language (it’s abstractions). I would argue that having to learn and work around Agents SDK abstractions is, at this point in time, worse than having to learn LangGraph abstractions. Largely because the hard thing about building reliable agents is making sure the agent has the right context, and Agents SDKs obfuscates that WAY more than LangGraph.</p>
+<p>&quot;more flexible&quot;</p>
+<p>This is just strictly not true. It’s the opposite of the truth. Everything you can do with Agents SDK you can do with LangGraph. Agents SDK only lets you do 10% of what you can do with LangGraph.</p>
+<p>With Agents SDK you write their abstractions. With LangGraph you write a large amount of normal code. I don’t see how Agents SDK is more code first.</p>
+<p>”using familiar programming constructs”</p>
+<p>With Agents SDK you have to learn a whole new set of abstractions. With LangGraph you write a large amount of normal code. What is more familiar than that?</p>
+<p>”enabling more dynamic and adaptable agent orchestration”</p>
+<p>Again - this doesn’t have to with declarative vs non-declarative. This has to do with workflows vs agents. See above point.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s15">
+      <h2>🔄 Comparing Agent Frameworks</h2>
+      <p class="lead">We&amp;#x27;ve talked about a lot of different components of agent frameworks:
+
+- Are they flexible orchestration layer, or just an agent abstraction?
+- If they are a flexible orchestration layer, are the</p>
+      <p>We&#x27;ve talked about a lot of different components of agent frameworks:</p>
+<div class="card"><ul><li>Are they flexible orchestration layer, or just an agent abstraction?</li><li>If they are a flexible orchestration layer, are they declarative or otherwise?</li><li>What features (aside from agent abstractions) does this framework provide?</li></ul></div>
+<p>I thought it would be fun to try to list out these dimensions in an spreadsheet. I tried to be as impartial as possible about this (I asked for - and got - a lot of good feedback from Twitter!).</p>
+<p>This currently contains comparisons to Agents SDK, Google&#x27;s ADK, LangChain, Crew AI, LlamaIndex, Agno AI, Mastra, Pydantic AI, AutoGen, Temporal, SmolAgents, DSPy.</p>
+<p>If I left out a framework (or got something wrong about a framework) please leave a comment!</p>
+<p>You can find a living version of the spreadsheet here.</p>
+      
+    </section>
+    <section class="section" id="s16">
+      <h2>🎨 Conclusion</h2>
+      <p class="lead">- The hard part of building reliable agentic systems is making sure the LLM has the appropriate context at each step.</p>
+      <div class="card"><ul><li>The hard part of building reliable agentic systems is making sure the LLM has the appropriate context at each step. This includes both controlling the exact content that goes into the LLM, as well as running the appropriate steps to generate relevant content.</li><li>Agentic systems consist of both workflows and agents (and everything in between).</li><li>Most agentic frameworks are neither declarative or imperative orchestration frameworks, but rather just a set of agent abstractions.</li><li>Agent abstractions can make it easy to get started, but they can often obfuscate and make it hard to make sure the LLM has the appropriate context at each step.</li><li>Agentic systems of all shapes and sizes (agents or workflows) all benefit from the same set of helpful features, which can be provided by a framework, or built from scratch.</li><li>LangGraph is best thought of as a orchestration framework (with both declarative and imperative APIs), with a series of agent abstractions built on top.</li></ul></div>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s17">
+      <h2>🏆 Related content</h2>
+      <p class="lead">Harrison&amp;#x27;s In the Loop
+
+#### Agent observability needs feedback to power learning
+
+Harrison ChaseMay 5, 20268min[](/blog/agent-observability-needs-feedback-to-power-learning).</p>
+      <p>Harrison&#x27;s In the Loop</p>
+<p>#### Agent observability needs feedback to power learning</p>
+<p>Harrison ChaseMay 5, 20268min[](/blog/agent-observability-needs-feedback-to-power-learning).png)Agent ArchitectureLangSmithOpen Source</p>
+<p>#### How LangSmith and LangChain OSS Help You Meet EU AI Act Requirements</p>
+<p>Jacob TalbotBecca WengApril 27, 20267min[](/blog/langsmith-langchain-oss-eu-ai-act).png)Case StudiesLangSmith</p>
+<p>#### How Credit Genie used Insights Agent to improve their AI financial assistant</p>
+<p>David LiJeffrey NgaiGoyo Lozano PalacioCharles YuanApril 20, 20265min[](/blog/credit-genie-insights-agent-financial-assistant)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s18">
+      <h2>🔑 See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+<p>](/contact-sales)</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+  </div>
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/how-to-think-about-agent-frameworks" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

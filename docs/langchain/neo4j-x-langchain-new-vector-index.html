@@ -1,0 +1,619 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Neo4j x LangChain: Deep dive into the new Vector index implementation</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafbfc;
+      --surface: #fff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --green: #10b981;
+      --emerald: #059669;
+      --teal: #14b8a6;
+      --blue: #3b82f6;
+      --purple: #6366f1;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans SC', 'Inter', system-ui, sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: var(--sans); background: var(--bg); color: var(--text); line-height:1.7; }
+    .nav { position:sticky; top:0; z-index:100; background:rgba(15,23,42,.85); backdrop-filter:blur(12px); padding:14px 32px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,.08); }
+    .nav a { color:#f1f5f9; text-decoration:none; font-weight:500; font-size:14px; }
+    .nav .brand { font-weight:700; font-size:16px; color:#10b981; }
+    .hero { background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%); color:#fff; padding:80px 32px 60px; text-align:center; }
+    .hero h1 { font-size:clamp(1.8rem,4vw,2.8rem); font-weight:800; margin-bottom:12px; line-height:1.3; }
+    .hero .subtitle { font-size:18px; color:rgba(255,255,255,.8); max-width:720px; margin:0 auto 40px; }
+    .hero .meta { font-size:13px; color:rgba(255,255,255,.5); margin-bottom:32px; }
+    .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:16px; max-width:800px; margin:0 auto; }
+    .stat { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); border-radius:12px; padding:20px 16px; backdrop-filter:blur(8px); }
+    .stat .num { font-size:28px; font-weight:800; color:#34d399; }
+    .stat .label { font-size:13px; color:rgba(255,255,255,.7); margin-top:4px; }
+    .page { max-width:900px; margin:0 auto; padding:40px 24px; }
+    .toc { margin-bottom:48px; }
+    .toc h3 { font-size:14px; text-transform:uppercase; letter-spacing:1.5px; color:var(--text-secondary); margin-bottom:16px; }
+    .toc-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; }
+    .toc-grid a { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--text); font-size:14px; font-weight:500; transition:all .2s; }
+    .toc-grid a:hover { border-color:var(--emerald); background:#ecfdf5; }
+    .toc-grid .num { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:8px; background:linear-gradient(135deg,#059669,#10b981); color:#fff; font-size:12px; font-weight:700; flex-shrink:0; }
+    .section { margin-bottom:56px; }
+    .section h2 { font-size:clamp(1.3rem,3vw,1.7rem); font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:10px; }
+    .lead { color:var(--text-secondary); font-size:15px; margin-bottom:24px; line-height:1.6; }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:24px; margin-bottom:16px; }
+    .card h4 { font-size:16px; font-weight:600; margin-bottom:8px; }
+    .card p, .card li { font-size:14px; color:var(--text-secondary); line-height:1.7; }
+    .card ul, .card ol { padding-left:20px; }
+    .card li { margin-bottom:4px; }
+    p { font-size:15px; color:var(--text-secondary); line-height:1.8; margin-bottom:16px; }
+    p code { background:#f1f5f9; padding:2px 6px; border-radius:4px; font-family:var(--mono); font-size:13px; color:#059669; }
+    .chart { margin:24px 0; }
+    .chart-row { display:flex; align-items:center; margin-bottom:10px; gap:12px; }
+    .chart-label { width:150px; font-size:13px; font-weight:500; text-align:right; flex-shrink:0; }
+    .chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:32px; overflow:hidden; }
+    .chart-bar { height:100%; border-radius:8px; display:flex; align-items:center; justify-content:flex-end; padding-right:10px; font-size:12px; font-weight:600; color:#fff; transition:width .6s ease; }
+    .chart-bar.green { background:linear-gradient(90deg,#059669,#10b981); }
+    .chart-bar.teal { background:linear-gradient(90deg,#14b8a6,#2dd4bf); }
+    .chart-bar.blue { background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+    .chart-bar.purple { background:linear-gradient(90deg,#6366f1,#a78bfa); }
+    .chart-bar.amber { background:linear-gradient(90deg,#f59e0b,#fbbf24); }
+    .chart-bar.red { background:linear-gradient(90deg,#ef4444,#f87171); }
+    .flow { display:flex; align-items:center; justify-content:center; gap:12px; margin:24px 0; flex-wrap:wrap; }
+    .flow-step { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 20px; font-size:14px; font-weight:600; text-align:center; min-width:120px; }
+    .flow-step.green { background:linear-gradient(135deg,#059669,#10b981); color:#fff; border:none; }
+    .flow-step.teal { background:linear-gradient(135deg,#14b8a6,#2dd4bf); color:#fff; border:none; }
+    .flow-step.blue { background:linear-gradient(135deg,#3b82f6,#60a5fa); color:#fff; border:none; }
+    .flow-step.purple { background:linear-gradient(135deg,#6366f1,#a78bfa); color:#fff; border:none; }
+    .flow-step.amber { background:linear-gradient(135deg,#f59e0b,#fbbf24); color:#fff; border:none; }
+    .flow-arrow { font-size:20px; color:var(--text-secondary); }
+    .compare-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:24px 0; }
+    .compare-card { border-radius:var(--radius); padding:24px; }
+    .compare-card.old { background:#fef2f2; border:2px solid #fecaca; }
+    .compare-card.new { background:#ecfdf5; border:2px solid #a7f3d0; }
+    .compare-card h4 { font-size:15px; font-weight:700; margin-bottom:8px; }
+    .compare-card p { font-size:13px; color:var(--text-secondary); }
+    .timeline { position:relative; padding-left:32px; margin:24px 0; }
+    .timeline::before { content:''; position:absolute; left:7px; top:8px; bottom:8px; width:3px; background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:24px; }
+    .tl-dot { position:absolute; left:-29px; top:4px; width:14px; height:14px; border-radius:50%; border:3px solid #059669; background:#fff; }
+    .tl-item:nth-child(2) .tl-dot { border-color:#14b8a6; }
+    .tl-item:nth-child(3) .tl-dot { border-color:#3b82f6; }
+    .tl-item:nth-child(4) .tl-dot { border-color:#6366f1; }
+    .tl-item:nth-child(5) .tl-dot { border-color:#f59e0b; }
+    .tl-phase { font-weight:700; font-size:15px; color:var(--text); }
+    .tl-desc { font-size:13px; color:var(--text-secondary); margin-top:4px; }
+    .code-block { background:#1e293b; border-radius:var(--radius); padding:20px; margin:16px 0; overflow-x:auto; }
+    .code-block pre { color:#e2e8f0; font-family:var(--mono); font-size:13px; line-height:1.6; white-space:pre-wrap; word-break:break-all; }
+    .block-q { background:linear-gradient(135deg,#ecfdf5,#d1fae5); border-left:4px solid #059669; border-radius:0 var(--radius) var(--radius) 0; padding:20px 24px; margin:24px 0; }
+    .block-q p { font-size:15px; font-style:italic; color:#064e3b; line-height:1.7; }
+    .badge { display:inline-block; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600; }
+    .badge-green { background:#ecfdf5; color:#059669; }
+    .badge-teal { background:#f0fdfa; color:#14b8a6; }
+    .badge-blue { background:#eff6ff; color:#3b82f6; }
+    .badge-purple { background:#eef2ff; color:#6366f1; }
+    .badge-amber { background:#fffbeb; color:#d97706; }
+    .footer { background:#0f172a; color:#94a3b8; padding:40px 32px; text-align:center; font-size:14px; }
+    .footer a { color:#34d399; text-decoration:none; }
+    .footer a:hover { text-decoration:underline; }
+    .footer .links { margin-top:12px; display:flex; justify-content:center; gap:24px; flex-wrap:wrap; }
+    @media(max-width:768px) {
+      .compare-grid { grid-template-columns:1fr; }
+      .chart-label { width:100px; font-size:12px; }
+      .flow { flex-direction:column; gap:8px; }
+      .flow-arrow { transform:rotate(90deg); }
+      .toc-grid { grid-template-columns:1fr; }
+      .hero { padding:60px 20px 40px; }
+      .nav { padding:12px 16px; }
+      .stats { grid-template-columns:1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+
+  <header class="hero">
+    <div class="meta">🧠 RAG & Knowledge · LangChain Accounts · 2023-09-07</div>
+    <h1>Neo4j x LangChain: Deep dive into the new Vector index implementation</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">39</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~6min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">7</div><div class="label">代码示例</div></div>
+      <div class="stat"><div class="num">10</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>Neo4j x LangChain: Deep dive i</a>
+      <a href="#s2"><span class="num">2</span>Learn how to customize LangCha</a>
+      <a href="#s3"><span class="num">3</span>Neo4j Environment setup</a>
+      <a href="#s4"><span class="num">4</span>Example dataset</a>
+      <a href="#s5"><span class="num">5</span>Read the wikipedia article</a>
+      <a href="#s6"><span class="num">6</span>Define chunking strategy</a>
+      <a href="#s7"><span class="num">7</span>Chunk the document</a>
+      <a href="#s8"><span class="num">8</span>Remove the summary</a>
+      <a href="#s9"><span class="num">9</span>Neo4j Vector index customizati</a>
+      <a href="#s10"><span class="num">10</span>&amp;#x27;name&amp;#x27;: &amp;#x27;constr</a>
+      <a href="#s11"><span class="num">11</span>&amp;#x27;type&amp;#x27;: &amp;#x27;UNIQUE</a>
+      <a href="#s12"><span class="num">12</span>&amp;#x27;entityType&amp;#x27;: &amp;#x27;</a>
+      <a href="#s13"><span class="num">13</span>&amp;#x27;labelsOrTypes&amp;#x27;: [&amp;#</a>
+      <a href="#s14"><span class="num">14</span>&amp;#x27;properties&amp;#x27;: [&amp;#x27</a>
+      <a href="#s15"><span class="num">15</span>&amp;#x27;ownedIndex&amp;#x27;: &amp;#x27;</a>
+      <a href="#s16"><span class="num">16</span>&amp;#x27;propertyType&amp;#x27;: None</a>
+      <a href="#s17"><span class="num">17</span>&amp;#x27;type&amp;#x27;: &amp;#x27;VECTOR</a>
+      <a href="#s18"><span class="num">18</span>&amp;#x27;labelsOrTypes&amp;#x27;: [&amp;#</a>
+      <a href="#s19"><span class="num">19</span>&amp;#x27;properties&amp;#x27;: [&amp;#x27</a>
+      <a href="#s20"><span class="num">20</span>&amp;#x27;options&amp;#x27;: {&amp;#x27;in</a>
+      <a href="#s21"><span class="num">21</span>&amp;#x27;indexConfig&amp;#x27;: {&amp;#x2</a>
+      <a href="#s22"><span class="num">22</span>&amp;#x27;vector.similarity_functi</a>
+      <a href="#s23"><span class="num">23</span>Loading additional documents</a>
+      <a href="#s24"><span class="num">24</span>Loading existing index</a>
+      <a href="#s25"><span class="num">25</span>Custom retrieval queries</a>
+      <a href="#s26"><span class="num">26</span>Document(&amp;quot;page_content=&amp;q</a>
+      <a href="#s27"><span class="num">27</span>&amp;quot;metadata=&amp;quot;{</a>
+      <a href="#s28"><span class="num">28</span>&amp;quot;author&amp;quot;:&amp;quot;Tomaz</a>
+      <a href="#s29"><span class="num">29</span>&amp;quot;confidence&amp;quot;:1.0,</a>
+      <a href="#s30"><span class="num">30</span>&amp;quot;id&amp;quot;:&amp;quot;langchain</a>
+      <a href="#s31"><span class="num">31</span>&amp;quot;editors&amp;quot;:[</a>
+      <a href="#s32"><span class="num">32</span>{</a>
+      <a href="#s33"><span class="num">33</span>&amp;quot;name&amp;quot;:&amp;quot;Galileo</a>
+      <a href="#s34"><span class="num">34</span>}</a>
+      <a href="#s35"><span class="num">35</span>]</a>
+      <a href="#s36"><span class="num">36</span>}&amp;quot;)&amp;quot;</a>
+      <a href="#s37"><span class="num">37</span>Summary</a>
+      <a href="#s38"><span class="num">38</span>Related content</a>
+      <a href="#s39"><span class="num">39</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+
+    <section class="section" id="s1">
+      <h2>🔍 Neo4j x LangChain: Deep dive into the new Vector index implementation</h2>
+      <p class="lead">The LangChain TeamSeptember 7, 20236min
+
+Go back to blogShare
+
+[</p>
+      <p>The LangChain TeamSeptember 7, 20236min[</p>
+<p>Go back to blog](/blog)Share[</p>
+      
+    </section>
+
+    <section class="section" id="s2">
+      <h2>⚡ Learn how to customize LangChain’s wrapper of Neo4j vector index</h2>
+      <p class="lead">Editor&amp;#x27;s Note: This post was written in collaboration with the Neo4j team.</p>
+      <p>Editor&#x27;s Note: This post was written in collaboration with the Neo4j team. We&#x27;ve been working closely with them on their new vector index and we&#x27;re really impressed with its ability to efficiently perform semantic search over unstructured text or other embedded data modalities, unlocking support for RAG applications and more customization.</p>
+<p>Neo4j was and is an excellent fit for handling structured information, but it struggled a bit with semantic search due to its brute-force approach. However, the struggle is in the past as Neo4j has introduced a new vector index in version 5.11 designed to efficiently perform semantic search over unstructured text or other embedded data modalities. The newly added vector index makes Neo4j a great fit for most RAG applications as it now works great with both structured and unstructured data.</p>
+<p>This blog post is designed to walk you through all the customization options available in the Neo4j Vector Index implementation in LangChain.</p>
+<p>The code is available on GitHub.</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s3">
+      <h2>🏗️ Neo4j Environment setup</h2>
+      <p class="lead">You need to setup a Neo4j 5.</p>
+      <p>You need to setup a Neo4j 5.11 or greater to follow along with the examples in this blog post. The easiest way is to start a free instance on Neo4j Aura, which offers cloud instances of Neo4j database. Alternatively, you can also setup a local instance of the Neo4j database by downloading the Neo4j Desktop application and creating a local database instance.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s4">
+      <h2>📊 Example dataset</h2>
+      <p class="lead">For the purpose of this blog post, we will use the &lt;code&gt;WikipediaLoader&lt;/code&gt; to fetch text from the Witcher page.</p>
+      <p>For the purpose of this blog post, we will use the <code>WikipediaLoader</code> to fetch text from the Witcher page.</p>
+<div class="code-block"><pre>from langchain.document_loaders import WikipediaLoader
+from langchain.text_splitter import CharacterTextSplitter</pre></div>
+      
+    </section>
+
+    <section class="section" id="s5">
+      <h2>🔗 Read the wikipedia article</h2>
+      <p class="lead">raw_documents = WikipediaLoader(query=&amp;quot;The Witcher&amp;quot;).</p>
+      <p>raw_documents = WikipediaLoader(query=&quot;The Witcher&quot;).load()</p>
+      
+    </section>
+
+    <section class="section" id="s6">
+      <h2>💡 Define chunking strategy</h2>
+      <p class="lead">text_splitter = CharacterTextSplitter.</p>
+      <p>text_splitter = CharacterTextSplitter.from_tiktoken_encoder(
+    chunk_size=1000, chunk_overlap=20
+)</p>
+      
+    </section>
+
+    <section class="section" id="s7">
+      <h2>🛠️ Chunk the document</h2>
+      <p class="lead">documents = text_splitter.</p>
+      <p>documents = text_splitter.split_documents(raw_documents)</p>
+      
+    </section>
+
+    <section class="section" id="s8">
+      <h2>📈 Remove the summary</h2>
+      <p class="lead">for d in documents:
+    del d.</p>
+      <p>for d in documents:
+    del d.metadata[&quot;summary&quot;]`</p>
+      
+    </section>
+
+    <section class="section" id="s9">
+      <h2>🎯 Neo4j Vector index customization</h2>
+      <p class="lead">Each text chunk is stored in Neo4j as a single isolated node.</p>
+      <p>Each text chunk is stored in Neo4j as a single isolated node.</p>
+<p>Graph schema of imported documents.</p>
+<p>By default, Neo4j vector index implementation in LangChain represents the documents using the <code>Chunk</code> node label, where the <code>text</code> property stores the text of the document, and the <code>embedding</code> property holds the vector representation of the text. The implementation allows you to customize the node label, text and embedding property names.</p>
+<div class="code-block"><pre>neo4j_db = Neo4jVector.from_documents(
+    documents,
+    OpenAIEmbeddings(),
+    url=url,
+    username=username,
+    password=password,
+    database=&amp;quot;neo4j&amp;quot;,  # neo4j by default
+    index_name=&amp;quot;wikipedia&amp;quot;,  # vector by default
+    node_label=&amp;quot;WikipediaArticle&amp;quot;,  # Chunk by default
+    text_node_property=&amp;quot;info&amp;quot;,  # text by default
+    embedding_node_property=&amp;quot;vector&amp;quot;,  # embedding by default
+    create_id_index=True,  # True by default
+)</pre></div>
+<p>In this example, we have specified that we want to store text chunks under the <code>WikipediaArticle</code> node label, where the <code>info</code> property is used to store text, and the <code>vector</code> property holds the text embedding representation. If you run the above examples, you should see the following information in the database.</p>
+<p>As mentioned, we define the <code>info</code> property to contain the text information, while the <code>vector</code> property is used to store the embedding. Any other properties like the <code>source</code> and <code>title</code> are treated as document metadata.</p>
+<p>By default, we also create a unique node property constraint on the id property of the specified node label for faster imports. If you don’t want to create a unique constraint, you can set the <code>create_id_index</code> to false. You can verify that the constraint has been created by using the following Cypher statement:</p>
+<p>`neo4j_db.query(&quot;SHOW CONSTRAINTS&quot;)
+#[{&#x27;id&#x27;: 4,</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s10">
+      <h2>🔬 &amp;#x27;name&amp;#x27;: &amp;#x27;constraint_e5da4d45&amp;#x27;,</h2>
+      <p class="lead"></p>
+      
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s11">
+      <h2>📝 &amp;#x27;type&amp;#x27;: &amp;#x27;UNIQUENESS&amp;#x27;,</h2>
+      <p class="lead"></p>
+      
+      
+    </section>
+
+    <section class="section" id="s12">
+      <h2>🧪 &amp;#x27;entityType&amp;#x27;: &amp;#x27;NODE&amp;#x27;,</h2>
+      <p class="lead"></p>
+      
+      
+    </section>
+
+    <section class="section" id="s13">
+      <h2>🌐 &amp;#x27;labelsOrTypes&amp;#x27;: [&amp;#x27;WikipediaArticle&amp;#x27;],</h2>
+      <p class="lead"></p>
+      
+      
+    </section>
+
+    <section class="section" id="s14">
+      <h2>📦 &amp;#x27;properties&amp;#x27;: [&amp;#x27;id&amp;#x27;],</h2>
+      <p class="lead"></p>
+      
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s15">
+      <h2>🔄 &amp;#x27;ownedIndex&amp;#x27;: &amp;#x27;constraint_e5da4d45&amp;#x27;,</h2>
+      <p class="lead"></p>
+      
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s16">
+      <h2>🎨 &amp;#x27;propertyType&amp;#x27;: None}]`</h2>
+      <p class="lead">As you would expect, we also create a vector index that will allow us to perform fast ANN searches.</p>
+      <p>As you would expect, we also create a vector index that will allow us to perform fast ANN searches.</p>
+<div class="code-block"><pre>neo4j_db.query(
+    &amp;quot;&amp;quot;&amp;quot;SHOW INDEXES
+       YIELD name, type, labelsOrTypes, properties, options
+       WHERE type = &amp;#x27;VECTOR&amp;#x27;
+    &amp;quot;&amp;quot;&amp;quot;
+)
+#[{&amp;#x27;name&amp;#x27;: &amp;#x27;wikipedia&amp;#x27;,</pre></div>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s17">
+      <h2>🏆 &amp;#x27;type&amp;#x27;: &amp;#x27;VECTOR&amp;#x27;,</h2>
+      <p class="lead"></p>
+      
+      
+    </section>
+
+    <section class="section" id="s18">
+      <h2>🔑 &amp;#x27;labelsOrTypes&amp;#x27;: [&amp;#x27;WikipediaArticle&amp;#x27;],</h2>
+      <p class="lead"></p>
+      
+      
+    </section>
+
+    <section class="section" id="s19">
+      <h2>📋 &amp;#x27;properties&amp;#x27;: [&amp;#x27;vector&amp;#x27;],</h2>
+      <p class="lead"></p>
+      
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s20">
+      <h2>🚀 &amp;#x27;options&amp;#x27;: {&amp;#x27;indexProvider&amp;#x27;: &amp;#x27;vector-1.0&amp;#x27;,</h2>
+      <p class="lead"></p>
+      
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s21">
+      <h2>🔍 &amp;#x27;indexConfig&amp;#x27;: {&amp;#x27;vector.dimensions&amp;#x27;: 1536,</h2>
+      <p class="lead"></p>
+      
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s22">
+      <h2>⚡ &amp;#x27;vector.similarity_function&amp;#x27;: &amp;#x27;cosine&amp;#x27;}}}]`</h2>
+      <p class="lead">The LangChain implementation created a vector index named &lt;code&gt;wikipedia&lt;/code&gt; , which indexes the &lt;code&gt;vector&lt;/code&gt; property of &lt;code&gt;WikipediaArticle&lt;/code&gt; nodes.</p>
+      <p>The LangChain implementation created a vector index named <code>wikipedia</code> , which indexes the <code>vector</code> property of <code>WikipediaArticle</code> nodes. Additionally, the provided configuration informs us that the vector embedding dimension is <code>1536</code> and uses the <code>cosine</code> similarity function.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s23">
+      <h2>🏗️ Loading additional documents</h2>
+      <p class="lead">You can use the &lt;code&gt;add_documents&lt;/code&gt; method to load additional documents into an instantiated vector index.</p>
+      <p>You can use the <code>add_documents</code> method to load additional documents into an instantiated vector index.</p>
+<div class="code-block"><pre>neo4j_db.add_documents(
+    [
+        Document(
+            page_content=&amp;quot;LangChain is the coolest library since the Library of Alexandria&amp;quot;,
+            metadata={&amp;quot;author&amp;quot;: &amp;quot;Tomaz&amp;quot;, &amp;quot;confidence&amp;quot;: 1.0}
+        )
+    ],
+    ids=[&amp;quot;langchain&amp;quot;],
+)</pre></div>
+<p>LangChain allows you to provide document ids to the <code>add_document</code> method, which can be used to sync information across different system and make it easier to update or delete relevant text chunks.</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s24">
+      <h2>📊 Loading existing index</h2>
+      <p class="lead">If you have an existing vector index in Neo4j with populated data, you can use the &lt;code&gt;from_existing_method&lt;/code&gt; to connect to it.</p>
+      <p>If you have an existing vector index in Neo4j with populated data, you can use the <code>from_existing_method</code> to connect to it.</p>
+<div class="code-block"><pre>existing_index = Neo4jVector.from_existing_index(
+    OpenAIEmbeddings(),
+    url=url,
+    username=username,
+    password=password,
+    index_name=&amp;quot;wikipedia&amp;quot;,
+    text_node_property=&amp;quot;info&amp;quot;,  # Need to define if it is not default
+)</pre></div>
+<p>First, the <code>from_existing_method</code> checks if the index with the provided name actually exists in the database. If it exists, it can retrieve the node label and embedding node property from index configuration map, which means that you don’t have to manually set those.</p>
+<div class="code-block"><pre>print(existing_index.node_label) # WikipediaArticle
+print(existing_index.embedding_node_property) # vector</pre></div>
+<p>However, the index information does not contain the text node property information. Therefore, if you use any property besides the default one (<code>text</code>), specify it using the <code>text_node_property</code> parameter.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s25">
+      <h2>🔗 Custom retrieval queries</h2>
+      <p class="lead">Since Neo4j is a native graph database, the vector index implementation in LangChain allows customization and enrichment of the returned information.</p>
+      <p>Since Neo4j is a native graph database, the vector index implementation in LangChain allows customization and enrichment of the returned information. However, this feature is intended for more advanced users as you are responsible for custom data loading as well as retrieval.</p>
+<p>The <code>retrieval_query</code> parameter allows you to collect, transform, or calculate any additional graph information you want to return from the similarity search. To better understand it, we can look at the actual implementation in the code.</p>
+<div class="code-block"><pre>read_query = (
+    &amp;quot;CALL db.index.vector.queryNodes($index, $k, $embedding) &amp;quot;
+    &amp;quot;YIELD node, score &amp;quot;
+) + retrieval_query</pre></div>
+<p>From the code, we can observe that the vector similarity search is hardcoded. However, we then have the option to add any intermediate steps and return additional information. The retrieval query must return the following three columns:</p>
+<div class="card"><ul>
+  <li>text (String): This is usually the textual data that is associated with the node that has been retrieved. This could be the main content of the node, a name, a description, or any other text-based information.</li>
+  <li>score (Float): This represents the similarity score between the query vector and the vector associated with the returned node. The score quantifies how similar the query is to the returned nodes, often on a scale from 0 to 1</li>
+  <li>metadata (Dictionary): This is a more flexible column that can contain additional information about the node or the search. It can be a dictionary (or map) that includes various attributes or properties that give more context to the returned node.</li>
+</ul></div>
+<p>We will add a relationship to a <code>WikipediaArticle</code>node to demonstrate this functionality.</p>
+<div class="code-block"><pre>existing_index.query(
+    &amp;quot;&amp;quot;&amp;quot;MATCH (w:WikipediaArticle {id:&amp;#x27;langchain&amp;#x27;})
+       MERGE (w)&amp;lt;-[:EDITED_BY]-(:Person {name:&amp;quot;Galileo&amp;quot;})
+    &amp;quot;&amp;quot;&amp;quot;
+)</pre></div>
+<p>We have added an <code>EDITED_BY</code> relationship to the <code>WikipediaArticle</code> node with the given id. Let’s now test out a custom retrieval option.</p>
+<div class="code-block"><pre>retrieval_query = &amp;quot;&amp;quot;&amp;quot;
+OPTIONAL MATCH (node)&amp;lt;-[:EDITED_BY]-(p)
+WITH node, score, collect(p) AS editors
+RETURN node.info AS text,
+       score,
+       node {.*, vector: Null, info: Null, editors: editors} AS metadata
+&amp;quot;&amp;quot;&amp;quot;</pre></div>
+<div class="code-block"><pre>existing_index_return = Neo4jVector.from_existing_index(
+    OpenAIEmbeddings(),
+    url=url,
+    username=username,
+    password=password,
+    database=&amp;quot;neo4j&amp;quot;,
+    index_name=&amp;quot;wikipedia&amp;quot;,
+    text_node_property=&amp;quot;info&amp;quot;,
+    retrieval_query=retrieval_query,
+)</pre></div>
+<p>I won’t go too much into the specifics of Cypher. You can use many resources to learn the basic syntax and more like the Neo4j Graph Academy. To construct a valid retrieval query, you must know that the relevant node from the vector similarity search is available under the <code>node</code> reference variable, while the similarity metric value is available under the <code>score</code> reference.</p>
+<div class="code-block"><pre>existing_index_return.similarity_search(
+    &amp;quot;What do you know about LangChain?&amp;quot;, k=1)</pre></div>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s26">
+      <h2>💡 Document(&amp;quot;page_content=&amp;quot;&amp;quot;LangChain is the coolest library since the Library of Alexandria&amp;quot;,</h2>
+      <p class="lead"></p>
+      
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s27">
+      <h2>🛠️ &amp;quot;metadata=&amp;quot;{</h2>
+      <p class="lead"></p>
+      
+      
+    </section>
+
+    <section class="section" id="s28">
+      <h2>📈 &amp;quot;author&amp;quot;:&amp;quot;Tomaz&amp;quot;,</h2>
+      <p class="lead"></p>
+      
+      
+    </section>
+
+    <section class="section" id="s29">
+      <h2>🎯 &amp;quot;confidence&amp;quot;:1.0,</h2>
+      <p class="lead"></p>
+      
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s30">
+      <h2>🔬 &amp;quot;id&amp;quot;:&amp;quot;langchain&amp;quot;,</h2>
+      <p class="lead"></p>
+      
+      
+    </section>
+
+    <section class="section" id="s31">
+      <h2>📝 &amp;quot;editors&amp;quot;:[</h2>
+      <p class="lead"></p>
+      
+      
+    </section>
+
+    <section class="section" id="s32">
+      <h2>🧪 {</h2>
+      <p class="lead"></p>
+      
+      
+    </section>
+
+    <section class="section" id="s33">
+      <h2>🌐 &amp;quot;name&amp;quot;:&amp;quot;Galileo&amp;quot;</h2>
+      <p class="lead"></p>
+      
+      
+    </section>
+
+    <section class="section" id="s34">
+      <h2>📦 }</h2>
+      <p class="lead"></p>
+      
+      
+    </section>
+
+    <section class="section" id="s35">
+      <h2>🔄 ]</h2>
+      <p class="lead"></p>
+      
+      
+    </section>
+
+    <section class="section" id="s36">
+      <h2>🎨 }&amp;quot;)&amp;quot;</h2>
+      <p class="lead">#]&lt;code&gt;
+
+You can observe that the metadata information contains the &lt;/code&gt;editor` property, which was calculated from graph information.</p>
+      <p>You can observe that the metadata information contains the <code>editor</code> property, which was calculated from graph information.</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s37">
+      <h2>🏆 Summary</h2>
+      <p class="lead">The newly added vector index implementation in Neo4j allows it to support RAG applications that rely on both structured and unstructured data, making it a perfect fit for highly-complex and connect...</p>
+      <p>The newly added vector index implementation in Neo4j allows it to support RAG applications that rely on both structured and unstructured data, making it a perfect fit for highly-complex and connected datasets.</p>
+<p>The code is available on GitHub.</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s38">
+      <h2>🔑 Related content</h2>
+      <p class="lead">.</p>
+      <p>.png)PartnerDeep Agents</p>
+<p>#### Building a company due diligence agent with Deep Agents, LangSmith and Parallel</p>
+<p>Matt HarrisNick MartitschSrimanth TangedipalliKaran SinghMay 8, 20269min[](/blog/building-a-company-due-diligence-agent-with-deep-agents-langsmith-and-parallel).png)Agent ArchitecturePartner</p>
+<p>#### Agentic Engineering: How Swarms of AI Agents Are Redefining Software Engineering</p>
+<p>Renuka KumarPrashanth RamagopalApril 17, 202611min[](/blog/agentic-engineering-redefining-software-engineering).png)LangChainPartner</p>
+<p>#### A Developer’s First 10 Minutes: Secure LangChain Agents with Cisco AI Defense</p>
+<p>Siddhant DashApril 16, 20264min[](/blog/secure-agents-cisco-ai-defense)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s39">
+      <h2>📋 See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+  </div>
+
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/neo4j-x-langchain-new-vector-index" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

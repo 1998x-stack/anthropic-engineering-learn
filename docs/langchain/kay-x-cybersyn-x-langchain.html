@@ -1,0 +1,253 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Kay x Cybersyn x LangChain: Embedding SEC Filings for RAG</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--green:#10b981;--emerald:#059669;--teal:#14b8a6;--blue:#3b82f6;--purple:#6366f1;--amber:#f59e0b;--red:#ef4444;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+    .nav{position:sticky;top:0;z-index:100;background:rgba(15,23,42,.85);backdrop-filter:blur(12px);padding:14px 32px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.08)}
+    .nav a{color:#f1f5f9;text-decoration:none;font-weight:500;font-size:14px}
+    .nav .brand{font-weight:700;font-size:16px;color:#10b981}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%);color:#fff;padding:80px 32px 60px;text-align:center}
+    .hero h1{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;margin-bottom:12px;line-height:1.3}
+    .hero .subtitle{font-size:18px;color:rgba(255,255,255,.8);max-width:720px;margin:0 auto 40px}
+    .hero .meta{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:32px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;max-width:800px;margin:0 auto}
+    .stat{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:20px 16px;backdrop-filter:blur(8px)}
+    .stat .num{font-size:28px;font-weight:800;color:#34d399}
+    .stat .label{font-size:13px;color:rgba(255,255,255,.7);margin-top:4px}
+    .page{max-width:900px;margin:0 auto;padding:40px 24px}
+    .toc{margin-bottom:48px}
+    .toc h3{font-size:14px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);margin-bottom:16px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .toc-grid a{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;transition:all .2s}
+    .toc-grid a:hover{border-color:var(--emerald);background:#ecfdf5}
+    .toc-grid .num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-size:12px;font-weight:700;flex-shrink:0}
+    .section{margin-bottom:56px}
+    .section h2{font-size:clamp(1.3rem,3vw,1.7rem);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+    .lead{color:var(--text-secondary);font-size:15px;margin-bottom:24px;line-height:1.6}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}
+    .card h4{font-size:16px;font-weight:600;margin-bottom:8px}
+    .card p,.card li{font-size:14px;color:var(--text-secondary);line-height:1.7}
+    .card ul,.card ol{padding-left:20px}
+    .card li{margin-bottom:4px}
+    p{font-size:15px;color:var(--text-secondary);line-height:1.8;margin-bottom:16px}
+    p code{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:13px;color:#059669}
+    .chart{margin:24px 0}
+    .chart-row{display:flex;align-items:center;margin-bottom:10px;gap:12px}
+    .chart-label{width:150px;font-size:13px;font-weight:500;text-align:right;flex-shrink:0}
+    .chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}
+    .chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;justify-content:flex-end;padding-right:10px;font-size:12px;font-weight:600;color:#fff;transition:width .6s ease}
+    .chart-bar.green{background:linear-gradient(90deg,#059669,#10b981)}
+    .chart-bar.teal{background:linear-gradient(90deg,#14b8a6,#2dd4bf)}
+    .chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+    .chart-bar.purple{background:linear-gradient(90deg,#6366f1,#a78bfa)}
+    .chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}
+    .flow{display:flex;align-items:center;justify-content:center;gap:12px;margin:24px 0;flex-wrap:wrap}
+    .flow-step{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;min-width:120px}
+    .flow-step.green{background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none}
+    .flow-step.teal{background:linear-gradient(135deg,#14b8a6,#2dd4bf);color:#fff;border:none}
+    .flow-step.blue{background:linear-gradient(135deg,#3b82f6,#60a5fa);color:#fff;border:none}
+    .flow-step.purple{background:linear-gradient(135deg,#6366f1,#a78bfa);color:#fff;border:none}
+    .flow-step.amber{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#fff;border:none}
+    .flow-arrow{font-size:20px;color:var(--text-secondary)}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}
+    .compare-card{border-radius:var(--radius);padding:24px}
+    .compare-card.old{background:#fef2f2;border:2px solid #fecaca}
+    .compare-card.new{background:#ecfdf5;border:2px solid #a7f3d0}
+    .compare-card h4{font-size:15px;font-weight:700;margin-bottom:8px}
+    .compare-card p{font-size:13px;color:var(--text-secondary)}
+    .timeline{position:relative;padding-left:32px;margin:24px 0}
+    .timeline::before{content:'';position:absolute;left:7px;top:8px;bottom:8px;width:3px;background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6);border-radius:2px}
+    .tl-item{position:relative;margin-bottom:24px}
+    .tl-dot{position:absolute;left:-29px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid #059669;background:#fff}
+    .tl-item:nth-child(2) .tl-dot{border-color:#14b8a6}
+    .tl-item:nth-child(3) .tl-dot{border-color:#3b82f6}
+    .tl-phase{font-weight:700;font-size:15px;color:var(--text)}
+    .tl-desc{font-size:13px;color:var(--text-secondary);margin-top:4px}
+    .code-block{background:#1e293b;border-radius:var(--radius);padding:20px;margin:16px 0;overflow-x:auto}
+    .code-block pre{color:#e2e8f0;font-family:var(--mono);font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-all}
+    .block-q{background:linear-gradient(135deg,#ecfdf5,#d1fae5);border-left:4px solid #059669;border-radius:0 var(--radius) var(--radius) 0;padding:20px 24px;margin:24px 0}
+    .block-q p{font-size:15px;font-style:italic;color:#064e3b;line-height:1.7}
+    .footer{background:#0f172a;color:#94a3b8;padding:40px 32px;text-align:center;font-size:14px}
+    .footer a{color:#34d399;text-decoration:none}
+    .footer a:hover{text-decoration:underline}
+    .footer .links{margin-top:12px;display:flex;justify-content:center;gap:24px;flex-wrap:wrap}
+    @media(max-width:768px){.compare-grid{grid-template-columns:1fr}.chart-label{width:100px;font-size:12px}.flow{flex-direction:column;gap:8px}.flow-arrow{transform:rotate(90deg)}.toc-grid{grid-template-columns:1fr}.hero{padding:60px 20px 40px}.nav{padding:12px 16px}.stats{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+  <header class="hero">
+    <div class="meta">🔧 Tools & Integrations · LangChain Accounts · 2023-10-03</div>
+    <h1>Kay x Cybersyn x LangChain: Embedding SEC Filings for RAG</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">10</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~11min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">4</div><div class="label">代码示例</div></div>
+      <div class="stat"><div class="num">22</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>Kay x Cybersyn x LangChain: Em</a>
+      <a href="#s2"><span class="num">2</span>Getting Started</a>
+      <a href="#s3"><span class="num">3</span>**Use cases**</a>
+      <a href="#s4"><span class="num">4</span>**Behind the Scenes: Infrastru</a>
+      <a href="#s5"><span class="num">5</span>**Collecting data**</a>
+      <a href="#s6"><span class="num">6</span>**Generating embeddings**</a>
+      <a href="#s7"><span class="num">7</span>Optimizing Retrieval</a>
+      <a href="#s8"><span class="num">8</span>Resources and next steps</a>
+      <a href="#s9"><span class="num">9</span>Related content</a>
+      <a href="#s10"><span class="num">10</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+    <section class="section" id="s1">
+      <h2>🔍 Kay x Cybersyn x LangChain: Embedding SEC Filings for RAG</h2>
+      <p class="lead">The LangChain TeamOctober 3, 202311min
+
+Go back to blogShare
+
+
+
+
+
+Editor&amp;#x27;s Note: This post was written by the Kay team, in collaboration with Cybersyn.</p>
+      <p>The LangChain TeamOctober 3, 202311min[</p>
+<p>Go back to blog](/blog)Share[</p>
+<p>](#)Editor&#x27;s Note: This post was written by the Kay team, in collaboration with Cybersyn.  Financial data processing is hard. SEC Retriever on LangChain– Powered by Kay and Cybersyn–makes it easy for developers to retrieve context from SEC Filings for their generative and conversational agents.</p>
+<p>Financial documents carry a wealth of nuanced information that is frequently used in high-stakes scenarios, from investing to corporate strategy. SEC Filings are a common source of such financial knowledge for US Public Companies. Several teams are starting to tap into this unstructured data for LLM use cases, but encounter multiple challenges.</p>
+<div class="card"><ul><li>LLMs are missing context: LLM knowledge is as good as the last training date. Financial markets move rapidly, and developers need to leverage Retrieval Augmented Generation (RAG) to equip LLMs with up-to-date knowledge. Moreover, SEC Filings are hard to index by search engines due to their data formats. Developers then opt to train on derivative articles related to these documents, except this can overlook the source context and lesser-known companies.</li><li>Embedding infra is evolving rapidly: Both in terms of planning and implementation, infrastructure for RAG is difficult to get right. Developers building their own RAG pipelines are inundated with choice. There are over 50 vector stores to choose from and an ever-changing list of embedding models on the MTEB Leaderboard. There are new ways to embed and retrieve every week. Things get trickier as you try to procure more GPU capacity and set up large-scale offline batch embedding pipelines; all while trying to tame compute costs.</li><li>Financial documents are complex: In addition to extracting data from obscure data formats, financial documents also require careful processing and chunking of data. Developers need to experiment with different ways of transforming tables, determining relevant entities, and linking them to parent sections. There&#x27;s a low tolerance for false positives in retrieving these documents since these numbers directly influence important decisions.</li></ul></div>
+<p>Multiple teams are building this exact same pipeline in-house, driving up costs. This is where the SEC Retriever on LangChain comes in. Powered by Kay and Cybersyn, developers can easily retrieve context from SEC Filings for their generative and conversational agents.</p>
+<p>Kay provides data APIs that are specifically designed for RAG. We offer fully hosted embeddings of large datasets so developers don’t have to collect data, generate embeddings, and scale retrieval. Cybersyn is a data-as-a-service company delivering analytics-ready economic data on Snowflake Marketplace. Initially focused on where businesses and consumers spend money and time, Cybersyn offers multiple data products via Snowflake, including an LLM training dataset that features SEC Filings. Kay further enriches, embeds, and sets up a semantic retrieval API for this data. In this blog, we will cover how to get started with this API and an overview of the infrastructure behind it.</p>
+      
+    </section>
+    <section class="section" id="s2">
+      <h2>⚡ Getting Started</h2>
+      <p class="lead">Using Kay in LangChain is incredibly straightforward.</p>
+      <p>Using Kay in LangChain is incredibly straightforward.</p>
+<p>First, install Kay (<code>pip install kay</code>) and get your free API key on Kay.ai.</p>
+<p>Second, initialize the <code>KayAiRetriever</code> with the datasets you need. Currently, we index multiple datasets related to Companies. These datasets include financial documents, press releases, engineering blogs, and more (docs). In this case, we&#x27;ll access 10-K and 10-Qs, and retrieve the top 6 chunks for a given query.</p>
+<p>`from langchain.retrievers import KayAiRetriever</p>
+<p>retriever = KayAiRetriever.create(dataset_id=&quot;company&quot;, data_types=[&quot;10-K&quot;, &quot;10-Q&quot;], num_contexts=6)`</p>
+<p>From here on, it&#x27;s business as usual. Plug this context into your existing prompts and pass it to your favorite LLM. Here&#x27;s a sample query that really highlights the power of embedded SEC data.</p>
+<p>`Question: What are patterns in Nvidia&#x27;s financial performance over the past three quarters?</p>
+<p>Answer: Based on the provided financial statements, here are some patterns in NVIDIA&#x27;s financial performance over the past three quarters:</p>
+<div class="card"><ol><li>Cash Flows from Operating Activities: The net cash provided by operating activities has shown a consistent increase over the three quarters. It was $1,874 million in Q1 2023, $1,731 million in Q2 2023, and $1,288 million in Q3 2023.</li></ol></div>
+<div class="card"><ol><li>Cash Flows from Investing Activities: The net cash provided by investing activities has fluctuated significantly. In Q1 2023, it was $2,612 million, indicating a positive cash flow. However, in Q2 2023, it was negative with a cash outflow of $8,244 million. In Q3 2023, it turned positive again with a cash inflow of $7,378 million.</li></ol></div>
+<div class="card"><ol><li>Cash Flows from Financing Activities: The net cash provided by financing activities has also shown variation. In Q1 2023, it was $4,146 million, indicating a positive cash flow. In Q2 2023, it was negative with a cash outflow of $9,961 million. In Q3 2023, it remained negative but decreased to $2,610 million.</li></ol></div>
+<div class="card"><ol><li>Acquisitions and Investments: NVIDIA has made acquisitions and investments in all three quarters, but the amounts have varied. In Q1 2023, the net cash used in investing activities was $1,272 million. In Q2 2023, it was a significant cash outflow of $8,244 million. In Q3 2023, it turned positive with a cash inflow of $7,378 million.</li></ol></div>
+<div class="card"><ol><li>Payments related to Repurchases of Common Stock: NVIDIA made significant payments related to repurchases of common stock in Q2 2023, with a cash outflow of $8,826 million. This suggests a focus on returning value to shareholders through stock buybacks.</li></ol></div>
+<p>These patterns indicate fluctuations in cash flows from investing and financing activities, while operating cash flows have remained relatively stable. Acquisition and investment activities have also contributed to the variations in cash flows. Additionally, NVIDIA&#x27;s focus on returning value to shareholders is evident through payments related to repurchases of common stock.`</p>
+<p>In contrast, try the same query with search-enabled LLMs like ChatGPT, Bard, or Perplexity. Kay captures a lot more nuance, since we pre-embed all this data and tailor our retrieval for each dataset and use case. This includes data enrichment, state-of-the-art embeddings, query understanding, and many other topics covered in the infrastructure section below.</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s3">
+      <h2>🏗️ **Use cases**</h2>
+      <p class="lead">SEC Filings are large, unstructured documents.</p>
+      <p>SEC Filings are large, unstructured documents. They capture crucial information about US public companies. In the past, all this data was squeezed into a few rigid tables, making most practitioners miss valuable signals from these files. Now, we can enable analysts, auditors, investors, executives, sales, and marketing teams to parse this information in seconds. Here are a few examples of how users are already utilizing this data.</p>
+<p>Analyzing Financial Performance</p>
+<p>&quot;Show me the revenue growth trend of Company X over the past five years.&quot;</p>
+<p>&quot;Compare the debt-to-equity ratios of Company A and Company B.&quot;</p>
+<p>Identifying Sales Opportunities</p>
+<p>&quot;Which new hardware products did Company X release this year?&quot; &quot;Summarize Company A&#x27;s strategic direction and their expansion plans.&quot;</p>
+<p>Monitoring Industry Trends</p>
+<p>&quot;What are some key market trends Company X is tapping into?&quot; &quot;Identify differences in positioning between Company A and Company B.&quot;</p>
+<p>Compliance Research</p>
+<p>&quot;How is Company X adapting to recent GDPR guidelines?&quot; &quot;What are the potential risks associated with the acquisition of Company A?&quot;</p>
+      
+    </section>
+    <section class="section" id="s4">
+      <h2>📊 **Behind the Scenes: Infrastructure**</h2>
+      <p class="lead">RAG systems consist of three essential components: data, representation, and retrieval.</p>
+      <p>RAG systems consist of three essential components: data, representation, and retrieval. In this scenario, data is typically represented as embeddings. The decisions we make regarding these components directly impact performance. At Kay, we care a lot about these choices and constantly stay up to date with the latest techniques. The diagram below depicts some of the key processes within each component. Let&#x27;s break that down</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s5">
+      <h2>🔗 **Collecting data**</h2>
+      <p class="lead">The foundation of our system is high-quality data.</p>
+      <p>The foundation of our system is high-quality data. All US public companies submit their mandatory filings through SEC&#x27;s Electronic Data Gathering, Analysis, and Retrieval (EDGAR) system. While this data is available via an API, it can be challenging to process and embed this due to its varied data formats. This is where Cybersyn steps in.</p>
+<p>Cybersyn builds derived data products from proprietary and public datasets that are difficult to procure, clean, or join. One of their data products is LLM Training Essentials, which includes SEC Filings along with several other government datasets. This brings us several benefits:</p>
+<div class="card"><ul><li>Cybersyn converts unstructured TXT and XBRL data into a relational database, eliminating the need to set up your own OCR and text extraction pipelines from Filing PDFs.</li><li>They also provide additional metadata that helps users join companies with common company identifiers including CIK, EIN, LEI, PermID, and OpenFIGI. This proves useful down the line for retrieval.</li><li>This data is then loaded onto the Snowflake Marketplace. Snowflake ensures secure and fully-governed access to this data, allowing users to read and interact with it using SQL queries. This significantly improves ease of access.</li><li>Cybersyn also takes responsibility for regularly updating this data, recognizing its time-sensitive nature for use cases involving SEC data.</li></ul></div>
+<p>Working with Cybersyn and Snowflake has significantly contributed to Kay&#x27;s data quality, accessibility, and reliability. We highly recommend exploring all of their data products.</p>
+      
+    </section>
+    <section class="section" id="s6">
+      <h2>💡 **Generating embeddings**</h2>
+      <p class="lead">Once we have raw text data, we start data enrichment.</p>
+      <p>Once we have raw text data, we start data enrichment. We focus on creating two types of metadata.</p>
+<div class="card"><ul><li>Company Metadata: We source company information such as ticker symbol, industry, location, summary, website, and more. This data helps us normalize and group companies for efficient retrieval.</li><li>Document Metadata: We also extract information specific to each document such as different sections, all mentions of time and date, and significant entities with NER. This metadata further enhances retrieval. Some of this gets embedded with the chunk and others are used in filtering.</li></ul></div>
+<p>Next step is choosing an embedding model. First, we quickly decided to move away from OpenAI embedding APIs to self-hosting open-source models. OSS embedding models are state of the art, give full control on scaling, are a lot cheaper and open up fine-tuning capabilities down the line. This was essential for us to iterate fast and be able to scale later. Amongst OSS models, after internal evaluation of different use cases for this dataset, we landed on <code>gte-base</code> which is one of the top models on the current leaderboard.</p>
+<p>To handle SEC data, we implement dynamic variable chunking based on sections, ensuring that the chunk size is limited to an average of 1500 characters using sentences. We handle chunks with tables differently by having a LLM summarize them in natural language. At the end of this process, we have all the data and the tools to start chunking and embedding. For offline batch embedding jobs, we leveraged Ray&#x27;s parallelization framework. Ray has been easy to set up, does the job, and has reliable support. It enabled us to chunk and embed over 20 million embeddings in under 15 minutes.</p>
+<p>Finally, we push the generated embeddings into a vector database. We use HNSW for vector indexing and BM25 for text indexing, which is fairly standard for these data types. One notable observation was that several vector stores perform simultaneous write and indexing operations, resulting in a significant decrease in write throughput. To address this issue, we highly recommend transitioning to incremental indexing.</p>
+      
+    </section>
+    <section class="section" id="s7">
+      <h2>🛠️ Optimizing Retrieval</h2>
+      <p class="lead">Retrieval goes beyond making a default call to your vector store.</p>
+      <p>Retrieval goes beyond making a default call to your vector store. There&#x27;s a lot we can do to decrease the candidate set and rank chunks better. In this component, we aim to make the retrieval process as accurate and efficient as possible.</p>
+<p>First, we build our own Query Intent Classifier (QIC) powered by LLMs. Given a query, this extracts all the entities that can either help us filter chunks on our metadata or get us some new information that validates hybrid search. This is where we force the LLM for structured output (s/o Instructor).  We also run sanity checks on the final response with string matching libraries to not miss out on entities that might exist in our metadata, for example. nike and nike inc. Turns out normalization itself for each metadata is a massive internal effort to do right.</p>
+<p>In addition to the classifier, we have also begun generating hallucinated search queries to conduct retrieval over, and to vote on the most relevant answers. While this has latency costs, this is an ongoing experiment to see how this improves accuracy.</p>
+<p>After obtaining a collection of search queries along with relevant filters, we initiate the retrieval process by narrowing down potential candidates using these filters. Next, we dynamically select between vector search and hybrid search, depending on the presence of any significant entities identified by QIC that warrant a keyword search. For vector search, we go with the default cosine distance.</p>
+<p>Once we have our top-k retrieved chunks, we apply Cohere&#x27;s Re-rank and take log of the context relevancy score. These scores help us set up our human evaluation task to unpack how users can intuitively reason through these scores. In the interim, we continue experiments to keep improving the distribution of context relevancy scores.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s8">
+      <h2>📈 Resources and next steps</h2>
+      <p class="lead">RAG is obviously an evolving process that requires consistent commitment to optimization.</p>
+      <p>RAG is obviously an evolving process that requires consistent commitment to optimization. Our motive for sharing how we approach this stack is to bring more transparency, share our learnings, and welcome feedback so we can continue improving retrieval for public datasets. The strategies we use are not set in stone and we&#x27;d love for you to try our SEC retriever and share what you think. Happy to chat and share notes at cal.com/kaydotai/chat.</p>
+<p>Here’s some resources to dive in further</p>
+<div class="card"><ul><li>SEC Retriever on LangChain</li><li>Cybersyn’s LLM Training Essentials</li><li>Snowflake Marketplace</li><li>Kay’s Github</li></ul></div>
+<p>Also, a reminder: LangChain Users get 10,000 Free Kay Requests for next 3 Months ⚡️</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s9">
+      <h2>🎯 Related content</h2>
+      <p class="lead">Tutorials &amp;amp; How-Tos
+
+#### How we built LangChain’s GTM Agent
+
+The LangChain TeamMarch 9, 202611min[](/blog/how-we-built-langchains-gtm-agent)Deep AgentsAgent ArchitectureTutorials &amp;amp; How-Tos
+
+#</p>
+      <p>Tutorials &amp; How-Tos</p>
+<p>#### How we built LangChain’s GTM Agent</p>
+<p>The LangChain TeamMarch 9, 202611min[](/blog/how-we-built-langchains-gtm-agent)Deep AgentsAgent ArchitectureTutorials &amp; How-Tos</p>
+<p>#### Evaluating Deep Agents: Our Learnings</p>
+<p>The LangChain TeamDecember 3, 20259min[](/blog/evaluating-deep-agents-our-learnings)Company AnnouncementsTutorials &amp; How-Tos</p>
+<p>#### Why We Rebuilt LangChain’s Chatbot and What We Learned</p>
+<p>The LangChain TeamNovember 5, 202513min[](/blog/rebuilding-chat-langchain)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s10">
+      <h2>🔬 See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+<p>](/contact-sales)</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+  </div>
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/kay-x-cybersyn-x-langchain" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

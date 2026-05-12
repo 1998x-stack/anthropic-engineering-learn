@@ -1,0 +1,400 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：How to Build the Ultimate AI Automation with Multi-Agent Collaboration</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--green:#10b981;--emerald:#059669;--teal:#14b8a6;--blue:#3b82f6;--purple:#6366f1;--amber:#f59e0b;--red:#ef4444;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+    .nav{position:sticky;top:0;z-index:100;background:rgba(15,23,42,.85);backdrop-filter:blur(12px);padding:14px 32px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.08)}
+    .nav a{color:#f1f5f9;text-decoration:none;font-weight:500;font-size:14px}
+    .nav .brand{font-weight:700;font-size:16px;color:#10b981}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%);color:#fff;padding:80px 32px 60px;text-align:center}
+    .hero h1{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;margin-bottom:12px;line-height:1.3}
+    .hero .subtitle{font-size:18px;color:rgba(255,255,255,.8);max-width:720px;margin:0 auto 40px}
+    .hero .meta{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:32px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;max-width:800px;margin:0 auto}
+    .stat{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:20px 16px;backdrop-filter:blur(8px)}
+    .stat .num{font-size:28px;font-weight:800;color:#34d399}
+    .stat .label{font-size:13px;color:rgba(255,255,255,.7);margin-top:4px}
+    .page{max-width:900px;margin:0 auto;padding:40px 24px}
+    .toc{margin-bottom:48px}
+    .toc h3{font-size:14px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);margin-bottom:16px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .toc-grid a{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;transition:all .2s}
+    .toc-grid a:hover{border-color:var(--emerald);background:#ecfdf5}
+    .toc-grid .num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-size:12px;font-weight:700;flex-shrink:0}
+    .section{margin-bottom:56px}
+    .section h2{font-size:clamp(1.3rem,3vw,1.7rem);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+    .lead{color:var(--text-secondary);font-size:15px;margin-bottom:24px;line-height:1.6}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}
+    .card h4{font-size:16px;font-weight:600;margin-bottom:8px}
+    .card p,.card li{font-size:14px;color:var(--text-secondary);line-height:1.7}
+    .card ul,.card ol{padding-left:20px}
+    .card li{margin-bottom:4px}
+    p{font-size:15px;color:var(--text-secondary);line-height:1.8;margin-bottom:16px}
+    p code{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:13px;color:#059669}
+    .chart{margin:24px 0}
+    .chart-row{display:flex;align-items:center;margin-bottom:10px;gap:12px}
+    .chart-label{width:150px;font-size:13px;font-weight:500;text-align:right;flex-shrink:0}
+    .chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}
+    .chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;justify-content:flex-end;padding-right:10px;font-size:12px;font-weight:600;color:#fff;transition:width .6s ease}
+    .chart-bar.green{background:linear-gradient(90deg,#059669,#10b981)}
+    .chart-bar.teal{background:linear-gradient(90deg,#14b8a6,#2dd4bf)}
+    .chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+    .chart-bar.purple{background:linear-gradient(90deg,#6366f1,#a78bfa)}
+    .chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}
+    .flow{display:flex;align-items:center;justify-content:center;gap:12px;margin:24px 0;flex-wrap:wrap}
+    .flow-step{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;min-width:120px}
+    .flow-step.green{background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none}
+    .flow-step.teal{background:linear-gradient(135deg,#14b8a6,#2dd4bf);color:#fff;border:none}
+    .flow-step.blue{background:linear-gradient(135deg,#3b82f6,#60a5fa);color:#fff;border:none}
+    .flow-step.purple{background:linear-gradient(135deg,#6366f1,#a78bfa);color:#fff;border:none}
+    .flow-step.amber{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#fff;border:none}
+    .flow-arrow{font-size:20px;color:var(--text-secondary)}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}
+    .compare-card{border-radius:var(--radius);padding:24px}
+    .compare-card.old{background:#fef2f2;border:2px solid #fecaca}
+    .compare-card.new{background:#ecfdf5;border:2px solid #a7f3d0}
+    .compare-card h4{font-size:15px;font-weight:700;margin-bottom:8px}
+    .compare-card p{font-size:13px;color:var(--text-secondary)}
+    .timeline{position:relative;padding-left:32px;margin:24px 0}
+    .timeline::before{content:'';position:absolute;left:7px;top:8px;bottom:8px;width:3px;background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6);border-radius:2px}
+    .tl-item{position:relative;margin-bottom:24px}
+    .tl-dot{position:absolute;left:-29px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid #059669;background:#fff}
+    .tl-item:nth-child(2) .tl-dot{border-color:#14b8a6}
+    .tl-item:nth-child(3) .tl-dot{border-color:#3b82f6}
+    .tl-phase{font-weight:700;font-size:15px;color:var(--text)}
+    .tl-desc{font-size:13px;color:var(--text-secondary);margin-top:4px}
+    .code-block{background:#1e293b;border-radius:var(--radius);padding:20px;margin:16px 0;overflow-x:auto}
+    .code-block pre{color:#e2e8f0;font-family:var(--mono);font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-all}
+    .block-q{background:linear-gradient(135deg,#ecfdf5,#d1fae5);border-left:4px solid #059669;border-radius:0 var(--radius) var(--radius) 0;padding:20px 24px;margin:24px 0}
+    .block-q p{font-size:15px;font-style:italic;color:#064e3b;line-height:1.7}
+    .footer{background:#0f172a;color:#94a3b8;padding:40px 32px;text-align:center;font-size:14px}
+    .footer a{color:#34d399;text-decoration:none}
+    .footer a:hover{text-decoration:underline}
+    .footer .links{margin-top:12px;display:flex;justify-content:center;gap:24px;flex-wrap:wrap}
+    @media(max-width:768px){.compare-grid{grid-template-columns:1fr}.chart-label{width:100px;font-size:12px}.flow{flex-direction:column;gap:8px}.flow-arrow{transform:rotate(90deg)}.toc-grid{grid-template-columns:1fr}.hero{padding:60px 20px 40px}.nav{padding:12px 16px}.stats{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+  <header class="hero">
+    <div class="meta">📚 Tutorials & Guides · LangChain Accounts · 2024-05-09</div>
+    <h1>How to Build the Ultimate AI Automation with Multi-Agent Collaboration</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">21</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~9min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">7</div><div class="label">代码示例</div></div>
+      <div class="stat"><div class="num">21</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>How to Build the Ultimate AI A</a>
+      <a href="#s2"><span class="num">2</span>Introducing LangGraph</a>
+      <a href="#s3"><span class="num">3</span>Building the Ultimate Autonomo</a>
+      <a href="#s4"><span class="num">4</span>The Research Agent Team</a>
+      <a href="#s5"><span class="num">5</span>Architecture</a>
+      <a href="#s6"><span class="num">6</span>Define the Graph State</a>
+      <a href="#s7"><span class="num">7</span>Report layout</a>
+      <a href="#s8"><span class="num">8</span>Initializing the graph with La</a>
+      <a href="#s9"><span class="num">9</span>Initialize the researcher</a>
+      <a href="#s10"><span class="num">10</span>Conduct research on the given </a>
+      <a href="#s11"><span class="num">11</span>Write the report</a>
+      <a href="#s12"><span class="num">12</span>Initialize agents</a>
+      <a href="#s13"><span class="num">13</span>Define a Langchain StateGraph </a>
+      <a href="#s14"><span class="num">14</span>Add nodes for each agent</a>
+      <a href="#s15"><span class="num">15</span>set up start and end nodes</a>
+      <a href="#s16"><span class="num">16</span>A Graph within a Graph to supp</a>
+      <a href="#s17"><span class="num">17</span>set up edges researcher-&amp;gt;re</a>
+      <a href="#s18"><span class="num">18</span>Running the Research Assistant</a>
+      <a href="#s19"><span class="num">19</span>What&amp;#x27;s Next?</a>
+      <a href="#s20"><span class="num">20</span>Related content</a>
+      <a href="#s21"><span class="num">21</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+    <section class="section" id="s1">
+      <h2>🔍 How to Build the Ultimate AI Automation with Multi-Agent Collaboration</h2>
+      <p class="lead">The LangChain TeamMay 9, 20248min
+
+Go back to blogShare
+
+
+
+
+
+Editor&amp;#x27;s Note: The following post is authored by Assaf Elovic, Head of R&amp;amp;D at Wix.</p>
+      <p>The LangChain TeamMay 9, 20248min[</p>
+<p>Go back to blog](/blog)Share[</p>
+<p>](#)Editor&#x27;s Note: The following post is authored by Assaf Elovic, Head of R&amp;D at Wix. In this blog, he walks through how to build an autonomous research assistant using LangGraph with a team of specialized agents.</p>
+<p>It has only been a year since the initial release of GPT Researcher, but methods for building, testing, and deploying AI agents have already evolved significantly. That’s just the nature and speed of the current AI progress. What started as simple zero-shot or few-shot prompting, has quickly evolved to agent function calling, RAG and now finally agentic workflows (aka “flow engineering”).</p>
+<p>Andrew Ng recently stated:“I think AI agent workflows will drive massive AI progress this year — perhaps even more than the next generation of foundation models. This is an important trend, and I urge everyone who works in AI to pay attention to it.”</p>
+<p>In this article you will learn why multi agent workflows are the current best standard and how to build the optimal autonomous research multi-agent assistant using LangGraph.</p>
+<p>To skip this tutorial, feel free to check out the final code implementation of GPT Researcher x LangGraph here.</p>
+      
+    </section>
+    <section class="section" id="s2">
+      <h2>⚡ Introducing LangGraph</h2>
+      <p class="lead">LangGraph is an extension of LangChain aimed at creating agent and multi-agent flows.</p>
+      <p>LangGraph is an extension of LangChain aimed at creating agent and multi-agent flows. It  adds in the ability to create cyclical flows and comes with memory built in - both important attributes for creating agents.</p>
+<p>LangGraph provides developers with a high degree of controllability and is important for creating custom agents and flows. Nearly all agents in production are customized towards the specific use case they are trying solve. LangGraph gives you the flexibility to create arbitrary customized agents, while providing an intuitive developer experience for doing so.</p>
+<p>Enough with the smalltalk, let&#x27;s start building!</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s3">
+      <h2>🏗️ Building the Ultimate Autonomous Research Agent</h2>
+      <p class="lead">By leveraging LangGraph, the research process can be significantly improved in depth and quality by leveraging multiple agents with specialized skills.</p>
+      <p>By leveraging LangGraph, the research process can be significantly improved in depth and quality by leveraging multiple agents with specialized skills. Having every agent focus and specialize only a specific skill, allows for better separation of concerns, customizability, and further development at scale as the project grows.</p>
+<p>Inspired by the recent STORM paper, this example showcases how a team of AI agents can work together to conduct research on a given topic, from planning to publication. This example will also leverage the leading autonomous research agent GPT Researcher.</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s4">
+      <h2>📊 The Research Agent Team</h2>
+      <p class="lead">The research team consists of seven LLM agents:
+
+- Chief Editor — Oversees the research process and manages the team.</p>
+      <p>The research team consists of seven LLM agents:</p>
+<div class="card"><ul><li>Chief Editor — Oversees the research process and manages the team. This is the “master” agent that coordinates the other agents using LangGraph. This agent acts as the main LangGraph interface.</li><li>GPT Researcher — A specialized autonomous agent that conducts in depth research on a given topic.</li><li>Editor — Responsible for planning the research outline and structure.</li><li>Reviewer — Validates the correctness of the research results given a set of criteria.</li><li>Reviser — Revises the research results based on the feedback from the reviewer.</li><li>Writer — Responsible for compiling and writing the final report.</li><li>Publisher — Responsible for publishing the final report in various formats.</li></ul></div>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s5">
+      <h2>🔗 Architecture</h2>
+      <p class="lead">As seen below, the automation process is based on the following stages: Planning the research, data collection and analysis, review and revision, writing the report and finally publication:
+
+
+
+More sp</p>
+      <p>As seen below, the automation process is based on the following stages: Planning the research, data collection and analysis, review and revision, writing the report and finally publication:</p>
+<p>More specifically the process is as follows:</p>
+<div class="card"><ul><li>Browser (gpt-researcher) — Browses the internet for initial research based on the given research task. This step is crucial for LLMs to plan the research process based on up to date and relevant information, and not rely solely on pre-trained data for a given task or topic.</li><li>Editor — Plans the report outline and structure based on the initial research. The Editor is also responsible for triggering the parallel research tasks based on the planned outline.</li></ul></div>
+<p>For each outline topic (in parallel):</p>
+<div class="card"><ul><li>Researcher (gpt-researcher) — Runs an in depth research on the subtopics and writes a draft. This agent leverages the GPT Researcher Python package under the hood, for optimized, in depth and factual research report.</li><li>Reviewer — Validates the correctness of the draft given a set of guidelines and provides feedback to the reviser (if any).</li><li>Reviser — Revises the draft until it is satisfactory based on the reviewer feedback.</li><li>Writer — Compiles and writes the final report including an introduction, conclusion and references section from the given research findings.</li><li>Publisher — Publishes the final report to multi formats such as PDF, Docx, Markdown, etc.</li></ul></div>
+<p>We won&#x27;t dive into all the code since there’s a lot of it, but we&#x27;ll focus on the interesting parts I’ve found valuable to share.</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s6">
+      <h2>💡 Define the Graph State</h2>
+      <p class="lead">One of my favorite features with LangGraph is state management.</p>
+      <p>One of my favorite features with LangGraph is state management. States in LangGraph are facilitated through a structured approach where developers define a GraphState that encapsulates the entire state of the application. Each node in the graph can modify this state, allowing for dynamic responses based on the evolving context of the interaction.</p>
+<p>Like in every start of a technical design, considering the data schema throughout the application is key. In this case we’ll define a ResearchState like so:</p>
+<div class="code-block"><pre>class ResearchState(TypedDict):
+    task: dict
+    initial_research: str
+    sections: List[str]
+    research_data: List[dict]</pre></div>
+      
+    </section>
+    <section class="section" id="s7">
+      <h2>🛠️ Report layout</h2>
+      <p class="lead">title: str
+    headers: dict
+    date: str
+    table_of_contents: str
+    introduction: str
+    conclusion: str
+    sources: List[str]
+    report: str
+&lt;code&gt;
+
+As seen above, the state is divided into </p>
+      <div class="code-block"><pre>title: str
+    headers: dict
+    date: str
+    table_of_contents: str
+    introduction: str
+    conclusion: str
+    sources: List[str]
+    report: str</pre></div>
+<p>As seen above, the state is divided into two main areas: the research task and the report layout content. As data circulates through the graph agents, each agent will, in turn, generate new data based on the existing state and update it for subsequent processing further down the graph with other agents.</p>
+<p>We can then initialize the graph with the following:</p>
+<p><code>from langgraph.graph import StateGraph
+workflow = StateGraph(ResearchState)
+</code></p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s8">
+      <h2>📈 Initializing the graph with LangGraph</h2>
+      <p class="lead">As stated above, one of the great things about multi agent development is building each agent to have specialized and scoped skills.</p>
+      <p>As stated above, one of the great things about multi agent development is building each agent to have specialized and scoped skills. Let’s take an example of the Researcher agent using GPT Researcher python package:</p>
+<p>`from gpt_researcher import GPTResearcher</p>
+<p>class ResearchAgent:
+    def __init__(self):
+        pass</p>
+<p>async def research(self, query: str):</p>
+      
+    </section>
+    <section class="section" id="s9">
+      <h2>🎯 Initialize the researcher</h2>
+      <p class="lead">researcher = GPTResearcher(parent_query=parent_query, query=query, report_type=research_report, conf</p>
+      <p>researcher = GPTResearcher(parent_query=parent_query, query=query, report_type=research_report, config_path=None)</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s10">
+      <h2>🔬 Conduct research on the given query</h2>
+      <p class="lead">await researcher.</p>
+      <p>await researcher.conduct_research()</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s11">
+      <h2>📝 Write the report</h2>
+      <p class="lead">report = await researcher.</p>
+      <p>report = await researcher.write_report()</p>
+<p>As you can see above, we’ve created an instance of the Research agent. Now let’s assume we’ve done the same for each of the team’s agent. After creating all of the agents, we’d initialize the graph with LangGraph:</p>
+<p>`def init_research_team(self):</p>
+      
+    </section>
+    <section class="section" id="s12">
+      <h2>🧪 Initialize agents</h2>
+      <p class="lead">editor_agent = EditorAgent(self.</p>
+      <p>editor_agent = EditorAgent(self.task)
+    research_agent = ResearchAgent()
+    writer_agent = WriterAgent()
+    publisher_agent = PublisherAgent(self.output_dir)</p>
+      
+    </section>
+    <section class="section" id="s13">
+      <h2>🌐 Define a Langchain StateGraph with the ResearchState</h2>
+      <p class="lead">workflow = StateGraph(ResearchState)</p>
+      <p>workflow = StateGraph(ResearchState)</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s14">
+      <h2>📦 Add nodes for each agent</h2>
+      <p class="lead">workflow.</p>
+      <p>workflow.add_node(&quot;browser&quot;, research_agent.run_initial_research)
+    workflow.add_node(&quot;planner&quot;, editor_agent.plan_research)
+    workflow.add_node(&quot;researcher&quot;, editor_agent.run_parallel_research)
+    workflow.add_node(&quot;writer&quot;, writer_agent.run)
+    workflow.add_node(&quot;publisher&quot;, publisher_agent.run)</p>
+<p>workflow.add_edge(&#x27;browser&#x27;, &#x27;planner&#x27;)
+    workflow.add_edge(&#x27;planner&#x27;, &#x27;researcher&#x27;)
+    workflow.add_edge(&#x27;researcher&#x27;, &#x27;writer&#x27;)
+    workflow.add_edge(&#x27;writer&#x27;, &#x27;publisher&#x27;)</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s15">
+      <h2>🔄 set up start and end nodes</h2>
+      <p class="lead">workflow.</p>
+      <p>workflow.set_entry_point(&quot;browser&quot;)
+    workflow.add_edge(&#x27;publisher&#x27;, END)</p>
+<p>return workflow
+`</p>
+<p>As seen above, creating the LangGraph graph is very straight forward and consists of three main functions: add_node, add_edge and set_entry_point. With these main functions you can first add the nodes to the graph, connect the edges and finally set the starting point.</p>
+<p>Focus check: If you’ve been following the code and architecture properly, you’ll notice that the Reviewer and Reviser agents are missing in the initialization above. Let’s dive into it!</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s16">
+      <h2>🎨 A Graph within a Graph to support stateful Parallelization</h2>
+      <p class="lead">This was the most exciting part of my experience working with LangGraph! One exciting feature of this autonomous assistant is having a parallel run for each research task, which would be reviewed and </p>
+      <p>This was the most exciting part of my experience working with LangGraph! One exciting feature of this autonomous assistant is having a parallel run for each research task, which would be reviewed and revised based on a set of predefined guidelines.</p>
+<p>Knowing how to leverage parallel work within a process is key for optimizing speed. But how would you trigger parallel agent work if all agents report to the same state? This can cause race conditions and inconsistencies in the final data report. To solve this, you can create a sub graph that would be triggered from the main LangGraph instance. This sub graph would hold its own state for each parallel run, and that would solve the issues that were raised.</p>
+<p>As we’ve done before, let’s define the LangGraph state and its agents. Since this sub graph basically reviews and revises a research draft, we’ll define the state with draft information:</p>
+<div class="code-block"><pre>class DraftState(TypedDict):
+    task: dict
+    topic: str
+    draft: dict
+    review: str
+    revision_notes: str</pre></div>
+<p>As seen in the DraftState, we mostly care about the topic discussed, and the reviewer and revision notes as they communicate between each other to finalize the subtopic research report. To create the circular condition we’ll take advantage of the last important piece of LangGraph which is conditional edges:</p>
+<div class="code-block"><pre>async def run_parallel_research(self, research_state: dict):
+    workflow = StateGraph(DraftState)</pre></div>
+<p>workflow.add_node(&quot;researcher&quot;, research_agent.run_depth_research)
+    workflow.add_node(&quot;reviewer&quot;, reviewer_agent.run)
+    workflow.add_node(&quot;reviser&quot;, reviser_agent.run)</p>
+      
+    </section>
+    <section class="section" id="s17">
+      <h2>🏆 set up edges researcher-&amp;gt;reviewer-&amp;gt;reviser-&amp;gt;reviewer...</h2>
+      <p class="lead">workflow.</p>
+      <div class="code-block"><pre>workflow.set_entry_point(&amp;quot;researcher&amp;quot;)
+    workflow.add_edge(&amp;#x27;researcher&amp;#x27;, &amp;#x27;reviewer&amp;#x27;)
+    workflow.add_edge(&amp;#x27;reviser&amp;#x27;, &amp;#x27;reviewer&amp;#x27;)
+    workflow.add_conditional_edges(&amp;#x27;reviewer&amp;#x27;,
+                                   (lambda draft: &amp;quot;accept&amp;quot; if draft[&amp;#x27;review&amp;#x27;] is None else &amp;quot;revise&amp;quot;),
+                                   {&amp;quot;accept&amp;quot;: END, &amp;quot;revise&amp;quot;: &amp;quot;reviser&amp;quot;})</pre></div>
+<p>By defining the conditional edges, the graph would direct to reviser if there exists review notes by the reviewer, or the cycle would end with the final draft. If you go back to the main graph we’ve built, you’ll see that this parallel work is under a node named “researcher” called by ChiefEditor agent.</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s18">
+      <h2>🔑 Running the Research Assistant</h2>
+      <p class="lead">After finalizing the agents, states and graphs, it’s time to run our research assistant! To make it easier to customize, the assistant runs with a given task.</p>
+      <p>After finalizing the agents, states and graphs, it’s time to run our research assistant! To make it easier to customize, the assistant runs with a given task.json file:</p>
+<div class="code-block"><pre>{
+  &amp;quot;query&amp;quot;: &amp;quot;Is AI in a hype cycle?&amp;quot;,
+  &amp;quot;max_sections&amp;quot;: 3,
+  &amp;quot;publish_formats&amp;quot;: {
+    &amp;quot;markdown&amp;quot;: true,
+    &amp;quot;pdf&amp;quot;: true,
+    &amp;quot;docx&amp;quot;: true
+  },
+  &amp;quot;follow_guidelines&amp;quot;: false,
+  &amp;quot;model&amp;quot;: &amp;quot;gpt-4-turbo&amp;quot;,
+  &amp;quot;guidelines&amp;quot;: [
+    &amp;quot;The report MUST be written in APA format&amp;quot;,
+    &amp;quot;Each sub section MUST include supporting sources using hyperlinks. If none exist, erase the sub section or rewrite it to be a part of the previous section&amp;quot;,
+    &amp;quot;The report MUST be written in spanish&amp;quot;
+  ]
+}</pre></div>
+<p>The task object is pretty self explanatory, however please notice that follow_guidelines if false would cause the graph to ignore the revision step and defined guidelines. Also, the max_sections field defines how many subheaders to research for. Having less will generate a shorter report.</p>
+<p>Running the assistant will result in a final research report in formats such as Markdown, PDF and Docx.</p>
+<p>To download and run the example check out the GPT Researcher x LangGraph open source page.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s19">
+      <h2>📋 What&amp;#x27;s Next?</h2>
+      <p class="lead">Going forward, there are super exciting things to think about.</p>
+      <p>Going forward, there are super exciting things to think about. Human in the loop is key for optimized AI experiences. Having a human help the assistant revise and focus on just the right research plan, topics and outline, would enhance the overall quality and experience. In addition, aiming for relying on human intervention throughout the AI flow ensures correctness, sense of control and deterministic results. Happy to see that LangGraph already supports this out of the box as seen here.</p>
+<p>In addition, having support for research about both web and local data would be key for many types of business and personal use cases.</p>
+<p>Lastly, more efforts can be done to improve the quality of retrieved sources and making sure the final report is built in the optimal storyline.</p>
+<p>A step forward in LangGraph and multi-agent collaboration as a whole would be where assistants can plan and generate graphs dynamically based on given tasks. This vision would allow assistants to choose only a subset of agents for a given task and plan their strategy based on the graph fundamentals as presented in this article and open a whole new world of possibilities. Given the pace of innovation in the AI space, it won’t be long before a new disruptive version of GPT Researcher is launched. Looking forward to what the future brings!</p>
+<p>To keep track of this project’s ongoing progress and updates please join our Discord community.</p>
+      
+    </section>
+    <section class="section" id="s20">
+      <h2>🚀 Related content</h2>
+      <p class="lead">Deep AgentsAgent ArchitectureOpen Source
+
+#### Tuning Deep Agents to Work Well with Different Models
+
+Vivek TrivedyMason DaughertyApril 29, 20265min[](/blog/tuning-deep-agents-different-models).</p>
+      <p>Deep AgentsAgent ArchitectureOpen Source</p>
+<p>#### Tuning Deep Agents to Work Well with Different Models</p>
+<p>Vivek TrivedyMason DaughertyApril 29, 20265min[](/blog/tuning-deep-agents-different-models).png)Agent ArchitectureLangSmithOpen Source</p>
+<p>#### How LangSmith and LangChain OSS Help You Meet EU AI Act Requirements</p>
+<p>Jacob TalbotBecca WengApril 27, 20267min[](/blog/langsmith-langchain-oss-eu-ai-act).png)Agent ArchitecturePartner</p>
+<p>#### Agentic Engineering: How Swarms of AI Agents Are Redefining Software Engineering</p>
+<p>Renuka KumarPrashanth RamagopalApril 17, 202611min[](/blog/agentic-engineering-redefining-software-engineering)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s21">
+      <h2>🔍 See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+<p>](/contact-sales)</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+  </div>
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/how-to-build-the-ultimate-ai-automation-with-multi-agent-collaboration" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

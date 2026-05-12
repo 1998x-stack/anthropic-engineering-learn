@@ -1,0 +1,323 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Parallel Function Calling for Structured Data Extraction</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafbfc;
+      --surface: #fff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --green: #10b981;
+      --emerald: #059669;
+      --teal: #14b8a6;
+      --blue: #3b82f6;
+      --purple: #6366f1;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans SC', 'Inter', system-ui, sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: var(--sans); background: var(--bg); color: var(--text); line-height:1.7; }
+    .nav { position:sticky; top:0; z-index:100; background:rgba(15,23,42,.85); backdrop-filter:blur(12px); padding:14px 32px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,.08); }
+    .nav a { color:#f1f5f9; text-decoration:none; font-weight:500; font-size:14px; }
+    .nav .brand { font-weight:700; font-size:16px; color:#10b981; }
+    .hero { background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%); color:#fff; padding:80px 32px 60px; text-align:center; }
+    .hero h1 { font-size:clamp(1.8rem,4vw,2.8rem); font-weight:800; margin-bottom:12px; line-height:1.3; }
+    .hero .subtitle { font-size:18px; color:rgba(255,255,255,.8); max-width:720px; margin:0 auto 40px; }
+    .hero .meta { font-size:13px; color:rgba(255,255,255,.5); margin-bottom:32px; }
+    .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:16px; max-width:800px; margin:0 auto; }
+    .stat { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); border-radius:12px; padding:20px 16px; backdrop-filter:blur(8px); }
+    .stat .num { font-size:28px; font-weight:800; color:#34d399; }
+    .stat .label { font-size:13px; color:rgba(255,255,255,.7); margin-top:4px; }
+    .page { max-width:900px; margin:0 auto; padding:40px 24px; }
+    .toc { margin-bottom:48px; }
+    .toc h3 { font-size:14px; text-transform:uppercase; letter-spacing:1.5px; color:var(--text-secondary); margin-bottom:16px; }
+    .toc-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; }
+    .toc-grid a { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--text); font-size:14px; font-weight:500; transition:all .2s; }
+    .toc-grid a:hover { border-color:var(--emerald); background:#ecfdf5; }
+    .toc-grid .num { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:8px; background:linear-gradient(135deg,#059669,#10b981); color:#fff; font-size:12px; font-weight:700; flex-shrink:0; }
+    .section { margin-bottom:56px; }
+    .section h2 { font-size:clamp(1.3rem,3vw,1.7rem); font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:10px; }
+    .lead { color:var(--text-secondary); font-size:15px; margin-bottom:24px; line-height:1.6; }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:24px; margin-bottom:16px; }
+    .card h4 { font-size:16px; font-weight:600; margin-bottom:8px; }
+    .card p, .card li { font-size:14px; color:var(--text-secondary); line-height:1.7; }
+    .card ul, .card ol { padding-left:20px; }
+    .card li { margin-bottom:4px; }
+    p { font-size:15px; color:var(--text-secondary); line-height:1.8; margin-bottom:16px; }
+    p code { background:#f1f5f9; padding:2px 6px; border-radius:4px; font-family:var(--mono); font-size:13px; color:#059669; }
+    .chart { margin:24px 0; }
+    .chart-row { display:flex; align-items:center; margin-bottom:10px; gap:12px; }
+    .chart-label { width:150px; font-size:13px; font-weight:500; text-align:right; flex-shrink:0; }
+    .chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:32px; overflow:hidden; }
+    .chart-bar { height:100%; border-radius:8px; display:flex; align-items:center; justify-content:flex-end; padding-right:10px; font-size:12px; font-weight:600; color:#fff; transition:width .6s ease; }
+    .chart-bar.green { background:linear-gradient(90deg,#059669,#10b981); }
+    .chart-bar.teal { background:linear-gradient(90deg,#14b8a6,#2dd4bf); }
+    .chart-bar.blue { background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+    .chart-bar.purple { background:linear-gradient(90deg,#6366f1,#a78bfa); }
+    .chart-bar.amber { background:linear-gradient(90deg,#f59e0b,#fbbf24); }
+    .chart-bar.red { background:linear-gradient(90deg,#ef4444,#f87171); }
+    .flow { display:flex; align-items:center; justify-content:center; gap:12px; margin:24px 0; flex-wrap:wrap; }
+    .flow-step { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 20px; font-size:14px; font-weight:600; text-align:center; min-width:120px; }
+    .flow-step.green { background:linear-gradient(135deg,#059669,#10b981); color:#fff; border:none; }
+    .flow-step.teal { background:linear-gradient(135deg,#14b8a6,#2dd4bf); color:#fff; border:none; }
+    .flow-step.blue { background:linear-gradient(135deg,#3b82f6,#60a5fa); color:#fff; border:none; }
+    .flow-step.purple { background:linear-gradient(135deg,#6366f1,#a78bfa); color:#fff; border:none; }
+    .flow-step.amber { background:linear-gradient(135deg,#f59e0b,#fbbf24); color:#fff; border:none; }
+    .flow-arrow { font-size:20px; color:var(--text-secondary); }
+    .compare-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:24px 0; }
+    .compare-card { border-radius:var(--radius); padding:24px; }
+    .compare-card.old { background:#fef2f2; border:2px solid #fecaca; }
+    .compare-card.new { background:#ecfdf5; border:2px solid #a7f3d0; }
+    .compare-card h4 { font-size:15px; font-weight:700; margin-bottom:8px; }
+    .compare-card p { font-size:13px; color:var(--text-secondary); }
+    .timeline { position:relative; padding-left:32px; margin:24px 0; }
+    .timeline::before { content:''; position:absolute; left:7px; top:8px; bottom:8px; width:3px; background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:24px; }
+    .tl-dot { position:absolute; left:-29px; top:4px; width:14px; height:14px; border-radius:50%; border:3px solid #059669; background:#fff; }
+    .tl-item:nth-child(2) .tl-dot { border-color:#14b8a6; }
+    .tl-item:nth-child(3) .tl-dot { border-color:#3b82f6; }
+    .tl-item:nth-child(4) .tl-dot { border-color:#6366f1; }
+    .tl-item:nth-child(5) .tl-dot { border-color:#f59e0b; }
+    .tl-phase { font-weight:700; font-size:15px; color:var(--text); }
+    .tl-desc { font-size:13px; color:var(--text-secondary); margin-top:4px; }
+    .code-block { background:#1e293b; border-radius:var(--radius); padding:20px; margin:16px 0; overflow-x:auto; }
+    .code-block pre { color:#e2e8f0; font-family:var(--mono); font-size:13px; line-height:1.6; white-space:pre-wrap; word-break:break-all; }
+    .block-q { background:linear-gradient(135deg,#ecfdf5,#d1fae5); border-left:4px solid #059669; border-radius:0 var(--radius) var(--radius) 0; padding:20px 24px; margin:24px 0; }
+    .block-q p { font-size:15px; font-style:italic; color:#064e3b; line-height:1.7; }
+    .badge { display:inline-block; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600; }
+    .badge-green { background:#ecfdf5; color:#059669; }
+    .badge-teal { background:#f0fdfa; color:#14b8a6; }
+    .badge-blue { background:#eff6ff; color:#3b82f6; }
+    .badge-purple { background:#eef2ff; color:#6366f1; }
+    .badge-amber { background:#fffbeb; color:#d97706; }
+    .footer { background:#0f172a; color:#94a3b8; padding:40px 32px; text-align:center; font-size:14px; }
+    .footer a { color:#34d399; text-decoration:none; }
+    .footer a:hover { text-decoration:underline; }
+    .footer .links { margin-top:12px; display:flex; justify-content:center; gap:24px; flex-wrap:wrap; }
+    @media(max-width:768px) {
+      .compare-grid { grid-template-columns:1fr; }
+      .chart-label { width:100px; font-size:12px; }
+      .flow { flex-direction:column; gap:8px; }
+      .flow-arrow { transform:rotate(90deg); }
+      .toc-grid { grid-template-columns:1fr; }
+      .hero { padding:60px 20px 40px; }
+      .nav { padding:12px 16px; }
+      .stats { grid-template-columns:1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+
+  <header class="hero">
+    <div class="meta">🧠 RAG & Knowledge · LangChain Accounts · 2023-11-09</div>
+    <h1>Parallel Function Calling for Structured Data Extraction</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">10</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~5min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">3</div><div class="label">代码示例</div></div>
+      <div class="stat"><div class="num">7</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>Parallel Function Calling for </a>
+      <a href="#s2"><span class="num">2</span>What is Extraction</a>
+      <a href="#s3"><span class="num">3</span>Old Function Calling</a>
+      <a href="#s4"><span class="num">4</span>Parallel Function Calling</a>
+      <a href="#s5"><span class="num">5</span>Convert Pydantic objects to th</a>
+      <a href="#s6"><span class="num">6</span>Give the model access to these</a>
+      <a href="#s7"><span class="num">7</span>Create an end to end chain</a>
+      <a href="#s8"><span class="num">8</span>Conclusion</a>
+      <a href="#s9"><span class="num">9</span>Related content</a>
+      <a href="#s10"><span class="num">10</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+
+    <section class="section" id="s1">
+      <h2>🔍 Parallel Function Calling for Structured Data Extraction</h2>
+      <p class="lead">The LangChain TeamNovember 9, 20234min
+
+Go back to blogShare
+
+Important Links:
+
+- Cookbook for extraction using parallel function calling
+
+One of the biggest use cases for language models that we s...</p>
+      <p>The LangChain TeamNovember 9, 20234min[</p>
+<p>Go back to blog](/blog)Share[</p>
+<div class="card"><ul>
+  <li>Cookbook for extraction using parallel function calling</li>
+</ul></div>
+<p>One of the biggest use cases for language models that we see is in extraction. This is where the language model is used to extract multiple pieces of structured information from unstructured documents. The biggest challenge developers faced here was in getting the language model to correctly output valid JSON.</p>
+<p>OpenAI helped immensely with that when they introduced function calling in early 2023. At a high level, function calling encourages the model to respond in a structured format. This was mainly highlighted as a way for the language model to invoke functions correctly (when calling functions you need a response in the right format). However, there are many other places where having a properly structured response is useful - such as extraction. We recently did a DeepLearningAI class with Andrew Ng where we covered this in detail.</p>
+<p>At OpenAI&#x27;s developer day on 11/6 they released an updated way to invoke functions that allows for parallel function calling. This new ability allows for a language model to call multiple functions at the same time. For more context you can check out their release blog here.</p>
+<p>Parallel function calling makes extraction significantly easier. In the rest of this blog post we&#x27;ll dive into what extraction is, what looked like before with the old way of function calling, and what it looks like now with parallel function calling, why it is significantly easier and more powerful (although it does come with one downside).</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s2">
+      <h2>⚡ What is Extraction</h2>
+      <p class="lead">Extraction is the process of extracting structured data from unstructured data.</p>
+      <p>Extraction is the process of extracting structured data from unstructured data. A concrete example of this is entity extraction. As Sematext explains:</p>
+<div class="block-q"><p>Entity extraction is, in the context of search, the process of figuring out which fields a query should target, as opposed to always hitting all fields. The reason we may want to involve entity extraction in search is to improve precision. For example: how do we tell that, when the user typed in Apple iPhone, the intent was to run company:Apple AND product:iPhone? And not bring back phone stickers in the shape of an apple?</p></div>
+<p>Crucially, this involves extracting multiple pieces of information, potentially of different types.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s3">
+      <h2>🏗️ Old Function Calling</h2>
+      <p class="lead">With old function calling you could only get one function call back at a time.</p>
+      <p>With old function calling you could only get one function call back at a time. This made it so that if you wanted to extract multiple pieces of information at a time you had to do some hacks. For example, let&#x27;s assume you wanted to extract the following pieces of information:</p>
+<p><code>class Person(BaseModel):
+    name: str
+    age: int</code></p>
+<p>(Notice that I am representing this as a Pydantic class - this is just a convenience method for constructing the JSON that is eventually passed into the function call parameter)</p>
+<p>If I just passed that directly as a function to the old OpenAI models, it would only ever return one piece of information! This is obviously not acceptable if I want to extract multiple pieces of information.</p>
+<p>In order to extract multiple pieces of information, I would have to do a hack like:</p>
+<p><code>class Information(BaseModel):
+    people: List[Person]</code></p>
+<p>This would construct a new object that had as a field a list of <code>Person</code> objects. This way, when the OpenAI model constructed the function invocation, it would construct one argument that was a list of people.</p>
+<p>This made it possible to allow for extraction of multiple elements of the same type, but it comes at a downside as well. If we wanted to extract both <code>Person</code> and a different type of object (say <code>Location</code>) we would have to do some more and more complicated typing logic. For example, that would look like:</p>
+<p><code>class Information(BaseModel):
+     info: List[Union[Person, Location]]</code></p>
+<p>This would also necessitate some more complicated parsing logic of the language model&#x27;s responses.</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s4">
+      <h2>📊 Parallel Function Calling</h2>
+      <p class="lead">So how does parallel function calling improve this?
+
+It removes a LOT of the complexity and hacks we had to do.</p>
+      <p>So how does parallel function calling improve this?</p>
+<p>It removes a LOT of the complexity and hacks we had to do. You no longer have to create that ugly, extraneous <code>Information</code> class - you can just pass in <code>Person</code> and <code>Location</code> directly as functions, and the model will output those as separate function calls. This is an improvement because it means:</p>
+<div class="card"><ul>
+  <li>Less logic needed to create the LLM input (better developer experience)</li>
+  <li>Less complicated function definitions to pass to the LLM (saves on tokens, less likely to confuse the LLM)</li>
+  <li>Less complicated output the LLM needs to produce (smaller chance the LLM messes up and outputs incorrect json)</li>
+  <li>Less logic needed to parse the LLM output (better developer experience)</li>
+</ul></div>
+<p>We&#x27;ve put all this together into a simple extraction chain - you can check it out here. The full logic for the chain looks something like:</p>
+<div class="code-block"><pre># Create a prompt telling the LLM to extract information
+prompt = ChatPromptTemplate.from_messages({
+        (&amp;quot;system&amp;quot;, _EXTRACTION_TEMPLATE),
+        (&amp;quot;user&amp;quot;, &amp;quot;{input}&amp;quot;)
+    })</pre></div>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s5">
+      <h2>🔗 Convert Pydantic objects to the appropriate schema</h2>
+      <p class="lead">tools = [convert_pydantic_to_openai_tool(p) for p in pydantic_schemas]</p>
+      <p>tools = [convert_pydantic_to_openai_tool(p) for p in pydantic_schemas]</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s6">
+      <h2>💡 Give the model access to these tools</h2>
+      <p class="lead">model = llm.</p>
+      <p>model = llm.bind(tools=tools)</p>
+      
+    </section>
+
+    <section class="section" id="s7">
+      <h2>🛠️ Create an end to end chain</h2>
+      <p class="lead">chain = prompt | model | PydanticToolsParser(tools=pydantic_schemas)&lt;code&gt;
+
+Using this chain we can now do things like:
+
+&lt;/code&gt;# Make sure to use a recent model that supports tools
+model = ChatOpe...</p>
+      <p>chain = prompt | model | PydanticToolsParser(tools=pydantic_schemas)`</p>
+<p>Using this chain we can now do things like:</p>
+<div class="code-block"><pre># Make sure to use a recent model that supports tools
+model = ChatOpenAI(model=&amp;quot;gpt-3.5-turbo-1106&amp;quot;)
+chain = create_extraction_chain_pydantic(Person, model)
+chain.invoke({&amp;quot;input&amp;quot;: &amp;quot;jane is 2 and bob is 3&amp;quot;})</pre></div>
+<p><code>[Person(name=&#x27;jane&#x27;, age=2), Person(name=&#x27;bob&#x27;, age=3)]</code></p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s8">
+      <h2>📈 Conclusion</h2>
+      <p class="lead">While most people are excited about function calling for creating agents, there is a very real (and very useful) use case around using it to structure outputs from LLMs more generically.</p>
+      <p>While most people are excited about function calling for creating agents, there is a very real (and very useful) use case around using it to structure outputs from LLMs more generically. One of these use cases is extraction, but with old function calling you had to do some hacks to get that to work. With parallel function calling it is significantly easier. Try it out!</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s9">
+      <h2>🎯 Related content</h2>
+      <p class="lead">Deep AgentsAgent ArchitectureOpen Source
+
+#### Tuning Deep Agents to Work Well with Different Models
+
+Vivek TrivedyMason DaughertyApril 29, 20265min[](/blog/tuning-deep-agents-different-models).</p>
+      <p>Deep AgentsAgent ArchitectureOpen Source</p>
+<p>#### Tuning Deep Agents to Work Well with Different Models</p>
+<p>Vivek TrivedyMason DaughertyApril 29, 20265min[](/blog/tuning-deep-agents-different-models).png)Agent ArchitectureLangSmithOpen Source</p>
+<p>#### How LangSmith and LangChain OSS Help You Meet EU AI Act Requirements</p>
+<p>Jacob TalbotBecca WengApril 27, 20267min[](/blog/langsmith-langchain-oss-eu-ai-act).png)Case StudiesLangSmith</p>
+<p>#### How Credit Genie used Insights Agent to improve their AI financial assistant</p>
+<p>David LiJeffrey NgaiGoyo Lozano PalacioCharles YuanApril 20, 20265min[](/blog/credit-genie-insights-agent-financial-assistant)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s10">
+      <h2>🔬 See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+  </div>
+
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/parallel-function-calling-extraction" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

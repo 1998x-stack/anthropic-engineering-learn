@@ -1,0 +1,244 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Handling PII data in LangChain</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--green:#10b981;--emerald:#059669;--teal:#14b8a6;--blue:#3b82f6;--purple:#6366f1;--amber:#f59e0b;--red:#ef4444;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+    .nav{position:sticky;top:0;z-index:100;background:rgba(15,23,42,.85);backdrop-filter:blur(12px);padding:14px 32px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.08)}
+    .nav a{color:#f1f5f9;text-decoration:none;font-weight:500;font-size:14px}
+    .nav .brand{font-weight:700;font-size:16px;color:#10b981}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%);color:#fff;padding:80px 32px 60px;text-align:center}
+    .hero h1{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;margin-bottom:12px;line-height:1.3}
+    .hero .subtitle{font-size:18px;color:rgba(255,255,255,.8);max-width:720px;margin:0 auto 40px}
+    .hero .meta{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:32px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;max-width:800px;margin:0 auto}
+    .stat{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:20px 16px;backdrop-filter:blur(8px)}
+    .stat .num{font-size:28px;font-weight:800;color:#34d399}
+    .stat .label{font-size:13px;color:rgba(255,255,255,.7);margin-top:4px}
+    .page{max-width:900px;margin:0 auto;padding:40px 24px}
+    .toc{margin-bottom:48px}
+    .toc h3{font-size:14px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);margin-bottom:16px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .toc-grid a{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;transition:all .2s}
+    .toc-grid a:hover{border-color:var(--emerald);background:#ecfdf5}
+    .toc-grid .num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-size:12px;font-weight:700;flex-shrink:0}
+    .section{margin-bottom:56px}
+    .section h2{font-size:clamp(1.3rem,3vw,1.7rem);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+    .lead{color:var(--text-secondary);font-size:15px;margin-bottom:24px;line-height:1.6}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}
+    .card h4{font-size:16px;font-weight:600;margin-bottom:8px}
+    .card p,.card li{font-size:14px;color:var(--text-secondary);line-height:1.7}
+    .card ul,.card ol{padding-left:20px}
+    .card li{margin-bottom:4px}
+    p{font-size:15px;color:var(--text-secondary);line-height:1.8;margin-bottom:16px}
+    p code{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:13px;color:#059669}
+    .chart{margin:24px 0}
+    .chart-row{display:flex;align-items:center;margin-bottom:10px;gap:12px}
+    .chart-label{width:150px;font-size:13px;font-weight:500;text-align:right;flex-shrink:0}
+    .chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}
+    .chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;justify-content:flex-end;padding-right:10px;font-size:12px;font-weight:600;color:#fff;transition:width .6s ease}
+    .chart-bar.green{background:linear-gradient(90deg,#059669,#10b981)}
+    .chart-bar.teal{background:linear-gradient(90deg,#14b8a6,#2dd4bf)}
+    .chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+    .chart-bar.purple{background:linear-gradient(90deg,#6366f1,#a78bfa)}
+    .chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}
+    .flow{display:flex;align-items:center;justify-content:center;gap:12px;margin:24px 0;flex-wrap:wrap}
+    .flow-step{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;min-width:120px}
+    .flow-step.green{background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none}
+    .flow-step.teal{background:linear-gradient(135deg,#14b8a6,#2dd4bf);color:#fff;border:none}
+    .flow-step.blue{background:linear-gradient(135deg,#3b82f6,#60a5fa);color:#fff;border:none}
+    .flow-step.purple{background:linear-gradient(135deg,#6366f1,#a78bfa);color:#fff;border:none}
+    .flow-step.amber{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#fff;border:none}
+    .flow-arrow{font-size:20px;color:var(--text-secondary)}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}
+    .compare-card{border-radius:var(--radius);padding:24px}
+    .compare-card.old{background:#fef2f2;border:2px solid #fecaca}
+    .compare-card.new{background:#ecfdf5;border:2px solid #a7f3d0}
+    .compare-card h4{font-size:15px;font-weight:700;margin-bottom:8px}
+    .compare-card p{font-size:13px;color:var(--text-secondary)}
+    .timeline{position:relative;padding-left:32px;margin:24px 0}
+    .timeline::before{content:'';position:absolute;left:7px;top:8px;bottom:8px;width:3px;background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6);border-radius:2px}
+    .tl-item{position:relative;margin-bottom:24px}
+    .tl-dot{position:absolute;left:-29px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid #059669;background:#fff}
+    .tl-item:nth-child(2) .tl-dot{border-color:#14b8a6}
+    .tl-item:nth-child(3) .tl-dot{border-color:#3b82f6}
+    .tl-phase{font-weight:700;font-size:15px;color:var(--text)}
+    .tl-desc{font-size:13px;color:var(--text-secondary);margin-top:4px}
+    .code-block{background:#1e293b;border-radius:var(--radius);padding:20px;margin:16px 0;overflow-x:auto}
+    .code-block pre{color:#e2e8f0;font-family:var(--mono);font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-all}
+    .block-q{background:linear-gradient(135deg,#ecfdf5,#d1fae5);border-left:4px solid #059669;border-radius:0 var(--radius) var(--radius) 0;padding:20px 24px;margin:24px 0}
+    .block-q p{font-size:15px;font-style:italic;color:#064e3b;line-height:1.7}
+    .footer{background:#0f172a;color:#94a3b8;padding:40px 32px;text-align:center;font-size:14px}
+    .footer a{color:#34d399;text-decoration:none}
+    .footer a:hover{text-decoration:underline}
+    .footer .links{margin-top:12px;display:flex;justify-content:center;gap:24px;flex-wrap:wrap}
+    @media(max-width:768px){.compare-grid{grid-template-columns:1fr}.chart-label{width:100px;font-size:12px}.flow{flex-direction:column;gap:8px}.flow-arrow{transform:rotate(90deg)}.toc-grid{grid-template-columns:1fr}.hero{padding:60px 20px 40px}.nav{padding:12px 16px}.stats{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+  <header class="hero">
+    <div class="meta">📚 Tutorials & Guides · LangChain Accounts · 2023-10-03</div>
+    <h1>Handling PII data in LangChain</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">9</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~6min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">4</div><div class="label">代码示例</div></div>
+      <div class="stat"><div class="num">14</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>Handling PII data in LangChain</a>
+      <a href="#s2"><span class="num">2</span>Introduction</a>
+      <a href="#s3"><span class="num">3</span>Why you should care about mask</a>
+      <a href="#s4"><span class="num">4</span>Sanitizing data for LLM provid</a>
+      <a href="#s5"><span class="num">5</span>llm=OpenAI(),</a>
+      <a href="#s6"><span class="num">6</span>Sanitizing data for LangSmith</a>
+      <a href="#s7"><span class="num">7</span>Conclusion</a>
+      <a href="#s8"><span class="num">8</span>Related content</a>
+      <a href="#s9"><span class="num">9</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+    <section class="section" id="s1">
+      <h2>🔍 Handling PII data in LangChain</h2>
+      <p class="lead">The LangChain TeamOctober 3, 20237min
+
+Go back to blogShare
+
+
+
+
+
+This blog post was written by Francisco, a founder at Pampa Labs, who assists companies in developing LLM applications that are accurat</p>
+      <p>The LangChain TeamOctober 3, 20237min[</p>
+<p>Go back to blog](/blog)Share[</p>
+<p>](#)This blog post was written by Francisco, a founder at Pampa Labs, who assists companies in developing LLM applications that are accurate and cost efficient.</p>
+      
+    </section>
+    <section class="section" id="s2">
+      <h2>⚡ Introduction</h2>
+      <p class="lead">PII stands for “personally identifiable information” and it refers to personal data that can be used to uncover an individual’s identity.</p>
+      <p>PII stands for “personally identifiable information” and it refers to personal data that can be used to uncover an individual’s identity. Lately, regulations such as GDPR make it so that companies find it increasingly important to find solutions that consider handling PII data effectively.</p>
+<p>Managing PII data with LLMs can be tricky. In many applications, you know when you are handling PII data because you explicitly ask for it in the shape of a form. In the case of chatbots, the user might spontaneously send PII data within the conversation (like presenting themselves with their name and surname) and depending on the application, this information might be sent to an LLM provider and logged for quality purposes.</p>
+<p>There are some questions that commonly arise:</p>
+<div class="card"><ul><li>What are the available options to mask PII data?</li><li>What about LangSmith? If LangSmith logs my apps conversations, will it be logging PII data as well?</li><li>Do we risk PII data being leaked if we send it to OpenAI? What about other providers?</li></ul></div>
+<p>While we don’t propose to have the definitive answers to these questions, by presenting a few options that are available today we can ignite the conversation on which are the best ways to handle PII data when working with LLMs.</p>
+      
+    </section>
+    <section class="section" id="s3">
+      <h2>🏗️ Why you should care about masking inputs for LLM providers</h2>
+      <p class="lead">LLM providers like OpenAI, Anthropic and Cohere all have their own privacy policies which detail how they use the data sent to them when using their API.</p>
+      <p>LLM providers like OpenAI, Anthropic and Cohere all have their own privacy policies which detail how they use the data sent to them when using their API. For example, some companies might use that data for investigating how to make models better or even use the data to train new models. Since LLMs can sometimes remember explicitly what they have learned in training, this could mean that future versions of their LLMs could potentially reproduce your PII data to other users.</p>
+<p>Given the importance of these privacy policies and the fact that they might change over time, we strongly suggest users to take a look at providers’ privacy policies before using their services. As an example, here’s OpenAI’s privacy policy.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s4">
+      <h2>📊 Sanitizing data for LLM providers</h2>
+      <p class="lead">The first question is: how can we anonymize the data? The LangChain ecosystem is integrated with tools that make it easy to mask the data before using it in the application.</p>
+      <p>The first question is: how can we anonymize the data? The LangChain ecosystem is integrated with tools that make it easy to mask the data before using it in the application. Let’s take a look a a few of them:</p>
+<p>Microsoft Presidio</p>
+<p>Microsoft Presidio is a tool that facilitates PII identification and anonymization in input text. In other words, it can replace your text’s PII elements by generic equivalents. It is quite handy as it can replace credit card numbers, emails, phones, addresses and full names among other such entities.</p>
+<p>Presidio works in two steps. First, it analyzes the text searching for PII data. This is probably the key differentiating feature in Presidio, since it uses a combination of different methods to identify the PII data in the text, including both rule based logic and NER Machine Learning models. As a second step, it anonymizes the data by replacing it by a a generic equivalent (i.e. ‘&lt;PERSON&gt;’). If using it within LangChain, the library uses faker to replace the entities by a fake value (‘John Smith’) to make the text more natural to the LLM.</p>
+<p>If you want more detail on how Presidio identifies PII data, here you can find the entities Presidio detects out of the box, plus the methods used to detect them.</p>
+<p>Using Presidio with LangChain is quite straightforward; one needs to add an extra step to the chain where the anonymization takes place, like so:</p>
+<div class="code-block"><pre>anonymizer = PresidioAnonymizer()
+template = &amp;quot;&amp;quot;&amp;quot;Rewrite this text into an official, short email:
+{anonymized_text}&amp;quot;&amp;quot;&amp;quot;
+prompt = PromptTemplate.from_template(template)
+llm = ChatOpenAI(temperature=0)
+chain = {&amp;quot;anonymized_text&amp;quot;: anonymizer.anonymize} | prompt | llm
+response = chain.invoke(text)</pre></div>
+<p>In the LangChain documentation we can find a full tutorial on how to use Microsoft Presidio plus a tutorial on how to use Presidio with non-English languages. If planning on using Presidio, you can also consider using it with LLMGuard which contains a suite of tools for LLM security including both input controls and guards (anonymization for PII data, jailbreaks) and output controls (malicious links, toxicity).</p>
+<p>Another good option to anonymize data is using OpaquePrompts. Instead of using several techniques in unison, OpaquePrompts uses one ML model to detect PII data and mask it appropriately.</p>
+<p>One of the main advantages of using OpaquePrompts is just how easy it is to use with LangChain, where we just use an <code>OpaquePrompts</code> LLM class which we initialize with a LangChain LLM like <code>OpenAI</code>.</p>
+<p>`chain = LLMChain(
+  prompt=prompt,</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s5">
+      <h2>🔗 llm=OpenAI(),</h2>
+      <p class="lead">llm=OpaquePrompts(base_llm=OpenAI()),
+  memory=memory,
+)`
+
+Another of its differential aspects is that it uses confidential computing which means that not even their anonymization service can access t</p>
+      <p>llm=OpaquePrompts(base_llm=OpenAI()),
+  memory=memory,
+)`</p>
+<p>Another of its differential aspects is that it uses confidential computing which means that not even their anonymization service can access the original data; a great feature for privacy seeking users. Finally, it will deanonymize the data after getting the response from the LLM so the user will get an answer that contains the original entities that they mentioned / requested.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s6">
+      <h2>💡 Sanitizing data for LangSmith</h2>
+      <p class="lead">In case we want to use LangSmith to log our app’s conversations, we might face another challenge: saving the data in a sanitized form.</p>
+      <p>In case we want to use LangSmith to log our app’s conversations, we might face another challenge: saving the data in a sanitized form. If we just use the aforementioned tools in the way described earlier, the LLM provider will receive the input in a sanitized form but we would be saving the original, unsanitized input to LangSmith. How can we avoid this?</p>
+<p>Option #1: do not save inputs or outputs</p>
+<p>If we want to make sure we are not saving any PII data to LangSmith, we can just hide the inputs and outputs of all of our queries from LangSmith. This can be done with a few environmental variables that LangSmith will use to understand whether it needs to log inputs/outputs or not:</p>
+<p><code>LANGCHAIN_HIDE_INPUTS=true
+LANGCHAIN_HIDE_OUTPUTS=true</code></p>
+<p>In this way we can directly control what is logged and what is not. For more information on this, please refer to the docs.</p>
+<p>It is important to note that if using this functionality, we should consider hiding both the inputs and the outputs since the LLM might mention PII data points in its answer (‘Hi John Smith! Nice to meet you’).</p>
+<p>Option #2: mask before saving</p>
+<p>Say we want to use the data in LangSmith to debug our application or we were thinking of finetuning a model of our own. In this case, not having the logs of our user’s conversations would hinder us from using real data to improve the quality of our application.</p>
+<p>Another option for cases like this is to mask the input so that the LLM and the tracing software both receive masked inputs. This can be achieved by masking the input before sending it as input to the chain. This method has the advantage of allowing us to trace and later use the conversation data while also keeping the data sanitized for the LLM providers and LangSmith tracing.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s7">
+      <h2>🛠️ Conclusion</h2>
+      <p class="lead">Handling PII data effectively is an important aspect of building safe and reliable data applications.</p>
+      <p>Handling PII data effectively is an important aspect of building safe and reliable data applications. We have presented a few proposed solutions for this problem but the LangChain ecosystem is consistently integrating new and innovative alternatives. Stay tuned to the LangChain newsletter to be the first to hear of new developments on this front!</p>
+<p>If you enjoyed this blog post, we&#x27;re also doing a webinar on this subject next week - sign up here to join!</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s8">
+      <h2>📈 Related content</h2>
+      <p class="lead">Tutorials &amp;amp; How-Tos
+
+#### How we built LangChain’s GTM Agent
+
+The LangChain TeamMarch 9, 202611min[](/blog/how-we-built-langchains-gtm-agent)Deep AgentsAgent ArchitectureTutorials &amp;amp; How-Tos
+
+#</p>
+      <p>Tutorials &amp; How-Tos</p>
+<p>#### How we built LangChain’s GTM Agent</p>
+<p>The LangChain TeamMarch 9, 202611min[](/blog/how-we-built-langchains-gtm-agent)Deep AgentsAgent ArchitectureTutorials &amp; How-Tos</p>
+<p>#### Evaluating Deep Agents: Our Learnings</p>
+<p>The LangChain TeamDecember 3, 20259min[](/blog/evaluating-deep-agents-our-learnings)Company AnnouncementsTutorials &amp; How-Tos</p>
+<p>#### Why We Rebuilt LangChain’s Chatbot and What We Learned</p>
+<p>The LangChain TeamNovember 5, 202513min[](/blog/rebuilding-chat-langchain)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s9">
+      <h2>🎯 See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+<p>](/contact-sales)</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+  </div>
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/handling-pii-data-in-langchain" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

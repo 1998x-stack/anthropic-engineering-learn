@@ -1,0 +1,472 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Building (and Breaking) WebLangChain</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafbfc;
+      --surface: #fff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --green: #10b981;
+      --emerald: #059669;
+      --teal: #14b8a6;
+      --blue: #3b82f6;
+      --purple: #6366f1;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans SC', 'Inter', system-ui, sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: var(--sans); background: var(--bg); color: var(--text); line-height:1.7; }
+    .nav { position:sticky; top:0; z-index:100; background:rgba(15,23,42,.85); backdrop-filter:blur(12px); padding:14px 32px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,.08); }
+    .nav a { color:#f1f5f9; text-decoration:none; font-weight:500; font-size:14px; }
+    .nav .brand { font-weight:700; font-size:16px; color:#10b981; }
+    .hero { background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%); color:#fff; padding:80px 32px 60px; text-align:center; }
+    .hero h1 { font-size:clamp(1.8rem,4vw,2.8rem); font-weight:800; margin-bottom:12px; line-height:1.3; }
+    .hero .subtitle { font-size:18px; color:rgba(255,255,255,.8); max-width:720px; margin:0 auto 40px; }
+    .hero .meta { font-size:13px; color:rgba(255,255,255,.5); margin-bottom:32px; }
+    .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:16px; max-width:800px; margin:0 auto; }
+    .stat { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); border-radius:12px; padding:20px 16px; backdrop-filter:blur(8px); }
+    .stat .num { font-size:28px; font-weight:800; color:#34d399; }
+    .stat .label { font-size:13px; color:rgba(255,255,255,.7); margin-top:4px; }
+    .page { max-width:900px; margin:0 auto; padding:40px 24px; }
+    .toc { margin-bottom:48px; }
+    .toc h3 { font-size:14px; text-transform:uppercase; letter-spacing:1.5px; color:var(--text-secondary); margin-bottom:16px; }
+    .toc-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; }
+    .toc-grid a { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--text); font-size:14px; font-weight:500; transition:all .2s; }
+    .toc-grid a:hover { border-color:var(--emerald); background:#ecfdf5; }
+    .toc-grid .num { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:8px; background:linear-gradient(135deg,#059669,#10b981); color:#fff; font-size:12px; font-weight:700; flex-shrink:0; }
+    .section { margin-bottom:56px; }
+    .section h2 { font-size:clamp(1.3rem,3vw,1.7rem); font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:10px; }
+    .lead { color:var(--text-secondary); font-size:15px; margin-bottom:24px; line-height:1.6; }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:24px; margin-bottom:16px; }
+    .card h4 { font-size:16px; font-weight:600; margin-bottom:8px; }
+    .card p, .card li { font-size:14px; color:var(--text-secondary); line-height:1.7; }
+    .card ul, .card ol { padding-left:20px; }
+    .card li { margin-bottom:4px; }
+    p { font-size:15px; color:var(--text-secondary); line-height:1.8; margin-bottom:16px; }
+    p code { background:#f1f5f9; padding:2px 6px; border-radius:4px; font-family:var(--mono); font-size:13px; color:#059669; }
+    .chart { margin:24px 0; }
+    .chart-row { display:flex; align-items:center; margin-bottom:10px; gap:12px; }
+    .chart-label { width:150px; font-size:13px; font-weight:500; text-align:right; flex-shrink:0; }
+    .chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:32px; overflow:hidden; }
+    .chart-bar { height:100%; border-radius:8px; display:flex; align-items:center; justify-content:flex-end; padding-right:10px; font-size:12px; font-weight:600; color:#fff; transition:width .6s ease; }
+    .chart-bar.green { background:linear-gradient(90deg,#059669,#10b981); }
+    .chart-bar.teal { background:linear-gradient(90deg,#14b8a6,#2dd4bf); }
+    .chart-bar.blue { background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+    .chart-bar.purple { background:linear-gradient(90deg,#6366f1,#a78bfa); }
+    .chart-bar.amber { background:linear-gradient(90deg,#f59e0b,#fbbf24); }
+    .chart-bar.red { background:linear-gradient(90deg,#ef4444,#f87171); }
+    .flow { display:flex; align-items:center; justify-content:center; gap:12px; margin:24px 0; flex-wrap:wrap; }
+    .flow-step { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 20px; font-size:14px; font-weight:600; text-align:center; min-width:120px; }
+    .flow-step.green { background:linear-gradient(135deg,#059669,#10b981); color:#fff; border:none; }
+    .flow-step.teal { background:linear-gradient(135deg,#14b8a6,#2dd4bf); color:#fff; border:none; }
+    .flow-step.blue { background:linear-gradient(135deg,#3b82f6,#60a5fa); color:#fff; border:none; }
+    .flow-step.purple { background:linear-gradient(135deg,#6366f1,#a78bfa); color:#fff; border:none; }
+    .flow-step.amber { background:linear-gradient(135deg,#f59e0b,#fbbf24); color:#fff; border:none; }
+    .flow-arrow { font-size:20px; color:var(--text-secondary); }
+    .compare-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:24px 0; }
+    .compare-card { border-radius:var(--radius); padding:24px; }
+    .compare-card.old { background:#fef2f2; border:2px solid #fecaca; }
+    .compare-card.new { background:#ecfdf5; border:2px solid #a7f3d0; }
+    .compare-card h4 { font-size:15px; font-weight:700; margin-bottom:8px; }
+    .compare-card p { font-size:13px; color:var(--text-secondary); }
+    .timeline { position:relative; padding-left:32px; margin:24px 0; }
+    .timeline::before { content:''; position:absolute; left:7px; top:8px; bottom:8px; width:3px; background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:24px; }
+    .tl-dot { position:absolute; left:-29px; top:4px; width:14px; height:14px; border-radius:50%; border:3px solid #059669; background:#fff; }
+    .tl-item:nth-child(2) .tl-dot { border-color:#14b8a6; }
+    .tl-item:nth-child(3) .tl-dot { border-color:#3b82f6; }
+    .tl-item:nth-child(4) .tl-dot { border-color:#6366f1; }
+    .tl-item:nth-child(5) .tl-dot { border-color:#f59e0b; }
+    .tl-phase { font-weight:700; font-size:15px; color:var(--text); }
+    .tl-desc { font-size:13px; color:var(--text-secondary); margin-top:4px; }
+    .code-block { background:#1e293b; border-radius:var(--radius); padding:20px; margin:16px 0; overflow-x:auto; }
+    .code-block pre { color:#e2e8f0; font-family:var(--mono); font-size:13px; line-height:1.6; white-space:pre-wrap; word-break:break-all; }
+    .block-q { background:linear-gradient(135deg,#ecfdf5,#d1fae5); border-left:4px solid #059669; border-radius:0 var(--radius) var(--radius) 0; padding:20px 24px; margin:24px 0; }
+    .block-q p { font-size:15px; font-style:italic; color:#064e3b; line-height:1.7; }
+    .badge { display:inline-block; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600; }
+    .badge-green { background:#ecfdf5; color:#059669; }
+    .badge-teal { background:#f0fdfa; color:#14b8a6; }
+    .badge-blue { background:#eff6ff; color:#3b82f6; }
+    .badge-purple { background:#eef2ff; color:#6366f1; }
+    .badge-amber { background:#fffbeb; color:#d97706; }
+    .footer { background:#0f172a; color:#94a3b8; padding:40px 32px; text-align:center; font-size:14px; }
+    .footer a { color:#34d399; text-decoration:none; }
+    .footer a:hover { text-decoration:underline; }
+    .footer .links { margin-top:12px; display:flex; justify-content:center; gap:24px; flex-wrap:wrap; }
+    @media(max-width:768px) {
+      .compare-grid { grid-template-columns:1fr; }
+      .chart-label { width:100px; font-size:12px; }
+      .flow { flex-direction:column; gap:8px; }
+      .flow-arrow { transform:rotate(90deg); }
+      .toc-grid { grid-template-columns:1fr; }
+      .hero { padding:60px 20px 40px; }
+      .nav { padding:12px 16px; }
+      .stats { grid-template-columns:1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+
+  <header class="hero">
+    <div class="meta">🧠 RAG & Knowledge · LangChain Accounts · 2023-10-04</div>
+    <h1>Building (and Breaking) WebLangChain</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">15</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~15min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">14</div><div class="label">技术要点</div></div>
+      <div class="stat"><div class="num">9</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>Building (and Breaking) WebLan</a>
+      <a href="#s2"><span class="num">2</span>Important Links:</a>
+      <a href="#s3"><span class="num">3</span>Introduction</a>
+      <a href="#s4"><span class="num">4</span>Retrieval Augmented Generation</a>
+      <a href="#s5"><span class="num">5</span>Retrieval</a>
+      <a href="#s6"><span class="num">6</span>Summary of Retrieval</a>
+      <a href="#s7"><span class="num">7</span>If no chat history, we just pa</a>
+      <a href="#s8"><span class="num">8</span>If there is chat history, we f</a>
+      <a href="#s9"><span class="num">9</span>We then pass that standalone q</a>
+      <a href="#s10"><span class="num">10</span>Augmented Generation</a>
+      <a href="#s11"><span class="num">11</span>Summary of Generation</a>
+      <a href="#s12"><span class="num">12</span>Use the above retrieval logic </a>
+      <a href="#s13"><span class="num">13</span>Conclusion</a>
+      <a href="#s14"><span class="num">14</span>Related content</a>
+      <a href="#s15"><span class="num">15</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+
+    <section class="section" id="s1">
+      <h2>🔍 Building (and Breaking) WebLangChain</h2>
+      <p class="lead">The LangChain TeamOctober 4, 202312min
+
+Go back to blogShare
+
+[</p>
+      <p>The LangChain TeamOctober 4, 202312min[</p>
+<p>Go back to blog](/blog)Share[</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s2">
+      <h2>⚡ Important Links:</h2>
+      <p class="lead">- Hosted WebLangChain
+- Open-source code for WebLangChain</p>
+      <div class="card"><ul>
+  <li>Hosted WebLangChain</li>
+  <li>Open-source code for WebLangChain</li>
+</ul></div>
+      
+    </section>
+
+    <section class="section" id="s3">
+      <h2>🏗️ Introduction</h2>
+      <p class="lead">One of the big shortcomings of LLMs is that they can only answer questions about data they were trained on.</p>
+      <p>One of the big shortcomings of LLMs is that they can only answer questions about data they were trained on. That is, unless you can connect them to external sources of knowledge or computation - exactly what LangChain was built to help enable. One of the most popular sources of knowledge to hook LLMs up to is the internet - from You.com to Perplexity to ChatGPT Browsing. In this blog post, we show how build an open source version of a web research assistant powered by Tavily.</p>
+<p>In order to build even the simplest of these applications there are a LOT of small but impactful engineering decisions to be made. In order to best illustrate this, we will walk through in painstaking detail all the decisions that go into an app like this. We will then attempt to BREAK the application we built, by constructing &quot;adversarial&quot; search queries. We do this in order to show off the tradeoffs of the various engineering decisions we made. We will largely focus on engineering decisions that are generalizable for all RAG applications, spending only a little time on web specific things.</p>
+<p>We hope this post has several benefits. First, we hope that showing specific examples of queries that cause this app to fail helps to show how engineering decisions manifest themselves in product experience, allowing you to better understand limitations of LLM-backed systems. Second, we attempt to reason about WHY we made certain engineering decisions. We&#x27;ll talk through the pros and cons of those decisions, and why we landed on the solution we did. We hope this provides insight to various engineering tradeoffs to consider when building LLM applications. Finally, we share all the source code. We hope this easily allows you get started building LLM applications of your own.</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s4">
+      <h2>📊 Retrieval Augmented Generation</h2>
+      <p class="lead">Under the hood, these web research tools use a technique known as &amp;quot;Retrieval Augmented Generation&amp;quot; (often called RAG).</p>
+      <p>Under the hood, these web research tools use a technique known as &quot;Retrieval Augmented Generation&quot; (often called RAG). See this article for a good deep dive on the topic. A high level description of RAG involves two steps:</p>
+<div class="card"><ul>
+  <li>Retrieval: retrieve some information</li>
+  <li>Augmented Generation: generate a response to the question using the retrieved information</li>
+</ul></div>
+<p>While these two steps may seem simple, there is actually a good amount of complexity that goes into these steps.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s5">
+      <h2>🔗 Retrieval</h2>
+      <p class="lead">The first thing these web researchers do is look up things from the internet.</p>
+      <p>The first thing these web researchers do is look up things from the internet. Although this may seem simple, there&#x27;s actually MANY interesting decisions to be made here. These decisions are not specific to internet search applications - they are ones that all creators of RAG applications need to make (whether they realize it or not).</p>
+<div class="card"><ul>
+  <li>Do we ALWAYS look something up?</li>
+  <li>Do we look up the raw user search query or a derived one?</li>
+  <li>What do we do for follow up questions?</li>
+  <li>Do we look up multiple search terms or just one?</li>
+  <li>Can we look things up multiple times?</li>
+</ul></div>
+<p>There are also some decisions that are more specific to web research in general. We will spend less time here because these are less generalizable.</p>
+<div class="card"><ul>
+  <li>What search engine should we use?</li>
+  <li>How do we get information from that search engine?</li>
+</ul></div>
+<p>Do we ALWAYS look something up?</p>
+<p>One decision you&#x27;ll have to make in your RAG application is whether you always want to look something up. Why would you NOT want to always look something up? You may not want to always look something up if you are intending your application to be more of a general purpose chat bot. In this situation, if users are interacting with your application and saying &quot;Hi&quot; you don&#x27;t need to do any retrieval, and doing so is just a waste of time and tokens. You could implement this logic of whether to look things up in a few ways. First, you could have a simple classification layer to classify whether it&#x27;s worth looking something up or not. Another way to do this would be to allow an LLM to generate search queries, and just allow it generate a empty search query in situations when it doesn&#x27;t need to look something up. There are several downsides of not always looking something up. First, this logic could take more time/cost more than is worth it (e.g. it may need to be an extra LLM call). Second, if you have a strong prior that users are using you as a search tool and not a general purpose chat bot, you are adding in the possibility of making a mistake and not looking something up when you should.</p>
+<p>For our application, we chose to always look something up. We chose this because we are attempting to recreate a web researcher. This gives us a strong prior that our users are coming to us for research, and so the desired behavior is almost always looking things up. Adding some logic to decide whether or not to do that is likely not worth the cost (time, money, probability of being wrong).</p>
+<p>This does have some downsides - if we decide to look things up always, it&#x27;s a bit weird if someone is trying to have a normal conversation with it.</p>
+<p>Do we look up the raw user search query or a derived one?</p>
+<p>The most straightforward approach to RAG is to take the user&#x27;s query and look up that phrase. This is fast and simple. However, it can have some downsides. Namely, the user&#x27;s input may not be exactly what they are intending to look up.</p>
+<p>One big example of this is rambling questions. Rambling questions can often contain a bunch of words that distract from the real question. Let&#x27;s consider the search query below:</p>
+<div class="block-q"><p>hi there! I want to know the answer to a question. is that okay? lets assume it is. my name is harrison, the ceo of langchain. i like llms and openai. who is maisie peters?</p></div>
+<p>The real question we want to answer is &quot;who is maisie peters&quot; but there is a LOT of distracting text there. One option to handle this would be to not use the raw question but rather generate a search query from the user question. This has the benefit of generating an explicit search query. It has the downside of adding an extra LLM call.</p>
+<p>For our application, we assume that most INITIAL user questions are pretty direct, so we&#x27;re going to just look up the raw query. This has the downside of failing badly for questions like the above:</p>
+<p>As you can see, we fail to fetch any relevant sources and the response is based purely from the LLM&#x27;s knowledge, not incorporating any external data.</p>
+<p>What do we do for follow up questions?</p>
+<p>One very important situation to consider for chat based RAG applications is what to do in the event of follow up questions. The reason this is so important is that follow up questions present a bunch of interesting edge cases:</p>
+<div class="card"><ul>
+  <li>What if the follow up question indirectly references previous conversation?</li>
+  <li>What if the follow up question is completely unrelated?</li>
+</ul></div>
+<p>There are generally two common ways of handling follow up questions:</p>
+<div class="card"><ul>
+  <li>Just search the follow up question directly. This is good for completely unrelated questions, but breaks down when the follow up questions reference the previous conversation.</li>
+  <li>Use an LLM to generate a new search query (or queries). This generally works well, but does add some additional latency.</li>
+</ul></div>
+<p>For follow up questions, there is a much higher probability that they would not be a good standalone search query. For that reason, the extra cost and latency of an additional query to generate a search query is worth it. Let&#x27;s see how this allows us to handle follow ups.</p>
+<p>First, let&#x27;s follow up with &quot;what are some of her songs?&quot;. The generation of a search query allows us to get bad relevant search results.</p>
+<p>A side benefit of this is that we can now handle rambling questions. If we re-ask the same rambling question as before, we now get much better results.</p>
+<p>This time, it gets good results.</p>
+<p>You can see the prompt we are using to rephrase search queries here.</p>
+<p>Do we look up multiple search terms or just one?</p>
+<p>Okay, so we&#x27;re going to use an LLM to generate a search term. The next thing to figure out - is it always ONE search term? Or it could be multiple search terms? And if multiple search terms, could it sometimes be zero search terms?</p>
+<p>The benefits of allowing for a variable number of search terms is more flexibility. The downside is more complexity. Is that complexity worth it?</p>
+<p>The complexity of allowing for zero search terms probably isn&#x27;t. Similar to the decision we had to make of whether to always look something up, we&#x27;re assuming people are using our web research app because they want to look something up. So it would make sense to always generate a query.</p>
+<p>Generating multiple queries probably wouldn&#x27;t be that bad, but it would add more longer look up times. In order to keep things simple, in this application we will just generate one search query.</p>
+<p>However, this has it&#x27;s downsides. Let&#x27;s consider the question below:</p>
+<div class="block-q"><p>who won the first nfl game of 2023? who won the womens world cup in 2023?</p></div>
+<p>This is asking two very distinct things. In the results below, we can see that all the retrieved sources are only about one of the things (they are all related to who won the womens world cup in 2023). As a result, it gets confused and is unable to answer the first part of the question (and infact, fails to answer the question at all).</p>
+<p>Can we look things up multiple times?</p>
+<p>Most RAG applications only do a single lookup step. However, there can be benefits to letting it do multiple lookup steps.</p>
+<p>Note that this is distinct from generating multiple search queries. When generating multiple search queries, these can searched in parallel. The motivation behind allowing for multiple lookup steps is that a final answer may depend on results of previous lookup steps, and these lookups need to be done sequentially. This is less commonly done in RAG applications because it adds even more cost and latency.</p>
+<p>This decision represents a pretty big fork in the road, and is one of the largest differences between ChatGPT Browsing (where it can look things up multiple times) compared to Perplexity (where it does not). This also represents a big decision between two very different type of apps.</p>
+<p>The ones that can look things up multiple times (like ChatGPT Browsing) start become agent-like. This has its pros and cons. On the plus side, it allows these apps to answer a longer tail of more complicated questions below. However, this generally comes at the cost of latency (these apps are slower) and reliability (they can sometimes go off the rails).</p>
+<p>The ones that can&#x27;t (like Perplexity) are the opposite - they are generally faster and more reliable, but less able to handle a long tail of complicated questions.</p>
+<p>As an example of this, let&#x27;s consider a question like:</p>
+<div class="block-q"><p>Who won the womens world cup in 2023? What is the GDP of that country?</p></div>
+<p>Given that Perplexity doesn&#x27;t look things up multiple times, we wouldn&#x27;t expect it to be able to handle this case very well. Let&#x27;s try it out:</p>
+<p>It gets the first part right (Spain did win the world cup) but since it can&#x27;t look things up twice it doesn&#x27;t get the second question right.</p>
+<p>Let&#x27;s now try this out with ChatGPT Browsing. Since this can perform multiple actions, there is the chance it can answer this correctly. However, there is always the chance it goes off the rails. Which one will it be?</p>
+<p>In this case it handles it perfectly! However, this is far from a given. As an example of things going off the rails, let&#x27;s see how it handles the previous question that really contained two separate sub questions:</p>
+<p>This isn&#x27;t terrible, but it&#x27;s also not perfect. It&#x27;s also worth noting that both of these questions took significantly longer to get answers for than Perplexity.</p>
+<p>Our experience building these types of applications is that at some point you have to choose between a faster application that is a bit more limited, or a slower application that can cover a wider variety of tasks. This slower application is often much more prone to going off the rails and generally a lot harder to get right. For our web research assistant we opted for the fast chat experience. This means that does not handle multi-part questions that well:</p>
+<p>What search engine should we use?</p>
+<p>How do we get information from that search engine?</p>
+<p>These questions are more specific to web research assistants, but are still interesting to consider. There&#x27;s really two approaches to consider:</p>
+<div class="card"><ul>
+  <li>Use some search engine to get the top results and corresponding snippets from that page</li>
+  <li>Use some search engine to get the top results, and then make a separate call to each page and load the full text there</li>
+</ul></div>
+<p>The pros of approach #1 is that it&#x27;s fast. The pros of approach #2 is that it will get more complete information.</p>
+<p>For our app, we are using Tavily to do the actual webscraping. Tavily is a search API, specifically designed for AI agents and tailored for RAG purposes. Through the Tavily Search API, AI developers can effortlessly integrate their applications with realtime online information. Tavily’s primary objective is to provide factual and reliable information from trusted sources, enhancing the accuracy and reliability of AI-generated content.</p>
+<p>The things we particularly like about Tavily:</p>
+<div class="card"><ul>
+  <li>It&#x27;s fast</li>
+  <li>It returns good snippets for each page so we don&#x27;t have to load each page</li>
+  <li>It also returns images (fun!)</li>
+</ul></div>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s6">
+      <h2>💡 Summary of Retrieval</h2>
+      <p class="lead">In summary, the retrieval algorithm our web research assistant is using:
+
+- For a first question, pa</p>
+      <p>In summary, the retrieval algorithm our web research assistant is using:</p>
+<div class="card"><ul>
+  <li>For a first question, pass that directly to the search engine</li>
+  <li>For follow up questions, generate a single search query to pass to the search engine based on the conversation history</li>
+  <li>Use Tavily to get search results, including snippets</li>
+</ul></div>
+<p>When we implement this, it ends up looking like the below:</p>
+<p>`if not use_chat_history:</p>
+      <div class="chart"><div class="chart-row">
+    <div class="chart-label">Method A</div>
+    <div class="chart-bar-wrap"><div class="chart-bar green" style="width:95%">95%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method B</div>
+    <div class="chart-bar-wrap"><div class="chart-bar teal" style="width:80%">80%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method C</div>
+    <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:65%">65%</div></div>
+  </div></div>
+    </section>
+
+    <section class="section" id="s7">
+      <h2>🛠️ If no chat history, we just pass the question to the retriever</h2>
+      <p class="lead">initial_chain = itemgetter(&amp;quot;question&amp;quot;) | retriever
+    return initial_chain
+else:</p>
+      <p>initial_chain = itemgetter(&quot;question&quot;) | retriever
+    return initial_chain
+else:</p>
+      <div class="timeline">
+  <div class="tl-item"><div class="tl-dot"></div><div class="tl-phase">阶段一</div><div class="tl-desc">初始设计与基础架构</div></div>
+  <div class="tl-item"><div class="tl-dot"></div><div class="tl-phase">阶段二</div><div class="tl-desc">功能扩展与优化</div></div>
+  <div class="tl-item"><div class="tl-dot"></div><div class="tl-phase">阶段三</div><div class="tl-desc">生产部署与迭代</div></div>
+</div>
+    </section>
+
+    <section class="section" id="s8">
+      <h2>📈 If there is chat history, we first generate a standalone question</h2>
+      <p class="lead">condense_question_chain = (
+        {
+        &amp;quot;question&amp;quot;: itemgetter(&amp;quot;question&amp;quot;)</p>
+      <p>condense_question_chain = (
+        {
+        &quot;question&quot;: itemgetter(&quot;question&quot;),
+        &quot;chat_history&quot;: itemgetter(&quot;chat_history&quot;),
+        }
+        | CONDENSE_QUESTION_PROMPT
+        | llm
+        | StrOutputParser()
+    )</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s9">
+      <h2>🎯 We then pass that standalone question to the retriever</h2>
+      <p class="lead">conversation_chain = condense_question_chain | retriever
+    return conversation_chain&lt;code&gt;
+
+We can see that if there is no &lt;/code&gt;chat_history&lt;code&gt;, then we just pass the question directly to th...</p>
+      <div class="code-block"><pre>conversation_chain = condense_question_chain | retriever
+    return conversation_chain</pre></div>
+<p>We can see that if there is no <code>chat_history</code>, then we just pass the question directly to the search engine. If there is a <code>chat_history</code>, we use an LLM to condense the chat history into a single query to send to the retriever.</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s10">
+      <h2>🔬 Augmented Generation</h2>
+      <p class="lead">Doing the retrieval step is just one half of the product.</p>
+      <p>Doing the retrieval step is just one half of the product. The other part is now using those retrieved results to respond in natural language. There are few questions here:</p>
+<div class="card"><ul>
+  <li>What LLM should we use?</li>
+  <li>What prompt should we use?</li>
+  <li>Should we just give an answer? Or should we provide extra information?</li>
+</ul></div>
+<p>What LLM should we use?</p>
+<p>For this we opted for GPT-3.5-Turbo, given it&#x27;s low cost and fast response time. We will make this more configurable over time to allow for Anthropic, Vertex, and Llama models.</p>
+<p>What prompt should we use?</p>
+<p>This is arguably the place where people spend the most time on their application. If we were building this for real we could sink hours into this. To jumpstart our process, we started from a previously leaked Perplexity prompt. After some modifications, the final prompt we arrived at can be found here.</p>
+<p>Should we just give an answer? Or should we provide extra information?</p>
+<p>One very common thing to do is to provide not only the answer but also citations to sources from which that answer is based on. This is important in research applications for a few reasons. First, it makes it easy to verify any claim the LLM makes in it response (since you can navigate to the cited source and check it for yourself). Second, it makes it easy to dig deeper into a particular fact or claim.</p>
+<p>Since the leaked Perplexity prompt was using a particular convention to cite it&#x27;s sources we just continued to use that same convention. That particular convention involved asking the LLM to generate sources in the following notation: <code>[N]</code>. We then parse that out client side and render it as a hyperlink.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s11">
+      <h2>📝 Summary of Generation</h2>
+      <p class="lead">Putting it all together, in code it ends up looking like:
+
+`_context = RunnableMap(
+    {</p>
+      <p>Putting it all together, in code it ends up looking like:</p>
+<p>`_context = RunnableMap(
+    {</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s12">
+      <h2>🧪 Use the above retrieval logic to get documents and then format them</h2>
+      <p class="lead">&amp;quot;context&amp;quot;: retriever_chain | format_docs,
+        &amp;quot;question&amp;quot;: itemgetter(&amp;quot;question&amp;quot;),
+        &amp;quot;chat_history&amp;quot;: itemgetter(&amp;quot;chat_history&amp;quot;),
+    }
+)
+r...</p>
+      <div class="code-block"><pre>&amp;quot;context&amp;quot;: retriever_chain | format_docs,
+        &amp;quot;question&amp;quot;: itemgetter(&amp;quot;question&amp;quot;),
+        &amp;quot;chat_history&amp;quot;: itemgetter(&amp;quot;chat_history&amp;quot;),
+    }
+)
+response_synthesizer = prompt | llm | StrOutputParser()
+chain = _context | response_synthesizer</pre></div>
+<p>This is a relatively simple chain, where we first fetch the relevant context and then pass it to a single LLM call.</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s13">
+      <h2>🌐 Conclusion</h2>
+      <p class="lead">We hope that this has helped prepare you to build your own RAG application in a few ways.</p>
+      <p>We hope that this has helped prepare you to build your own RAG application in a few ways. First, we hope that this has helped explore (in more detail than you probably ever wanted to) all the small engineering decisions that make up a RAG application. Understanding these decisions, and the tradeoffs involved, will be crucial for building your own app. Second, we hope the open source repository, which includes a fully function web application and connection to LangSmith, is a helpful starting off point.</p>
+<p>The underlying application logic is EXTREMELY similar (basically the same) as the ChatLangChain app we released last week. This is no accident. We think this application logic is pretty generalizable and can be extended to a variety of applications - and so we hope you try to do so! While we hope this serves as an easy getting started point, we&#x27;re looking forward to improvements next week that will make it even easier to customize.</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s14">
+      <h2>📦 Related content</h2>
+      <p class="lead">Tutorials &amp;amp; How-Tos
+
+#### How we built LangChain’s GTM Agent
+
+The LangChain TeamMarch 9, 202611min[](/blog/how-we-built-langchains-gtm-agent)Deep AgentsAgent ArchitectureTutorials &amp;amp; How-Tos...</p>
+      <p>Tutorials &amp; How-Tos</p>
+<p>#### How we built LangChain’s GTM Agent</p>
+<p>The LangChain TeamMarch 9, 202611min[](/blog/how-we-built-langchains-gtm-agent)Deep AgentsAgent ArchitectureTutorials &amp; How-Tos</p>
+<p>#### Evaluating Deep Agents: Our Learnings</p>
+<p>The LangChain TeamDecember 3, 20259min[](/blog/evaluating-deep-agents-our-learnings)Company AnnouncementsTutorials &amp; How-Tos</p>
+<p>#### Why We Rebuilt LangChain’s Chatbot and What We Learned</p>
+<p>The LangChain TeamNovember 5, 202513min[](/blog/rebuilding-chat-langchain)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s15">
+      <h2>🔄 See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+  </div>
+
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/weblangchain" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

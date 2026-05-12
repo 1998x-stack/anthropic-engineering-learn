@@ -1,0 +1,292 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Structured Tools</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--green:#10b981;--emerald:#059669;--teal:#14b8a6;--blue:#3b82f6;--purple:#6366f1;--amber:#f59e0b;--red:#ef4444;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+    .nav{position:sticky;top:0;z-index:100;background:rgba(15,23,42,.85);backdrop-filter:blur(12px);padding:14px 32px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.08)}
+    .nav a{color:#f1f5f9;text-decoration:none;font-weight:500;font-size:14px}
+    .nav .brand{font-weight:700;font-size:16px;color:#10b981}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%);color:#fff;padding:80px 32px 60px;text-align:center}
+    .hero h1{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;margin-bottom:12px;line-height:1.3}
+    .hero .subtitle{font-size:18px;color:rgba(255,255,255,.8);max-width:720px;margin:0 auto 40px}
+    .hero .meta{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:32px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;max-width:800px;margin:0 auto}
+    .stat{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:20px 16px;backdrop-filter:blur(8px)}
+    .stat .num{font-size:28px;font-weight:800;color:#34d399}
+    .stat .label{font-size:13px;color:rgba(255,255,255,.7);margin-top:4px}
+    .page{max-width:900px;margin:0 auto;padding:40px 24px}
+    .toc{margin-bottom:48px}
+    .toc h3{font-size:14px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);margin-bottom:16px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .toc-grid a{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;transition:all .2s}
+    .toc-grid a:hover{border-color:var(--emerald);background:#ecfdf5}
+    .toc-grid .num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-size:12px;font-weight:700;flex-shrink:0}
+    .section{margin-bottom:56px}
+    .section h2{font-size:clamp(1.3rem,3vw,1.7rem);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+    .lead{color:var(--text-secondary);font-size:15px;margin-bottom:24px;line-height:1.6}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}
+    .card h4{font-size:16px;font-weight:600;margin-bottom:8px}
+    .card p,.card li{font-size:14px;color:var(--text-secondary);line-height:1.7}
+    .card ul,.card ol{padding-left:20px}
+    .card li{margin-bottom:4px}
+    p{font-size:15px;color:var(--text-secondary);line-height:1.8;margin-bottom:16px}
+    p code{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:13px;color:#059669}
+    .chart{margin:24px 0}
+    .chart-row{display:flex;align-items:center;margin-bottom:10px;gap:12px}
+    .chart-label{width:150px;font-size:13px;font-weight:500;text-align:right;flex-shrink:0}
+    .chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}
+    .chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;justify-content:flex-end;padding-right:10px;font-size:12px;font-weight:600;color:#fff;transition:width .6s ease}
+    .chart-bar.green{background:linear-gradient(90deg,#059669,#10b981)}
+    .chart-bar.teal{background:linear-gradient(90deg,#14b8a6,#2dd4bf)}
+    .chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+    .chart-bar.purple{background:linear-gradient(90deg,#6366f1,#a78bfa)}
+    .chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}
+    .flow{display:flex;align-items:center;justify-content:center;gap:12px;margin:24px 0;flex-wrap:wrap}
+    .flow-step{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;min-width:120px}
+    .flow-step.green{background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none}
+    .flow-step.teal{background:linear-gradient(135deg,#14b8a6,#2dd4bf);color:#fff;border:none}
+    .flow-step.blue{background:linear-gradient(135deg,#3b82f6,#60a5fa);color:#fff;border:none}
+    .flow-step.purple{background:linear-gradient(135deg,#6366f1,#a78bfa);color:#fff;border:none}
+    .flow-step.amber{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#fff;border:none}
+    .flow-arrow{font-size:20px;color:var(--text-secondary)}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}
+    .compare-card{border-radius:var(--radius);padding:24px}
+    .compare-card.old{background:#fef2f2;border:2px solid #fecaca}
+    .compare-card.new{background:#ecfdf5;border:2px solid #a7f3d0}
+    .compare-card h4{font-size:15px;font-weight:700;margin-bottom:8px}
+    .compare-card p{font-size:13px;color:var(--text-secondary)}
+    .timeline{position:relative;padding-left:32px;margin:24px 0}
+    .timeline::before{content:'';position:absolute;left:7px;top:8px;bottom:8px;width:3px;background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6);border-radius:2px}
+    .tl-item{position:relative;margin-bottom:24px}
+    .tl-dot{position:absolute;left:-29px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid #059669;background:#fff}
+    .tl-item:nth-child(2) .tl-dot{border-color:#14b8a6}
+    .tl-item:nth-child(3) .tl-dot{border-color:#3b82f6}
+    .tl-phase{font-weight:700;font-size:15px;color:var(--text)}
+    .tl-desc{font-size:13px;color:var(--text-secondary);margin-top:4px}
+    .code-block{background:#1e293b;border-radius:var(--radius);padding:20px;margin:16px 0;overflow-x:auto}
+    .code-block pre{color:#e2e8f0;font-family:var(--mono);font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-all}
+    .block-q{background:linear-gradient(135deg,#ecfdf5,#d1fae5);border-left:4px solid #059669;border-radius:0 var(--radius) var(--radius) 0;padding:20px 24px;margin:24px 0}
+    .block-q p{font-size:15px;font-style:italic;color:#064e3b;line-height:1.7}
+    .footer{background:#0f172a;color:#94a3b8;padding:40px 32px;text-align:center;font-size:14px}
+    .footer a{color:#34d399;text-decoration:none}
+    .footer a:hover{text-decoration:underline}
+    .footer .links{margin-top:12px;display:flex;justify-content:center;gap:24px;flex-wrap:wrap}
+    @media(max-width:768px){.compare-grid{grid-template-columns:1fr}.chart-label{width:100px;font-size:12px}.flow{flex-direction:column;gap:8px}.flow-arrow{transform:rotate(90deg)}.toc-grid{grid-template-columns:1fr}.hero{padding:60px 20px 40px}.nav{padding:12px 16px}.stats{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+  <header class="hero">
+    <div class="meta">📚 Tutorials & Guides · LangChain Accounts · 2023-05-03</div>
+    <h1>Structured Tools</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">8</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~7min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">21</div><div class="label">代码示例</div></div>
+      <div class="stat"><div class="num">10</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>Structured Tools</a>
+      <a href="#s2"><span class="num">2</span>What is a “Structured Tool”?</a>
+      <a href="#s3"><span class="num">3</span>New Structured Tools</a>
+      <a href="#s4"><span class="num">4</span>Implementing your own Structur</a>
+      <a href="#s5"><span class="num">5</span>How can I use Structured Tools</a>
+      <a href="#s6"><span class="num">6</span>FAQ</a>
+      <a href="#s7"><span class="num">7</span>Related content</a>
+      <a href="#s8"><span class="num">8</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+    <section class="section" id="s1">
+      <h2>🔍 Structured Tools</h2>
+      <p class="lead">The LangChain TeamMay 2, 20236min
+
+Go back to blogShare
+
+
+
+
+
+TL;DR: we&amp;#x27;re introducing a new abstraction to allow for usage of more complex tools.</p>
+      <p>The LangChain TeamMay 2, 20236min[</p>
+<p>Go back to blog](/blog)Share[</p>
+<p>](#)TL;DR: we&#x27;re introducing a new abstraction to allow for usage of more complex tools. While previous tools took in a single string input, new tools can take in an arbitrary number of inputs of arbitrary types. We are also introducing a new agent class that works well with these new types of tools.</p>
+<p>Important Links:</p>
+<div class="card"><ul><li>Tools list</li><li>New agent</li></ul></div>
+<p>Way back in November 2022 when we first launched LangChain, agent and tool utilization played a central role in our design. We built one of the first chains based on ReAct, a groundbreaking paper that brought tool use to the forefront of prompting frameworks.</p>
+<p>In the early days, tool use was simplistic. A model would generate two strings:</p>
+<div class="card"><ul><li>A tool name</li><li>An input string for the chosen tool</li></ul></div>
+<p>This approach confined the agent to one tool per turn, and the input to that tool was restricted to a single string. These limitations were primarily due to the model&#x27;s constraints; models struggled to perform even these basic tasks proficiently. Reliably executing more complex operations, such as selecting multiple tools or populating complex schema, would have been a fool’s errand.</p>
+<p>However, the rapid development of more advanced language models like <code>text-davinci-003</code>, <code>gpt-3.5-turbo</code>, and <code>gpt-4</code> has raised the floor of what available models can reliably achieve. This prompted us to reassess the limitations on tool usage within LangChain&#x27;s agent framework.</p>
+<p>Earlier this year, we introduced a &quot;multi-action&quot; agent framework, where agents can plan multiple actions to perform on each step of the agent executor. Building on that success, we are now breaking free from the single-string input constraint and proudly offering structured tool support!</p>
+<p>Structured tool’s enable more complex, multi-faceted interactions between language models and tools, making it easier to build innovative, adaptable, and powerful applications.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s2">
+      <h2>⚡ What is a “Structured Tool”?</h2>
+      <p class="lead">A structured tool represents an action an agent can take.</p>
+      <p>A structured tool represents an action an agent can take. It wraps any function you provide to let an agent easily interface with it. A Structured Tool object is defined by its:</p>
+<div class="card"><ul><li><code>name</code>: a label telling the agent which tool to pick. For example, a tool named &quot;GetCurrentWeather&quot; tells the agent that it&#x27;s for finding the current weather.</li><li><code>description</code>: a short instruction manual that explains when and why the agent should use the tool.</li><li><code>args_schema</code>: Communicates the interface of the tool for the agent. It typically draws from the wrapped function&#x27;s signature and permits additional validation logic on tool inputs.</li><li><code>_run</code> and <code>_arun</code> functions: These define the tool&#x27;s inner workings. It could be something simple like returning the current time or more complex like sending a message or controlling a robot.</li></ul></div>
+<p>The tool <code>name</code> is its unique identifier. A good name unambiguously communicates what it does, so a tool called “GetCurrentWeather” is much more useful than “GCTW” . If a tool’s name isn’t clear to you, it probably isn’t clear to the agent either. If you are giving an agent access to multiple tools, the name could also provide information about their relationship. For instance, if you have “AmazonSearch” and “AmazonCurrentBalance” and “NikeShoppingCart” tools, the agent can infer that the first two are related, even without reading the description.</p>
+<p>The <code>description</code> provides more detailed directives on how to use the tool. A good description is concise but effectively communicates what the tool does. This can also provide space to provide short examples (or counter examples) if needed.</p>
+<p>The <code>args_schema</code> is a Pydantic <code>BaseModel</code> that defines the arguments (along with their type information) that are to be fed to the tool. It has two main jobs: first, to communicate what information is required from the agent. The second job is to validate those inputs before executing the tool&#x27;s inner functionality.</p>
+<p>Finally, the <code>_run</code> and accompanying async <code>_arun</code> methods define tool’s logic. You can put anything here, from arithmetic, to API requests, to calls to other LLM Chains.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s3">
+      <h2>🏗️ New Structured Tools</h2>
+      <p class="lead">In addition to this new base class, we are releasing the following new tools, both of which inherit from this structured tool class.</p>
+      <p>In addition to this new base class, we are releasing the following new tools, both of which inherit from this structured tool class.</p>
+<div class="card"><ul><li>File management - a toolkit for all the filesystem operations you might want, including write, grep, move, copy, list_dir, find</li><li>Web Browser - while we previously had browsers for document loaders, we now are releasing an official stateful PlayWright Browser toolkit that let’s an agent go to websites, click, submit forms, and query data</li></ul></div>
+<p>For a list of all tools (old and new) please see the documentation here.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s4">
+      <h2>📊 Implementing your own Structured Tools</h2>
+      <p class="lead">The fastest way to get started is by calling the &lt;code&gt;StructuredTool.</p>
+      <p>The fastest way to get started is by calling the <code>StructuredTool.from_function(your_callable)</code> constructor.</p>
+<p>As an example, suppose you wanted a tool to interact with Hugging Face models via the <code>requests</code> library.</p>
+<p>`import requests
+from langchain.tools.base import StructuredTool</p>
+<p>API_KEY = &quot;&lt;MY-API-KEY&gt;&quot;</p>
+<p>def get_huggingface_models(
+    path: Optional[str] = None, query_params: Optional[dict] = None
+) -&gt; dict:
+    &quot;&quot;&quot;Tool that calls GET on &lt;https://huggingface.co/models*&gt; apis. Valid params include &quot;search&quot;:&quot;search&quot;, &quot;author&quot;:&quot;author&quot;, &quot;filter&quot;:&quot;filter&quot; and &quot;sort&quot;:&quot;sort&quot;.&quot;&quot;&quot;
+    base_url = &quot;&lt;https://huggingface.co/api/models&gt;&quot;
+    headers = {&quot;authorization&quot;: f&quot;Bearer {API_KEY}&quot;}
+    result = requests.get(base_url + (path or &quot;&quot;), params=query_params, headers=headers)
+    return result.json()</p>
+<div class="code-block"><pre>get_huggingface_models_tool = StructuredTool.from_function(get_huggingface_models)
+models = get_huggingface_models_tool.run({&amp;quot;query_params&amp;quot;: {&amp;quot;search&amp;quot;: &amp;quot;gpt-j&amp;quot;}})
+print(models)</pre></div>
+<p>Behind the scenes, this infers the <code>args_schema</code> from the function’s signature. This is used tell the agent that it can provide query parameters to search as well as a path parameter to call other  child endpoints.</p>
+<p>If you want more control over the tool definition,  you can subclass the <code>BaseTool</code> directly. For instance, maybe you want the api key to be loaded automatically from the environment variables.</p>
+<p>`from typing import Optional, Type</p>
+<p>import aiohttp
+import requests</p>
+<p>from langchain.callbacks.manager import (
+    AsyncCallbackManagerForToolRun,
+    CallbackManagerForToolRun,
+)
+from langchain.tools import BaseTool
+from pydantic import BaseModel, BaseSettings, Field</p>
+<p>class GetHuggingFaceModelsToolSchema(BaseModel):
+    path: str = Field(default=&quot;&quot;, description=&quot;the api path&quot;)
+    query_params: Optional[dict] = Field(
+        default=None, description=&quot;Optional search parameters&quot;
+    )</p>
+<p>class GetHuggingFaceModelsTool(BaseTool, BaseSettings):
+    &quot;&quot;&quot;My custom tool.&quot;&quot;&quot;</p>
+<p>name: str = &quot;get_huggingface_models&quot;
+    description: str = &quot;&quot;&quot;Tool that calls GET on &lt;https://huggingface.co/models*&gt; apis. Valid params include &quot;search&quot;:&quot;search&quot;, &quot;author&quot;:&quot;author&quot;, &quot;filter&quot;:&quot;filter&quot; and &quot;sort&quot;:&quot;sort&quot;.&quot;&quot;&quot;
+    args_schema: Type[GetHuggingFaceModelsToolSchema] = GetHuggingFaceModelsToolSchema
+    base_url: str = &quot;&lt;https://huggingface.co/api/models&gt;&quot;
+    api_key: str = Field(..., env=&quot;HUGGINGFACE_API_KEY&quot;)</p>
+<p>@property
+    def _headers(self) -&gt; dict:
+        return {&quot;authorization&quot;: f&quot;Bearer {self.api_key}&quot;}</p>
+<p>def _run(
+        self,
+        path: str = &quot;&quot;,
+        query_params: Optional[dict] = None,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -&gt; dict:
+        &quot;&quot;&quot;Run the tool&quot;&quot;&quot;
+        result = requests.get(
+            self.base_url + path, params=query_params, headers=self._headers
+        )
+        return result.json()</p>
+<p>async def _arun(
+        self,
+        path: str = &quot;&quot;,
+        query_params: Optional[dict] = None,
+        run_manager: Optional[AsyncCallbackManagerForToolRun] = None,
+    ) -&gt; dict:
+        &quot;&quot;&quot;Run the tool asynchronously.&quot;&quot;&quot;</p>
+<p>async with aiohttp.ClientSession() as session:
+            async with session.get(
+                self.base_url + path, params=query_params, headers=self._headers
+            ) as response:
+                return await response.json()</p>
+<div class="code-block"><pre>get_models_tool = GetHuggingFaceModelsTool()
+models = get_models_tool.run({&amp;quot;query_params&amp;quot;: {&amp;quot;search&amp;quot;: &amp;quot;gpt-j&amp;quot;}})
+print(models)</pre></div>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s5">
+      <h2>🔗 How can I use Structured Tools?</h2>
+      <p class="lead">We have added a new &lt;code&gt;StructuredChatAgent&lt;/code&gt; that works natively with these structured tools.</p>
+      <p>We have added a new <code>StructuredChatAgent</code> that works natively with these structured tools. Please see this page for a walkthrough.</p>
+<p>Due to limitations in the default prompts and output parsers of previous agents, they do not effectively work with structured tools without extra customization.</p>
+<p>To get started, you can instantiate the structured chat agent executor using the following code snippet:</p>
+<div class="code-block"><pre>from langchain.agents import initialize_agent, AgentType
+from langchain.chat_models import ChatAnthropic
+tools = [] # Add any tools here
+llm = ChatAnthropic(temperature=0) # or any other LLM
+agent_chain = initialize_agent(tools, llm, agent=AgentType.STRUCTURED_CHAT_ZERO_SHOT_REACT_DESCRIPTION)</pre></div>
+<p>These tools are also compatible with the <code>AutoGPT</code> agent from <code>langchain.experimental</code>.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s6">
+      <h2>💡 FAQ</h2>
+      <p class="lead">Q: Can I use structured tools with existing agents?
+
+A: If your structured tool accepts one string argument: YES, it will still work with existing agents.</p>
+      <p>Q: Can I use structured tools with existing agents?</p>
+<p>A: If your structured tool accepts one string argument: YES, it will still work with existing agents. However, structured tool with more than one argument are not directly compatible with the following agents without further customization:</p>
+<div class="card"><ul><li><code>zero-shot-react-description</code></li><li><code>react-docstore</code></li><li><code>self-ask-with-search</code></li><li><code>conversational-react-description</code></li><li><code>chat-zero-shot-react-description</code></li><li><code>chat-conversational-react-description</code></li></ul></div>
+<p>Q: Can I still create string Tools?</p>
+<p>A: You can still use the <code>Tool</code> constructor and <code>@tool</code> decorators to define simple string tools. Tools that inherit from the <code>BaseTool</code> class and accept a single string argument will still be treated as string tools.</p>
+<p>Q: Can I use previously defined string <code>BaseTool</code>&#x27;s with new agents built for <code>StructuredTool</code>’s</p>
+<p>A:  Yes! Structured tools don’t require new agent executors, and older tools are forwards compatible. The original <code>Tool</code> class shares the same base class as the <code>StructuredTool</code> , which is another way of saying your tools should work out of the box.</p>
+<p>Tools that expect json serialized string inputs may require some modifications to interoperate with the output parser of newer agents, or they can be updated to the new format, which should offer better support for more complex interfaces.</p>
+      
+    </section>
+    <section class="section" id="s7">
+      <h2>🛠️ Related content</h2>
+      <p class="lead">.</p>
+      <p>.png)PartnerDeep Agents</p>
+<p>#### Building a company due diligence agent with Deep Agents, LangSmith and Parallel</p>
+<p>Matt HarrisNick MartitschSrimanth TangedipalliKaran SinghMay 8, 20269min[](/blog/building-a-company-due-diligence-agent-with-deep-agents-langsmith-and-parallel).png)Agent ArchitecturePartner</p>
+<p>#### Agentic Engineering: How Swarms of AI Agents Are Redefining Software Engineering</p>
+<p>Renuka KumarPrashanth RamagopalApril 17, 202611min[](/blog/agentic-engineering-redefining-software-engineering).png)LangChainPartner</p>
+<p>#### A Developer’s First 10 Minutes: Secure LangChain Agents with Cisco AI Defense</p>
+<p>Siddhant DashApril 16, 20264min[](/blog/secure-agents-cisco-ai-defense)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s8">
+      <h2>📈 See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+<p>](/contact-sales)</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+  </div>
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/structured-tools" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

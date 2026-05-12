@@ -1,0 +1,171 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>深度解析：LangMem SDK for agent long-term memory</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--green:#10b981;--teal:#14b8a6;--blue:#3b82f6;--amber:#f59e0b;--pink:#ec4899;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',sans-serif}*{margin:0;padding:0;box-sizing:border-box}body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}.nav{position:sticky;top:0;background:rgba(15,23,42,.92);backdrop-filter:blur(12px);padding:16px 32px;display:flex;justify-content:space-between;align-items:center;z-index:100;border-bottom:1px solid rgba(5,150,105,.3)}.nav-brand{color:#fff;font-weight:700;font-size:18px;text-decoration:none}.nav-back{color:rgba(255,255,255,.7);text-decoration:none;font-size:14px}.nav-back:hover{color:#fff}.hero{background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%);padding:80px 32px;text-align:center;color:#fff}.hero h1{font-size:clamp(24px,4vw,42px);font-weight:800;margin-bottom:16px;line-height:1.2}.hero .subtitle{font-size:16px;color:rgba(255,255,255,.8);max-width:720px;margin:0 auto 40px;line-height:1.6}.hero-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:16px;max-width:800px;margin:0 auto}.stat-card{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:var(--radius);padding:18px;backdrop-filter:blur(8px)}.stat-card .num{font-size:22px;font-weight:800;color:#6ee7b7}.stat-card .label{font-size:12px;color:rgba(255,255,255,.7);margin-top:4px}.page{max-width:900px;margin:0 auto;padding:32px 24px}.toc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:48px}.toc h3{font-size:16px;margin-bottom:16px;color:#059669}.toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px}.toc-grid a{display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--text);font-size:14px;padding:8px 12px;border-radius:8px;transition:background .2s}.toc-grid a:hover{background:rgba(5,150,105,.08)}.toc-grid .num{background:linear-gradient(135deg,#059669,#047857);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}.section{margin-bottom:56px}.section h2{font-size:22px;font-weight:700;margin-bottom:8px}.lead{color:var(--text-secondary);font-size:15px;margin-bottom:20px;border-left:3px solid #059669;padding-left:16px}.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}.card h4{font-size:16px;font-weight:600;margin-bottom:8px}.card p{font-size:14px;color:var(--text-secondary);line-height:1.7}.chart{margin:20px 0}.chart-row{display:flex;align-items:center;gap:12px;margin-bottom:10px}.chart-label{width:140px;font-size:13px;text-align:right;flex-shrink:0}.chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;overflow:hidden;height:28px}.chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;padding:0 10px;font-size:12px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden}.chart-bar.green{background:linear-gradient(90deg,#10b981,#059669)}.chart-bar.teal{background:linear-gradient(90deg,#14b8a6,#0d9488)}.chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#2563eb)}.chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#d97706)}.chart-bar.pink{background:linear-gradient(90deg,#ec4899,#db2777)}.block-q{background:linear-gradient(135deg,rgba(5,150,105,.06),rgba(20,184,166,.06));border-left:4px solid #059669;border-radius:0 var(--radius) var(--radius) 0;padding:20px 24px;margin:20px 0;font-size:15px;font-style:italic;color:var(--text-secondary)}.footer{background:#0f172a;color:rgba(255,255,255,.6);padding:40px 32px;text-align:center;font-size:14px}.footer a{color:#10b981;text-decoration:none}.footer a:hover{text-decoration:underline}
+@media(max-width:768px){.hero{padding:48px 20px}.toc-grid{grid-template-columns:1fr}.chart-label{width:100px;font-size:12px}.hero-stats{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<nav class="nav"><a href="../" class="nav-brand">LangChain 技术博客</a><a href="../" class="nav-back">&larr; Back to Hub</a></nav>
+<header class="hero">
+  <span style="display:inline-block;background:rgba(16,185,129,.2);color:#a7f3d0;padding:4px 12px;border-radius:20px;font-size:12px;margin-bottom:16px">Announcements</span>
+  <h1>LangMem SDK for agent long-term memory</h1>
+  <p class="subtitle">Announcements &middot; LangChain Team &middot; LangChain Blog</p>
+  <div class="hero-stats"><div class="stat-card"><div class="num">2</div><div class="label">核心章节</div></div>
+<div class="stat-card"><div class="num">7</div><div class="label">子话题</div></div>
+<div class="stat-card"><div class="num">15</div><div class="label">关键要点</div></div>
+<div class="stat-card"><div class="num">1500+</div><div class="label">总字数</div></div>
+</div>
+</header>
+<div class="page">
+  <nav class="toc"><h3>📑 目录导航</h3><div class="toc-grid"><a href="#s1"><span class="num">1</span>📌 Quick links</a>
+<a href="#s2"><span class="num">2</span>🧠 On memory and adaptive agents</a>
+</div></nav>
+  <section class="section" id="s1"><h2>📌 Quick links</h2><p class="lead">- Documentation: link</p><div class="card"><ul style="margin:12px 0;padding-left:20px">
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7">Documentation: <a href="https://langchain-ai.github.io/langmem/?ref=blog.langchain.com" target="_blank" style="color:#059669;text-decoration:underline">[link</a>]</li>
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7">Managed Service Signup: <a href="https://forms.gle/KY8ja6F24nJFRF2e9?ref=blog.langchain.com" target="_blank" style="color:#059669;text-decoration:underline">[link</a>]</li>
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7">Video Tutorials:</li>
+</ul>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">Concepts: <a href="https://youtu.be/snZI5ojuMRc?ref=blog.langchain.com" target="_blank" style="color:#059669;text-decoration:underline">[link</a>]</p>
+<ul style="margin:12px 0;padding-left:20px">
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7">Semantic Memory in LangMem: <a href="https://youtu.be/3Yp-hIEcWXk?ref=blog.langchain.com" target="_blank" style="color:#059669;text-decoration:underline">[link</a>]</li>
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7">Procedural Memory in LangMem: <a href="https://youtu.be/WW-v5mO2P7w?ref=blog.langchain.com" target="_blank" style="color:#059669;text-decoration:underline">[link</a>]</li>
+</ul></div></section>
+<section class="section" id="s2"><h2>🧠 On memory and adaptive agents</h2><p class="lead">Agents use memory to learn, but the way their memories are formed, stored, updated, and retrieved impacts types of thing</p><div class="card"><p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">Agents use memory to learn, but the way their memories are formed, stored, updated, and retrieved impacts types of things your agent can learn to know or do. At LangChain, we’ve found it useful to <strong>first</strong> identify the capabilities your agent needs to be able to learn, map these to specific memory types or approaches, and only then implement them in your agent. Before adding memory, we think you should consider:</p>
+<ul style="margin:12px 0;padding-left:20px">
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7"><strong>What behavior should be learned (user-informed) vs. pre-defined?</strong></li>
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7"><strong>What types of knowledge or facts should be tracked?</strong></li>
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7"><strong>What conditions should trigger a memory to be recalled?</strong></li>
+</ul>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">While there may be some overlap, each memory type serves distinct functions when building adaptive agents:</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">Memory TypePurposeAgent ExampleHuman ExampleTypical Storage PatternSemanticFacts &amp; KnowledgeUser preferences; knowledge tripletsKnowing Python is a programming languageProfile or CollectionEpisodicPast ExperiencesFew-shot examples; Summaries of past conversationsRemembering your first day at workCollectionProceduralSystem BehaviorCore personality and response patternsKnowing how to ride a bicyclePrompt rules or Collection</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">So then revisiting our questions above:</p>
+<ul style="margin:12px 0;padding-left:20px">
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7"><strong>What behavior should be learned vs. fixed?</strong> Some aspects of your agent&#x27;s behavior may need to adapt based on feedback and experience, while others should remain consistent. This will guide whether you need <strong>procedural memory </strong>to evolve behavior patterns, or if fixed prompt rules are sufficient. This is similar in spirit to the concept of the &quot;chain of command&quot; in OpenAI&#x27;s model spec  since learned behaviors are shaped by user interactions.</li>
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7"><strong>What types of knowledge or facts should be tracked?</strong></li>
+</ul>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">Different use cases require different types of knowledge persistence. You might need <strong>semantic memory</strong> to maintain facts about users or domains, <strong>episodic memory</strong> to learn from successful interactions, or both working together.</p>
+<ul style="margin:12px 0;padding-left:20px">
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7"><strong>What conditions should trigger a memory to be recalled?</strong></li>
+</ul>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">Some memories (core procedural memory) may be <strong>data-independent</strong> - they are always present in the prompt. Some are <strong>data-dependent</strong> and may be recalled based on semantic similarity. Others may be recalled based on a combination of application context, similarity, time, etc.</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">A related concern is memory privacy. In LangMem, all memories are given a <strong>namespace</strong>. The most common namespaces would include a use_id in order to prevent cross-over of user memories. In general, memories can be scoped to particular app routes, to individual users, shared across teams, or the agent could learn core procedures across all users. The extent of memory sharing is determined both by privacy and performance needs.</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">All of these memory types are meant to address recall <strong>beyond individual conversations</strong>. Memory within a given conversation, or thread, is already handled reasonably well using checkpointing in LangGraph (so long as it doesn’t extend beyond the model’s effective context window), which serves as the “short-term” or “working” memory system for your agent.</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">Note that this also differs from standard RAG in a couple ways. One is the way the information is gained: through interaction rather than offline data ingestion. The other is in the type of information that’s prioritized. Below, we will share more about the memory types in more detail.</p>
+<h3 style="font-size:18px;font-weight:600;margin:28px 0 12px;color:var(--text)">Semantic memory: facts</h3>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0"><a href="https://langchain-ai.github.io/langgraph/concepts/memory/?ref=blog.langchain.com#semantic-memory" target="_blank" style="color:#059669;text-decoration:underline">Semantic memory</a> stores key facts (and their relationships) and other information that ground an agent&#x27;s responses. It lets your agent remember important details that wouldn’t be “pre-trained” into the model itself and that isn’t accessible from a web search or generic retriever.</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">![](https://cdn.prod.website-files.com/65c81e88c254bb0f97633a71/69cbadeff72d73b2dc00d826_image.png)</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">Code`</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">from langmem import create_memory_manager</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">manager = create_memory_manager(</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">    &quot;anthropic:claude-3-5-sonnet-latest&quot;,</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">    instructions=&quot;Extract user preferences and facts&quot;,</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">    enable_inserts=True</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">)</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0"># Process conversation to extract facts</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">conversation = [</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">    {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Alice manages the ML team and mentors Bob, who is also on the team.&quot;}</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">]</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">memories = manager.invoke({&quot;messages&quot;: conversation})</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0"># Extract and store new knowledge</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">conversation2 = [</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">    {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Bob now leads the ML team and the NLP project.&quot;}</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">]</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">update = manager.invoke({&quot;messages&quot;: conversation2, &quot;existing&quot;: memories})</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0"> `</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">`memories = [</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">    ExtractedMemory(</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">        id=&quot;27e96a9d-8e53-4031-865e-5ec50c1f7ad5&quot;,</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">        content=Memory(</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">            content=&quot;Alice manages the ML team and mentors Bob, who is also on the team.&quot;</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">        ),</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">    ),</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">    ExtractedMemory(</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">        id=&quot;e2f6b646-cdf1-4be1-bb40-0fd91d25d00f&quot;,</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">        content=Memory(</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">            content=&quot;Bob now leads the ML team and the NLP project.&quot;</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">        ),</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">    ),</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">]</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">`</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">In our experience, semantic memory is the most common form of “memory” that engineers ask for and imagine (after, perhaps, short-term “conversation history” memory) when they first seek to add a memory layer.</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">It also (debatably) has the most overlap with traditional RAG systems. If the knowledge is available from another store (docs site, codebase, etc.), and if that store is the source of truth (rather than the interactions themselves), then your agent may work fine simply retrieving over that knowledge corpus directly. Or you can periodically ingest that knowledge to integrate that in the semantic memory system. If the knowledge is regarding personalization (about the user) or conceptual relationships not found in the raw materials, then semantic memory is perfect for you.</p>
+<h3 style="font-size:18px;font-weight:600;margin:28px 0 12px;color:var(--text)">Procedural memory: evolving behavior</h3>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">Procedural memory represents internalized knowledge of <strong>how to</strong> perform tasks. It is distinct from episodic memory in that it focuses on generalized skills, rules, and behaviors. For AI agents, procedural memory is saved across a combination of model weights, agent code, and agent&#x27;s prompt that collectively determine the agent&#x27;s functionality. In LangMem, we focus on saving learned procedures as updated instructions in the agent&#x27;s prompt.</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">![](https://cdn.prod.website-files.com/65c81e88c254bb0f97633a71/69cbadeff72d73b2dc00d82b_image-1.png)</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">Code`</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">from langmem import create_prompt_optimizer</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">trajectories = [</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">    (</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">        [</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">            {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Tell me about Mars&quot;},</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">            {&quot;role&quot;: &quot;assistant&quot;, &quot;content&quot;: &quot;Mars is the fourth planet...&quot;},</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">            {&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;I wanted more about its moons&quot;},</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">        ],</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">        {&quot;score&quot;: 0.5, &quot;comment&quot;: &quot;Missed key information about moons&quot;}</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">    )</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">]</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">optimizer = create_prompt_optimizer(</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">    &quot;anthropic:claude-3-5-sonnet-latest&quot;,</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">    kind=&quot;metaprompt&quot;,</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">    config={&quot;max_reflection_steps&quot;: 3}</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">)</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">improved_prompt = optimizer.invoke({</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">    &quot;trajectories&quot;: trajectories,</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">    &quot;prompt&quot;: &quot;You are a planetary science expert&quot;</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">})</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0"> `</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">`&quot;&quot;&quot;</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">You are a helpful assistant..</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">    If the user asks about astronomy, explain topics clearly using real-world examples and current scientific data.</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">    Use visual references when helpful and adapt to the user&#x27;s knowledge level.</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">    Balance practical observational astronomy with theoretical concepts, providing either viewing advice or technical explanations based on user needs.</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">&quot;&quot;&quot;`</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">The optimizer is prompted with identifying patterns in successful and unsuccessful interactions, then updating the system prompt to reinforce effective behaviors. This creates a feedback loop where the agent&#x27;s core instructions evolve based on observed performance.</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">Informed by our <a href="https://blog.langchain.com/exploring-prompt-optimization/" target="_blank" style="color:#059669;text-decoration:underline">work on prompt optimization</a>, LangMem provides multiple algorithms for generating prompt update proposals, including: <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:0.9em;color:#059669">metaprompt</code> uses reflection &amp; additional “thinking” time to study the conversations and then use a meta-prompt to propose the update; <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:0.9em;color:#059669">gradient</code> explicitly divides the work into separate steps of critique and prompt proposals to further simplify the task at each step; and a simple <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:0.9em;color:#059669">prompt_memory</code> algorithm that attempts to do the above in a single step.</p>
+<h3 style="font-size:18px;font-weight:600;margin:28px 0 12px;color:var(--text)">Episodic memory: events and experiences</h3>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">Episodic memory stores memories of past interactions. It is distinct from procedural memory in its focus on recalling <em>specific</em> experiences. It is distinguished from semantic memory in its focus on past events rather than general knowledge, answering “how” the agent solved a particular problem rather than just “what” the answer was. It often takes the form of few-shot examples, with each example distilled from a longer raw interaction. LangMem doesn&#x27;t yet support opinionated utilities for episodic memory.</p>
+<h3 style="font-size:18px;font-weight:600;margin:28px 0 12px;color:var(--text)">Try it today</h3>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">Check out the <a href="https://langchain-ai.github.io/langmem/?ref=blog.langchain.com" target="_blank" style="color:#059669;text-decoration:underline">docs</a> for more examples on how to implement custom memory systems using LangMem, including guides on how to:</p>
+<ul style="margin:12px 0;padding-left:20px">
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7">Create an agent that actively manage its own memory</li>
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7">Share memories between agents</li>
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7">Namespace memories to organize information by user or team.</li>
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7">Integrate LangMem in your custom framework</li>
+</ul>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">If your team wants to add personalization or life-long learning to your agents, fill out our <a href="https://forms.gle/KY8ja6F24nJFRF2e9?ref=blog.langchain.com" target="_blank" style="color:#059669;text-decoration:underline">interest form</a>.</p>
+<h3 style="font-size:18px;font-weight:600;margin:28px 0 12px;color:var(--text)">Join our team</h3>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">We&#x27;re recruiting engineers to build the world&#x27;s best runtime for adaptive agents. If you&#x27;re interested in designing and building with us, check out our <a href="https://www.langchain.com/careers?ref=blog.langchain.com" target="_blank" style="color:#059669;text-decoration:underline">open positions</a>.</p>
+<h3 style="font-size:18px;font-weight:600;margin:28px 0 12px;color:var(--text)">Related content</h3>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">![](https://cdn.prod.website-files.com/65c81e88c254bb0f97633a71/69e113adb98acef39fe4aa32_Reusable-evaluators.png)Observability &amp; EvalsLangSmith</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">#### Reusable Evaluators and Evaluator Templates in LangSmith</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">![](https://cdn.prod.website-files.com/65c81e88c254bb0f97633a71/69e0006d57fa417eb9caf388_catherine-qiao.png)![](https://cdn.prod.website-files.com/65c81e88c254bb0f97633a71/69e0003a1af368dfae13c23c_jacob-talbot.png)Catherine QiaoJacob TalbotApril 16, 2026![](https://cdn.prod.website-files.com/65b8cd72835ceeacd4449a53/69cd1fd0002272ce39bf1241_Icon-6.svg)4min[](/blog/reusable-langsmith-evaluator-templates)![](https://cdn.prod.website-files.com/65c81e88c254bb0f97633a71/69dce8a01c18c14b60cd4372_76.webp)LangSmithObservability &amp; Evals</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">#### Human judgment in the agent improvement loop</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">![](https://cdn.prod.website-files.com/65c81e88c254bb0f97633a71/69dd2d3bf32d4fc06a289383_rahul-verma.png)Rahul VermaApril 9, 2026![](https://cdn.prod.website-files.com/65b8cd72835ceeacd4449a53/69cd1fd0002272ce39bf1241_Icon-6.svg)11min[](/blog/human-judgment-in-the-agent-improvement-loop)![](https://cdn.prod.website-files.com/65c81e88c254bb0f97633a71/69dce9138b145f1419b6b38b_74--2-.webp)Observability &amp; Evals</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">#### Better Harness: A Recipe for Harness Hill-Climbing with Evals</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">![](https://cdn.prod.website-files.com/65c81e88c254bb0f97633a71/69dcefac505b6b48827abf84_vivek-trivedy.png)Vivek TrivedyApril 8, 2026![](https://cdn.prod.website-files.com/65b8cd72835ceeacd4449a53/69cd1fd0002272ce39bf1241_Icon-6.svg)8min[](/blog/better-harness-a-recipe-for-harness-hill-climbing-with-evals)![](https://cdn.prod.website-files.com/65b8cd72835ceeacd4449a53/69ce01ea562f8cc223cabf25_Frame%202147254328.svg)Sign up for our newsletter to stay up to date</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+<h3 style="font-size:18px;font-weight:600;margin:28px 0 12px;color:var(--text)">See what your agent is really doing</h3>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">[Try LangSmith</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">](https://smith.langchain.com/)[Get a demo</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">](/contact-sales)</p><div class="chart" style="margin:20px 0"><div class="chart-row"><div class="chart-label">What behavior should</div><div class="chart-bar-wrap"><div class="chart-bar green" style="width:95%">- What types of knowledge or facts sho</div></div></div>
+<div class="chart-row"><div class="chart-label">What conditions shou</div><div class="chart-bar-wrap"><div class="chart-bar teal" style="width:83%">While there may be some overlap, each me</div></div></div>
+<div class="chart-row"><div class="chart-label">What behavior should</div><div class="chart-bar-wrap"><div class="chart-bar blue" style="width:71%">Some aspects of your agent&#x27;s behavi</div></div></div>
+<div class="chart-row"><div class="chart-label">What types of knowle</div><div class="chart-bar-wrap"><div class="chart-bar amber" style="width:59%">Different use cases require different ty</div></div></div>
+<div class="chart-row"><div class="chart-label">What conditions shou</div><div class="chart-bar-wrap"><div class="chart-bar pink" style="width:47%">Some memories (core procedural memory) m</div></div></div>
+</div></div></section>
+
+</div>
+<footer class="footer">
+  <p><a href="../">&larr; 返回 Hub</a> &middot; 原文：<a href="https://www.langchain.com/careers?ref=blog.langchain.com" target="_blank">langchain.com</a></p>
+  <p style="margin-top:8px">LangChain Blog Deep-Dive &middot; LangChain Team &middot; </p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,309 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Implementing advanced RAG strategies with Neo4j</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafbfc;
+      --surface: #fff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --green: #10b981;
+      --emerald: #059669;
+      --teal: #14b8a6;
+      --blue: #3b82f6;
+      --purple: #6366f1;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans SC', 'Inter', system-ui, sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: var(--sans); background: var(--bg); color: var(--text); line-height:1.7; }
+    .nav { position:sticky; top:0; z-index:100; background:rgba(15,23,42,.85); backdrop-filter:blur(12px); padding:14px 32px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,.08); }
+    .nav a { color:#f1f5f9; text-decoration:none; font-weight:500; font-size:14px; }
+    .nav .brand { font-weight:700; font-size:16px; color:#10b981; }
+    .hero { background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%); color:#fff; padding:80px 32px 60px; text-align:center; }
+    .hero h1 { font-size:clamp(1.8rem,4vw,2.8rem); font-weight:800; margin-bottom:12px; line-height:1.3; }
+    .hero .subtitle { font-size:18px; color:rgba(255,255,255,.8); max-width:720px; margin:0 auto 40px; }
+    .hero .meta { font-size:13px; color:rgba(255,255,255,.5); margin-bottom:32px; }
+    .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:16px; max-width:800px; margin:0 auto; }
+    .stat { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); border-radius:12px; padding:20px 16px; backdrop-filter:blur(8px); }
+    .stat .num { font-size:28px; font-weight:800; color:#34d399; }
+    .stat .label { font-size:13px; color:rgba(255,255,255,.7); margin-top:4px; }
+    .page { max-width:900px; margin:0 auto; padding:40px 24px; }
+    .toc { margin-bottom:48px; }
+    .toc h3 { font-size:14px; text-transform:uppercase; letter-spacing:1.5px; color:var(--text-secondary); margin-bottom:16px; }
+    .toc-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; }
+    .toc-grid a { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--text); font-size:14px; font-weight:500; transition:all .2s; }
+    .toc-grid a:hover { border-color:var(--emerald); background:#ecfdf5; }
+    .toc-grid .num { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:8px; background:linear-gradient(135deg,#059669,#10b981); color:#fff; font-size:12px; font-weight:700; flex-shrink:0; }
+    .section { margin-bottom:56px; }
+    .section h2 { font-size:clamp(1.3rem,3vw,1.7rem); font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:10px; }
+    .lead { color:var(--text-secondary); font-size:15px; margin-bottom:24px; line-height:1.6; }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:24px; margin-bottom:16px; }
+    .card h4 { font-size:16px; font-weight:600; margin-bottom:8px; }
+    .card p, .card li { font-size:14px; color:var(--text-secondary); line-height:1.7; }
+    .card ul, .card ol { padding-left:20px; }
+    .card li { margin-bottom:4px; }
+    p { font-size:15px; color:var(--text-secondary); line-height:1.8; margin-bottom:16px; }
+    p code { background:#f1f5f9; padding:2px 6px; border-radius:4px; font-family:var(--mono); font-size:13px; color:#059669; }
+    .chart { margin:24px 0; }
+    .chart-row { display:flex; align-items:center; margin-bottom:10px; gap:12px; }
+    .chart-label { width:150px; font-size:13px; font-weight:500; text-align:right; flex-shrink:0; }
+    .chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:32px; overflow:hidden; }
+    .chart-bar { height:100%; border-radius:8px; display:flex; align-items:center; justify-content:flex-end; padding-right:10px; font-size:12px; font-weight:600; color:#fff; transition:width .6s ease; }
+    .chart-bar.green { background:linear-gradient(90deg,#059669,#10b981); }
+    .chart-bar.teal { background:linear-gradient(90deg,#14b8a6,#2dd4bf); }
+    .chart-bar.blue { background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+    .chart-bar.purple { background:linear-gradient(90deg,#6366f1,#a78bfa); }
+    .chart-bar.amber { background:linear-gradient(90deg,#f59e0b,#fbbf24); }
+    .chart-bar.red { background:linear-gradient(90deg,#ef4444,#f87171); }
+    .flow { display:flex; align-items:center; justify-content:center; gap:12px; margin:24px 0; flex-wrap:wrap; }
+    .flow-step { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 20px; font-size:14px; font-weight:600; text-align:center; min-width:120px; }
+    .flow-step.green { background:linear-gradient(135deg,#059669,#10b981); color:#fff; border:none; }
+    .flow-step.teal { background:linear-gradient(135deg,#14b8a6,#2dd4bf); color:#fff; border:none; }
+    .flow-step.blue { background:linear-gradient(135deg,#3b82f6,#60a5fa); color:#fff; border:none; }
+    .flow-step.purple { background:linear-gradient(135deg,#6366f1,#a78bfa); color:#fff; border:none; }
+    .flow-step.amber { background:linear-gradient(135deg,#f59e0b,#fbbf24); color:#fff; border:none; }
+    .flow-arrow { font-size:20px; color:var(--text-secondary); }
+    .compare-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:24px 0; }
+    .compare-card { border-radius:var(--radius); padding:24px; }
+    .compare-card.old { background:#fef2f2; border:2px solid #fecaca; }
+    .compare-card.new { background:#ecfdf5; border:2px solid #a7f3d0; }
+    .compare-card h4 { font-size:15px; font-weight:700; margin-bottom:8px; }
+    .compare-card p { font-size:13px; color:var(--text-secondary); }
+    .timeline { position:relative; padding-left:32px; margin:24px 0; }
+    .timeline::before { content:''; position:absolute; left:7px; top:8px; bottom:8px; width:3px; background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:24px; }
+    .tl-dot { position:absolute; left:-29px; top:4px; width:14px; height:14px; border-radius:50%; border:3px solid #059669; background:#fff; }
+    .tl-item:nth-child(2) .tl-dot { border-color:#14b8a6; }
+    .tl-item:nth-child(3) .tl-dot { border-color:#3b82f6; }
+    .tl-item:nth-child(4) .tl-dot { border-color:#6366f1; }
+    .tl-item:nth-child(5) .tl-dot { border-color:#f59e0b; }
+    .tl-phase { font-weight:700; font-size:15px; color:var(--text); }
+    .tl-desc { font-size:13px; color:var(--text-secondary); margin-top:4px; }
+    .code-block { background:#1e293b; border-radius:var(--radius); padding:20px; margin:16px 0; overflow-x:auto; }
+    .code-block pre { color:#e2e8f0; font-family:var(--mono); font-size:13px; line-height:1.6; white-space:pre-wrap; word-break:break-all; }
+    .block-q { background:linear-gradient(135deg,#ecfdf5,#d1fae5); border-left:4px solid #059669; border-radius:0 var(--radius) var(--radius) 0; padding:20px 24px; margin:24px 0; }
+    .block-q p { font-size:15px; font-style:italic; color:#064e3b; line-height:1.7; }
+    .badge { display:inline-block; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600; }
+    .badge-green { background:#ecfdf5; color:#059669; }
+    .badge-teal { background:#f0fdfa; color:#14b8a6; }
+    .badge-blue { background:#eff6ff; color:#3b82f6; }
+    .badge-purple { background:#eef2ff; color:#6366f1; }
+    .badge-amber { background:#fffbeb; color:#d97706; }
+    .footer { background:#0f172a; color:#94a3b8; padding:40px 32px; text-align:center; font-size:14px; }
+    .footer a { color:#34d399; text-decoration:none; }
+    .footer a:hover { text-decoration:underline; }
+    .footer .links { margin-top:12px; display:flex; justify-content:center; gap:24px; flex-wrap:wrap; }
+    @media(max-width:768px) {
+      .compare-grid { grid-template-columns:1fr; }
+      .chart-label { width:100px; font-size:12px; }
+      .flow { flex-direction:column; gap:8px; }
+      .flow-arrow { transform:rotate(90deg); }
+      .toc-grid { grid-template-columns:1fr; }
+      .hero { padding:60px 20px 40px; }
+      .nav { padding:12px 16px; }
+      .stats { grid-template-columns:1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+
+  <header class="hero">
+    <div class="meta">🧠 RAG & Knowledge · LangChain Accounts · 2023-11-07</div>
+    <h1>Implementing advanced RAG strategies with Neo4j</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">5</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~7min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">2</div><div class="label">代码示例</div></div>
+      <div class="stat"><div class="num">14</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>Implementing advanced RAG stra</a>
+      <a href="#s2"><span class="num">2</span>Add this</a>
+      <a href="#s3"><span class="num">3</span>Summary</a>
+      <a href="#s4"><span class="num">4</span>Related content</a>
+      <a href="#s5"><span class="num">5</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+
+    <section class="section" id="s1">
+      <h2>🔍 Implementing advanced RAG strategies with Neo4j</h2>
+      <p class="lead">The LangChain TeamNovember 7, 20237min
+
+Go back to blogShare
+
+Editor&amp;#x27;s note: We&amp;#x27;re excited to share this blogpost as it covers several of the advanced retrieval strategies we introduced i...</p>
+      <p>The LangChain TeamNovember 7, 20237min[</p>
+<p>Go back to blog](/blog)Share[</p>
+<p>](#)Editor&#x27;s note: We&#x27;re excited to share this blogpost as it covers several of the advanced retrieval strategies we introduced in the past month, specifically a lot of the ones that rely on changing the ingestion step. A lot of these advanced retrieval strategies can be summarized as changing how indexing of documents is done to retain some concept of hierarchy. Neo4j is an exciting database to use for these tasks since it can represent these hierarchies as part of the graph. This also allows you to switch between indexing strategies pretty easily.</p>
+<p>Tomaz has implemented a single LangChain template that contains four different RAG strategies. Check it out here:</p>
+<div class="card"><ul>
+  <li>Neo4j Advanced RAG Template</li>
+</ul></div>
+<p>Retrieval-augmented generation applications seem to be the “Hello World” of AI applications. Nowadays, you can implement a “Chat with your PDF” application in only a couple of minutes due to the help of LLM framework libraries like LangChain.</p>
+<p>“Chat with your PDF” applications typically rely on vector similarity search to retrieve relevant information, which are then fed to an LLM to generate a final answer that is returned to a user.</p>
+<p>Vector similarity search is used to retrieve relevant information.</p>
+<p>Lately, it is becoming more and more obvious that naive vector similarity search might not be accurate enough for all use cases. For example, we have seen the introduction of step-back approach to prompting, which emphasizes the importance of taking a step back from the immediate details of a task to focus on a higher-level abstraction.</p>
+<p>Step-back prompting. Image from research paper licensed under CC BY 4.0.</p>
+<p>The step-back prompting technique is based on the observation that directly addressing intricate tasks can lead to errors, especially when there are numerous specifics to consider. Instead of plunging straight into the complexities, the model first prompts itself to ask a more generic question that encapsulates the core essence of the original query. By focusing on this broader concept or principle, it can retrieve more relevant and comprehensive facts. Once armed with this foundational knowledge, the model can then proceed to reason and deduce the answer to the specific task at hand.</p>
+<p>On the other hand, we have also seen the introduction of so-called parent document retrievers, where the hypothesis is that directly using a document’s vector might not be efficient.</p>
+<p>Types of parent document retrieval strategies. Image by Damien Benveniste, PhD from AiEdge.io</p>
+<p>Large documents can be split into smaller chunks, where the smaller chunks are converted to vectors, improving indexing for similarity searches. Although these smaller vectors better represent specific concepts, the original large document is retrieved as it provides better context for answering questions. Similarly, you can use an LLM to generate questions the document answers. The document is then indexed by these question embeddings, providing closer similarity with user questions. In both examples, the full parent document is retrieved to provide complete context for answers, hence the name “Parent Document Retriever”.</p>
+<p>In this blog post, you will learn how to use the neo4j-advanced-rag template and host it using LangServe.</p>
+<p>Neo4j Environment Setup</p>
+<p>You need to set up a Neo4j 5.11 or greater to follow along with the examples in this blog post. The easiest way is to start a free instance on Neo4j Aura, which offers cloud instances of the Neo4j database. Alternatively, you can also set up a local instance of the Neo4j database by downloading the Neo4j Desktop application and creating a local database instance.</p>
+<p>`from langchain.graphs import Neo4jGraph</p>
+<div class="code-block"><pre>url = &amp;quot;neo4j+s://databases.neo4j.io&amp;quot;
+username =&amp;quot;neo4j&amp;quot;
+password = &amp;quot;&amp;quot;
+graph = Neo4jGraph(
+   url=url,
+   username=username,
+   password=password
+)</pre></div>
+<p>Neo4j Advanced RAG template</p>
+<p>LangChain Templates offers a collection of easily deployable reference architectures that anyone can use. This is a new way to create, share, maintain, download, and customize chains and agents. They are all in a standard format that allows them to easily be deployed with LangServe, allowing you to easily get production-ready APIs and a playground for free.</p>
+<p>The <code>neo4j-advanced-rag</code> template allows you to balance precise embeddings and context retention by implementing advanced retrieval strategies.</p>
+<div class="card"><ul>
+  <li>Traditional method where the exact data indexed is the data retrieved.</li>
+</ul></div>
+<div class="card"><ul>
+  <li>Instead of indexing entire documents, data is divided into smaller chunks, referred to as Parent and Child documents.</li>
+</ul></div>
+<div class="card"><ul>
+  <li>Child documents are indexed for better representation of specific concepts, while parent documents are retrieved to ensure context retention.</li>
+</ul></div>
+<p>3. Hypothetical Questions:</p>
+<div class="card"><ul>
+  <li>Documents are processed to generate potential questions they might answer.</li>
+</ul></div>
+<div class="card"><ul>
+  <li>These questions are then indexed for better representation of specific concepts, while parent documents are retrieved to ensure context retention.</li>
+</ul></div>
+<div class="card"><ul>
+  <li>Instead of indexing the entire document, a summary of the document is created and indexed.</li>
+</ul></div>
+<div class="card"><ul>
+  <li>Similarly, the parent document is retrieved in a RAG application.</li>
+</ul></div>
+<p>To be able to use LangChain templates, you should first install the LangChain CLI:</p>
+<p><code>pip install -U &quot;langchain-cli[serve]&quot;</code></p>
+<p>Retrieving the LangChain template is then as simple as executing the following line of code:</p>
+<p><code>langchain app new my-app --package neo4j-advanced-rag</code></p>
+<p>This code will create a new folder called my-app, and store all the relevant code in it. Think of it as a “git clone” equivalent for LangChain templates. This will construct the following structure in your filesystem.</p>
+<p>There are two top-level folders created:</p>
+<div class="card"><ul>
+  <li>App: stores the FastAPI server code</li>
+  <li>Packages: stores all the templates that you selected to use in this application. Remember, you can use multiple templates in a single application</li>
+</ul></div>
+<p>Every template is a standalone project with its own poetry file, readme, and potentially also an ingest script, which you can use to populate the database. In the <code>neo4j-advanced-rag</code> template, the ingest script will construct a small graph based on the information from the Dune wikipedia page. Before running, you need to make sure to add relevant environment variables:</p>
+<div class="code-block"><pre>export OPENAI_API_KEY=sk-..
+export NEO4J_USERNAME=neo4j
+export NEO4J_PASSWORD=password
+export NEO4J_URI=bolt://localhost:7687</pre></div>
+<p>Make sure to change the environment variables to appropriate values. Then, you can run the ingest script with the following command.</p>
+<p><code>python ingest.py</code></p>
+<p>The ingest can take a minute as we use the LLM to generate hypothetical questions and summaries. If you inspect the generated graph in Neo4j Browser, you should get a similar visualization:</p>
+<p>The purple nodes are the parent documents, which have a length of 512 tokens. Each parent document has multiple child nodes (orange) that contain a subsection of the parent document. Additionally, the parent nodes also have potential questions represented as blue nodes and a single summary node in red. As we have all the data needed for different strategies in a single store, we can easily compare the results of using different advanced retrieval strategies in the Playground application. One thing you need to do is to change the <code>server.py</code> to include the <code>neo4j-advanced-rag</code> template as an endpoint.</p>
+<p>`from fastapi import FastAPI
+from langserve import add_routes</p>
+<p>from neo4j_advanced_rag import chain as neo4j_advanced_chain</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s2">
+      <h2>⚡ Add this</h2>
+      <p class="lead">add_routes(app, neo4j_advanced_chain, path=&amp;quot;/neo4j-advanced-rag&amp;quot;)
+
+if __name__ == &amp;quot;__main__&amp;quot;:
+    import uvicorn
+
+    uvicorn.</p>
+      <p>add_routes(app, neo4j_advanced_chain, path=&quot;/neo4j-advanced-rag&quot;)</p>
+<p>if __name__ == &quot;__main__&quot;:
+    import uvicorn</p>
+<p>uvicorn.run(app, host=&quot;0.0.0.0&quot;, port=8000)`</p>
+<p>You can now serve this template by executing the following line of code in the root application directory.</p>
+<p><code>langchain serve</code></p>
+<p>Finally, you can open the playground application in your browser and compare different advanced RAG retrieval approaches.</p>
+<p>The playground is really nice as it offers a nice user interface to test out and inspect various LangChain Templates. For example, you can expand the “Intermediate steps” and inspect which documents were passed to the LLM, what is in the prompt, and all the other details of a chain.</p>
+<p>Since the strategy can be selected in the dropdown menu, you can easily compare how the output differs based on the selected retrieval strategy (or inspect documents in the Intermediate steps section).</p>
+<p>Even with such a tiny dataset (17 documents of 512 tokens), I was able to find examples where the typical RAG retrieval might fail. Therefore, it seems imperative to learn about advanced retrieval RAG strategies and implement them into your application for better user experience.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s3">
+      <h2>🏗️ Summary</h2>
+      <p class="lead">In today’s RAG applications, the ability to retrieve accurate and contextual information from a large text corpus is crucial.</p>
+      <p>In today’s RAG applications, the ability to retrieve accurate and contextual information from a large text corpus is crucial. The traditional approach to vector similarity search, while powerful, might sometimes overlook the specific context when longer text is embedded. By splitting longer documents into smaller vectors and indexing these for similarity, we can increase the retrieval accuracy while retaining the contextual information of parent documents to generate the answers with LLMs. Similarly, we can use LLMs to generate hypothetical questions or summaries of text and index those instead but still return the text of the parent document.</p>
+<p>Test it out and let us know how it goes!</p>
+      <div class="chart"><div class="chart-row">
+    <div class="chart-label">Method A</div>
+    <div class="chart-bar-wrap"><div class="chart-bar green" style="width:95%">95%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method B</div>
+    <div class="chart-bar-wrap"><div class="chart-bar teal" style="width:80%">80%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method C</div>
+    <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:65%">65%</div></div>
+  </div></div>
+    </section>
+
+    <section class="section" id="s4">
+      <h2>📊 Related content</h2>
+      <p class="lead">.</p>
+      <p>.png)LangChainPartner</p>
+<p>#### A Developer’s First 10 Minutes: Secure LangChain Agents with Cisco AI Defense</p>
+<p>Siddhant DashApril 16, 20264min[](/blog/secure-agents-cisco-ai-defense)Company AnnouncementsLangChain</p>
+<p>#### LangChain Skills</p>
+<p>The LangChain TeamMarch 4, 20262min[](/blog/langchain-skills)Case StudiesLangChainLangGraph</p>
+<p>#### How Remote uses LangChain and LangGraph to onboard thousands of customers with AI</p>
+<p>The LangChain TeamJanuary 19, 20265min[](/blog/customers-remote)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s5">
+      <h2>🔗 See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+  </div>
+
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/implementing-advanced-retrieval-rag-strategies-with-neo4j" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

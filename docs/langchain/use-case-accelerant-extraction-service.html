@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Use Case Accelerant: Extraction Service</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--green:#10b981;--emerald:#059669;--teal:#14b8a6;--blue:#3b82f6;--purple:#6366f1;--amber:#f59e0b;--red:#ef4444;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+    .nav{position:sticky;top:0;z-index:100;background:rgba(15,23,42,.85);backdrop-filter:blur(12px);padding:14px 32px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.08)}
+    .nav a{color:#f1f5f9;text-decoration:none;font-weight:500;font-size:14px}
+    .nav .brand{font-weight:700;font-size:16px;color:#10b981}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%);color:#fff;padding:80px 32px 60px;text-align:center}
+    .hero h1{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;margin-bottom:12px;line-height:1.3}
+    .hero .subtitle{font-size:18px;color:rgba(255,255,255,.8);max-width:720px;margin:0 auto 40px}
+    .hero .meta{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:32px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;max-width:800px;margin:0 auto}
+    .stat{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:20px 16px;backdrop-filter:blur(8px)}
+    .stat .num{font-size:28px;font-weight:800;color:#34d399}
+    .stat .label{font-size:13px;color:rgba(255,255,255,.7);margin-top:4px}
+    .page{max-width:900px;margin:0 auto;padding:40px 24px}
+    .toc{margin-bottom:48px}
+    .toc h3{font-size:14px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);margin-bottom:16px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .toc-grid a{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;transition:all .2s}
+    .toc-grid a:hover{border-color:var(--emerald);background:#ecfdf5}
+    .toc-grid .num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-size:12px;font-weight:700;flex-shrink:0}
+    .section{margin-bottom:56px}
+    .section h2{font-size:clamp(1.3rem,3vw,1.7rem);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+    .lead{color:var(--text-secondary);font-size:15px;margin-bottom:24px;line-height:1.6}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}
+    .card h4{font-size:16px;font-weight:600;margin-bottom:8px}
+    .card p,.card li{font-size:14px;color:var(--text-secondary);line-height:1.7}
+    .card ul,.card ol{padding-left:20px}
+    .card li{margin-bottom:4px}
+    p{font-size:15px;color:var(--text-secondary);line-height:1.8;margin-bottom:16px}
+    p code{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:13px;color:#059669}
+    .chart{margin:24px 0}
+    .chart-row{display:flex;align-items:center;margin-bottom:10px;gap:12px}
+    .chart-label{width:150px;font-size:13px;font-weight:500;text-align:right;flex-shrink:0}
+    .chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}
+    .chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;justify-content:flex-end;padding-right:10px;font-size:12px;font-weight:600;color:#fff;transition:width .6s ease}
+    .chart-bar.green{background:linear-gradient(90deg,#059669,#10b981)}
+    .chart-bar.teal{background:linear-gradient(90deg,#14b8a6,#2dd4bf)}
+    .chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+    .chart-bar.purple{background:linear-gradient(90deg,#6366f1,#a78bfa)}
+    .chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}
+    .flow{display:flex;align-items:center;justify-content:center;gap:12px;margin:24px 0;flex-wrap:wrap}
+    .flow-step{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;min-width:120px}
+    .flow-step.green{background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none}
+    .flow-step.teal{background:linear-gradient(135deg,#14b8a6,#2dd4bf);color:#fff;border:none}
+    .flow-step.blue{background:linear-gradient(135deg,#3b82f6,#60a5fa);color:#fff;border:none}
+    .flow-step.purple{background:linear-gradient(135deg,#6366f1,#a78bfa);color:#fff;border:none}
+    .flow-step.amber{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#fff;border:none}
+    .flow-arrow{font-size:20px;color:var(--text-secondary)}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}
+    .compare-card{border-radius:var(--radius);padding:24px}
+    .compare-card.old{background:#fef2f2;border:2px solid #fecaca}
+    .compare-card.new{background:#ecfdf5;border:2px solid #a7f3d0}
+    .compare-card h4{font-size:15px;font-weight:700;margin-bottom:8px}
+    .compare-card p{font-size:13px;color:var(--text-secondary)}
+    .timeline{position:relative;padding-left:32px;margin:24px 0}
+    .timeline::before{content:'';position:absolute;left:7px;top:8px;bottom:8px;width:3px;background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6);border-radius:2px}
+    .tl-item{position:relative;margin-bottom:24px}
+    .tl-dot{position:absolute;left:-29px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid #059669;background:#fff}
+    .tl-item:nth-child(2) .tl-dot{border-color:#14b8a6}
+    .tl-item:nth-child(3) .tl-dot{border-color:#3b82f6}
+    .tl-phase{font-weight:700;font-size:15px;color:var(--text)}
+    .tl-desc{font-size:13px;color:var(--text-secondary);margin-top:4px}
+    .code-block{background:#1e293b;border-radius:var(--radius);padding:20px;margin:16px 0;overflow-x:auto}
+    .code-block pre{color:#e2e8f0;font-family:var(--mono);font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-all}
+    .block-q{background:linear-gradient(135deg,#ecfdf5,#d1fae5);border-left:4px solid #059669;border-radius:0 var(--radius) var(--radius) 0;padding:20px 24px;margin:24px 0}
+    .block-q p{font-size:15px;font-style:italic;color:#064e3b;line-height:1.7}
+    .footer{background:#0f172a;color:#94a3b8;padding:40px 32px;text-align:center;font-size:14px}
+    .footer a{color:#34d399;text-decoration:none}
+    .footer a:hover{text-decoration:underline}
+    .footer .links{margin-top:12px;display:flex;justify-content:center;gap:24px;flex-wrap:wrap}
+    @media(max-width:768px){.compare-grid{grid-template-columns:1fr}.chart-label{width:100px;font-size:12px}.flow{flex-direction:column;gap:8px}.flow-arrow{transform:rotate(90deg)}.toc-grid{grid-template-columns:1fr}.hero{padding:60px 20px 40px}.nav{padding:12px 16px}.stats{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+  <header class="hero">
+    <div class="meta">📚 Tutorials & Guides · LangChain Accounts · 2024-03-06</div>
+    <h1>Use Case Accelerant: Extraction Service</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">8</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~9min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">4</div><div class="label">代码示例</div></div>
+      <div class="stat"><div class="num">22</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>Use Case Accelerant: Extractio</a>
+      <a href="#s2"><span class="num">2</span>The Extraction Use Case</a>
+      <a href="#s3"><span class="num">3</span>LLMs to the Rescue</a>
+      <a href="#s4"><span class="num">4</span>The Service</a>
+      <a href="#s5"><span class="num">5</span>Example</a>
+      <a href="#s6"><span class="num">6</span>Conclusion</a>
+      <a href="#s7"><span class="num">7</span>Related content</a>
+      <a href="#s8"><span class="num">8</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+    <section class="section" id="s1">
+      <h2>🔍 Use Case Accelerant: Extraction Service</h2>
+      <p class="lead">The LangChain TeamMarch 6, 20247min
+
+Go back to blogShare
+
+
+
+
+
+Today we’re excited to announce our newest OSS use-case accelerant: an extraction service.</p>
+      <p>The LangChain TeamMarch 6, 20247min[</p>
+<p>Go back to blog](/blog)Share[</p>
+<p>](#)Today we’re excited to announce our newest OSS use-case accelerant: an extraction service. LLMs are a powerful tool for extracting structured data from unstructured sources. We&#x27;ve improved our support for data extraction in the open source LangChain library over the past few releases, and now we’re taking that a step further with a starter repository to help you build your own extraction application.</p>
+<p>The starter repository includes a bare-bones web application that can be extended to build a self-service extraction application that can be used by non-technical users in your organization to leverage the power of LLMs for data extraction.</p>
+<p>We&#x27;ll discuss the extraction service in more detail below, but first, let&#x27;s discuss the extraction use case and how LLMs can help.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s2">
+      <h2>⚡ The Extraction Use Case</h2>
+      <p class="lead">Enterprises spend substantial resources and effort to derive valuable insights from unstructured data sources, which encompass documents such as PDFs and PowerPoint presentations, websites, and other </p>
+      <p>Enterprises spend substantial resources and effort to derive valuable insights from unstructured data sources, which encompass documents such as PDFs and PowerPoint presentations, websites, and other textual information like product reviews and customer feedback.</p>
+<p>Commonly deployed extraction solutions tend to rely on a mixture of approaches that involve manual work done by people, and automated extraction done using either hand-crafted rules or custom fine-tuned ML models.</p>
+<p>For automated solutions, companies have been shifting away from rule-based methodologies to machine learning (ML)-based solutions, recognizing that ML-driven approaches typically offer greater scalability and maintainability in their systems.</p>
+<p>The main problem with previous generations of ML-based solutions is that they often require significant effort to build and maintain, as well as a significant amount of labeled data to train the models.</p>
+<p>Large Language Models (LLMs) have emerged as a capable new ML technology that can help power information extraction applications. LLMs can be adapted for specific extraction tasks just by providing appropriate instructions to them (in the form of a prompt) and appropriate reference examples. As a result, LLMs significantly reduce the barrier to adopt an AI first approach to information extraction.</p>
+<p>The new generation of solutions to information extraction will be built on top of LLMs. Such solutions will still involve human-in-the-loop to provide feedback and guidance to the LLMs, and some amount of custom rules and heuristics to handle edge cases. Such solutions will still require a workflow tool to manage the data extraction and validation process. But such solutions will become significantly more scalable and maintainable than the previous generations of solutions.</p>
+      
+    </section>
+    <section class="section" id="s3">
+      <h2>🏗️ LLMs to the Rescue</h2>
+      <p class="lead">How do you use an LLM for information extraction? Here, we’ll outline the essential components and high level and high level considerations that should go into building an extraction service.</p>
+      <p>How do you use an LLM for information extraction? Here, we’ll outline the essential components and high level and high level considerations that should go into building an extraction service.</p>
+<p>#### The raw data</p>
+<p>Extracting information using an LLM starts with the data you wish to extract from, which first needs to be converted into a text format. LangChain contains hundreds of document loaders that you can use to parse files like PDFs and convert to a textual format.</p>
+<p>After loading the text, you need to decide how to present it to the LLM. The simplest thing to do is to present the entire text to the LLM. This is great for small pieces of text, but has several pitfalls for longer texts. First, it may not all fit into the context window. Second, assuming it does, most language models perform worse on longer inputs, so putting it all in context may yield worse results. Third, even if the results are comparable, the inference time will take a while.</p>
+<p>A more sophisticated approach involves segmenting the text into chunks and processing only the relevant ones through the LLM. This of course introduces the complication of having to decide which chunks are relevant. Alternatively, you could extract content from all the chunks in parallel which will guarantee you don’t miss any relevant chunks. Either way you will need to decide how to best combine results from across the chunks and how to deal with information that’s been broken up across separate chunks.</p>
+<p>#### Describe what you want</p>
+<p>If you want the LLM to extract information effectively, you need to provide it with a description of what you want extracted.</p>
+<p>Such a description can be broken down into three key components:</p>
+<div class="card"><ol><li>A schema that describes the structure of the data you want to extract.</li></ol></div>
+<div class="card"><ol><li>A prompt that provides context for the extraction and primes the LLM.</li></ol></div>
+<div class="card"><ol><li>Reference examples that show examples of extractions from text.</li></ol></div>
+<p>#### How to make it work</p>
+<p>So these are the components, but how do you actually make it work?</p>
+<p>There are two simple but powerful ideas we’d like to cover here.</p>
+<p>The first key idea is making sure the LLM responds in a correct format. If you instruct an LLM to output JSON in its prompt, it may not always do so. Function calling has emerged as a new and relatively reliable way to enforce that LLMs output a specific format. We would recommend using this for improved performance.</p>
+<p>Check out the structured output docs for a high level LangChain API that shows tool / function calling with different LLMs.</p>
+<p>Another tip for improving performance is to use reference examples. While you can set up an extraction problem without any reference examples, we have found that in practice it is highly beneficial to include examples of inputs and corresponding outputs. These can often be more helpful than instructions in terms of showing the LLM how to handle specific situations.</p>
+<p>We have included further details in the extraction use case docs that will help you squeeze performance from your LLMs.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s4">
+      <h2>📊 The Service</h2>
+      <p class="lead">With this in mind, what exactly does our extraction service provide?
+
+The service is built on top of FastAPI and Postgresql.</p>
+      <p>With this in mind, what exactly does our extraction service provide?</p>
+<p>The service is built on top of FastAPI and Postgresql. It exposes a standard REST API, and comes with a docker-compose file to help you spin up the stack quickly. The service is a bare-bones web application that can be extended to create an extraction application for non-technical users in your organization. This is essentially boilerplate that you can use to jumpstart your application development. Alternatively, you can just use it as is for your own extraction workflows without doing any further development.</p>
+<p>The API allows defining and persisting &quot;extractors&quot; which contain the key components needed to configure an LLM for extraction. These components include a schema that describes the structure of the data you want to extract, a prompt that provides context for the extraction and primes the model, and reference examples that show the model some examples of extractions.</p>
+<p>In addition, the API exposes an extraction endpoint that allow you to submit files for extraction using an existing extractor, and a second variant of the endpoint that allows you to use a RemoteRunnable to easily use the service as part of a larger LangChain Expression Language (LCEL) chain.</p>
+<p>The service is pre-configured with a MIME-type based parser and supports parsing of PDFs and HTML files. You can easily extend this to support other types of files (e.g., PowerPoint) using existing LangChain document loaders and parsers.</p>
+<p>One key decision we’ve made for the extraction API is that we’ve designed it to always extract multiple entities. This is usually the desired behavior when extracting from text because it allows the model to extract multiple entities if they’re present, and also because it allows the model to extract no entities if the text contains no relevant information.</p>
+<p>How do you actually use this service?</p>
+<p>Building off the above, there are a few usage considerations. You can use JSON schema to define exactly what to extract. You can specify examples that will be incorporated to improve the quality of extracted results. You can either specify these when invoking the API, or you can create and save extractors and examples in a database. This will make it easy to save and share extractors. In terms of passing in the text, you can either pass in raw text or binary files.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s5">
+      <h2>🔗 Example</h2>
+      <p class="lead">Let’s take a look at an example of how to use this service.</p>
+      <p>Let’s take a look at an example of how to use this service.</p>
+<p>First, you can create an extractor:</p>
+<div class="code-block"><pre>curl -X &amp;#x27;POST&amp;#x27; \
+  &amp;#x27;http://localhost:8000/extractors&amp;#x27; \
+  -H &amp;#x27;accept: application/json&amp;#x27; \
+  -H &amp;#x27;Content-Type: application/json&amp;#x27; \
+  -d &amp;#x27;{
+  &amp;quot;name&amp;quot;: &amp;quot;Personal Information&amp;quot;,
+  &amp;quot;description&amp;quot;: &amp;quot;Use to extract personal information&amp;quot;,
+  &amp;quot;schema&amp;quot;: {
+      &amp;quot;type&amp;quot;: &amp;quot;object&amp;quot;,
+      &amp;quot;title&amp;quot;: &amp;quot;Person&amp;quot;,
+      &amp;quot;required&amp;quot;: [
+        &amp;quot;name&amp;quot;,
+        &amp;quot;age&amp;quot;
+      ],
+      &amp;quot;properties&amp;quot;: {
+        &amp;quot;age&amp;quot;: {
+          &amp;quot;type&amp;quot;: &amp;quot;integer&amp;quot;,
+          &amp;quot;title&amp;quot;: &amp;quot;Age&amp;quot;
+        },
+        &amp;quot;name&amp;quot;: {
+          &amp;quot;type&amp;quot;: &amp;quot;string&amp;quot;,
+          &amp;quot;title&amp;quot;: &amp;quot;Name&amp;quot;
+        }
+      }
+    },
+  &amp;quot;instruction&amp;quot;: &amp;quot;Use information about the person from the given user input.&amp;quot;
+}&amp;#x27;</pre></div>
+<p>What is this doing?</p>
+<p>First, we are sending a name parameter to the service - this is just a simple human readable name for the extractor we are creating, not to be used by the LLM. Likewise, the description parameter is just for tracking purposes, not used in any way.</p>
+<p>The schema parameter is used by the service. This is the JSON schema representing the schema of the objects we are trying to extract. We are extracting a Person schema, with two attributes, both of which are required: age (an integer) and name (a string).</p>
+<p>The instruction parameter is also used by the service. These instructions are sent to the LLM along with the schema and the text and can provide additional context and instruction for how the LLM should behave.</p>
+<p>When we send this, we get back a response corresponding to the id of the extractor we just created:</p>
+<p><code>{
+  &quot;uuid&quot;: &quot;32d5324a-8a48-4073-b57c-0a2ebfb0bf5e&quot;
+}</code></p>
+<p>After having registered it, we can then invoke it:</p>
+<div class="code-block"><pre>curl -s -X &amp;#x27;POST&amp;#x27; \
+&amp;#x27;http://localhost:8000/extract&amp;#x27; \
+-H &amp;#x27;accept: application/json&amp;#x27; \
+-H &amp;#x27;Content-Type: multipart/form-data&amp;#x27; \
+-F &amp;#x27;extractor_id=32d5324a-8a48-4073-b57c-0a2ebfb0bf5e&amp;#x27; \
+-F &amp;#x27;text=my name is chester and i am 20 years old. My name is eugene and I am 1 year older than chester.&amp;#x27; \
+-F &amp;#x27;mode=entire_document&amp;#x27; \
+-F &amp;#x27;file=&amp;#x27; | jq .</pre></div>
+<p>We are passing in an extractor_id - this is the id returned from the step before.</p>
+<p>We also pass in text - this is the text to extract information from.</p>
+<p>We specify mode=entire_document. This is telling the service to extract from the whole document. If the text we were extracting from was larger, we may want to handle it differently - this is where we control that parameter.</p>
+<p>Finally, we pass a file with an empty value. This service also accepts file uploads, but we are not using that here</p>
+<p>We get back the following response:</p>
+<div class="code-block"><pre>{
+  &amp;quot;data&amp;quot;: [
+    {
+      &amp;quot;name&amp;quot;: &amp;quot;chester&amp;quot;,
+      &amp;quot;age&amp;quot;: 20
+    },
+    {
+      &amp;quot;name&amp;quot;: &amp;quot;eugene&amp;quot;,
+      &amp;quot;age&amp;quot;: 21
+    }
+  ]
+}</pre></div>
+      
+    </section>
+    <section class="section" id="s6">
+      <h2>💡 Conclusion</h2>
+      <p class="lead">In this blog we’ve introduced the idea of using LLMs to extract structured data from unstructured text, introduced our fully open source repository that exposes a service to do this, and ran through a</p>
+      <p>In this blog we’ve introduced the idea of using LLMs to extract structured data from unstructured text, introduced our fully open source repository that exposes a service to do this, and ran through a relatively simple example of how to use it. For more complex examples, you can check out the readme of the service. For information on how to do extraction using LangChain without using this service, you can check out our updated use case documentation. Over the next week or so we will be adding a relatively simple frontend for this service and exposing a hosted version of it. We’d love any feedback!</p>
+<p>Additional Resources:</p>
+<div class="card"><ul><li>LangChain-extract - the repository that contains the service code</li><li>LangChain Extraction documentation – documentation that shows how to do extraction using LangChain</li><li>Structured Output Functionality - High level LangChain API to structure output using different models capable of function/tool calling</li><li>Function Calling - function calling in more detail</li><li>LangChain-benchmarks -a repository that contains benchmarking code that you can use to evaluate different LLMs</li></ul></div>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s7">
+      <h2>🛠️ Related content</h2>
+      <p class="lead">.</p>
+      <p>.png)PartnerDeep Agents</p>
+<p>#### Building a company due diligence agent with Deep Agents, LangSmith and Parallel</p>
+<p>Matt HarrisNick MartitschSrimanth TangedipalliKaran SinghMay 8, 20269min[](/blog/building-a-company-due-diligence-agent-with-deep-agents-langsmith-and-parallel)Company Announcements</p>
+<p>#### Interrupt Preview: Meet the MC</p>
+<p>Becca WengApril 28, 20267min[](/blog/interrupt-preview-meet-the-mc)Company Announcements</p>
+<p>#### April 2026: LangChain Newsletter</p>
+<p>The LangChain TeamApril 27, 20264min[](/blog/april-2026-langchain-newsletter)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s8">
+      <h2>📈 See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+<p>](/contact-sales)</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+  </div>
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/use-case-accelerant-extraction-service" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

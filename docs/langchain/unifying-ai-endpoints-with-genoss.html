@@ -1,0 +1,201 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Unifying AI endpoints with Genoss, powered by LangChain</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--green:#10b981;--emerald:#059669;--teal:#14b8a6;--blue:#3b82f6;--purple:#6366f1;--amber:#f59e0b;--red:#ef4444;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+    .nav{position:sticky;top:0;z-index:100;background:rgba(15,23,42,.85);backdrop-filter:blur(12px);padding:14px 32px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.08)}
+    .nav a{color:#f1f5f9;text-decoration:none;font-weight:500;font-size:14px}
+    .nav .brand{font-weight:700;font-size:16px;color:#10b981}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%);color:#fff;padding:80px 32px 60px;text-align:center}
+    .hero h1{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;margin-bottom:12px;line-height:1.3}
+    .hero .subtitle{font-size:18px;color:rgba(255,255,255,.8);max-width:720px;margin:0 auto 40px}
+    .hero .meta{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:32px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;max-width:800px;margin:0 auto}
+    .stat{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:20px 16px;backdrop-filter:blur(8px)}
+    .stat .num{font-size:28px;font-weight:800;color:#34d399}
+    .stat .label{font-size:13px;color:rgba(255,255,255,.7);margin-top:4px}
+    .page{max-width:900px;margin:0 auto;padding:40px 24px}
+    .toc{margin-bottom:48px}
+    .toc h3{font-size:14px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);margin-bottom:16px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .toc-grid a{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;transition:all .2s}
+    .toc-grid a:hover{border-color:var(--emerald);background:#ecfdf5}
+    .toc-grid .num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-size:12px;font-weight:700;flex-shrink:0}
+    .section{margin-bottom:56px}
+    .section h2{font-size:clamp(1.3rem,3vw,1.7rem);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+    .lead{color:var(--text-secondary);font-size:15px;margin-bottom:24px;line-height:1.6}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}
+    .card h4{font-size:16px;font-weight:600;margin-bottom:8px}
+    .card p,.card li{font-size:14px;color:var(--text-secondary);line-height:1.7}
+    .card ul,.card ol{padding-left:20px}
+    .card li{margin-bottom:4px}
+    p{font-size:15px;color:var(--text-secondary);line-height:1.8;margin-bottom:16px}
+    p code{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:13px;color:#059669}
+    .chart{margin:24px 0}
+    .chart-row{display:flex;align-items:center;margin-bottom:10px;gap:12px}
+    .chart-label{width:150px;font-size:13px;font-weight:500;text-align:right;flex-shrink:0}
+    .chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}
+    .chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;justify-content:flex-end;padding-right:10px;font-size:12px;font-weight:600;color:#fff;transition:width .6s ease}
+    .chart-bar.green{background:linear-gradient(90deg,#059669,#10b981)}
+    .chart-bar.teal{background:linear-gradient(90deg,#14b8a6,#2dd4bf)}
+    .chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+    .chart-bar.purple{background:linear-gradient(90deg,#6366f1,#a78bfa)}
+    .chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}
+    .flow{display:flex;align-items:center;justify-content:center;gap:12px;margin:24px 0;flex-wrap:wrap}
+    .flow-step{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;min-width:120px}
+    .flow-step.green{background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none}
+    .flow-step.teal{background:linear-gradient(135deg,#14b8a6,#2dd4bf);color:#fff;border:none}
+    .flow-step.blue{background:linear-gradient(135deg,#3b82f6,#60a5fa);color:#fff;border:none}
+    .flow-step.purple{background:linear-gradient(135deg,#6366f1,#a78bfa);color:#fff;border:none}
+    .flow-step.amber{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#fff;border:none}
+    .flow-arrow{font-size:20px;color:var(--text-secondary)}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}
+    .compare-card{border-radius:var(--radius);padding:24px}
+    .compare-card.old{background:#fef2f2;border:2px solid #fecaca}
+    .compare-card.new{background:#ecfdf5;border:2px solid #a7f3d0}
+    .compare-card h4{font-size:15px;font-weight:700;margin-bottom:8px}
+    .compare-card p{font-size:13px;color:var(--text-secondary)}
+    .timeline{position:relative;padding-left:32px;margin:24px 0}
+    .timeline::before{content:'';position:absolute;left:7px;top:8px;bottom:8px;width:3px;background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6);border-radius:2px}
+    .tl-item{position:relative;margin-bottom:24px}
+    .tl-dot{position:absolute;left:-29px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid #059669;background:#fff}
+    .tl-item:nth-child(2) .tl-dot{border-color:#14b8a6}
+    .tl-item:nth-child(3) .tl-dot{border-color:#3b82f6}
+    .tl-phase{font-weight:700;font-size:15px;color:var(--text)}
+    .tl-desc{font-size:13px;color:var(--text-secondary);margin-top:4px}
+    .code-block{background:#1e293b;border-radius:var(--radius);padding:20px;margin:16px 0;overflow-x:auto}
+    .code-block pre{color:#e2e8f0;font-family:var(--mono);font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-all}
+    .block-q{background:linear-gradient(135deg,#ecfdf5,#d1fae5);border-left:4px solid #059669;border-radius:0 var(--radius) var(--radius) 0;padding:20px 24px;margin:24px 0}
+    .block-q p{font-size:15px;font-style:italic;color:#064e3b;line-height:1.7}
+    .footer{background:#0f172a;color:#94a3b8;padding:40px 32px;text-align:center;font-size:14px}
+    .footer a{color:#34d399;text-decoration:none}
+    .footer a:hover{text-decoration:underline}
+    .footer .links{margin-top:12px;display:flex;justify-content:center;gap:24px;flex-wrap:wrap}
+    @media(max-width:768px){.compare-grid{grid-template-columns:1fr}.chart-label{width:100px;font-size:12px}.flow{flex-direction:column;gap:8px}.flow-arrow{transform:rotate(90deg)}.toc-grid{grid-template-columns:1fr}.hero{padding:60px 20px 40px}.nav{padding:12px 16px}.stats{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+  <header class="hero">
+    <div class="meta">📚 Tutorials & Guides · LangChain Accounts · 2023-08-02</div>
+    <h1>Unifying AI endpoints with Genoss, powered by LangChain</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">7</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~5min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">-</div><div class="label">代码示例</div></div>
+      <div class="stat"><div class="num">13</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>Unifying AI endpoints with Gen</a>
+      <a href="#s2"><span class="num">2</span>The integration problem</a>
+      <a href="#s3"><span class="num">3</span>Genoss is the solution</a>
+      <a href="#s4"><span class="num">4</span>Usage in production</a>
+      <a href="#s5"><span class="num">5</span>Conclusion</a>
+      <a href="#s6"><span class="num">6</span>Related content</a>
+      <a href="#s7"><span class="num">7</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+    <section class="section" id="s1">
+      <h2>🔍 Unifying AI endpoints with Genoss, powered by LangChain</h2>
+      <p class="lead">The LangChain TeamAugust 2, 20234min
+
+Go back to blogShare
+
+
+
+
+
+Editor’s Note: This blog post was written by Matt Carey, one of the builders of Genoss.</p>
+      <p>The LangChain TeamAugust 2, 20234min[</p>
+<p>Go back to blog](/blog)Share[</p>
+<p>](#)Editor’s Note: This blog post was written by Matt Carey, one of the builders of Genoss. We&#x27;re sharing it on our blog too because we hear from a lot of people that don&#x27;t want to get locked in to a single model. We think tools like Genoss that provide clean interfaces for interoperability will help more builders get robust apps into production fast. We&#x27;re also incredibly excited about the integration it has with LangSmith to enable easy debugging, logging, monitoring, and observability!</p>
+<p>Introducing Genoss GPT: One line GPT application portability with the Genoss model gateway.</p>
+<p>TL;DR: GenossGPT offers a universal interface for interacting with GPT models, simplifying the task of integrating and switching between models in your GenAI-powered application. It gives businesses control over their model usage, while leveraging LangSmith to provide enhanced observability and analytics in production.</p>
+<p>Development in the generative AI space continues to pick up steam, with an ever-expanding range of uses being found for large language models (LLMs). These uses span diverse domains including personal assistants, document retrieval, as well as image and text generation. Groundbreaking apps like ChatGPT have paved the way for companies to dive into the space and start building with this technology.</p>
+<p>Big players are building their own models such as AWS with their Titan models, Meta with their newly released Llama 2, and Microsoft with their partnerships with both OpenAI and Meta, showing that there is serious investment in the space.</p>
+<p>Unicorn startups like Hugging Face, raising money at a $4 billion valuation, have dominated the open-source space and allow anyone to deploy models with ease. Universities will continue to push the envelope of what is possible on a budget, and these innovations will feed back into open-source projects. However, it is unlikely that smaller companies will be able to compete with big tech giants in building production LLMs from scratch due to the high costs.</p>
+<p>Ecosystems like LangChain provide a set of helpful utilities for developers interacting with these third-party LLMs, or foundational models as they are often called. LangChain classes help developers leverage models with I/O and memory, as well as providing model chains to accomplish specific tasks such as document retrieval. Additionally, LangChain establishes a standard vocabulary, introducing terms like ‘RetrievalChain’ and ‘MemoryStore’ with well-defined meanings in the ecosystem, thereby streamlining discourse among AI engineers.</p>
+      
+    </section>
+    <section class="section" id="s2">
+      <h2>⚡ The integration problem</h2>
+      <p class="lead">A discernible gap, still resides in the current tooling designed to facilitate integrations with LLM providers.</p>
+      <p>A discernible gap, still resides in the current tooling designed to facilitate integrations with LLM providers. As newer and improved models are introduced and the technology progresses, engineers want the freedom to be able to quickly implement new features with these models.</p>
+<p>LangChain provides classes for a huge amount of models, such as OpenAI and Hugging Face, based on a common LLM class. However it requires using different classes for each provider. These classes have various methods and properties and although you would hope they are directly plug and play, the actual solution is rarely that simple.</p>
+<p>Factors such as model streaming and nested chains further complicate the problem. LangChain does a great job at building interoperability between composable pieces (e.g. VectorStores, DocumentLoaders &amp; Retrievers) but we need to improve the developer experience when it comes to switching between LLM models.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s3">
+      <h2>🏗️ Genoss is the solution</h2>
+      <p class="lead">Genoss is a model gateway powered by LangChain.</p>
+      <p>Genoss is a model gateway powered by LangChain. It standardises the process of calling any supported LLM into one unified interface, compatible with the OpenAI API specification. By simply changing your base URL to your Genoss endpoint, you have the power of any LLM model at your fingertips. Direct integration with any 3rd party tool that supports the OpenAI interface is enabled out of the box.</p>
+<p>Genoss does the heavy lifting for you to provide a single cohesive interface for interacting with both Completions and Embeddings models across multiple providers. You can switch between local open-source models, OpenAI models, AWS Bedrock models or any Hugging Face model with just a simple change to the model name.</p>
+<p>https://genoss.ai/</p>
+<p>When using Genoss in an enterprise setting, an admin can update the model with a singular change on the dashboard (coming soon). There is no need to update any application code to point towards new providers, the mapping is handled entirely by Genoss. This is useful for applications which use different models for different tasks or even users tiers. Paid users of your application could be given access to a choice of models with varying benefits such as enhanced privacy or fine-tuning using specific knowledge, whereas demo users would use a generic and cheaper model.</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s4">
+      <h2>📊 Usage in production</h2>
+      <p class="lead">Genoss is open-source and is free to use via the hosted version or to self-host on your own infrastructure.</p>
+      <p>Genoss is open-source and is free to use via the hosted version or to self-host on your own infrastructure. Think of Genoss like Supabase for LLM applications. It empowers developers to go from a weekend side-project straight to production using the same infrastructure and tech stack.</p>
+<p>Genoss leverages LangChain’s new tool, LangSmith. LangSmith provides observability, debugging and testing on the inputs and outputs of the models at each stage of the workflow. Analytics of LLM calls can be performed to help improve the usage and effectiveness of the model and the prompts. This allows companies to run LLM based workflows in production with higher confidence in their models and their outputs than ever before.</p>
+<p>When using Genoss as your model gateway, LangSmith is automatically setup and ready to use. Companies can also use LangSmith to track token usage, manage costs of their LLM calls and keep an eye on latencies directly from the Genoss console.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s5">
+      <h2>🔗 Conclusion</h2>
+      <p class="lead">The lack of consistency between model interfaces makes building with LLMs unnecessary complicated.</p>
+      <p>The lack of consistency between model interfaces makes building with LLMs unnecessary complicated. As cloud providers, commercial and open-source models are not aligned on a standard interface, Genoss provides interface unification. Genoss reduces the learning curve for developers starting to build, and for organisations scaling applications harnessing the power of Generative AI.</p>
+<p>Given the rapid pace of LLM advancements, developers will use Genoss to test the latest models, experiment with fine-tuning and run private models locally. Enterprises will use Genoss to control the model usage of their users in both internal and production apps whilst utilising LangSmith for observability, debugging and testing.</p>
+<p>Find the code repository for Genoss here. We look forward to seeing what you will build with it.</p>
+<p>Thanks to the team Stan Girard, Maxime Thoosen, Arnault Chazareix for all your hard work.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s6">
+      <h2>💡 Related content</h2>
+      <p class="lead">.</p>
+      <p>.png)PartnerDeep Agents</p>
+<p>#### Building a company due diligence agent with Deep Agents, LangSmith and Parallel</p>
+<p>Matt HarrisNick MartitschSrimanth TangedipalliKaran SinghMay 8, 20269min[](/blog/building-a-company-due-diligence-agent-with-deep-agents-langsmith-and-parallel)Deep AgentsAgent ArchitectureOpen Source</p>
+<p>#### Tuning Deep Agents to Work Well with Different Models</p>
+<p>Vivek TrivedyMason DaughertyApril 29, 20265min[](/blog/tuning-deep-agents-different-models).png)Agent ArchitectureLangSmithOpen Source</p>
+<p>#### How LangSmith and LangChain OSS Help You Meet EU AI Act Requirements</p>
+<p>Jacob TalbotBecca WengApril 27, 20267min[](/blog/langsmith-langchain-oss-eu-ai-act)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s7">
+      <h2>🛠️ See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+<p>](/contact-sales)</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+  </div>
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/unifying-ai-endpoints-with-genoss" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

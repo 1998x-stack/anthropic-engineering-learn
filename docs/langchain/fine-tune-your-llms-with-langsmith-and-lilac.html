@@ -1,0 +1,250 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Fine-tune your LLMs with LangSmith and Lilac</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--green:#10b981;--emerald:#059669;--teal:#14b8a6;--blue:#3b82f6;--purple:#6366f1;--amber:#f59e0b;--red:#ef4444;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+    .nav{position:sticky;top:0;z-index:100;background:rgba(15,23,42,.85);backdrop-filter:blur(12px);padding:14px 32px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.08)}
+    .nav a{color:#f1f5f9;text-decoration:none;font-weight:500;font-size:14px}
+    .nav .brand{font-weight:700;font-size:16px;color:#10b981}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%);color:#fff;padding:80px 32px 60px;text-align:center}
+    .hero h1{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;margin-bottom:12px;line-height:1.3}
+    .hero .subtitle{font-size:18px;color:rgba(255,255,255,.8);max-width:720px;margin:0 auto 40px}
+    .hero .meta{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:32px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;max-width:800px;margin:0 auto}
+    .stat{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:20px 16px;backdrop-filter:blur(8px)}
+    .stat .num{font-size:28px;font-weight:800;color:#34d399}
+    .stat .label{font-size:13px;color:rgba(255,255,255,.7);margin-top:4px}
+    .page{max-width:900px;margin:0 auto;padding:40px 24px}
+    .toc{margin-bottom:48px}
+    .toc h3{font-size:14px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);margin-bottom:16px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .toc-grid a{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;transition:all .2s}
+    .toc-grid a:hover{border-color:var(--emerald);background:#ecfdf5}
+    .toc-grid .num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-size:12px;font-weight:700;flex-shrink:0}
+    .section{margin-bottom:56px}
+    .section h2{font-size:clamp(1.3rem,3vw,1.7rem);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+    .lead{color:var(--text-secondary);font-size:15px;margin-bottom:24px;line-height:1.6}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}
+    .card h4{font-size:16px;font-weight:600;margin-bottom:8px}
+    .card p,.card li{font-size:14px;color:var(--text-secondary);line-height:1.7}
+    .card ul,.card ol{padding-left:20px}
+    .card li{margin-bottom:4px}
+    p{font-size:15px;color:var(--text-secondary);line-height:1.8;margin-bottom:16px}
+    p code{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:13px;color:#059669}
+    .chart{margin:24px 0}
+    .chart-row{display:flex;align-items:center;margin-bottom:10px;gap:12px}
+    .chart-label{width:150px;font-size:13px;font-weight:500;text-align:right;flex-shrink:0}
+    .chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}
+    .chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;justify-content:flex-end;padding-right:10px;font-size:12px;font-weight:600;color:#fff;transition:width .6s ease}
+    .chart-bar.green{background:linear-gradient(90deg,#059669,#10b981)}
+    .chart-bar.teal{background:linear-gradient(90deg,#14b8a6,#2dd4bf)}
+    .chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+    .chart-bar.purple{background:linear-gradient(90deg,#6366f1,#a78bfa)}
+    .chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}
+    .flow{display:flex;align-items:center;justify-content:center;gap:12px;margin:24px 0;flex-wrap:wrap}
+    .flow-step{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;min-width:120px}
+    .flow-step.green{background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none}
+    .flow-step.teal{background:linear-gradient(135deg,#14b8a6,#2dd4bf);color:#fff;border:none}
+    .flow-step.blue{background:linear-gradient(135deg,#3b82f6,#60a5fa);color:#fff;border:none}
+    .flow-step.purple{background:linear-gradient(135deg,#6366f1,#a78bfa);color:#fff;border:none}
+    .flow-step.amber{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#fff;border:none}
+    .flow-arrow{font-size:20px;color:var(--text-secondary)}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}
+    .compare-card{border-radius:var(--radius);padding:24px}
+    .compare-card.old{background:#fef2f2;border:2px solid #fecaca}
+    .compare-card.new{background:#ecfdf5;border:2px solid #a7f3d0}
+    .compare-card h4{font-size:15px;font-weight:700;margin-bottom:8px}
+    .compare-card p{font-size:13px;color:var(--text-secondary)}
+    .timeline{position:relative;padding-left:32px;margin:24px 0}
+    .timeline::before{content:'';position:absolute;left:7px;top:8px;bottom:8px;width:3px;background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6);border-radius:2px}
+    .tl-item{position:relative;margin-bottom:24px}
+    .tl-dot{position:absolute;left:-29px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid #059669;background:#fff}
+    .tl-item:nth-child(2) .tl-dot{border-color:#14b8a6}
+    .tl-item:nth-child(3) .tl-dot{border-color:#3b82f6}
+    .tl-phase{font-weight:700;font-size:15px;color:var(--text)}
+    .tl-desc{font-size:13px;color:var(--text-secondary);margin-top:4px}
+    .code-block{background:#1e293b;border-radius:var(--radius);padding:20px;margin:16px 0;overflow-x:auto}
+    .code-block pre{color:#e2e8f0;font-family:var(--mono);font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-all}
+    .block-q{background:linear-gradient(135deg,#ecfdf5,#d1fae5);border-left:4px solid #059669;border-radius:0 var(--radius) var(--radius) 0;padding:20px 24px;margin:24px 0}
+    .block-q p{font-size:15px;font-style:italic;color:#064e3b;line-height:1.7}
+    .footer{background:#0f172a;color:#94a3b8;padding:40px 32px;text-align:center;font-size:14px}
+    .footer a{color:#34d399;text-decoration:none}
+    .footer a:hover{text-decoration:underline}
+    .footer .links{margin-top:12px;display:flex;justify-content:center;gap:24px;flex-wrap:wrap}
+    @media(max-width:768px){.compare-grid{grid-template-columns:1fr}.chart-label{width:100px;font-size:12px}.flow{flex-direction:column;gap:8px}.flow-arrow{transform:rotate(90deg)}.toc-grid{grid-template-columns:1fr}.hero{padding:60px 20px 40px}.nav{padding:12px 16px}.stats{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+  <header class="hero">
+    <div class="meta">🔧 Tools & Integrations · LangChain Accounts · 2023-09-26</div>
+    <h1>Fine-tune your LLMs with LangSmith and Lilac</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">12</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~6min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">1</div><div class="label">代码示例</div></div>
+      <div class="stat"><div class="num">15</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>Fine-tune your LLMs with LangS</a>
+      <a href="#s2"><span class="num">2</span>LangSmith + Lilac</a>
+      <a href="#s3"><span class="num">3</span>Fine-tuning a Q&amp;amp;A Chatbot</a>
+      <a href="#s4"><span class="num">4</span>Capture traces</a>
+      <a href="#s5"><span class="num">5</span>Import to Lilac</a>
+      <a href="#s6"><span class="num">6</span>Curate your dataset</a>
+      <a href="#s7"><span class="num">7</span>Export the dataset</a>
+      <a href="#s8"><span class="num">8</span>Fine-tune</a>
+      <a href="#s9"><span class="num">9</span>Use in your Chain</a>
+      <a href="#s10"><span class="num">10</span>Conclusion</a>
+      <a href="#s11"><span class="num">11</span>Related content</a>
+      <a href="#s12"><span class="num">12</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+    <section class="section" id="s1">
+      <h2>🔍 Fine-tune your LLMs with LangSmith and Lilac</h2>
+      <p class="lead">The LangChain TeamSeptember 26, 20236min
+
+Go back to blogShare
+
+
+
+
+
+In taking your LLM from prototype into production, many have turned to fine-tuning models to get more consistent and high-quality be</p>
+      <p>The LangChain TeamSeptember 26, 20236min[</p>
+<p>Go back to blog](/blog)Share[</p>
+<p>](#)In taking your LLM from prototype into production, many have turned to fine-tuning models to get more consistent and high-quality behavior in their applications. Services like OpenAI and HuggingFace make it easy to fine-tune a model on your application-specific data. All it takes is a JSON file!</p>
+<p>The tricky part is deciding what to include in that data. Once your LLM is deployed, it could be prompted given any input - how do you make sure it will respond appropriately for the user or machine it is meant to interact with?</p>
+<p>For this, there is no real substitute for high-quality data taken from your unique application context. This is where LangSmith and Lilac can help out.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s2">
+      <h2>⚡ LangSmith + Lilac</h2>
+      <p class="lead">To understand and improve any language model application, it’s important to be able to quickly explore and organize the data the model is seeing.</p>
+      <p>To understand and improve any language model application, it’s important to be able to quickly explore and organize the data the model is seeing. To achieve this, LangSmith and Lilac provide complementary capabilities:</p>
+<div class="card"><ul><li>LangSmith: Efficiently collects, connects, and manages datasets generated by your LLM applications at scale. Use this to capture quality examples (and failure cases) and user feedback you can use for fine-tuning.</li><li>Lilac: Offers advanced analytics to structure, filter, and refine datasets, making it easy to continuously improve your data pipeline.</li></ul></div>
+<p>We wanted to share how to connect these two powerful tools to kickstart your fine-tuning workflows.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s3">
+      <h2>🏗️ Fine-tuning a Q&amp;amp;A Chatbot</h2>
+      <p class="lead">In the following sections, we will use LangSmith and Lilac to curate a dataset to fine-tune an LLM powering a chatbot that uses retrieval-augmented generation (RAG) to answer questions about your docu</p>
+      <p>In the following sections, we will use LangSmith and Lilac to curate a dataset to fine-tune an LLM powering a chatbot that uses retrieval-augmented generation (RAG) to answer questions about your documentation. For our example,  we will use a dataset sampled from a Q&amp;A app for LangChain’s docs. The overall process is outlined in the image below:</p>
+<p>Dataset Curation Pipeline with LangSmith + Lilac</p>
+<p>The main steps are:</p>
+<div class="card"><ul><li>Capture traces from the prototype and convert to a candidate dataset</li><li>Import into Lilac to label, filter, and enrich.</li><li>Fine-tune a model on the enriched dataset.</li><li>Use the fine-tuned model in an improved application.</li></ul></div>
+      
+    </section>
+    <section class="section" id="s4">
+      <h2>📊 Capture traces</h2>
+      <p class="lead">LangChain make it easy to design a prototype using prompt chaining.</p>
+      <p>LangChain make it easy to design a prototype using prompt chaining. At first, the application may not be fully optimized or may run into errors when the prompt engineering is incomplete, but we can quickly create an alpha version of a feature to kickstart the dataset curation process. When building with LangChain, we can easily trace all the execution steps to LangSmith by setting a couple of environment variables.</p>
+<p>Then in LangSmith, we can select runs to add to a candidate dataset in the UI or programmatically (see the notebook).</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s5">
+      <h2>🔗 Import to Lilac</h2>
+      <p class="lead">💡
+
+The sections below give a high level overview of the Lilac UI.</p>
+      <p>The sections below give a high level overview of the Lilac UI. For a deeper dive reproducing this workflow, see the python cookbook.</p>
+<p>Lilac provides a native integration with LangSmith datasets. After installing Lilac locally, set the <code>LANGCHAIN_API_KEY</code>  in the environment and you should see a list of LangSmith datasets auto-populated in the Lilac UI. Select the one you’ve earmarked for fine-tuning, and Lilac will handle the rest.</p>
+<p>The “Add dataset” page in the Lilac UI with the LangSmith data loader.</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s6">
+      <h2>💡 Curate your dataset</h2>
+      <p class="lead">Now that we have our dataset in Lilac, we can run Lilac’s signals, concepts and labels to help organize and filter the dataset.</p>
+      <p>Now that we have our dataset in Lilac, we can run Lilac’s signals, concepts and labels to help organize and filter the dataset. Our goal is to select distinct examples demonstrating good language model generations for a variety of input types. Let’s see how Lilac can help us structure our dataset.</p>
+<p>Right off the bat, Lilac provides two useful signals you can apply to your dataset: Near-duplicates and PII detection. Filtering near-duplicates for inputs is important to make sure the model gets diverse information and reduce changes of memorization. To compute a signal from the UI, expand the schema in the top left corner, and select “Compute Signal” from the context menu of the field you want to enrich.</p>
+<p>Computing a signal via the context menu of the answer field in the Lilac schema viewer.</p>
+<p>In addition to signals, Lilac offers concepts, a powerful way to organize the data along axes that you care about. A concept is simply a collection of positive (text that is related to the concept) and negative examples (either the opposite, or unrelated to the concept). Lilac comes with several built-in concepts, like toxicity, profanity, sentiment, etc, or you can create your own. Before we apply a concept to the dataset, we need to compute text embeddings on the field that we care about.</p>
+<p>Computing embeddings for the question field to enable concept and semantic search via Lilac’s search box.</p>
+<p>Once we’ve computed embeddings, we can preview a concept by selecting it from the search box menu.</p>
+<p>Selecting profanity on the answer field for previewing.</p>
+<p>To compute a concept for the entire dataset, choose “Compute concept” from the context menu in the schema viewer.</p>
+<p>Computing a concept via the context menu of the answer field in the schema viewer.</p>
+<p>In addition to concepts, embeddings enable two other useful functionalities for exploring the data: semantic search and finding similar examples.</p>
+<p>Semantic search for “forget all previous instructions” via Lilac’s search box.Finding questions similar to “what is 1213 divided….” via the Lilac UI.</p>
+<p>In addition to automated labeling with signals and concepts, Lilac allows you to tag individual rows with custom labels that can be later used to prune your dataset.</p>
+<p>Adding a calculation label to an example in Lilac.</p>
+<p>When you add a new label, just like signals and concepts, it creates a new top-level column in your dataset. These can then be used to power additional analytics.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s7">
+      <h2>🛠️ Export the dataset</h2>
+      <p class="lead">Once we’ve computed the information needed for filtering, you can export the enriched dataset via python, as shown in the notebook or via Lilac’s UI, which will create a browser download of a json fil</p>
+      <p>Once we’ve computed the information needed for filtering, you can export the enriched dataset via python, as shown in the notebook or via Lilac’s UI, which will create a browser download of a json file. We recommend the python API for downloading large amounts of data, or if you need a better control over the selection of data.</p>
+<p>Lilac’s Download data modal dialog.</p>
+<p>Once we exported the enriched dataset, we can easily filter out the examples in python using the enriched fields.</p>
+      
+    </section>
+    <section class="section" id="s8">
+      <h2>📈 Fine-tune</h2>
+      <p class="lead">With the dataset in hand, it’s time to fine-tune! It’s easy to convert from LangChain’s message format to the formats expected by OpenAI, HuggingFace or other training frameworks.</p>
+      <p>With the dataset in hand, it’s time to fine-tune! It’s easy to convert from LangChain’s message format to the formats expected by OpenAI, HuggingFace or other training frameworks. You can check out the linked notebook for more info!</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s9">
+      <h2>🎯 Use in your Chain</h2>
+      <p class="lead">Once we have the fine-tuned LLM, we can switch to it with a update to the “model” argument in our LLM.</p>
+      <p>Once we have the fine-tuned LLM, we can switch to it with a update to the “model” argument in our LLM.</p>
+<p>`from langchain.chat_models import ChatOpenAI</p>
+<div class="code-block"><pre>llm = ChatOpenAI(model=&amp;quot;ft:gpt-3.5-turbo-0613:{openaiOrg}::{modelId}&amp;quot;)</pre></div>
+<p>Assuming we’ve structured the data appropriately, this model will have more awareness for the structure and style you wish to use in generating responses.</p>
+      
+    </section>
+    <section class="section" id="s10">
+      <h2>🔬 Conclusion</h2>
+      <p class="lead">This is a simple overview of the process for going from traces to fine-tuned model by integrating Lilac and LangSmith.</p>
+      <p>This is a simple overview of the process for going from traces to fine-tuned model by integrating Lilac and LangSmith. With the data process in place, you can continuously improve each components in your contextual reasoning application LangSmith makes it easy to collect user and model-assisted feedback to save time when capturing data, and Lilac helps you analyze, label, and organize all the text data so you can refine your model appropriately.</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s11">
+      <h2>📝 Related content</h2>
+      <p class="lead">.</p>
+      <p>.png)PartnerDeep Agents</p>
+<p>#### Building a company due diligence agent with Deep Agents, LangSmith and Parallel</p>
+<p>Matt HarrisNick MartitschSrimanth TangedipalliKaran SinghMay 8, 20269min[](/blog/building-a-company-due-diligence-agent-with-deep-agents-langsmith-and-parallel).png)Agent ArchitectureLangSmithOpen Source</p>
+<p>#### How LangSmith and LangChain OSS Help You Meet EU AI Act Requirements</p>
+<p>Jacob TalbotBecca WengApril 27, 20267min[](/blog/langsmith-langchain-oss-eu-ai-act).png)Case StudiesLangSmith</p>
+<p>#### How Credit Genie used Insights Agent to improve their AI financial assistant</p>
+<p>David LiJeffrey NgaiGoyo Lozano PalacioCharles YuanApril 20, 20265min[](/blog/credit-genie-insights-agent-financial-assistant)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s12">
+      <h2>🧪 See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+<p>](/contact-sales)</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+  </div>
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/fine-tune-your-llms-with-langsmith-and-lilac" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

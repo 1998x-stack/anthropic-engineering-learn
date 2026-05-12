@@ -1,0 +1,255 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Plan-and-Execute Agents</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--green:#10b981;--emerald:#059669;--teal:#14b8a6;--blue:#3b82f6;--purple:#6366f1;--amber:#f59e0b;--red:#ef4444;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+    .nav{position:sticky;top:0;z-index:100;background:rgba(15,23,42,.85);backdrop-filter:blur(12px);padding:14px 32px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.08)}
+    .nav a{color:#f1f5f9;text-decoration:none;font-weight:500;font-size:14px}
+    .nav .brand{font-weight:700;font-size:16px;color:#10b981}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%);color:#fff;padding:80px 32px 60px;text-align:center}
+    .hero h1{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;margin-bottom:12px;line-height:1.3}
+    .hero .subtitle{font-size:18px;color:rgba(255,255,255,.8);max-width:720px;margin:0 auto 40px}
+    .hero .meta{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:32px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;max-width:800px;margin:0 auto}
+    .stat{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:20px 16px;backdrop-filter:blur(8px)}
+    .stat .num{font-size:28px;font-weight:800;color:#34d399}
+    .stat .label{font-size:13px;color:rgba(255,255,255,.7);margin-top:4px}
+    .page{max-width:900px;margin:0 auto;padding:40px 24px}
+    .toc{margin-bottom:48px}
+    .toc h3{font-size:14px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);margin-bottom:16px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .toc-grid a{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;transition:all .2s}
+    .toc-grid a:hover{border-color:var(--emerald);background:#ecfdf5}
+    .toc-grid .num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-size:12px;font-weight:700;flex-shrink:0}
+    .section{margin-bottom:56px}
+    .section h2{font-size:clamp(1.3rem,3vw,1.7rem);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+    .lead{color:var(--text-secondary);font-size:15px;margin-bottom:24px;line-height:1.6}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}
+    .card h4{font-size:16px;font-weight:600;margin-bottom:8px}
+    .card p,.card li{font-size:14px;color:var(--text-secondary);line-height:1.7}
+    .card ul,.card ol{padding-left:20px}
+    .card li{margin-bottom:4px}
+    p{font-size:15px;color:var(--text-secondary);line-height:1.8;margin-bottom:16px}
+    p code{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:13px;color:#059669}
+    .chart{margin:24px 0}
+    .chart-row{display:flex;align-items:center;margin-bottom:10px;gap:12px}
+    .chart-label{width:150px;font-size:13px;font-weight:500;text-align:right;flex-shrink:0}
+    .chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}
+    .chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;justify-content:flex-end;padding-right:10px;font-size:12px;font-weight:600;color:#fff;transition:width .6s ease}
+    .chart-bar.green{background:linear-gradient(90deg,#059669,#10b981)}
+    .chart-bar.teal{background:linear-gradient(90deg,#14b8a6,#2dd4bf)}
+    .chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+    .chart-bar.purple{background:linear-gradient(90deg,#6366f1,#a78bfa)}
+    .chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}
+    .flow{display:flex;align-items:center;justify-content:center;gap:12px;margin:24px 0;flex-wrap:wrap}
+    .flow-step{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;min-width:120px}
+    .flow-step.green{background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none}
+    .flow-step.teal{background:linear-gradient(135deg,#14b8a6,#2dd4bf);color:#fff;border:none}
+    .flow-step.blue{background:linear-gradient(135deg,#3b82f6,#60a5fa);color:#fff;border:none}
+    .flow-step.purple{background:linear-gradient(135deg,#6366f1,#a78bfa);color:#fff;border:none}
+    .flow-step.amber{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#fff;border:none}
+    .flow-arrow{font-size:20px;color:var(--text-secondary)}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}
+    .compare-card{border-radius:var(--radius);padding:24px}
+    .compare-card.old{background:#fef2f2;border:2px solid #fecaca}
+    .compare-card.new{background:#ecfdf5;border:2px solid #a7f3d0}
+    .compare-card h4{font-size:15px;font-weight:700;margin-bottom:8px}
+    .compare-card p{font-size:13px;color:var(--text-secondary)}
+    .timeline{position:relative;padding-left:32px;margin:24px 0}
+    .timeline::before{content:'';position:absolute;left:7px;top:8px;bottom:8px;width:3px;background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6);border-radius:2px}
+    .tl-item{position:relative;margin-bottom:24px}
+    .tl-dot{position:absolute;left:-29px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid #059669;background:#fff}
+    .tl-item:nth-child(2) .tl-dot{border-color:#14b8a6}
+    .tl-item:nth-child(3) .tl-dot{border-color:#3b82f6}
+    .tl-phase{font-weight:700;font-size:15px;color:var(--text)}
+    .tl-desc{font-size:13px;color:var(--text-secondary);margin-top:4px}
+    .code-block{background:#1e293b;border-radius:var(--radius);padding:20px;margin:16px 0;overflow-x:auto}
+    .code-block pre{color:#e2e8f0;font-family:var(--mono);font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-all}
+    .block-q{background:linear-gradient(135deg,#ecfdf5,#d1fae5);border-left:4px solid #059669;border-radius:0 var(--radius) var(--radius) 0;padding:20px 24px;margin:24px 0}
+    .block-q p{font-size:15px;font-style:italic;color:#064e3b;line-height:1.7}
+    .footer{background:#0f172a;color:#94a3b8;padding:40px 32px;text-align:center;font-size:14px}
+    .footer a{color:#34d399;text-decoration:none}
+    .footer a:hover{text-decoration:underline}
+    .footer .links{margin-top:12px;display:flex;justify-content:center;gap:24px;flex-wrap:wrap}
+    @media(max-width:768px){.compare-grid{grid-template-columns:1fr}.chart-label{width:100px;font-size:12px}.flow{flex-direction:column;gap:8px}.flow-arrow{transform:rotate(90deg)}.toc-grid{grid-template-columns:1fr}.hero{padding:60px 20px 40px}.nav{padding:12px 16px}.stats{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+  <header class="hero">
+    <div class="meta">📚 Tutorials & Guides · LangChain Accounts · 2024-02-13</div>
+    <h1>Plan-and-Execute Agents</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">9</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~6min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">3</div><div class="label">代码示例</div></div>
+      <div class="stat"><div class="num">16</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>Plan-and-Execute Agents</a>
+      <a href="#s2"><span class="num">2</span>**Links **</a>
+      <a href="#s3"><span class="num">3</span>Background</a>
+      <a href="#s4"><span class="num">4</span>**Plan-And-Execute**</a>
+      <a href="#s5"><span class="num">5</span>Reasoning WithOut Observations</a>
+      <a href="#s6"><span class="num">6</span>**LLMCompiler**</a>
+      <a href="#s7"><span class="num">7</span>Conclusion</a>
+      <a href="#s8"><span class="num">8</span>Related content</a>
+      <a href="#s9"><span class="num">9</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+    <section class="section" id="s1">
+      <h2>🔍 Plan-and-Execute Agents</h2>
+      <p class="lead">The LangChain TeamFebruary 13, 20245min
+
+Go back to blogShare</p>
+      <p>The LangChain TeamFebruary 13, 20245min[</p>
+<p>Go back to blog](/blog)Share[</p>
+      
+    </section>
+    <section class="section" id="s2">
+      <h2>⚡ **Links **</h2>
+      <p class="lead">- Plan-and-execute (Python, JS)
+- LLMCompiler (Python)
+- ReWOO (Python)
+- Youtube
+
+We’re releasing three agent architectures in LangGraph showcasing the “plan-and-execute” style agent design.</p>
+      <div class="card"><ul><li>Plan-and-execute (Python, JS)</li><li>LLMCompiler (Python)</li><li>ReWOO (Python)</li><li>Youtube</li></ul></div>
+<p>We’re releasing three agent architectures in LangGraph showcasing the “plan-and-execute” style agent design. These agents promise a number of improvements over traditional Reasoning and Action (ReAct)-style agents.</p>
+<p>⏰ First of all, they can execute multi-step workflow faster, since the larger agent doesn’t need to be consulted after each action. Each sub-task can be performed without an additional LLM call (or with a call to a lighter-weight LLM).</p>
+<p>💸 Second, they offer cost savings over ReAct agents. If LLM calls are used for sub-tasks, they typically can be made to smaller, domain-specific models. The larger model then is only called for (re-)planning steps and to generate the final response.</p>
+<p>🏆 Third, they can perform better overall (in terms of task completions rate and quality) by forcing the planner to explicitly “think through” all the steps required to accomplish the entire task. Generating the full reasoning steps is a tried-and-true prompting technique to improve outcomes. Subdividing the problem also permits more focused task execution.</p>
+      
+    </section>
+    <section class="section" id="s3">
+      <h2>🏗️ Background</h2>
+      <p class="lead">Over the past year, language model-powered agents and state machines have emerged as a promising design pattern for creating flexible and effective ai-powered products.</p>
+      <p>Over the past year, language model-powered agents and state machines have emerged as a promising design pattern for creating flexible and effective ai-powered products.</p>
+<p>At their core, agents use LLMs as general-purpose problem-solvers, connecting them with external resources to answer questions or accomplish tasks.</p>
+<p>LLM agents typically have the following main steps:</p>
+<div class="card"><ul><li>Propose action: the LLM generates text to respond directly to a user or to pass to a function.</li><li>Execute action: your code invokes other software to do things like query a database or call an API.</li><li>Observe: react to the response of the tool call by either calling another function or responding to the user.</li></ul></div>
+<p>The ReAct agent is a great prototypical design for this, as it prompts the language model using a repeated thought, act, observation loop:</p>
+<div class="code-block"><pre>Thought: I should call Search() to see the current score of the game.
+Act: Search(&amp;quot;What is the current score of game X?&amp;quot;)
+Observation: The current score is 24-21
+... (repeat N times)</pre></div>
+<p>A typical ReAct-style agent trajectory.</p>
+<p>This takes advantage of Chain-of-thought prompting to make a single action choice per step. While this can be effect for simple tasks, it has a couple main downsides:</p>
+<div class="card"><ul><li>It requires an LLM call for each tool invocation.</li><li>The LLM only plans for 1 sub-problem at a time. This may lead to sub-optimal trajectories, since it isn&#x27;t forced to &quot;reason&quot; about the whole task.</li></ul></div>
+<p>One way to overcome these two shortcomings is through an explicit planning step. Below are two such designs we have implemented in LangGraph.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s4">
+      <h2>📊 **Plan-And-Execute**</h2>
+      <p class="lead">🔗 Python Link
+
+🔗 JS Link
+
+Plan-and-execute Agent
+
+Based loosely on Wang, et.</p>
+      <p>Plan-and-execute Agent</p>
+<p>Based loosely on Wang, et. al.’s paper on Plan-and-Solve Prompting, and Yohei Nakajima’s BabyAGI project, this simple architecture is emblematic of the planning agent architecture. It consists of two basic components:</p>
+<div class="card"><ul><li>A planner, which prompts an LLM to generate a multi-step plan to complete a large task.</li><li>Executor(s), which accept the user query and a step in the plan and invoke 1 or more tools to complete that task.</li></ul></div>
+<p>Once execution is completed, the agent is called again with a re-planning prompt, letting it decide whether to finish with a response or whether to generate a follow-up plan (if the first plan didn’t have the desired effect).</p>
+<p>This agent design lets us avoid having to call the large planner LLM for each tool invocation. It still is restricted by serial tool calling and uses an LLM for each task since it doesn&#x27;t support variable assignment.</p>
+      
+    </section>
+    <section class="section" id="s5">
+      <h2>🔗 Reasoning WithOut Observations</h2>
+      <p class="lead">🔗 Python Link 
+
+In ReWOO, Xu, et.</p>
+      <p>In ReWOO, Xu, et. al, propose an agent that removes the need to always use an LLM for each task while still allowing tasks to depend on previous task results. They do so by permitting variable assignment in the planner&#x27;s output. Below is a diagram of the agent design.</p>
+<p>Its planner generates a plan list consisting of interleaving &quot;Plan&quot; (reasoning) and &quot;E#&quot; lines. As an example, given the user query &quot;What are the stats for the quarterbacks of the super bowl contenders this year&quot;, the planner may generate the following plan:</p>
+<div class="code-block"><pre>Plan: I need to know the teams playing in the superbowl this year
+E1: Search[Who is competing in the superbowl?]
+Plan: I need to know the quarterbacks for each team
+E2: LLM[Quarterback for the first team of #E1]
+Plan: I need to know the quarterbacks for each team
+E3: LLM[Quarter back for the second team of #E1]
+Plan: I need to look up stats for the first quarterback
+E4: Search[Stats for #E2]
+Plan: I need to look up stats for the second quarterback
+E5: Search[Stats for #E3]</pre></div>
+<p>Notice how the planner can reference previous outputs using syntax like <code>#E2</code> . This means it can execute a task list without having to re-plan every time.</p>
+<p>The worker node loops through each task and assigns the task output to the corresponding variable. It also replaces variables with their results when calling subsequent calls.</p>
+<p>Finally, the Solver integrates all these outputs into a final answer.</p>
+<p>This agent design can be more effective than a naive plan-and-execute agent since each task can have only the required context (its input and variable values).</p>
+<p>It still relies on sequential task execution, however, which can create a longer runtime.</p>
+      
+    </section>
+    <section class="section" id="s6">
+      <h2>💡 **LLMCompiler**</h2>
+      <p class="lead">🔗 Python Link 
+
+LLMCompiler Agent
+
+The LLMCompiler, by Kim, et.</p>
+      <p>LLMCompiler Agent</p>
+<p>The LLMCompiler, by Kim, et. al., is an agent architecture designed to further increase the speed of task execution beyond the plan-and-execute and ReWOO agents described above, and even beyond OpenAI’s parallel tool calling.</p>
+<p>The LLMCompiler has the following main components:</p>
+<div class="card"><ul><li>Planner: streams a DAG of tasks. Each task contains a tool, arguments, and list of dependencies.</li><li>Task Fetching Unit schedules and executes the tasks. This accepts a stream of tasks. This unit schedules tasks once their dependencies are met. Since many tools involve other calls to search engines or LLMs, the extra parallelism can grant a significant speed boost (the paper claims 3.6x).</li><li>Joiner: dynamically replan or finish based on the entire graph history (including task execution results) is an LLM step that decides whether to respond with the final answer or whether to pass the progress back to the (re-)planning agent to continue work.</li></ul></div>
+<p>The key runtime-boosting ideas here are:</p>
+<div class="card"><ul><li>Planner outputs are streamed; the output parser eagerly yields task parameters and their dependencies.</li><li>The task fetching unit receives the parsed task stream and schedules tasks once all their dependencies are satisfied.</li><li>Task arguments can be variables, which are the outputs of previous tasks in the DAG. For instance, the model can call <code>search(&quot;${1}&quot;)</code> to search for queries generated by the output of task 1. This lets the agent work even faster than the &quot;embarrassingly parallel&quot; tool calling in OpenAI.</li></ul></div>
+<p>By formatting tasks as a DAG, the agent can save precious time while invoking tools, leading to an overall better user experience.</p>
+      
+    </section>
+    <section class="section" id="s7">
+      <h2>🛠️ Conclusion</h2>
+      <p class="lead">These three agent architectures are prototypical of the &amp;quot;plan-and-execute&amp;quot; design pattern, which separates an LLM-powered &amp;quot;planner&amp;quot; from the tool execution runtime.</p>
+      <p>These three agent architectures are prototypical of the &quot;plan-and-execute&quot; design pattern, which separates an LLM-powered &quot;planner&quot; from the tool execution runtime. If your application requires multiple tool invocations or API calls, these types of approaches can reduce the time it takes to return a final result and help you save costs by reducing the frequency of calls to more powerful LLMs.</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s8">
+      <h2>📈 Related content</h2>
+      <p class="lead">Deep AgentsAgent ArchitectureOpen Source
+
+#### Tuning Deep Agents to Work Well with Different Models
+
+Vivek TrivedyMason DaughertyApril 29, 20265min[](/blog/tuning-deep-agents-different-models).</p>
+      <p>Deep AgentsAgent ArchitectureOpen Source</p>
+<p>#### Tuning Deep Agents to Work Well with Different Models</p>
+<p>Vivek TrivedyMason DaughertyApril 29, 20265min[](/blog/tuning-deep-agents-different-models).png)Agent ArchitectureLangSmithOpen Source</p>
+<p>#### How LangSmith and LangChain OSS Help You Meet EU AI Act Requirements</p>
+<p>Jacob TalbotBecca WengApril 27, 20267min[](/blog/langsmith-langchain-oss-eu-ai-act).png)Agent ArchitecturePartner</p>
+<p>#### Agentic Engineering: How Swarms of AI Agents Are Redefining Software Engineering</p>
+<p>Renuka KumarPrashanth RamagopalApril 17, 202611min[](/blog/agentic-engineering-redefining-software-engineering)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s9">
+      <h2>🎯 See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+<p>](/contact-sales)</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+  </div>
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/planning-agents" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

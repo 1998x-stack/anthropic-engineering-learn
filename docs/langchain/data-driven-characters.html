@@ -1,0 +1,436 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Data-Driven Characters</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafbfc;
+      --surface: #fff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --green: #10b981;
+      --emerald: #059669;
+      --teal: #14b8a6;
+      --blue: #3b82f6;
+      --purple: #6366f1;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans SC', 'Inter', system-ui, sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: var(--sans); background: var(--bg); color: var(--text); line-height:1.7; }
+    .nav { position:sticky; top:0; z-index:100; background:rgba(15,23,42,.85); backdrop-filter:blur(12px); padding:14px 32px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,.08); }
+    .nav a { color:#f1f5f9; text-decoration:none; font-weight:500; font-size:14px; }
+    .nav .brand { font-weight:700; font-size:16px; color:#10b981; }
+    .hero { background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%); color:#fff; padding:80px 32px 60px; text-align:center; }
+    .hero h1 { font-size:clamp(1.8rem,4vw,2.8rem); font-weight:800; margin-bottom:12px; line-height:1.3; }
+    .hero .subtitle { font-size:18px; color:rgba(255,255,255,.8); max-width:720px; margin:0 auto 40px; }
+    .hero .meta { font-size:13px; color:rgba(255,255,255,.5); margin-bottom:32px; }
+    .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:16px; max-width:800px; margin:0 auto; }
+    .stat { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); border-radius:12px; padding:20px 16px; backdrop-filter:blur(8px); }
+    .stat .num { font-size:28px; font-weight:800; color:#34d399; }
+    .stat .label { font-size:13px; color:rgba(255,255,255,.7); margin-top:4px; }
+    .page { max-width:900px; margin:0 auto; padding:40px 24px; }
+    .toc { margin-bottom:48px; }
+    .toc h3 { font-size:14px; text-transform:uppercase; letter-spacing:1.5px; color:var(--text-secondary); margin-bottom:16px; }
+    .toc-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; }
+    .toc-grid a { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--text); font-size:14px; font-weight:500; transition:all .2s; }
+    .toc-grid a:hover { border-color:var(--emerald); background:#ecfdf5; }
+    .toc-grid .num { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:8px; background:linear-gradient(135deg,#059669,#10b981); color:#fff; font-size:12px; font-weight:700; flex-shrink:0; }
+    .section { margin-bottom:56px; }
+    .section h2 { font-size:clamp(1.3rem,3vw,1.7rem); font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:10px; }
+    .lead { color:var(--text-secondary); font-size:15px; margin-bottom:24px; line-height:1.6; }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:24px; margin-bottom:16px; }
+    .card h4 { font-size:16px; font-weight:600; margin-bottom:8px; }
+    .card p, .card li { font-size:14px; color:var(--text-secondary); line-height:1.7; }
+    .card ul, .card ol { padding-left:20px; }
+    .card li { margin-bottom:4px; }
+    p { font-size:15px; color:var(--text-secondary); line-height:1.8; margin-bottom:16px; }
+    p code { background:#f1f5f9; padding:2px 6px; border-radius:4px; font-family:var(--mono); font-size:13px; color:#059669; }
+    .chart { margin:24px 0; }
+    .chart-row { display:flex; align-items:center; margin-bottom:10px; gap:12px; }
+    .chart-label { width:150px; font-size:13px; font-weight:500; text-align:right; flex-shrink:0; }
+    .chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:32px; overflow:hidden; }
+    .chart-bar { height:100%; border-radius:8px; display:flex; align-items:center; justify-content:flex-end; padding-right:10px; font-size:12px; font-weight:600; color:#fff; transition:width .6s ease; }
+    .chart-bar.green { background:linear-gradient(90deg,#059669,#10b981); }
+    .chart-bar.teal { background:linear-gradient(90deg,#14b8a6,#2dd4bf); }
+    .chart-bar.blue { background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+    .chart-bar.purple { background:linear-gradient(90deg,#6366f1,#a78bfa); }
+    .chart-bar.amber { background:linear-gradient(90deg,#f59e0b,#fbbf24); }
+    .chart-bar.red { background:linear-gradient(90deg,#ef4444,#f87171); }
+    .flow { display:flex; align-items:center; justify-content:center; gap:12px; margin:24px 0; flex-wrap:wrap; }
+    .flow-step { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 20px; font-size:14px; font-weight:600; text-align:center; min-width:120px; }
+    .flow-step.green { background:linear-gradient(135deg,#059669,#10b981); color:#fff; border:none; }
+    .flow-step.teal { background:linear-gradient(135deg,#14b8a6,#2dd4bf); color:#fff; border:none; }
+    .flow-step.blue { background:linear-gradient(135deg,#3b82f6,#60a5fa); color:#fff; border:none; }
+    .flow-step.purple { background:linear-gradient(135deg,#6366f1,#a78bfa); color:#fff; border:none; }
+    .flow-step.amber { background:linear-gradient(135deg,#f59e0b,#fbbf24); color:#fff; border:none; }
+    .flow-arrow { font-size:20px; color:var(--text-secondary); }
+    .compare-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:24px 0; }
+    .compare-card { border-radius:var(--radius); padding:24px; }
+    .compare-card.old { background:#fef2f2; border:2px solid #fecaca; }
+    .compare-card.new { background:#ecfdf5; border:2px solid #a7f3d0; }
+    .compare-card h4 { font-size:15px; font-weight:700; margin-bottom:8px; }
+    .compare-card p { font-size:13px; color:var(--text-secondary); }
+    .timeline { position:relative; padding-left:32px; margin:24px 0; }
+    .timeline::before { content:''; position:absolute; left:7px; top:8px; bottom:8px; width:3px; background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:24px; }
+    .tl-dot { position:absolute; left:-29px; top:4px; width:14px; height:14px; border-radius:50%; border:3px solid #059669; background:#fff; }
+    .tl-item:nth-child(2) .tl-dot { border-color:#14b8a6; }
+    .tl-item:nth-child(3) .tl-dot { border-color:#3b82f6; }
+    .tl-item:nth-child(4) .tl-dot { border-color:#6366f1; }
+    .tl-item:nth-child(5) .tl-dot { border-color:#f59e0b; }
+    .tl-phase { font-weight:700; font-size:15px; color:var(--text); }
+    .tl-desc { font-size:13px; color:var(--text-secondary); margin-top:4px; }
+    .code-block { background:#1e293b; border-radius:var(--radius); padding:20px; margin:16px 0; overflow-x:auto; }
+    .code-block pre { color:#e2e8f0; font-family:var(--mono); font-size:13px; line-height:1.6; white-space:pre-wrap; word-break:break-all; }
+    .block-q { background:linear-gradient(135deg,#ecfdf5,#d1fae5); border-left:4px solid #059669; border-radius:0 var(--radius) var(--radius) 0; padding:20px 24px; margin:24px 0; }
+    .block-q p { font-size:15px; font-style:italic; color:#064e3b; line-height:1.7; }
+    .badge { display:inline-block; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600; }
+    .badge-green { background:#ecfdf5; color:#059669; }
+    .badge-teal { background:#f0fdfa; color:#14b8a6; }
+    .badge-blue { background:#eff6ff; color:#3b82f6; }
+    .badge-purple { background:#eef2ff; color:#6366f1; }
+    .badge-amber { background:#fffbeb; color:#d97706; }
+    .footer { background:#0f172a; color:#94a3b8; padding:40px 32px; text-align:center; font-size:14px; }
+    .footer a { color:#34d399; text-decoration:none; }
+    .footer a:hover { text-decoration:underline; }
+    .footer .links { margin-top:12px; display:flex; justify-content:center; gap:24px; flex-wrap:wrap; }
+    @media(max-width:768px) {
+      .compare-grid { grid-template-columns:1fr; }
+      .chart-label { width:100px; font-size:12px; }
+      .flow { flex-direction:column; gap:8px; }
+      .flow-arrow { transform:rotate(90deg); }
+      .toc-grid { grid-template-columns:1fr; }
+      .hero { padding:60px 20px 40px; }
+      .nav { padding:12px 16px; }
+      .stats { grid-template-columns:1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+
+  <header class="hero">
+    <div class="meta">🔧 Tools & Integrations · LangChain Accounts · 2023-06-19</div>
+    <h1>Data-Driven Characters</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">16</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~12min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">2</div><div class="label">代码示例</div></div>
+      <div class="stat"><div class="num">57</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>Data-Driven Characters</a>
+      <a href="#s2"><span class="num">2</span>tldr: a [repo](https://github.</a>
+      <a href="#s3"><span class="num">3</span>Features</a>
+      <a href="#s4"><span class="num">4</span>Why data-driven-characters?</a>
+      <a href="#s5"><span class="num">5</span>How it works</a>
+      <a href="#s6"><span class="num">6</span>Create a character definition </a>
+      <a href="#s7"><span class="num">7</span>Running your own chatbot</a>
+      <a href="#s8"><span class="num">8</span>Different memory, different co</a>
+      <a href="#s9"><span class="num">9</span>Analysis</a>
+      <a href="#s10"><span class="num">10</span>What data-driven characters wi</a>
+      <a href="#s11"><span class="num">11</span>Contributing characters</a>
+      <a href="#s12"><span class="num">12</span>Limitations</a>
+      <a href="#s13"><span class="num">13</span>Contributing to the repo</a>
+      <a href="#s14"><span class="num">14</span>Acknowledgements</a>
+      <a href="#s15"><span class="num">15</span>Related content</a>
+      <a href="#s16"><span class="num">16</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+
+    <section class="section" id="s1">
+      <h2>🔍 Data-Driven Characters</h2>
+      <p class="lead">The LangChain TeamJune 19, 202311min
+
+Go back to blogShare
+
+Editor&amp;#x27;s Note: the following is a blog post by Michael Chang.</p>
+      <p>The LangChain TeamJune 19, 202311min[</p>
+<p>Go back to blog](/blog)Share[</p>
+<p>](#)Editor&#x27;s Note: the following is a blog post by Michael Chang. We were lucky enough to have Michael spend ~2 months with us before he started at DeepMind. He took on some of the most open-ended problems that faced us - starting with a lot of work in agent simulation, and now this deep dive into memory.</p>
+<p>Generate character chatbots from existing corpora with LangChain.</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s2">
+      <h2>⚡ tldr: a [repo](https://github.com/mbchang/data-driven-characters?ref=blog.langchain.com) for grounding characters in corpora</h2>
+      <p class="lead">- Upload a corpus
+- Name a character
+- Enjoy
+
+&lt;code&gt;data-driven-characters&lt;/code&gt; is a repo for creating and interacting with character chatbots.</p>
+      <div class="card"><ul>
+  <li>Upload a corpus</li>
+  <li>Name a character</li>
+  <li>Enjoy</li>
+</ul></div>
+<p><code>data-driven-characters</code> is a repo for creating and interacting with character chatbots. This can be used to automatically create character definitions for existing platforms like character.ai. It also explores creating chatbots from scratch with different types of memory management that can better ground the character chatbots in real backstories.</p>
+      
+    </section>
+
+    <section class="section" id="s3">
+      <h2>🏗️ Features</h2>
+      <p class="lead">This repo provides three ways to interact with your data-driven characters:
+
+- Export to character.</p>
+      <p>This repo provides three ways to interact with your data-driven characters:</p>
+<div class="card"><ul>
+  <li>Export to character.ai</li>
+  <li>Debug locally in the command line or with a Streamlit interface</li>
+  <li>Host a self-contained Streamlit app in the browser</li>
+</ul></div>
+<p>Character.ai does not give users control over how memory is managed in their character chatbots, nor does it have an API. In contrast, <code>data-driven-characters</code> gives you tools for creating character chatbots on your own, with various kinds of memory management that you control, including summarization and retrieval.</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s4">
+      <h2>📊 Why data-driven-characters?</h2>
+      <p class="lead">&gt; Through the miracle of the printed page, I can at least read what Aristotle wrote without an intermediary .</p>
+      <div class="block-q"><p>Through the miracle of the printed page, I can at least read what Aristotle wrote without an intermediary ... I can go directly to the source material. And that is, of course, the foundation upon which our western civilization is built. But I can&#x27;t ask Aristotle a question. ... And so my hope is that in our lifetimes, we can make a tool of a new kind, of an interactive kind. My hope is someday, when the next Aristotle is alive, we can capture the underlying worldview of that Aristotle, in a computer, and someday some students will be able to not only read the words Aristotle wrote, but ask Aristotle a question and get an answer.&quot; (video)</p></div>
+<div class="card"><ul>
+  <li>Steve Jobs, Lunds University, Sweden, 1985</li>
+</ul></div>
+<p>Books are dead. Characters are alive.</p>
+<p>The key breakthrough of large language models is enabling a new way to interact with information: they make it possible to turn static text corpora into interactive experiences.</p>
+<p>And if there is one use case of large language models (LLM) that people love, it is to bring characters, both real and fictional, to life. This may explain why character.ai has about 3x more user engagement than ChatGPT.</p>
+<p>However, some limitations with character.ai are that:</p>
+<div class="card"><ul>
+  <li>it is tedious to manually specify character definitions</li>
+  <li>users have no control over how memory is managed in their character chatbots.</li>
+</ul></div>
+<p>The main way that people interact with characters via LLMs is to ask the LLM to impersonate characters. This works only when the character was present in the LLM&#x27;s pre-training data. For example, ChatGPT can impersonate Socrates:</p>
+<p>ChatGPT can impersonate Socrates, likely because Plato&#x27;s works were in its training data.</p>
+<p>But what if you want to chat with a character from a movie that came out last year? Consider chatting with the main character, Evelyn, from Everything Everywhere All At Once. Neither ChatGPT- 3.5 and ChatGPT-4 can do it. Search-powered LLMs that can access current information often do not do much better:</p>
+<p>Metaphor and Vectara are not designed to have conversations. Inflection&#x27;s Pi is a conversational chatbot, but does not impersonate characters.Bard, Perplexity, You.com, all appropriately impersonate a movie character in the first message, but break character in the second message, because they are designed for the purpose of information retrieval rather than to converse.</p>
+<p>We also see apps like Paul Graham GPT, Lex GPT, and Wait But Why GPT being built to give users a more direct conversational experience with the content of a real character. These apps retrieve from real existing essays and transcripts from the characters they depict, thereby providing a grounding to the characters that character.ai does not provide. However, these apps do not directly impersonate characters, but rather only describe their content. Furthermore, these apps limit the user to asking questions about the content of only specific characters.</p>
+<p><code>data-driven-characters</code> generalizes this customized character chat experience to allow the user to chat with anyone based on any corpus.</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s5">
+      <h2>🔗 How it works</h2>
+      <p class="lead">Let&amp;#x27;s revisit the goal of chatting with Evelyn from Everything Everywhere All At Once.</p>
+      <p>Let&#x27;s revisit the goal of chatting with Evelyn from Everything Everywhere All At Once. <code>data-driven-characters</code> provides tools to easily spin up your own Evelyn chatbot from the movie&#x27;s transcript.</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s6">
+      <h2>💡 Create a character definition to export to character.ai</h2>
+      <p class="lead">The most basic way to use &lt;code&gt;data-driven-characters&lt;/code&gt; is as a tool to automatically generate a character.</p>
+      <p>The most basic way to use <code>data-driven-characters</code> is as a tool to automatically generate a character.ai character definition. Instead of manually crafting character definitions, <code>data-driven-characters</code> gives you an scalable, data-driven approach. This can be done in 11 lines of code:</p>
+<div class="code-block"><pre>from dataclasses import asdict
+import json
+from data_driven_characters.character import generate_character_definition
+from data_driven_characters.corpus import generate_corpus_summaries, load_docs</pre></div>
+<p>CORPUS = &#x27;data/everything_everywhere_all_at_once.txt&#x27;
+CHARACTER_NAME = &quot;Evelyn&quot;</p>
+<p>docs = load_docs(corpus_path=CORPUS, chunk_size=2048, chunk_overlap=64)
+character_definition = generate_character_definition(
+	name=CHARACTER_NAME,
+	corpus_summaries=generate_corpus_summaries(docs=docs))</p>
+<p>print(json.dumps(asdict(character_definition), indent=4))`</p>
+<p>‌Here <code>corpus_summaries</code> refers to a summarized version of the transcript. This generates the following character definition:</p>
+<div class="code-block"><pre>{
+&amp;quot;name&amp;quot;: &amp;quot;Evelyn&amp;quot;,
+&amp;quot;short_description&amp;quot;: &amp;quot;I&amp;#x27;m Evelyn, a Verse Jumper exploring universes.&amp;quot;,
+&amp;quot;long_description&amp;quot;: &amp;quot;I&amp;#x27;m Evelyn, able to Verse Jump, linking my consciousness to other versions of me in different universes. This unique ability has led to strange events, like becoming a Kung Fu master and confessing love. Verse Jumping cracks my mind, risking my grip on reality. I&amp;#x27;m in a group saving the multiverse from a great evil, Jobu Tupaki. Amidst chaos, I&amp;#x27;ve learned the value of kindness and embracing life&amp;#x27;s messiness.&amp;quot;, &amp;quot;greeting&amp;quot;: &amp;quot;Hey there, nice to meet you! I&amp;#x27;m Evelyn, and I&amp;#x27;m always up for an adventure. Let&amp;#x27;s see what we can discover together!&amp;quot;
+}</pre></div>
+<p>You can then export this character definition to character.ai. In fact, we have already done so: you can chat with this rendition of Evelyn on character.ai here.</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s7">
+      <h2>🛠️ Running your own chatbot</h2>
+      <p class="lead">The benefit of creating characters on character.</p>
+      <p>The benefit of creating characters on character.ai is that character.ai hosts an entire ecosystem of character chatbots that you can interact with for free. The flip side is that ~600 characters of text does not provide enough information to ground the character chatbot in its backstory - it would be nice if the Evelyn chatbot could reference information from the movie transcript itself. Character.ai allows you to add 32,000 characters of additional context, but recommends the context be via a set of example dialogues, which is cumbersome to curate. Even if we do just copy and paste the movie transcript as addition context, how this context is used or managed is out of the user&#x27;s control. If the character starts hallucinating in a way that deviates away from its backstory, character.ai provides you no diagnostic tools to debug this behavior.</p>
+<p>With <code>data-driven-characters</code>, you can easily create, debug, and run your own chatbots conditioned on your own corpora, thanks to the abstractions provided by LangChain. The repo provides ways for you to chat with it either with a command line interface or with a Streamlit interface. As you can see below, our Evelyn chatbot stays in character and grounds its dialogue in real events from the transcript.</p>
+<p>The Streamlit app for data-driven-characters. On the left panel, the user uploads a corpus, chooses a character name, and specifies how the character should ground its persona in the corpus. In this case, the character retrieves from a summarized transcript computed with LangChain&#x27;s &quot;refine&quot; summarization chain. The middle panel shows the chat interface. The right panel shows the debugging console, which is normally not visible in the actual app but can be viewed in the terminal if you run the app locally. The Evelyn chatbot references the fact that she faced repossession of her laundromat (snippet [7] in the when conversing with the user.</p>
+<p>Contrast our custom Evelyn chatbot with the one that we exported to character.ai above, whose interaction is shown below. The character.ai Evelyn appears to simply latch onto the local concepts present in the conversation, without bringing new information from its backstory.</p>
+<p>Even if we did provide the movie transcript as context, we would not have visibility into how it is using this background information as we would with <code>data-driven-characters</code>.</p>
+<p>The above example illustrates the difference between the philosophies behind character.ai and <code>data-driven-characters</code>. If you primarily interested in accessibility and open-ended entertainment, character.ai is a better choice. But if you want more control in the design of your chatbots, <code>data-driven-characters</code> may be a better option to consider.</p>
+<p>You can directly upload any corpus and chat with any character on our app.</p>
+<p>You can directly upload any corpus and chat with any character on our app.</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s8">
+      <h2>📈 Different memory, different conception of self</h2>
+      <p class="lead">In the current age of chatbot assistants like ChatGPT and Bard, &amp;quot;memory&amp;quot; is usually conceived as a method for referencing previous parts of a chat session.</p>
+      <p>In the current age of chatbot assistants like ChatGPT and Bard, &quot;memory&quot; is usually conceived as a method for referencing previous parts of a chat session. However, as illustrated by the Generative Agents paper, memory can serve different purposes at different timescales. For character chatbots, an important role that memory plays is in defining their very conception of themselves.</p>
+<p>We can use <code>data-driven-characters</code> to compare different methods for packaging information about a character&#x27;s backstory to create the character. <code>data-driven-characters</code> currently implements the following tools for packaging information:</p>
+<div class="card"><ul>
+  <li>character summary (the character.ai long description)</li>
+  <li>retrieval over the transcript</li>
+  <li>retrieval over a summarized version of the transcript</li>
+</ul></div>
+<p>With these tools, we have implemented several example chatbot architectures:</p>
+<div class="card"><ul>
+  <li>character summary</li>
+  <li>retrieval over transcript</li>
+  <li>retrieval over summarized transcript</li>
+  <li>character summary + retrieval over transcript</li>
+  <li>character summary + retrieval over summarized transcript</li>
+</ul></div>
+<p>These kinds of memory serve a different purpose from the typical conversation buffer (with which we also equip each of the above chatbot architectures) – they define the character chatbot&#x27;s conception of self.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s9">
+      <h2>🎯 Analysis</h2>
+      <p class="lead">We can evaluate all five architectures to observe the relative effect of the three tools above: (1) character summary, (2) retrieval over the transcript, and (3) retrieval over the summarized trans...</p>
+      <p>We can evaluate all five architectures to observe the relative effect of the three tools above: (1) character summary, (2) retrieval over the transcript, and (3) retrieval over the summarized transcript.</p>
+<p>Let us consider a different movie, Thor: Love and Thunder, and chat with Thor. In the movie, Thor&#x27;s enemy Gorr the God Butcher trapped some children in the Shadow Realm inside a cage with spikes. Let us ask Thor where Gorr hid the children.</p>
+<p>Where did Gorr hide the children?</p>
+<div class="card"><ul>
+  <li>character description: &quot;Ah, Gorr the God Butcher, he was a formidable adversary. Unfortunately, I do not have knowledge of where he may have hidden the children. However, as the God of Thunder and protector of Asgard, I will do everything in my power to locate and rescue them. Together with my trusted team, we shall prevail.&quot;</li>
+  <li>retrieval over raw transcript: &quot;Gorr hid the children in a cage made of spikes. It was a terrible place, but we were able to rescue them and bring them to safety.&quot;</li>
+  <li>retrieval over summarized transcript: &quot;Gorr had trapped the children in the Shadow Realm, a dark and dangerous place. But fear not, for my team and I were able to rescue them and bring them back to safety. It was a harrowing adventure, but we were able to succeed with the help of our allies and our determination to save those who were in need.&quot;</li>
+  <li>character description + retrieval over transcript: &quot;Gorr hid the children in a cage made of spikes. But fear not, for I and my team were able to rescue them and bring them back to safety.&quot;</li>
+  <li>character description + retrieval over summarized transcript: &quot;Gorr had trapped the children in the Shadow Realm, a dangerous and cursed place. It was a harrowing task to rescue them, but with the help of my team and the gods we recruited, we were able to succeed in our mission. The children are now safe and on their way back to their families.&quot;</li>
+</ul></div>
+<p>‌We can make several observations:</p>
+<div class="card"><ul>
+  <li>Augmenting retrieval with a character summary does not substantially change the content of the response;</li>
+  <li>Initialization the chatbot with only the character summary produces an generic and uninformative response;</li>
+  <li>Retrieving over the transcript produces a response that references more concrete information (&quot;a cage made of spikes&quot;) whereas retrieving over the summarized transcript produces a response that references more abstract information (&quot;the Shadow Realm&quot;).</li>
+</ul></div>
+<p>These observations clearly show that grounding character chatbots in data makes a big difference in the informativeness of their response. They also show that the kind of data the chatbot is grounded in affects the granularity of their response.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s10">
+      <h2>🔬 What data-driven characters will you create?</h2>
+      <p class="lead">The purpose of &lt;code&gt;data-driven-characters&lt;/code&gt; is to serve as a minimal hackable starting point for creating your own data-driven character chatbots.</p>
+      <p>The purpose of <code>data-driven-characters</code> is to serve as a minimal hackable starting point for creating your own data-driven character chatbots. It provides a simple library built on top of LangChain for processing any text corpus, creating character definitions, and managing memory, with various examples and interfaces that make it easy to spin up and debug your own character chatbots.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s11">
+      <h2>📝 Contributing characters</h2>
+      <p class="lead">As of the time of writing this post, the following character.</p>
+      <p>As of the time of writing this post, the following character.ai characters have been generated with <code>data-driven-characters</code> . The up-to-date list is on the Github README.</p>
+<div class="card"><ul>
+  <li>Everything Everywhere All At Once (2022)</li>
+  <li>Alpha Waymond</li>
+  <li>Jobu Tupaki</li>
+</ul></div>
+<div class="card"><ul>
+  <li>Thor: Love and Thunder (2022)</li>
+  <li>Jane Foster</li>
+  <li>Gorr the God Butcher</li>
+  <li>Korg</li>
+</ul></div>
+<div class="card"><ul>
+  <li>Top Gun: Maverick (2022)</li>
+  <li>Bradley &quot;Rooster&quot; Bradshaw</li>
+  <li>Admiral Cain</li>
+</ul></div>
+<div class="card"><ul>
+  <li>My Immortal</li>
+</ul></div>
+<p>If you create a character.ai character with <code>data-driven-characters</code>, please submit a pull request and we can add and acknowledge your contribution to the README.</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s12">
+      <h2>🧪 Limitations</h2>
+      <p class="lead">It is easy to prompt a language model to respond in an open-ended style like &amp;quot;respond in the style of pirate.</p>
+      <p>It is easy to prompt a language model to respond in an open-ended style like &quot;respond in the style of pirate.&quot; It is harder to prompt a language model to &quot;respond in the speaking of this specific character, using these snippets of a corpus for context.&quot; The former case is open-ended whereas the latter case requires precision. One limitation of <code>data-driven-characters</code> is that, while it grounds the content of the character&#x27;s dialogue in the corpus, it has been less straightforward to ground the style of the dialogue in the corpus. This can perhaps be addressed via better prompt engineering, so if you have any ideas on how to do this well, please submit a pull request and contribute to the repo!</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s13">
+      <h2>🌐 Contributing to the repo</h2>
+      <p class="lead">&lt;code&gt;data-driven-characters&lt;/code&gt; is an evolving repo and has a lot of potential for future work, including adding new chatbot architectures, memory management schemes, and better user interfaces.</p>
+      <p><code>data-driven-characters</code> is an evolving repo and has a lot of potential for future work, including adding new chatbot architectures, memory management schemes, and better user interfaces. The long-term outcome that <code>data-driven-characters</code> seeks to catalyze is a decentralized ecosystem and community of data-driven artificial characters, where users have full control over the design and data used to create the characters. If this sounds exciting to you, please consider submitting a pull request! See the contributing section in the github README for details.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s14">
+      <h2>📦 Acknowledgements</h2>
+      <p class="lead">&lt;code&gt;data-driven-characters&lt;/code&gt; is a library built upon LangChain.</p>
+      <p><code>data-driven-characters</code> is a library built upon LangChain. The Streamlit interface is inspired from the official Streamlit chatbot example. Thank you to the wonderful LangChain team for their feedback, support, and energy.</p>
+      
+    </section>
+
+    <section class="section" id="s15">
+      <h2>🔄 Related content</h2>
+      <p class="lead">.</p>
+      <p>.png)LangChainPartner</p>
+<p>#### A Developer’s First 10 Minutes: Secure LangChain Agents with Cisco AI Defense</p>
+<p>Siddhant DashApril 16, 20264min[](/blog/secure-agents-cisco-ai-defense)Company AnnouncementsLangChain</p>
+<p>#### LangChain Skills</p>
+<p>The LangChain TeamMarch 4, 20262min[](/blog/langchain-skills)Case StudiesLangChainLangGraph</p>
+<p>#### How Remote uses LangChain and LangGraph to onboard thousands of customers with AI</p>
+<p>The LangChain TeamJanuary 19, 20265min[](/blog/customers-remote)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s16">
+      <h2>🎨 See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+  </div>
+
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/data-driven-characters" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

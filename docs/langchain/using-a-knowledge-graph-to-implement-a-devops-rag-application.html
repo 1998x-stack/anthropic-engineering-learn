@@ -1,0 +1,548 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Using a Knowledge Graph to implement a DevOps RAG application</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafbfc;
+      --surface: #fff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --green: #10b981;
+      --emerald: #059669;
+      --teal: #14b8a6;
+      --blue: #3b82f6;
+      --purple: #6366f1;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans SC', 'Inter', system-ui, sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: var(--sans); background: var(--bg); color: var(--text); line-height:1.7; }
+    .nav { position:sticky; top:0; z-index:100; background:rgba(15,23,42,.85); backdrop-filter:blur(12px); padding:14px 32px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,.08); }
+    .nav a { color:#f1f5f9; text-decoration:none; font-weight:500; font-size:14px; }
+    .nav .brand { font-weight:700; font-size:16px; color:#10b981; }
+    .hero { background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%); color:#fff; padding:80px 32px 60px; text-align:center; }
+    .hero h1 { font-size:clamp(1.8rem,4vw,2.8rem); font-weight:800; margin-bottom:12px; line-height:1.3; }
+    .hero .subtitle { font-size:18px; color:rgba(255,255,255,.8); max-width:720px; margin:0 auto 40px; }
+    .hero .meta { font-size:13px; color:rgba(255,255,255,.5); margin-bottom:32px; }
+    .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:16px; max-width:800px; margin:0 auto; }
+    .stat { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); border-radius:12px; padding:20px 16px; backdrop-filter:blur(8px); }
+    .stat .num { font-size:28px; font-weight:800; color:#34d399; }
+    .stat .label { font-size:13px; color:rgba(255,255,255,.7); margin-top:4px; }
+    .page { max-width:900px; margin:0 auto; padding:40px 24px; }
+    .toc { margin-bottom:48px; }
+    .toc h3 { font-size:14px; text-transform:uppercase; letter-spacing:1.5px; color:var(--text-secondary); margin-bottom:16px; }
+    .toc-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; }
+    .toc-grid a { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--text); font-size:14px; font-weight:500; transition:all .2s; }
+    .toc-grid a:hover { border-color:var(--emerald); background:#ecfdf5; }
+    .toc-grid .num { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:8px; background:linear-gradient(135deg,#059669,#10b981); color:#fff; font-size:12px; font-weight:700; flex-shrink:0; }
+    .section { margin-bottom:56px; }
+    .section h2 { font-size:clamp(1.3rem,3vw,1.7rem); font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:10px; }
+    .lead { color:var(--text-secondary); font-size:15px; margin-bottom:24px; line-height:1.6; }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:24px; margin-bottom:16px; }
+    .card h4 { font-size:16px; font-weight:600; margin-bottom:8px; }
+    .card p, .card li { font-size:14px; color:var(--text-secondary); line-height:1.7; }
+    .card ul, .card ol { padding-left:20px; }
+    .card li { margin-bottom:4px; }
+    p { font-size:15px; color:var(--text-secondary); line-height:1.8; margin-bottom:16px; }
+    p code { background:#f1f5f9; padding:2px 6px; border-radius:4px; font-family:var(--mono); font-size:13px; color:#059669; }
+    .chart { margin:24px 0; }
+    .chart-row { display:flex; align-items:center; margin-bottom:10px; gap:12px; }
+    .chart-label { width:150px; font-size:13px; font-weight:500; text-align:right; flex-shrink:0; }
+    .chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:32px; overflow:hidden; }
+    .chart-bar { height:100%; border-radius:8px; display:flex; align-items:center; justify-content:flex-end; padding-right:10px; font-size:12px; font-weight:600; color:#fff; transition:width .6s ease; }
+    .chart-bar.green { background:linear-gradient(90deg,#059669,#10b981); }
+    .chart-bar.teal { background:linear-gradient(90deg,#14b8a6,#2dd4bf); }
+    .chart-bar.blue { background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+    .chart-bar.purple { background:linear-gradient(90deg,#6366f1,#a78bfa); }
+    .chart-bar.amber { background:linear-gradient(90deg,#f59e0b,#fbbf24); }
+    .chart-bar.red { background:linear-gradient(90deg,#ef4444,#f87171); }
+    .flow { display:flex; align-items:center; justify-content:center; gap:12px; margin:24px 0; flex-wrap:wrap; }
+    .flow-step { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 20px; font-size:14px; font-weight:600; text-align:center; min-width:120px; }
+    .flow-step.green { background:linear-gradient(135deg,#059669,#10b981); color:#fff; border:none; }
+    .flow-step.teal { background:linear-gradient(135deg,#14b8a6,#2dd4bf); color:#fff; border:none; }
+    .flow-step.blue { background:linear-gradient(135deg,#3b82f6,#60a5fa); color:#fff; border:none; }
+    .flow-step.purple { background:linear-gradient(135deg,#6366f1,#a78bfa); color:#fff; border:none; }
+    .flow-step.amber { background:linear-gradient(135deg,#f59e0b,#fbbf24); color:#fff; border:none; }
+    .flow-arrow { font-size:20px; color:var(--text-secondary); }
+    .compare-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:24px 0; }
+    .compare-card { border-radius:var(--radius); padding:24px; }
+    .compare-card.old { background:#fef2f2; border:2px solid #fecaca; }
+    .compare-card.new { background:#ecfdf5; border:2px solid #a7f3d0; }
+    .compare-card h4 { font-size:15px; font-weight:700; margin-bottom:8px; }
+    .compare-card p { font-size:13px; color:var(--text-secondary); }
+    .timeline { position:relative; padding-left:32px; margin:24px 0; }
+    .timeline::before { content:''; position:absolute; left:7px; top:8px; bottom:8px; width:3px; background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:24px; }
+    .tl-dot { position:absolute; left:-29px; top:4px; width:14px; height:14px; border-radius:50%; border:3px solid #059669; background:#fff; }
+    .tl-item:nth-child(2) .tl-dot { border-color:#14b8a6; }
+    .tl-item:nth-child(3) .tl-dot { border-color:#3b82f6; }
+    .tl-item:nth-child(4) .tl-dot { border-color:#6366f1; }
+    .tl-item:nth-child(5) .tl-dot { border-color:#f59e0b; }
+    .tl-phase { font-weight:700; font-size:15px; color:var(--text); }
+    .tl-desc { font-size:13px; color:var(--text-secondary); margin-top:4px; }
+    .code-block { background:#1e293b; border-radius:var(--radius); padding:20px; margin:16px 0; overflow-x:auto; }
+    .code-block pre { color:#e2e8f0; font-family:var(--mono); font-size:13px; line-height:1.6; white-space:pre-wrap; word-break:break-all; }
+    .block-q { background:linear-gradient(135deg,#ecfdf5,#d1fae5); border-left:4px solid #059669; border-radius:0 var(--radius) var(--radius) 0; padding:20px 24px; margin:24px 0; }
+    .block-q p { font-size:15px; font-style:italic; color:#064e3b; line-height:1.7; }
+    .badge { display:inline-block; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600; }
+    .badge-green { background:#ecfdf5; color:#059669; }
+    .badge-teal { background:#f0fdfa; color:#14b8a6; }
+    .badge-blue { background:#eff6ff; color:#3b82f6; }
+    .badge-purple { background:#eef2ff; color:#6366f1; }
+    .badge-amber { background:#fffbeb; color:#d97706; }
+    .footer { background:#0f172a; color:#94a3b8; padding:40px 32px; text-align:center; font-size:14px; }
+    .footer a { color:#34d399; text-decoration:none; }
+    .footer a:hover { text-decoration:underline; }
+    .footer .links { margin-top:12px; display:flex; justify-content:center; gap:24px; flex-wrap:wrap; }
+    @media(max-width:768px) {
+      .compare-grid { grid-template-columns:1fr; }
+      .chart-label { width:100px; font-size:12px; }
+      .flow { flex-direction:column; gap:8px; }
+      .flow-arrow { transform:rotate(90deg); }
+      .toc-grid { grid-template-columns:1fr; }
+      .hero { padding:60px 20px 40px; }
+      .nav { padding:12px 16px; }
+      .stats { grid-template-columns:1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+
+  <header class="hero">
+    <div class="meta">🧠 RAG & Knowledge · LangChain Accounts · 2023-10-04</div>
+    <h1>Using a Knowledge Graph to implement a DevOps RAG application</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">19</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~8min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">11</div><div class="label">代码示例</div></div>
+      <div class="stat"><div class="num">11</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>Using a Knowledge Graph to imp</a>
+      <a href="#s2"><span class="num">2</span>Neo4j Environment Setup</a>
+      <a href="#s3"><span class="num">3</span>Dataset</a>
+      <a href="#s4"><span class="num">4</span>Neo4j Vector index</a>
+      <a href="#s5"><span class="num">5</span>name: BugFix</a>
+      <a href="#s6"><span class="num">6</span>description: Add a new feature</a>
+      <a href="#s7"><span class="num">7</span>status: In Progress`</a>
+      <a href="#s8"><span class="num">8</span>The RecommendationService is c</a>
+      <a href="#s9"><span class="num">9</span>that will provide more persona</a>
+      <a href="#s10"><span class="num">10</span>users. This update involves le</a>
+      <a href="#s11"><span class="num">11</span>enhance the recommendation alg</a>
+      <a href="#s12"><span class="num">12</span>in progress.`</a>
+      <a href="#s13"><span class="num">13</span>There are 4 open tickets.`</a>
+      <a href="#s14"><span class="num">14</span>[{&amp;#x27;count(*)&amp;#x27;: 5}]`</a>
+      <a href="#s15"><span class="num">15</span>Graph Cypher search</a>
+      <a href="#s16"><span class="num">16</span>Knowledge graph agent</a>
+      <a href="#s17"><span class="num">17</span>Conclusion</a>
+      <a href="#s18"><span class="num">18</span>Related content</a>
+      <a href="#s19"><span class="num">19</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+
+    <section class="section" id="s1">
+      <h2>🔍 Using a Knowledge Graph to implement a DevOps RAG application</h2>
+      <p class="lead">The LangChain TeamOctober 4, 20238min
+
+Go back to blogShare
+
+Editor&amp;#x27;s Note: This post was written in collaboration with the Neo4J team.</p>
+      <p>The LangChain TeamOctober 4, 20238min[</p>
+<p>Go back to blog](/blog)Share[</p>
+<p>](#)Editor&#x27;s Note: This post was written in collaboration with the Neo4J team.</p>
+<p>RAG applications are all the rage at the moment. Everyone is building their company documentation chatbot or similar. Mostly, they all have in common that their source of knowledge is unstructured text, which gets chunked and embedded in one way or another. However, not all information arrives as unstructured text.</p>
+<p>Say, for example, you wanted to create a chatbot that could answer questions about your microservice architecture, ongoing tasks, and more. Tasks are mostly defined as unstructured text, so there wouldn’t be anything different from the usual RAG workflow there. However, how could you prepare information about your microservices architecture so the chatbot can retrieve up-to-date information? One option would be to create daily snapshots of the architecture and transform them into text that the LLM would understand. However, what if there is a better approach? Meet knowledge graphs, which can store both structured and unstructured information in a single database.</p>
+<p>Knowledge graph schema representing microservice architecture and their tasks. Image by author.</p>
+<p>Nodes and relationships are used to describe data in a knowledge graph. Typically, nodes are used to represent entities or concepts like people, organizations, and locations. In the microservice graph example, nodes describe people, teams, microservices, and tasks. On the other hand, relationships are used to define connections between these entities, like dependencies between microservices or task owners.</p>
+<p>Both nodes and relationships can have property values stored as key-value pairs.</p>
+<p>Node properties of a Microservice and Task nodes. Image by author.</p>
+<p>The microservice nodes have two node properties describing their name and technology. On the other hand, task nodes are more complex. They have the the name, status, description, as well as embedding properties. By storing text embedding values as node properties, you can perform a vector similarity search of task descriptions identical to if you had the tasks stored in a vector database. Therefore, knowledge graphs allow you to store and retrieve both structured and unstructured information to power your RAG applications.</p>
+<p>In this blog post, I’ll walk you through a scenario of implementing a knowledge graph based RAG application with LangChain to support your DevOps team. The code is available on GitHub.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s2">
+      <h2>⚡ Neo4j Environment Setup</h2>
+      <p class="lead">You need to set up a Neo4j 5.</p>
+      <p>You need to set up a Neo4j 5.11 or greater to follow along with the examples in this blog post. The easiest way is to start a free instance on Neo4j Aura, which offers cloud instances of Neo4j database. Alternatively, you can also set up a local instance of the Neo4j database by downloading the Neo4j Desktop application and creating a local database instance.from langchain.graphs import Neo4jGraph.</p>
+<p>`from langchain.graphs import Neo4jGraph</p>
+<p>url = &quot;neo4j+s://databases.neo4j.io&quot;
+username =&quot;neo4j&quot;
+password = &quot;&quot;</p>
+<p>graph = Neo4jGraph(
+    url=url,
+    username=username,
+    password=password
+)`</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s3">
+      <h2>🏗️ Dataset</h2>
+      <p class="lead">Knowledge graphs are excellent at connecting information from multiple data sources.</p>
+      <p>Knowledge graphs are excellent at connecting information from multiple data sources. You could fetch information from cloud services, task management tools, and more when developing a DevOps RAG application.</p>
+<p>Combining multiple data sources into a knowledge graph. Image by author.</p>
+<div class="code-block"><pre>url = &amp;quot;https://gist.githubusercontent.com/tomasonjo/08dc8ba0e19d592c4c3cde40dd6abcc3/raw/da8882249af3e819a80debf3160ebbb3513ee962/microservices.json&amp;quot;
+import_query = requests.get(url).json()[&amp;#x27;query&amp;#x27;]
+graph.query(
+    import_query
+)</pre></div>
+<p>If you inspect the graph in Neo4j Browser, you should get a similar visualization.</p>
+<p>Subset of the DevOps graph. Image by author.</p>
+<p>Blue nodes describe microservices. These microservices may have dependencies on one another, implying that the functioning or the outcome of one might be reliant on another’s operation. On the other hand, the brown nodes represent tasks that are directly linked to these microservices. Besides showing how things are set up and their linked tasks, our graph also shows which teams are in charge of what.</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s4">
+      <h2>📊 Neo4j Vector index</h2>
+      <p class="lead">We will begin by implementing a vector index search for finding relevant tasks by their name and description.</p>
+      <p>We will begin by implementing a vector index search for finding relevant tasks by their name and description. If you are unfamiliar with vector similarity search, let me give you a quick refresher. The key idea is to calculate the text embedding values for each task based on their description and name. Then, at query time, find the most similar tasks to the user input using a similarity metric like a cosine distance.</p>
+<p>Vector similarity search in a RAG application. Image by author.</p>
+<p>The retrieved information from the vector index can then be used as context to the LLM so it can generate accurate and up-to-date answers.</p>
+<p>The tasks are already in our knowledge graph. However, we need to calculate the embedding values and create the vector index. This can be achieved with the <code>from_existing_graph</code> method.</p>
+<div class="code-block"><pre>import os
+from langchain.vectorstores.neo4j_vector import Neo4jVector
+from langchain.embeddings.openai import OpenAIEmbeddings</pre></div>
+<p>os.environ[&#x27;OPENAI_API_KEY&#x27;] = &quot;OPENAI_API_KEY&quot;</p>
+<div class="code-block"><pre>vector_index = Neo4jVector.from_existing_graph(
+    OpenAIEmbeddings(),
+    url=url,
+    username=username,
+    password=password,
+    index_name=&amp;#x27;tasks&amp;#x27;,
+    node_label=&amp;quot;Task&amp;quot;,
+    text_node_properties=[&amp;#x27;name&amp;#x27;, &amp;#x27;description&amp;#x27;, &amp;#x27;status&amp;#x27;],
+    embedding_node_property=&amp;#x27;embedding&amp;#x27;,
+)</pre></div>
+<p>In this example, we used the following graph-specific parameters for the <code>from_existing_graph</code> method.</p>
+<div class="card"><ul>
+  <li>index_name: name of the vector index</li>
+  <li>node_label: node label of relevant nodes</li>
+  <li>text_node_properties: properties to be used to calculate embeddings and retrieve from the vector index</li>
+  <li>embedding_node_property: which property to store the embedding values to</li>
+</ul></div>
+<p>Now that the vector index has been initiated, we can use it as any other vector index in LangChain.</p>
+<div class="code-block"><pre>response = vector_index.similarity_search(
+    &amp;quot;How will RecommendationService be updated?&amp;quot;
+)
+print(response[0].page_content)</pre></div>
+      <div class="chart"><div class="chart-row">
+    <div class="chart-label">Method A</div>
+    <div class="chart-bar-wrap"><div class="chart-bar green" style="width:95%">95%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method B</div>
+    <div class="chart-bar-wrap"><div class="chart-bar teal" style="width:80%">80%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method C</div>
+    <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:65%">65%</div></div>
+  </div></div>
+    </section>
+
+    <section class="section" id="s5">
+      <h2>🔗 name: BugFix</h2>
+      <p class="lead"></p>
+      
+      
+    </section>
+
+    <section class="section" id="s6">
+      <h2>💡 description: Add a new feature to RecommendationService to provide ...</h2>
+      <p class="lead"></p>
+      
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s7">
+      <h2>🛠️ status: In Progress`</h2>
+      <p class="lead">You can observe that we construct a response of a map or dictionary-like string with defined properties in the &lt;code&gt;text_node_properties&lt;/code&gt; parameter.</p>
+      <p>You can observe that we construct a response of a map or dictionary-like string with defined properties in the <code>text_node_properties</code> parameter.</p>
+<p>Now we can easily create a chatbot response by wrapping the vector index into a <code>RetrievalQA</code> module.</p>
+<div class="code-block"><pre>from langchain.chains import RetrievalQA
+from langchain.chat_models import ChatOpenAI</pre></div>
+<p>vector_qa = RetrievalQA.from_chain_type(
+    llm=ChatOpenAI(),
+    chain_type=&quot;stuff&quot;,
+    retriever=vector_index.as_retriever()
+)
+vector_qa.run(
+    &quot;How will recommendation service be updated?&quot;
+)</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s8">
+      <h2>📈 The RecommendationService is currently being updated to include a new feature</h2>
+      <p class="lead"></p>
+      
+      <div class="timeline">
+  <div class="tl-item"><div class="tl-dot"></div><div class="tl-phase">阶段一</div><div class="tl-desc">初始设计与基础架构</div></div>
+  <div class="tl-item"><div class="tl-dot"></div><div class="tl-phase">阶段二</div><div class="tl-desc">功能扩展与优化</div></div>
+  <div class="tl-item"><div class="tl-dot"></div><div class="tl-phase">阶段三</div><div class="tl-desc">生产部署与迭代</div></div>
+</div>
+    </section>
+
+    <section class="section" id="s9">
+      <h2>🎯 that will provide more personalized and accurate product recommendations to</h2>
+      <p class="lead"></p>
+      
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s10">
+      <h2>🔬 users. This update involves leveraging user behavior and preference data to</h2>
+      <p class="lead"></p>
+      
+      <div class="timeline">
+  <div class="tl-item"><div class="tl-dot"></div><div class="tl-phase">阶段一</div><div class="tl-desc">初始设计与基础架构</div></div>
+  <div class="tl-item"><div class="tl-dot"></div><div class="tl-phase">阶段二</div><div class="tl-desc">功能扩展与优化</div></div>
+  <div class="tl-item"><div class="tl-dot"></div><div class="tl-phase">阶段三</div><div class="tl-desc">生产部署与迭代</div></div>
+</div>
+    </section>
+
+    <section class="section" id="s11">
+      <h2>📝 enhance the recommendation algorithm. The status of this update is currently</h2>
+      <p class="lead"></p>
+      
+      <div class="timeline">
+  <div class="tl-item"><div class="tl-dot"></div><div class="tl-phase">阶段一</div><div class="tl-desc">初始设计与基础架构</div></div>
+  <div class="tl-item"><div class="tl-dot"></div><div class="tl-phase">阶段二</div><div class="tl-desc">功能扩展与优化</div></div>
+  <div class="tl-item"><div class="tl-dot"></div><div class="tl-phase">阶段三</div><div class="tl-desc">生产部署与迭代</div></div>
+</div>
+    </section>
+
+    <section class="section" id="s12">
+      <h2>🧪 in progress.`</h2>
+      <p class="lead">One limitation of vector indexes, in general, is that they don’t provide the ability to aggregate information like you would with a structured query language like Cypher.</p>
+      <p>One limitation of vector indexes, in general, is that they don’t provide the ability to aggregate information like you would with a structured query language like Cypher. Take, for example, the following example:</p>
+<p>`vector_qa.run(
+    &quot;How many open tickets there are?&quot;
+)</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s13">
+      <h2>🌐 There are 4 open tickets.`</h2>
+      <p class="lead">The response seems valid, and the LLM uses assertive language, making you believe the result is correct.</p>
+      <p>The response seems valid, and the LLM uses assertive language, making you believe the result is correct. However, the problem is that the response directly correlates to the number of retrieved documents from the vector index, which is four by default. What actually happens is that the vector index retrieves four open tickets, and the LLM unquestioningly believes that those are all the open tickets. However, the truth is different, and we can validate it using a Cypher statement.</p>
+<div class="code-block"><pre>graph.query(
+    &amp;quot;MATCH (t:Task {status:&amp;#x27;Open&amp;#x27;}) RETURN count(*)&amp;quot;
+)</pre></div>
+      <div class="chart"><div class="chart-row">
+    <div class="chart-label">Method A</div>
+    <div class="chart-bar-wrap"><div class="chart-bar green" style="width:95%">95%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method B</div>
+    <div class="chart-bar-wrap"><div class="chart-bar teal" style="width:80%">80%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method C</div>
+    <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:65%">65%</div></div>
+  </div></div>
+    </section>
+
+    <section class="section" id="s14">
+      <h2>📦 [{&amp;#x27;count(*)&amp;#x27;: 5}]`</h2>
+      <p class="lead">There are five open tasks in our toy graph.</p>
+      <p>There are five open tasks in our toy graph. While vector similarity search is excellent for sifting through relevant information in unstructured text, it lacks the capability to analyze and aggregate structured information. Using Neo4j, this problem can be easily solved by employing Cypher, which is a structured query language for graph databases.</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s15">
+      <h2>🔄 Graph Cypher search</h2>
+      <p class="lead">Cypher is a structured query language designed to interact with graph databases and provides a visual way of matching patterns and relationships.</p>
+      <p>Cypher is a structured query language designed to interact with graph databases and provides a visual way of matching patterns and relationships. It relies on the following ascii-art type of syntax:</p>
+<div class="code-block"><pre>(:Person {name:&amp;quot;Tomaz&amp;quot;})-[:LIVES_IN]-&amp;gt;(:Country {name:&amp;quot;Slovenia&amp;quot;})</pre></div>
+<p>This patterns describes a node with a label Person and the name property Tomaz that has a LIVES_IN relationship to the Country node of Slovenia.</p>
+<p>The neat thing about LangChain is that it provides a GraphCypherQAChain, which generates the Cypher queries for you, so you don’t have to learn Cypher syntax in order to retrieve information from a graph database like Neo4j.</p>
+<p>The following code will refresh the graph schema and instantiate the Cypher chain.</p>
+<p>`from langchain.chains import GraphCypherQAChain</p>
+<p>graph.refresh_schema()</p>
+<div class="code-block"><pre>cypher_chain = GraphCypherQAChain.from_llm(
+    cypher_llm = ChatOpenAI(temperature=0, model_name=&amp;#x27;gpt-4&amp;#x27;),
+    qa_llm = ChatOpenAI(temperature=0), graph=graph, verbose=True,
+)</pre></div>
+<p>Generating valid Cypher statements is a complex task. Therefore, it is recommended to use state-of-the-art LLMs like gpt-4 to generate Cypher statements, while generating answers using the database context can be left to gpt-3.5-turbo.</p>
+<p>Now, you can ask the same question about how many tickets are open.</p>
+<p><code>cypher_chain.run(
+    &quot;How many open tickets there are?&quot;
+)</code></p>
+<p>Result is the following</p>
+<p>You can also ask the chain to aggregate the data using various grouping keys, like the following example.</p>
+<p><code>cypher_chain.run(
+    &quot;Which team has the most open tasks?&quot;
+)</code></p>
+<p>*Result is the following
+*</p>
+<p>You might say these aggregations are not graph-based operations, and you will be correct. We can, of course, perform more graph-based operations like traversing the dependency graph of microservices.</p>
+<div class="code-block"><pre>cypher_chain.run(
+    &amp;quot;Which services depend on Database directly?&amp;quot;
+)</pre></div>
+<p>*Result is the following
+*</p>
+<p>Of course, you can also ask the chain to produce variable-length path traversals by asking questions like:</p>
+<div class="code-block"><pre>cypher_chain.run(
+    &amp;quot;Which services depend on Database indirectly?&amp;quot;
+)</pre></div>
+<p>Some of the mentioned services are the same as in the directly dependent question. The reason is the structure of the dependency graph and not the invalid Cypher statement.</p>
+      <div class="chart"><div class="chart-row">
+    <div class="chart-label">ascii</div>
+    <div class="chart-bar-wrap"><div class="chart-bar green" style="width:95%">95%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">art</div>
+    <div class="chart-bar-wrap"><div class="chart-bar teal" style="width:80%">80%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Person</div>
+    <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:65%">65%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Tomaz</div>
+    <div class="chart-bar-wrap"><div class="chart-bar purple" style="width:50%">50%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Country</div>
+    <div class="chart-bar-wrap"><div class="chart-bar amber" style="width:35%">35%</div></div>
+  </div></div>
+    </section>
+
+    <section class="section" id="s16">
+      <h2>🎨 Knowledge graph agent</h2>
+      <p class="lead">Since we have implemented separate tools for the structured and unstructured parts of the knowledge graph, we can add an agent that can use these two tools to explore the knowledge graph.</p>
+      <p>Since we have implemented separate tools for the structured and unstructured parts of the knowledge graph, we can add an agent that can use these two tools to explore the knowledge graph.</p>
+<div class="code-block"><pre>from langchain.agents import initialize_agent, Tool
+from langchain.agents import AgentType</pre></div>
+<p>tools = [
+    Tool(
+        name=&quot;Tasks&quot;,
+        func=vector_qa.run,
+        description=&quot;&quot;&quot;Useful when you need to answer questions about descriptions of tasks.
+        Not useful for counting the number of tasks.
+        Use full question as input.
+        &quot;&quot;&quot;,
+    ),
+    Tool(
+        name=&quot;Graph&quot;,
+        func=cypher_chain.run,
+        description=&quot;&quot;&quot;Useful when you need to answer questions about microservices,
+        their dependencies or assigned people. Also useful for any sort of
+        aggregation like counting the number of tasks, etc.
+        Use full question as input.
+        &quot;&quot;&quot;,
+    ),
+]</p>
+<div class="code-block"><pre>mrkl = initialize_agent(
+    tools,
+    ChatOpenAI(temperature=0, model_name=&amp;#x27;gpt-4&amp;#x27;),
+    agent=AgentType.OPENAI_FUNCTIONS, verbose=True
+)</pre></div>
+<p>Let’s try out how well does the agent works.</p>
+<div class="code-block"><pre>response = mrkl.run(&amp;quot;Which team is assigned to maintain PaymentService?&amp;quot;)
+print(response)</pre></div>
+<p>Result is the following</p>
+<p>Let’s now try to invoke the Tasks tool.</p>
+<div class="code-block"><pre>response = mrkl.run(&amp;quot;Which tasks have optimization in their description?&amp;quot;)
+print(response)</pre></div>
+<p>*Result is the following
+*</p>
+<p>One thing is certain. I have to work on my agent prompt engineering skills. There is definitely room for improvement in tools description. Additionally, you can also customize the agent prompt.</p>
+      <div class="chart"><div class="chart-row">
+    <div class="chart-label">Method A</div>
+    <div class="chart-bar-wrap"><div class="chart-bar green" style="width:95%">95%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method B</div>
+    <div class="chart-bar-wrap"><div class="chart-bar teal" style="width:80%">80%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method C</div>
+    <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:65%">65%</div></div>
+  </div></div>
+    </section>
+
+    <section class="section" id="s17">
+      <h2>🏆 Conclusion</h2>
+      <p class="lead">Knowledge graphs are an excellent fit when you require structured and unstructured data to power your RAG applications.</p>
+      <p>Knowledge graphs are an excellent fit when you require structured and unstructured data to power your RAG applications. With the approach shown in this blog post, you can avoid polyglot architectures, where you must maintain and sync multiple types of databases. Learn more about graph-based search in LangChain here.</p>
+<p>The code is available on GitHub.</p>
+<p>If you are eager to learn more about building AI applications with graphs, join us at the NODES, online, 24h conference organized by Neo4j on October 26th, 2023.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s18">
+      <h2>🔑 Related content</h2>
+      <p class="lead">Company Announcements
+
+#### Interrupt Preview: Meet the MC
+
+Becca WengApril 28, 20267min[](/blog/interrupt-preview-meet-the-mc)Company Announcements
+
+#### April 2026: LangChain Newsletter
+
+The Lang...</p>
+      <p>Company Announcements</p>
+<p>#### Interrupt Preview: Meet the MC</p>
+<p>Becca WengApril 28, 20267min[](/blog/interrupt-preview-meet-the-mc)Company Announcements</p>
+<p>#### April 2026: LangChain Newsletter</p>
+<p>The LangChain TeamApril 27, 20264min[](/blog/april-2026-langchain-newsletter).png)LangChainPartner</p>
+<p>#### A Developer’s First 10 Minutes: Secure LangChain Agents with Cisco AI Defense</p>
+<p>Siddhant DashApril 16, 20264min[](/blog/secure-agents-cisco-ai-defense)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s19">
+      <h2>📋 See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+  </div>
+
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/using-a-knowledge-graph-to-implement-a-devops-rag-application" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

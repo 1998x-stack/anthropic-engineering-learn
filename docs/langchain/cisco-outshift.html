@@ -1,0 +1,305 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：How Outshift by Cisco achieved a 10x productivity boost with their Agentic AI Platform Engineer</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafbfc;
+      --surface: #fff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --green: #10b981;
+      --emerald: #059669;
+      --teal: #14b8a6;
+      --blue: #3b82f6;
+      --purple: #6366f1;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans SC', 'Inter', system-ui, sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: var(--sans); background: var(--bg); color: var(--text); line-height:1.7; }
+    .nav { position:sticky; top:0; z-index:100; background:rgba(15,23,42,.85); backdrop-filter:blur(12px); padding:14px 32px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,.08); }
+    .nav a { color:#f1f5f9; text-decoration:none; font-weight:500; font-size:14px; }
+    .nav .brand { font-weight:700; font-size:16px; color:#10b981; }
+    .hero { background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%); color:#fff; padding:80px 32px 60px; text-align:center; }
+    .hero h1 { font-size:clamp(1.8rem,4vw,2.8rem); font-weight:800; margin-bottom:12px; line-height:1.3; }
+    .hero .subtitle { font-size:18px; color:rgba(255,255,255,.8); max-width:720px; margin:0 auto 40px; }
+    .hero .meta { font-size:13px; color:rgba(255,255,255,.5); margin-bottom:32px; }
+    .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:16px; max-width:800px; margin:0 auto; }
+    .stat { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); border-radius:12px; padding:20px 16px; backdrop-filter:blur(8px); }
+    .stat .num { font-size:28px; font-weight:800; color:#34d399; }
+    .stat .label { font-size:13px; color:rgba(255,255,255,.7); margin-top:4px; }
+    .page { max-width:900px; margin:0 auto; padding:40px 24px; }
+    .toc { margin-bottom:48px; }
+    .toc h3 { font-size:14px; text-transform:uppercase; letter-spacing:1.5px; color:var(--text-secondary); margin-bottom:16px; }
+    .toc-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; }
+    .toc-grid a { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--text); font-size:14px; font-weight:500; transition:all .2s; }
+    .toc-grid a:hover { border-color:var(--emerald); background:#ecfdf5; }
+    .toc-grid .num { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:8px; background:linear-gradient(135deg,#059669,#10b981); color:#fff; font-size:12px; font-weight:700; flex-shrink:0; }
+    .section { margin-bottom:56px; }
+    .section h2 { font-size:clamp(1.3rem,3vw,1.7rem); font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:10px; }
+    .lead { color:var(--text-secondary); font-size:15px; margin-bottom:24px; line-height:1.6; }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:24px; margin-bottom:16px; }
+    .card h4 { font-size:16px; font-weight:600; margin-bottom:8px; }
+    .card p, .card li { font-size:14px; color:var(--text-secondary); line-height:1.7; }
+    .card ul, .card ol { padding-left:20px; }
+    .card li { margin-bottom:4px; }
+    p { font-size:15px; color:var(--text-secondary); line-height:1.8; margin-bottom:16px; }
+    p code { background:#f1f5f9; padding:2px 6px; border-radius:4px; font-family:var(--mono); font-size:13px; color:#059669; }
+    .chart { margin:24px 0; }
+    .chart-row { display:flex; align-items:center; margin-bottom:10px; gap:12px; }
+    .chart-label { width:150px; font-size:13px; font-weight:500; text-align:right; flex-shrink:0; }
+    .chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:32px; overflow:hidden; }
+    .chart-bar { height:100%; border-radius:8px; display:flex; align-items:center; justify-content:flex-end; padding-right:10px; font-size:12px; font-weight:600; color:#fff; transition:width .6s ease; }
+    .chart-bar.green { background:linear-gradient(90deg,#059669,#10b981); }
+    .chart-bar.teal { background:linear-gradient(90deg,#14b8a6,#2dd4bf); }
+    .chart-bar.blue { background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+    .chart-bar.purple { background:linear-gradient(90deg,#6366f1,#a78bfa); }
+    .chart-bar.amber { background:linear-gradient(90deg,#f59e0b,#fbbf24); }
+    .chart-bar.red { background:linear-gradient(90deg,#ef4444,#f87171); }
+    .flow { display:flex; align-items:center; justify-content:center; gap:12px; margin:24px 0; flex-wrap:wrap; }
+    .flow-step { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 20px; font-size:14px; font-weight:600; text-align:center; min-width:120px; }
+    .flow-step.green { background:linear-gradient(135deg,#059669,#10b981); color:#fff; border:none; }
+    .flow-step.teal { background:linear-gradient(135deg,#14b8a6,#2dd4bf); color:#fff; border:none; }
+    .flow-step.blue { background:linear-gradient(135deg,#3b82f6,#60a5fa); color:#fff; border:none; }
+    .flow-step.purple { background:linear-gradient(135deg,#6366f1,#a78bfa); color:#fff; border:none; }
+    .flow-step.amber { background:linear-gradient(135deg,#f59e0b,#fbbf24); color:#fff; border:none; }
+    .flow-arrow { font-size:20px; color:var(--text-secondary); }
+    .compare-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:24px 0; }
+    .compare-card { border-radius:var(--radius); padding:24px; }
+    .compare-card.old { background:#fef2f2; border:2px solid #fecaca; }
+    .compare-card.new { background:#ecfdf5; border:2px solid #a7f3d0; }
+    .compare-card h4 { font-size:15px; font-weight:700; margin-bottom:8px; }
+    .compare-card p { font-size:13px; color:var(--text-secondary); }
+    .timeline { position:relative; padding-left:32px; margin:24px 0; }
+    .timeline::before { content:''; position:absolute; left:7px; top:8px; bottom:8px; width:3px; background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:24px; }
+    .tl-dot { position:absolute; left:-29px; top:4px; width:14px; height:14px; border-radius:50%; border:3px solid #059669; background:#fff; }
+    .tl-item:nth-child(2) .tl-dot { border-color:#14b8a6; }
+    .tl-item:nth-child(3) .tl-dot { border-color:#3b82f6; }
+    .tl-item:nth-child(4) .tl-dot { border-color:#6366f1; }
+    .tl-item:nth-child(5) .tl-dot { border-color:#f59e0b; }
+    .tl-phase { font-weight:700; font-size:15px; color:var(--text); }
+    .tl-desc { font-size:13px; color:var(--text-secondary); margin-top:4px; }
+    .code-block { background:#1e293b; border-radius:var(--radius); padding:20px; margin:16px 0; overflow-x:auto; }
+    .code-block pre { color:#e2e8f0; font-family:var(--mono); font-size:13px; line-height:1.6; white-space:pre-wrap; word-break:break-all; }
+    .block-q { background:linear-gradient(135deg,#ecfdf5,#d1fae5); border-left:4px solid #059669; border-radius:0 var(--radius) var(--radius) 0; padding:20px 24px; margin:24px 0; }
+    .block-q p { font-size:15px; font-style:italic; color:#064e3b; line-height:1.7; }
+    .badge { display:inline-block; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600; }
+    .badge-green { background:#ecfdf5; color:#059669; }
+    .badge-teal { background:#f0fdfa; color:#14b8a6; }
+    .badge-blue { background:#eff6ff; color:#3b82f6; }
+    .badge-purple { background:#eef2ff; color:#6366f1; }
+    .badge-amber { background:#fffbeb; color:#d97706; }
+    .footer { background:#0f172a; color:#94a3b8; padding:40px 32px; text-align:center; font-size:14px; }
+    .footer a { color:#34d399; text-decoration:none; }
+    .footer a:hover { text-decoration:underline; }
+    .footer .links { margin-top:12px; display:flex; justify-content:center; gap:24px; flex-wrap:wrap; }
+    @media(max-width:768px) {
+      .compare-grid { grid-template-columns:1fr; }
+      .chart-label { width:100px; font-size:12px; }
+      .flow { flex-direction:column; gap:8px; }
+      .flow-arrow { transform:rotate(90deg); }
+      .toc-grid { grid-template-columns:1fr; }
+      .hero { padding:60px 20px 40px; }
+      .nav { padding:12px 16px; }
+      .stats { grid-template-columns:1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+
+  <header class="hero">
+    <div class="meta">🔧 Tools & Integrations · LangChain Accounts · 2025-05-04</div>
+    <h1>How Outshift by Cisco achieved a 10x productivity boost with their Agentic AI Platform Engineer</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">10</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~5min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">12</div><div class="label">技术要点</div></div>
+      <div class="stat"><div class="num">12</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>How Outshift by Cisco achieved</a>
+      <a href="#s2"><span class="num">2</span>JARVIS: The AI Platform Engine</a>
+      <a href="#s3"><span class="num">3</span>Key Features of JARVIS</a>
+      <a href="#s4"><span class="num">4</span>Agentic Blueprint Behind JARVI</a>
+      <a href="#s5"><span class="num">5</span>How Developers Use JARVIS: Rea</a>
+      <a href="#s6"><span class="num">6</span>*Assigning Jira task to JARVIS</a>
+      <a href="#s7"><span class="num">7</span>Impact of JARVIS at Outshift</a>
+      <a href="#s8"><span class="num">8</span>Key Learnings in Building JARV</a>
+      <a href="#s9"><span class="num">9</span>Related content</a>
+      <a href="#s10"><span class="num">10</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+
+    <section class="section" id="s1">
+      <h2>🔍 How Outshift by Cisco achieved a 10x productivity boost with their Agentic AI Platform Engineer</h2>
+      <p class="lead">The LangChain TeamMay 4, 20255min
+
+Go back to blogShare
+
+Outshift is the incubation engine at Cisco, driving innovation in emerging technologies such as the Internet of Agents, Quantum, and next-ge...</p>
+      <p>The LangChain TeamMay 4, 20255min[</p>
+<p>Go back to blog](/blog)Share[</p>
+<p>](#)Outshift is the incubation engine at Cisco, driving innovation in emerging technologies such as the Internet of Agents, Quantum, and next-generation infrastructure. The Platform Engineering team at Outshift offers foundational platform services to accelerate various incubation projects.</p>
+<p>Platform Engineers manage complex, distributed cloud-native SaaS environments involving multiple heterogeneous systems. Monitoring and diagnosing issues in these systems often requires rapidly locating information across these runtime environments, telemetry systems, and documentation sites.</p>
+<p>The small and mighty team of Platform engineers at Outshift had to context-switch and service frequent developer requests, ranging from access management to infrastructure provisioning, while developing new features to advance the platform. This led to:</p>
+<div class="card"><ul>
+  <li>Long wait times for request fulfillment of simple and frequent requests, often taking days to complete.</li>
+  <li>Increased cognitive load due to constant context switching between tools and workflows.</li>
+  <li>Operational inefficiencies, where high-value engineering tasks were deprioritized in favor of routine platform maintenance.</li>
+</ul></div>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s2">
+      <h2>⚡ JARVIS: The AI Platform Engineer</h2>
+      <p class="lead">To unlock a 10x productivity boost, the Cisco Outshift Platform Engineering team developed JARVIS, an AI Platform Engineer designed as a distributed Multi-Agent System (MAS).</p>
+      <p>To unlock a 10x productivity boost, the Cisco Outshift Platform Engineering team developed JARVIS, an AI Platform Engineer designed as a distributed Multi-Agent System (MAS).</p>
+<p>JARVIS is orchestrated using LangGraph for scalable and deterministic agent workflows and connected through the AGNTCY Agent Connect Protocol (ACP), an open source standard protocol, to enable seamless agent-to-agent collaboration across systems.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s3">
+      <h2>🏗️ Key Features of JARVIS</h2>
+      <p class="lead">Knowledge Management
+
+JARVIS integrates with platform knowledge bases — including documentation, policies, Jira, and code repositories — using Retrieval-Augmented Generation (RAG) for unstructured ...</p>
+      <p>JARVIS integrates with platform knowledge bases — including documentation, policies, Jira, and code repositories — using Retrieval-Augmented Generation (RAG) for unstructured data and GraphRAG for structured data to extract actionable insights from platform information.</p>
+<p>Self-Service Capabilities</p>
+<p>JARVIS automates many commonly requested developer tasks such as CI/CD onboarding, cloud resource provisioning, and developer sandbox environment setup — dramatically reducing turnaround times.</p>
+<p>JARVIS simplifies Kubernetes deployments by translating natural language inputs into K8s manifests and infrastructure templates through a hybrid machine learning approach.</p>
+<p>Seamless UX Integration</p>
+<p>JARVIS surfaces agentic AI capabilities directly into familiar developer interfaces — including Jira, Backstage, Webex, and CLI — allowing developers to interact with autonomous workflows without changing their existing tools or habits.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s4">
+      <h2>📊 Agentic Blueprint Behind JARVIS</h2>
+      <p class="lead">The development of JARVIS was grounded in AGNTCY’s Four-Phase approach to building resilient multi-agent systems on the Internet of Agents, an open, interoperable platform for agent-to-agent collab...</p>
+      <p>The development of JARVIS was grounded in AGNTCY’s Four-Phase approach to building resilient multi-agent systems on the Internet of Agents, an open, interoperable platform for agent-to-agent collaboration:</p>
+<p>We mapped critical platform workflows with specialized first- and third-party agents, laying the foundation for multi-agentic system.</p>
+<p>Using LangGraph and the AGNTCY Agent Connect Protocol, we designed flexible, modular workflows where agents collaborate seamlessly across distributed environments.</p>
+<p>JARVIS was operationalized across our cloud-native ecosystem, powered by the AGNTCY Workflow Server for scalable execution and coordination.</p>
+<p>Through continuous tracing, benchmarking, and feedback loops with LangSmith and agentevals, we refined agent behavior to drive consistent improvements over time.</p>
+<p>This approach made JARVIS modular, scalable, and ready to evolve with our growing platform needs.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s5">
+      <h2>🔗 How Developers Use JARVIS: Real Interfaces in Action</h2>
+      <p class="lead">To maximize accessibility and adoption, JARVIS was integrated across multiple developer interfaces:
+
+- Jira: Developers can assign tasks directly to the JARVIS AI Platform Engineer via Jira tickets.</p>
+      <p>To maximize accessibility and adoption, JARVIS was integrated across multiple developer interfaces:</p>
+<div class="card"><ul>
+  <li>Jira: Developers can assign tasks directly to the JARVIS AI Platform Engineer via Jira tickets. JARVIS autonomously executes the request and reaches out for additional input if needed.</li>
+  <li>Backstage: A chat-based assistant embedded within our internal developer portal allows developers to trigger workflows and retrieve platform services seamlessly.</li>
+  <li>Webex: A secure, conversational interface that delivers real-time notifications, task updates, and direct messaging interactions with JARVIS.</li>
+  <li>CLI: Developers interact with JARVIS via the command line to provision sandbox applications, deploy infrastructure, and automate repetitive tasks with ease.</li>
+</ul></div>
+<p>By meeting developers where they already work, JARVIS drives adoption while enhancing platform usability and responsiveness.</p>
+<p>Below are some examples of JARVIS in action:</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s6">
+      <h2>💡 *Assigning Jira task to JARVIS AI Engineer*</h2>
+      <p class="lead">#### Internal Developer Portal Chat Interface: User requesting an LLM Key using JARIVS
+
+#### LangGra</p>
+      <p>#### Internal Developer Portal Chat Interface: User requesting an LLM Key using JARIVS</p>
+<p>#### LangGraph Studio Demonstration of multi-agent tool calling</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s7">
+      <h2>🛠️ Impact of JARVIS at Outshift</h2>
+      <p class="lead">JARVIS is  delivering significant productivity gains for Platform Engineering at Outshift:
+
+- Tasks that previously took a week, such as setting up CI/CD pipelines, can now be completed in under an...</p>
+      <p>JARVIS is  delivering significant productivity gains for Platform Engineering at Outshift:</p>
+<div class="card"><ul>
+  <li>Tasks that previously took a week, such as setting up CI/CD pipelines, can now be completed in under an hour.</li>
+  <li>Provisioning resources (e.g., S3 buckets, EC2 instances, LLM access keys) is now instantaneous, reducing what used to be half-day tasks to just seconds.</li>
+  <li>Back-and-forth communication between developers and Platform Engineering for routine tasks has been eliminated, thanks to JARVIS’s ability to autonomously guide developers and retrieve needed information.</li>
+  <li>The organization now handles a significantly higher volume of requests with the same team size, while also reducing burnout and improving overall efficiency.</li>
+</ul></div>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s8">
+      <h2>📈 Key Learnings in Building JARVIS AI Platform Engineer</h2>
+      <p class="lead">- Internet of Agents (IoA) unlocks the true potential of Multi-Agent Systems: The future of platform engineering lies in multi-agent systems, where the seamless integration of first-party and third...</p>
+      <div class="card"><ul>
+  <li>Internet of Agents (IoA) unlocks the true potential of Multi-Agent Systems: The future of platform engineering lies in multi-agent systems, where the seamless integration of first-party and third-party distributed agents automate complex platform workflows.</li>
+  <li>Open standards like the AGNTCY Agent Connect Protocol (ACP) enable reliable agent-to-agent communication across heterogeneous systems, while frameworks like LangGraph provide scalable, deterministic workflow orchestration</li>
+  <li>Structuring multi-agent systems around the Four Phases — Discover, Compose, Deploy, and Evaluate — enables agent discoverability, promotes agent-to-agent collaboration, drives reuse, and simplifies the creation of complex, deterministic multi-agent systems.</li>
+  <li>Seamless UX Integration is essential for agentic workflows. Embedding agentic capabilities directly into existing developer tools — Jira, CLI, developer portals — is critical for adoption. Combining GenAI-driven agent outputs with traditional interfaces ensures users can interact intuitively with complex workflows without changing their daily routines.</li>
+  <li>Continuous evaluation and benchmarking ensure reliability, Delivering trustworthy agentic systems requires continuous tracing, monitoring, and performance evaluation. Using tracing solutions like LangSmith and evaluation frameworks like agentevals allows teams to analyze agent reasoning patterns, detect inconsistencies, and refine system performance to ensure high accuracy at scale.</li>
+</ul></div>
+<p>The Future of Agentic AI in Platform Engineering</p>
+<p>Outshift is pioneering the integration of agentic AI into platform engineering — building ecosystems where AI agents amplify human potential, enhance collaboration, and accelerate innovation. Their work with JARVIS is just the beginning. They&#x27;re pushing the boundaries of what’s possible with AI-powered platforms, creating new foundations for the Internet of Agents.</p>
+<p>To see how the broader ecosystem is evolving, visit agntcy.org — where the Outshift team is helping to build the collaboration layer that will let AI agents work together seamlessly.</p>
+<p>Explore how Outshift is driving the future of AI in platform engineering.</p>
+<p>Learn more about Outshift Incubations</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s9">
+      <h2>🎯 Related content</h2>
+      <p class="lead">.</p>
+      <p>.png)Agent ArchitectureLangSmithOpen Source</p>
+<p>#### How LangSmith and LangChain OSS Help You Meet EU AI Act Requirements</p>
+<p>Jacob TalbotBecca WengApril 27, 20267min[](/blog/langsmith-langchain-oss-eu-ai-act).png)Case StudiesLangSmith</p>
+<p>#### How Credit Genie used Insights Agent to improve their AI financial assistant</p>
+<p>David LiJeffrey NgaiGoyo Lozano PalacioCharles YuanApril 20, 20265min[](/blog/credit-genie-insights-agent-financial-assistant)Observability &amp; EvalsLangSmith</p>
+<p>#### Reusable Evaluators and Evaluator Templates in LangSmith</p>
+<p>Catherine QiaoJacob TalbotApril 16, 20264min[](/blog/reusable-langsmith-evaluator-templates)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s10">
+      <h2>🔬 See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+  </div>
+
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/cisco-outshift" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

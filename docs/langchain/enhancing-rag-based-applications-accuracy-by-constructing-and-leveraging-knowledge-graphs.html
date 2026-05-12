@@ -1,0 +1,575 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Enhancing RAG-based application accuracy by constructing and leveraging knowledge graphs</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafbfc;
+      --surface: #fff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --green: #10b981;
+      --emerald: #059669;
+      --teal: #14b8a6;
+      --blue: #3b82f6;
+      --purple: #6366f1;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans SC', 'Inter', system-ui, sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: var(--sans); background: var(--bg); color: var(--text); line-height:1.7; }
+    .nav { position:sticky; top:0; z-index:100; background:rgba(15,23,42,.85); backdrop-filter:blur(12px); padding:14px 32px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,.08); }
+    .nav a { color:#f1f5f9; text-decoration:none; font-weight:500; font-size:14px; }
+    .nav .brand { font-weight:700; font-size:16px; color:#10b981; }
+    .hero { background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%); color:#fff; padding:80px 32px 60px; text-align:center; }
+    .hero h1 { font-size:clamp(1.8rem,4vw,2.8rem); font-weight:800; margin-bottom:12px; line-height:1.3; }
+    .hero .subtitle { font-size:18px; color:rgba(255,255,255,.8); max-width:720px; margin:0 auto 40px; }
+    .hero .meta { font-size:13px; color:rgba(255,255,255,.5); margin-bottom:32px; }
+    .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:16px; max-width:800px; margin:0 auto; }
+    .stat { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); border-radius:12px; padding:20px 16px; backdrop-filter:blur(8px); }
+    .stat .num { font-size:28px; font-weight:800; color:#34d399; }
+    .stat .label { font-size:13px; color:rgba(255,255,255,.7); margin-top:4px; }
+    .page { max-width:900px; margin:0 auto; padding:40px 24px; }
+    .toc { margin-bottom:48px; }
+    .toc h3 { font-size:14px; text-transform:uppercase; letter-spacing:1.5px; color:var(--text-secondary); margin-bottom:16px; }
+    .toc-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; }
+    .toc-grid a { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--text); font-size:14px; font-weight:500; transition:all .2s; }
+    .toc-grid a:hover { border-color:var(--emerald); background:#ecfdf5; }
+    .toc-grid .num { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:8px; background:linear-gradient(135deg,#059669,#10b981); color:#fff; font-size:12px; font-weight:700; flex-shrink:0; }
+    .section { margin-bottom:56px; }
+    .section h2 { font-size:clamp(1.3rem,3vw,1.7rem); font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:10px; }
+    .lead { color:var(--text-secondary); font-size:15px; margin-bottom:24px; line-height:1.6; }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:24px; margin-bottom:16px; }
+    .card h4 { font-size:16px; font-weight:600; margin-bottom:8px; }
+    .card p, .card li { font-size:14px; color:var(--text-secondary); line-height:1.7; }
+    .card ul, .card ol { padding-left:20px; }
+    .card li { margin-bottom:4px; }
+    p { font-size:15px; color:var(--text-secondary); line-height:1.8; margin-bottom:16px; }
+    p code { background:#f1f5f9; padding:2px 6px; border-radius:4px; font-family:var(--mono); font-size:13px; color:#059669; }
+    .chart { margin:24px 0; }
+    .chart-row { display:flex; align-items:center; margin-bottom:10px; gap:12px; }
+    .chart-label { width:150px; font-size:13px; font-weight:500; text-align:right; flex-shrink:0; }
+    .chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:32px; overflow:hidden; }
+    .chart-bar { height:100%; border-radius:8px; display:flex; align-items:center; justify-content:flex-end; padding-right:10px; font-size:12px; font-weight:600; color:#fff; transition:width .6s ease; }
+    .chart-bar.green { background:linear-gradient(90deg,#059669,#10b981); }
+    .chart-bar.teal { background:linear-gradient(90deg,#14b8a6,#2dd4bf); }
+    .chart-bar.blue { background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+    .chart-bar.purple { background:linear-gradient(90deg,#6366f1,#a78bfa); }
+    .chart-bar.amber { background:linear-gradient(90deg,#f59e0b,#fbbf24); }
+    .chart-bar.red { background:linear-gradient(90deg,#ef4444,#f87171); }
+    .flow { display:flex; align-items:center; justify-content:center; gap:12px; margin:24px 0; flex-wrap:wrap; }
+    .flow-step { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 20px; font-size:14px; font-weight:600; text-align:center; min-width:120px; }
+    .flow-step.green { background:linear-gradient(135deg,#059669,#10b981); color:#fff; border:none; }
+    .flow-step.teal { background:linear-gradient(135deg,#14b8a6,#2dd4bf); color:#fff; border:none; }
+    .flow-step.blue { background:linear-gradient(135deg,#3b82f6,#60a5fa); color:#fff; border:none; }
+    .flow-step.purple { background:linear-gradient(135deg,#6366f1,#a78bfa); color:#fff; border:none; }
+    .flow-step.amber { background:linear-gradient(135deg,#f59e0b,#fbbf24); color:#fff; border:none; }
+    .flow-arrow { font-size:20px; color:var(--text-secondary); }
+    .compare-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:24px 0; }
+    .compare-card { border-radius:var(--radius); padding:24px; }
+    .compare-card.old { background:#fef2f2; border:2px solid #fecaca; }
+    .compare-card.new { background:#ecfdf5; border:2px solid #a7f3d0; }
+    .compare-card h4 { font-size:15px; font-weight:700; margin-bottom:8px; }
+    .compare-card p { font-size:13px; color:var(--text-secondary); }
+    .timeline { position:relative; padding-left:32px; margin:24px 0; }
+    .timeline::before { content:''; position:absolute; left:7px; top:8px; bottom:8px; width:3px; background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:24px; }
+    .tl-dot { position:absolute; left:-29px; top:4px; width:14px; height:14px; border-radius:50%; border:3px solid #059669; background:#fff; }
+    .tl-item:nth-child(2) .tl-dot { border-color:#14b8a6; }
+    .tl-item:nth-child(3) .tl-dot { border-color:#3b82f6; }
+    .tl-item:nth-child(4) .tl-dot { border-color:#6366f1; }
+    .tl-item:nth-child(5) .tl-dot { border-color:#f59e0b; }
+    .tl-phase { font-weight:700; font-size:15px; color:var(--text); }
+    .tl-desc { font-size:13px; color:var(--text-secondary); margin-top:4px; }
+    .code-block { background:#1e293b; border-radius:var(--radius); padding:20px; margin:16px 0; overflow-x:auto; }
+    .code-block pre { color:#e2e8f0; font-family:var(--mono); font-size:13px; line-height:1.6; white-space:pre-wrap; word-break:break-all; }
+    .block-q { background:linear-gradient(135deg,#ecfdf5,#d1fae5); border-left:4px solid #059669; border-radius:0 var(--radius) var(--radius) 0; padding:20px 24px; margin:24px 0; }
+    .block-q p { font-size:15px; font-style:italic; color:#064e3b; line-height:1.7; }
+    .badge { display:inline-block; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600; }
+    .badge-green { background:#ecfdf5; color:#059669; }
+    .badge-teal { background:#f0fdfa; color:#14b8a6; }
+    .badge-blue { background:#eff6ff; color:#3b82f6; }
+    .badge-purple { background:#eef2ff; color:#6366f1; }
+    .badge-amber { background:#fffbeb; color:#d97706; }
+    .footer { background:#0f172a; color:#94a3b8; padding:40px 32px; text-align:center; font-size:14px; }
+    .footer a { color:#34d399; text-decoration:none; }
+    .footer a:hover { text-decoration:underline; }
+    .footer .links { margin-top:12px; display:flex; justify-content:center; gap:24px; flex-wrap:wrap; }
+    @media(max-width:768px) {
+      .compare-grid { grid-template-columns:1fr; }
+      .chart-label { width:100px; font-size:12px; }
+      .flow { flex-direction:column; gap:8px; }
+      .flow-arrow { transform:rotate(90deg); }
+      .toc-grid { grid-template-columns:1fr; }
+      .hero { padding:60px 20px 40px; }
+      .nav { padding:12px 16px; }
+      .stats { grid-template-columns:1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+
+  <header class="hero">
+    <div class="meta">🧠 RAG & Knowledge · LangChain Accounts · 2024-03-15</div>
+    <h1>Enhancing RAG-based application accuracy by constructing and leveraging knowledge graphs</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">27</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~8min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">7</div><div class="label">代码示例</div></div>
+      <div class="stat"><div class="num">10</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>Enhancing RAG-based applicatio</a>
+      <a href="#s2"><span class="num">2</span>A practical guide to construct</a>
+      <a href="#s3"><span class="num">3</span>Neo4j Environment Setup</a>
+      <a href="#s4"><span class="num">4</span>Data ingestion</a>
+      <a href="#s5"><span class="num">5</span>Define chunking strategy</a>
+      <a href="#s6"><span class="num">6</span>Extract graph data</a>
+      <a href="#s7"><span class="num">7</span>Store to neo4j</a>
+      <a href="#s8"><span class="num">8</span>Hybrid Retrieval for RAG</a>
+      <a href="#s9"><span class="num">9</span>Unstructured data retriever</a>
+      <a href="#s10"><span class="num">10</span>Graph retriever</a>
+      <a href="#s11"><span class="num">11</span>[&amp;#x27;Amelia Earhart&amp;#x27;]`</a>
+      <a href="#s12"><span class="num">12</span>Elizabeth I - BORN_ON -&amp;gt; 7 </a>
+      <a href="#s13"><span class="num">13</span>Elizabeth I - DIED_ON -&amp;gt; 24</a>
+      <a href="#s14"><span class="num">14</span>Elizabeth I - TITLE_HELD_FROM </a>
+      <a href="#s15"><span class="num">15</span>Elizabeth I - TITLE_HELD_UNTIL</a>
+      <a href="#s16"><span class="num">16</span>Elizabeth I - MEMBER_OF -&amp;gt; </a>
+      <a href="#s17"><span class="num">17</span>Elizabeth I - CHILD_OF -&amp;gt; H</a>
+      <a href="#s18"><span class="num">18</span>and more...`</a>
+      <a href="#s19"><span class="num">19</span>Final retriever</a>
+      <a href="#s20"><span class="num">20</span>Defining the RAG chain</a>
+      <a href="#s21"><span class="num">21</span>Search query: Which house did </a>
+      <a href="#s22"><span class="num">22</span>&amp;#x27;Elizabeth I belonged to </a>
+      <a href="#s23"><span class="num">23</span>Search query: When was Elizabe</a>
+      <a href="#s24"><span class="num">24</span>&amp;#x27;Elizabeth I was born on </a>
+      <a href="#s25"><span class="num">25</span>Summary</a>
+      <a href="#s26"><span class="num">26</span>Related content</a>
+      <a href="#s27"><span class="num">27</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+
+    <section class="section" id="s1">
+      <h2>🔍 Enhancing RAG-based application accuracy by constructing and leveraging knowledge graphs</h2>
+      <p class="lead">The LangChain TeamMarch 15, 20247min
+
+Go back to blogShare
+
+[</p>
+      <p>The LangChain TeamMarch 15, 20247min[</p>
+<p>Go back to blog](/blog)Share[</p>
+      <div class="chart"><div class="chart-row">
+    <div class="chart-label">Method A</div>
+    <div class="chart-bar-wrap"><div class="chart-bar green" style="width:95%">95%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method B</div>
+    <div class="chart-bar-wrap"><div class="chart-bar teal" style="width:80%">80%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method C</div>
+    <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:65%">65%</div></div>
+  </div></div>
+    </section>
+
+    <section class="section" id="s2">
+      <h2>⚡ A practical guide to constructing and retrieving information from knowledge graphs in RAG applications with Neo4j and LangChain</h2>
+      <p class="lead">Editor&amp;#x27;s Note: the following is a guest blog post from Tomaz Bratanic, who focuses on Graph ML and GenAI research at Neo4j.</p>
+      <p>Editor&#x27;s Note: the following is a guest blog post from Tomaz Bratanic, who focuses on Graph ML and GenAI research at Neo4j. Neo4j is a graph database and analytics company which helps organizations find hidden relationships and patterns across billions of data connections deeply, easily, and quickly.</p>
+<p>Graph retrieval augmented generation (Graph RAG) is gaining momentum and emerging as a powerful addition to traditional vector search retrieval methods. This approach leverages the structured nature of graph databases, which organize data as nodes and relationships, to enhance the depth and contextuality of retrieved information.</p>
+<p>Example knowledge graph.</p>
+<p>Graphs are great at representing and storing heterogeneous and interconnected information in a structured manner, effortlessly capturing complex relationships and attributes across diverse data types. In contrast, vector databases often struggle with such structured information, as their strength lies in handling unstructured data through high-dimensional vectors. In your RAG application, you can combine structured graph data with vector search through unstructured text to achieve the best of both worlds, which is exactly what we will do in this blog post.</p>
+<p>Knowledge graphs are great, but how do you create one? Constructing a knowledge graph is typically the most challenging step in leveraging the power of graph-based data representation. It involves gathering and structuring the data, which requires a deep understanding of both the domain and graph modeling. To simplify this process, we have been experimenting with LLMs. LLMs, with their profound understanding of language and context, can automate significant parts of the knowledge graph creation process. By analyzing text data, these models can identify entities, understand the relationships between them, and suggest how they might be best represented in a graph structure. As a result of these experiments, we have added the first version of the graph construction module to LangChain, which we will demonstrate in this blog post.</p>
+<p>The code is available on GitHub.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s3">
+      <h2>🏗️ Neo4j Environment Setup</h2>
+      <p class="lead">You need to set up a Neo4j instance follow along with the examples in this blog post.</p>
+      <p>You need to set up a Neo4j instance follow along with the examples in this blog post. The easiest way is to start a free instance on Neo4j Aura, which offers cloud instances of Neo4j database. Alternatively, you can also set up a local instance of the Neo4j database by downloading the Neo4j Desktop application and creating a local database instance.</p>
+<div class="code-block"><pre>os.environ[&amp;quot;OPENAI_API_KEY&amp;quot;] = &amp;quot;sk-&amp;quot;
+os.environ[&amp;quot;NEO4J_URI&amp;quot;] = &amp;quot;bolt://localhost:7687&amp;quot;
+os.environ[&amp;quot;NEO4J_USERNAME&amp;quot;] = &amp;quot;neo4j&amp;quot;
+os.environ[&amp;quot;NEO4J_PASSWORD&amp;quot;] = &amp;quot;password&amp;quot;</pre></div>
+<p>graph = Neo4jGraph()`</p>
+<p>Additionally, you must provide an OpenAI key, as we will use their models in this blog post.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s4">
+      <h2>📊 Data ingestion</h2>
+      <p class="lead">For this demonstration, we will use Elizabeth I’s Wikipedia page.</p>
+      <p>For this demonstration, we will use Elizabeth I’s Wikipedia page. We can utilize LangChain loaders to fetch and split the documents from Wikipedia seamlessly.</p>
+<div class="code-block"><pre># Read the wikipedia article
+raw_documents = WikipediaLoader(query=&amp;quot;Elizabeth I&amp;quot;).load()</pre></div>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s5">
+      <h2>🔗 Define chunking strategy</h2>
+      <p class="lead">text_splitter = TokenTextSplitter(chunk_size=512, chunk_overlap=24)
+documents = text_splitter.</p>
+      <div class="code-block"><pre>text_splitter = TokenTextSplitter(chunk_size=512, chunk_overlap=24)
+documents = text_splitter.split_documents(raw_documents[:3])</pre></div>
+<p>Now it’s time to construct a graph based on the retrieved documents. For this purpose, we have implemented an <code>LLMGraphTransformer</code>module that significantly simplifies constructing and storing a knowledge graph in a graph database.</p>
+<div class="code-block"><pre>llm=ChatOpenAI(temperature=0, model_name=&amp;quot;gpt-4-0125-preview&amp;quot;)
+llm_transformer = LLMGraphTransformer(llm=llm)</pre></div>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s6">
+      <h2>💡 Extract graph data</h2>
+      <p class="lead">graph_documents = llm_transformer.</p>
+      <p>graph_documents = llm_transformer.convert_to_graph_documents(documents)</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s7">
+      <h2>🛠️ Store to neo4j</h2>
+      <p class="lead">graph.</p>
+      <div class="code-block"><pre>graph.add_graph_documents(
+  graph_documents,
+  baseEntityLabel=True,
+  include_source=True
+)</pre></div>
+<p>You can define which LLM you want the knowledge graph generation chain to use. At the moment, we support only function calling models from OpenAI and Mistral. However, we plan to expand the LLM selection in the future. In this example, we are using the latest GPT-4. Note that the quality of generated graph significantly depends on the model you are using. In theory, you always want to use the most capable one. The LLM graph transformers returns graph documents, which can be imported to Neo4j via the <code>add_graph_documents</code> method. The <code>baseEntityLabel</code> parameter assigns an additional <code>__Entity__</code> label to each node, enhancing indexing and query performance. The <code>include_source</code> parameter links nodes to their originating documents, facilitating data traceability and context understanding.</p>
+<p>You can inspect the generated graph in Neo4j Browser.</p>
+<p>Part of the generated graph.</p>
+<p>Note that this image represents only a part of the generated graph for clarity.</p>
+      <div class="chart"><div class="chart-row">
+    <div class="chart-label">Method A</div>
+    <div class="chart-bar-wrap"><div class="chart-bar green" style="width:95%">95%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method B</div>
+    <div class="chart-bar-wrap"><div class="chart-bar teal" style="width:80%">80%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method C</div>
+    <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:65%">65%</div></div>
+  </div></div>
+    </section>
+
+    <section class="section" id="s8">
+      <h2>📈 Hybrid Retrieval for RAG</h2>
+      <p class="lead">After the graph generation, we will use a hybrid retrieval approach that combines vector and keyword indexes with graph retrieval for RAG applications.</p>
+      <p>After the graph generation, we will use a hybrid retrieval approach that combines vector and keyword indexes with graph retrieval for RAG applications.</p>
+<p>Combining hybrid (vector + keyword) and graph retrieval methods. Image by author.</p>
+<p>The diagram illustrates a retrieval process beginning with a user posing a question, which is then directed to an RAG retriever. This retriever employs keyword and vector searches to search through unstructured text data and combines it with the information it collects from the knowledge graph. Since Neo4j features both keyword and vector indexes, you can implement all three retrieval options with a single database system. The collected data from these sources is fed into an LLM to generate and deliver the final answer.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s9">
+      <h2>🎯 Unstructured data retriever</h2>
+      <p class="lead">You can use the &lt;code&gt;Neo4jVector.</p>
+      <p>You can use the <code>Neo4jVector.from_existing_graph</code> method to add both keyword and vector retrieval to documents. This method configures keyword and vector search indexes for a hybrid search approach, targeting nodes labeled <code>Document</code>. Additionally, it calculates text embedding values if they are missing.</p>
+<div class="code-block"><pre>vector_index = Neo4jVector.from_existing_graph(
+    OpenAIEmbeddings(),
+    search_type=&amp;quot;hybrid&amp;quot;,
+    node_label=&amp;quot;Document&amp;quot;,
+    text_node_properties=[&amp;quot;text&amp;quot;],
+    embedding_node_property=&amp;quot;embedding&amp;quot;
+)</pre></div>
+<p>The vector index can then be called with the <code>similarity_search</code> method.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s10">
+      <h2>🔬 Graph retriever</h2>
+      <p class="lead">On the other hand, configuring a graph retrieval is more involved but offers more freedom.</p>
+      <p>On the other hand, configuring a graph retrieval is more involved but offers more freedom. In this example, we will use a full-text index to identify relevant nodes and then return their direct neighborhood.</p>
+<p>Graph retriever. Image by author.</p>
+<p>The graph retriever starts by identifying relevant entities in the input. For simplicity, we instruct the LLM to identify people, organizations, and locations. To achieve this, we will use LCEL with the newly added <code>with_structured_output</code> method to achieve this.</p>
+<div class="code-block"><pre># Extract entities from text
+class Entities(BaseModel):
+    &amp;quot;&amp;quot;&amp;quot;Identifying information about entities.&amp;quot;&amp;quot;&amp;quot;</pre></div>
+<p>names: List[str] = Field(
+        ...,
+        description=&quot;All the person, organization, or business entities
+        that &quot; &quot;appear in the text&quot;,
+    )</p>
+<p>prompt = ChatPromptTemplate.from_messages(
+    [
+        (
+            &quot;system&quot;,
+            &quot;You are extracting organization and person entities from the
+            text.&quot;,
+        ),
+        (
+            &quot;human&quot;,
+            &quot;Use the given format to extract information from the
+             following&quot;
+            &quot;input: {question}&quot;,
+        ),
+    ]
+)</p>
+<p>entity_chain = prompt | llm.with_structured_output(Entities)`</p>
+<p>`entity_chain.invoke({&quot;question&quot;: &quot;Where was Amelia Earhart born?&quot;}).names</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s11">
+      <h2>📝 [&amp;#x27;Amelia Earhart&amp;#x27;]`</h2>
+      <p class="lead">Great, now that we can detect entities in the question, let’s use a full-text index to map them to the knowledge graph.</p>
+      <p>Great, now that we can detect entities in the question, let’s use a full-text index to map them to the knowledge graph. First, we need to define a full-text index and a function that will generate full-text queries that allow a bit of misspelling, which we won’t go into much detail here.</p>
+<div class="code-block"><pre>graph.query(
+    &amp;quot;CREATE FULLTEXT INDEX entity IF NOT EXISTS FOR (e:__Entity__) ON EACH [e.id]&amp;quot;)</pre></div>
+<p>def generate_full_text_query(input: str) -&gt; str:
+    &quot;&quot;&quot;
+    Generate a full-text search query for a given input string.</p>
+<div class="code-block"><pre>This function constructs a query string suitable for a full-text
+    search. It processes the input string by splitting it into words and
+    appending a similarity threshold (~2 changed characters) to each
+    word, then combines them using the AND operator. Useful for mapping
+    entities from user questions to database values, and allows for some
+    misspelings.
+    &amp;quot;&amp;quot;&amp;quot;
+    full_text_query = &amp;quot;&amp;quot;
+    words = [el for el in remove_lucene_chars(input).split() if el]
+    for word in words[:-1]:
+        full_text_query += f&amp;quot; {word}~2 AND&amp;quot;
+    full_text_query += f&amp;quot; {words[-1]}~2&amp;quot;
+    return full_text_query.strip()</pre></div>
+<p>Let’s put it all together now.</p>
+<div class="code-block"><pre># Fulltext index query
+def structured_retriever(question: str) -&amp;gt; str:
+    &amp;quot;&amp;quot;&amp;quot;
+    Collects the neighborhood of entities mentioned
+    in the question
+    &amp;quot;&amp;quot;&amp;quot;
+    result = &amp;quot;&amp;quot;
+    entities = entity_chain.invoke({&amp;quot;question&amp;quot;: question})
+    for entity in entities.names:
+        response = graph.query(
+            &amp;quot;&amp;quot;&amp;quot;CALL db.index.fulltext.queryNodes(&amp;#x27;entity&amp;#x27;, $query,
+            {limit:2})
+            YIELD node,score
+            CALL {
+              MATCH (node)-[r:!MENTIONS]-&amp;gt;(neighbor)
+              RETURN node.id + &amp;#x27; - &amp;#x27; + type(r) + &amp;#x27; -&amp;gt; &amp;#x27; + neighbor.id AS
+              output
+              UNION
+              MATCH (node)&amp;lt;-[r:!MENTIONS]-(neighbor)
+              RETURN neighbor.id + &amp;#x27; - &amp;#x27; + type(r) + &amp;#x27; -&amp;gt; &amp;#x27; +  node.id AS
+              output
+            }
+            RETURN output LIMIT 50
+            &amp;quot;&amp;quot;&amp;quot;,
+            {&amp;quot;query&amp;quot;: generate_full_text_query(entity)},
+        )
+        result += &amp;quot;\n&amp;quot;.join([el[&amp;#x27;output&amp;#x27;] for el in response])
+    return result</pre></div>
+<p>The <code>structured_retriever</code> function starts by detecting entities in the user question. Next, it iterates over the detected entities and uses a Cypher template to retrieve the neighborhood of relevant nodes. Let’s test it out!</p>
+<p>`print(structured_retriever(&quot;Who is Elizabeth I?&quot;))</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s12">
+      <h2>🧪 Elizabeth I - BORN_ON -&amp;gt; 7 September 1533</h2>
+      <p class="lead"></p>
+      
+      
+    </section>
+
+    <section class="section" id="s13">
+      <h2>🌐 Elizabeth I - DIED_ON -&amp;gt; 24 March 1603</h2>
+      <p class="lead"></p>
+      
+      
+    </section>
+
+    <section class="section" id="s14">
+      <h2>📦 Elizabeth I - TITLE_HELD_FROM -&amp;gt; Queen Of England And Ireland</h2>
+      <p class="lead"></p>
+      
+      
+    </section>
+
+    <section class="section" id="s15">
+      <h2>🔄 Elizabeth I - TITLE_HELD_UNTIL -&amp;gt; 17 November 1558</h2>
+      <p class="lead"></p>
+      
+      
+    </section>
+
+    <section class="section" id="s16">
+      <h2>🎨 Elizabeth I - MEMBER_OF -&amp;gt; House Of Tudor</h2>
+      <p class="lead"></p>
+      
+      
+    </section>
+
+    <section class="section" id="s17">
+      <h2>🏆 Elizabeth I - CHILD_OF -&amp;gt; Henry Viii</h2>
+      <p class="lead"></p>
+      
+      
+    </section>
+
+    <section class="section" id="s18">
+      <h2>🔑 and more...`</h2>
+      <p class="lead"></p>
+      
+      
+    </section>
+
+    <section class="section" id="s19">
+      <h2>📋 Final retriever</h2>
+      <p class="lead">As we mentioned at the start, we’ll combine the unstructured and graph retriever to create the final context that will be passed to an LLM.</p>
+      <p>As we mentioned at the start, we’ll combine the unstructured and graph retriever to create the final context that will be passed to an LLM.</p>
+<div class="code-block"><pre>def retriever(question: str):
+    print(f&amp;quot;Search query: {question}&amp;quot;)
+    structured_data = structured_retriever(question)
+    unstructured_data = [el.page_content for el in vector_index.similarity_search(question)]
+    final_data = f&amp;quot;&amp;quot;&amp;quot;Structured data:
+{structured_data}
+Unstructured data:
+{&amp;quot;#Document &amp;quot;. join(unstructured_data)}
+    &amp;quot;&amp;quot;&amp;quot;
+    return final_data</pre></div>
+<p>As we are dealing with Python, we can simply concatenate the outputs using the f-string.</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s20">
+      <h2>🚀 Defining the RAG chain</h2>
+      <p class="lead">We have successfully implemented the retrieval component of the RAG.</p>
+      <p>We have successfully implemented the retrieval component of the RAG. Next, we introduce a prompt that leverages the context provided by the integrated hybrid retriever to produce the response, completing the implementation of the RAG chain.</p>
+<div class="code-block"><pre>template = &amp;quot;&amp;quot;&amp;quot;Answer the question based only on the following context:
+{context}</pre></div>
+<p>Question: {question}
+&quot;&quot;&quot;
+prompt = ChatPromptTemplate.from_template(template)</p>
+<div class="code-block"><pre>chain = (
+    RunnableParallel(
+        {
+            &amp;quot;context&amp;quot;: _search_query | retriever,
+            &amp;quot;question&amp;quot;: RunnablePassthrough(),
+        }
+    )
+    | prompt
+    | llm
+    | StrOutputParser()
+)</pre></div>
+<p>Finally, we can go ahead and test our hybrid RAG implementation.</p>
+<p>`chain.invoke({&quot;question&quot;: &quot;Which house did Elizabeth I belong to?&quot;})</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s21">
+      <h2>🔍 Search query: Which house did Elizabeth I belong to?</h2>
+      <p class="lead"></p>
+      
+      
+    </section>
+
+    <section class="section" id="s22">
+      <h2>⚡ &amp;#x27;Elizabeth I belonged to the House of Tudor.&amp;#x27;`</h2>
+      <p class="lead">I’ve also incorporated a query rewriting feature, enabling the RAG chain to adapt to conversational settings that allow follow-up questions.</p>
+      <p>I’ve also incorporated a query rewriting feature, enabling the RAG chain to adapt to conversational settings that allow follow-up questions. Given that we use vector and keyword search methods, we must rewrite follow-up questions to optimize our search process.</p>
+<div class="code-block"><pre>chain.invoke(
+    {
+        &amp;quot;question&amp;quot;: &amp;quot;When was she born?&amp;quot;,
+        &amp;quot;chat_history&amp;quot;: [(&amp;quot;Which house did Elizabeth I belong to?&amp;quot;,
+        &amp;quot;House Of Tudor&amp;quot;)],
+    }
+)</pre></div>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s23">
+      <h2>🏗️ Search query: When was Elizabeth I born?</h2>
+      <p class="lead"></p>
+      
+      
+    </section>
+
+    <section class="section" id="s24">
+      <h2>📊 &amp;#x27;Elizabeth I was born on 7 September 1533.&amp;#x27;`</h2>
+      <p class="lead">You can observe that &lt;code&gt;When was she born?&lt;/code&gt; was first rewritten to &lt;code&gt;When was Elizabeth I born?&lt;/code&gt; .</p>
+      <p>You can observe that <code>When was she born?</code> was first rewritten to <code>When was Elizabeth I born?</code> . The rewritten query was then used to retrieve relevant context and answer the question.</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s25">
+      <h2>🔗 Summary</h2>
+      <p class="lead">With the introduction of the &lt;code&gt;LLMGraphTransformer&lt;/code&gt;, the process of generating knowledge graphs should now be smoother and more accessible, making it easier for anyone looking to enhance ...</p>
+      <p>With the introduction of the <code>LLMGraphTransformer</code>, the process of generating knowledge graphs should now be smoother and more accessible, making it easier for anyone looking to enhance their RAG-based applications with the depth and context that knowledge graphs provide. This is just a start as we have a lot of improvements planned.</p>
+<p>If you have insights, suggestions, or questions about our generating graphs with LLMs, please don’t hesitate to reach out.</p>
+<p>The code is available on GitHub.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s26">
+      <h2>💡 Related content</h2>
+      <p class="lead">Company Announcements
+
+#### Interrupt Preview: Meet the MC
+
+Becca WengApril 28, 20267min[](/blog/interrupt-preview-meet-the-mc).</p>
+      <p>Company Announcements</p>
+<p>#### Interrupt Preview: Meet the MC</p>
+<p>Becca WengApril 28, 20267min[](/blog/interrupt-preview-meet-the-mc).png)Agent ArchitectureLangSmithOpen Source</p>
+<p>#### How LangSmith and LangChain OSS Help You Meet EU AI Act Requirements</p>
+<p>Jacob TalbotBecca WengApril 27, 20267min[](/blog/langsmith-langchain-oss-eu-ai-act)Company Announcements</p>
+<p>#### April 2026: LangChain Newsletter</p>
+<p>The LangChain TeamApril 27, 20264min[](/blog/april-2026-langchain-newsletter)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s27">
+      <h2>🛠️ See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+  </div>
+
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/enhancing-rag-based-applications-accuracy-by-constructing-and-leveraging-knowledge-graphs" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

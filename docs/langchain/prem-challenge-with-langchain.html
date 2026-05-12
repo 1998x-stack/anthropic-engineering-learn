@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：🎉 Prem Challenge🎉</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--green:#10b981;--emerald:#059669;--teal:#14b8a6;--blue:#3b82f6;--purple:#6366f1;--amber:#f59e0b;--red:#ef4444;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+    .nav{position:sticky;top:0;z-index:100;background:rgba(15,23,42,.85);backdrop-filter:blur(12px);padding:14px 32px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.08)}
+    .nav a{color:#f1f5f9;text-decoration:none;font-weight:500;font-size:14px}
+    .nav .brand{font-weight:700;font-size:16px;color:#10b981}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%);color:#fff;padding:80px 32px 60px;text-align:center}
+    .hero h1{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;margin-bottom:12px;line-height:1.3}
+    .hero .subtitle{font-size:18px;color:rgba(255,255,255,.8);max-width:720px;margin:0 auto 40px}
+    .hero .meta{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:32px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;max-width:800px;margin:0 auto}
+    .stat{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:20px 16px;backdrop-filter:blur(8px)}
+    .stat .num{font-size:28px;font-weight:800;color:#34d399}
+    .stat .label{font-size:13px;color:rgba(255,255,255,.7);margin-top:4px}
+    .page{max-width:900px;margin:0 auto;padding:40px 24px}
+    .toc{margin-bottom:48px}
+    .toc h3{font-size:14px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);margin-bottom:16px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .toc-grid a{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;transition:all .2s}
+    .toc-grid a:hover{border-color:var(--emerald);background:#ecfdf5}
+    .toc-grid .num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-size:12px;font-weight:700;flex-shrink:0}
+    .section{margin-bottom:56px}
+    .section h2{font-size:clamp(1.3rem,3vw,1.7rem);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+    .lead{color:var(--text-secondary);font-size:15px;margin-bottom:24px;line-height:1.6}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}
+    .card h4{font-size:16px;font-weight:600;margin-bottom:8px}
+    .card p,.card li{font-size:14px;color:var(--text-secondary);line-height:1.7}
+    .card ul,.card ol{padding-left:20px}
+    .card li{margin-bottom:4px}
+    p{font-size:15px;color:var(--text-secondary);line-height:1.8;margin-bottom:16px}
+    p code{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:13px;color:#059669}
+    .chart{margin:24px 0}
+    .chart-row{display:flex;align-items:center;margin-bottom:10px;gap:12px}
+    .chart-label{width:150px;font-size:13px;font-weight:500;text-align:right;flex-shrink:0}
+    .chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}
+    .chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;justify-content:flex-end;padding-right:10px;font-size:12px;font-weight:600;color:#fff;transition:width .6s ease}
+    .chart-bar.green{background:linear-gradient(90deg,#059669,#10b981)}
+    .chart-bar.teal{background:linear-gradient(90deg,#14b8a6,#2dd4bf)}
+    .chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+    .chart-bar.purple{background:linear-gradient(90deg,#6366f1,#a78bfa)}
+    .chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}
+    .flow{display:flex;align-items:center;justify-content:center;gap:12px;margin:24px 0;flex-wrap:wrap}
+    .flow-step{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;min-width:120px}
+    .flow-step.green{background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none}
+    .flow-step.teal{background:linear-gradient(135deg,#14b8a6,#2dd4bf);color:#fff;border:none}
+    .flow-step.blue{background:linear-gradient(135deg,#3b82f6,#60a5fa);color:#fff;border:none}
+    .flow-step.purple{background:linear-gradient(135deg,#6366f1,#a78bfa);color:#fff;border:none}
+    .flow-step.amber{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#fff;border:none}
+    .flow-arrow{font-size:20px;color:var(--text-secondary)}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}
+    .compare-card{border-radius:var(--radius);padding:24px}
+    .compare-card.old{background:#fef2f2;border:2px solid #fecaca}
+    .compare-card.new{background:#ecfdf5;border:2px solid #a7f3d0}
+    .compare-card h4{font-size:15px;font-weight:700;margin-bottom:8px}
+    .compare-card p{font-size:13px;color:var(--text-secondary)}
+    .timeline{position:relative;padding-left:32px;margin:24px 0}
+    .timeline::before{content:'';position:absolute;left:7px;top:8px;bottom:8px;width:3px;background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6);border-radius:2px}
+    .tl-item{position:relative;margin-bottom:24px}
+    .tl-dot{position:absolute;left:-29px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid #059669;background:#fff}
+    .tl-item:nth-child(2) .tl-dot{border-color:#14b8a6}
+    .tl-item:nth-child(3) .tl-dot{border-color:#3b82f6}
+    .tl-phase{font-weight:700;font-size:15px;color:var(--text)}
+    .tl-desc{font-size:13px;color:var(--text-secondary);margin-top:4px}
+    .code-block{background:#1e293b;border-radius:var(--radius);padding:20px;margin:16px 0;overflow-x:auto}
+    .code-block pre{color:#e2e8f0;font-family:var(--mono);font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-all}
+    .block-q{background:linear-gradient(135deg,#ecfdf5,#d1fae5);border-left:4px solid #059669;border-radius:0 var(--radius) var(--radius) 0;padding:20px 24px;margin:24px 0}
+    .block-q p{font-size:15px;font-style:italic;color:#064e3b;line-height:1.7}
+    .footer{background:#0f172a;color:#94a3b8;padding:40px 32px;text-align:center;font-size:14px}
+    .footer a{color:#34d399;text-decoration:none}
+    .footer a:hover{text-decoration:underline}
+    .footer .links{margin-top:12px;display:flex;justify-content:center;gap:24px;flex-wrap:wrap}
+    @media(max-width:768px){.compare-grid{grid-template-columns:1fr}.chart-label{width:100px;font-size:12px}.flow{flex-direction:column;gap:8px}.flow-arrow{transform:rotate(90deg)}.toc-grid{grid-template-columns:1fr}.hero{padding:60px 20px 40px}.nav{padding:12px 16px}.stats{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+  <header class="hero">
+    <div class="meta">🔧 Tools & Integrations · LangChain Accounts · 2023-06-26</div>
+    <h1>🎉 Prem Challenge🎉</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">20</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~7min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">5</div><div class="label">代码示例</div></div>
+      <div class="stat"><div class="num">24</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>🎉 Prem Challenge🎉</a>
+      <a href="#s2"><span class="num">2</span>About Prem</a>
+      <a href="#s3"><span class="num">3</span>One-click Integration</a>
+      <a href="#s4"><span class="num">4</span>The right abstraction</a>
+      <a href="#s5"><span class="num">5</span>Prem Challenge Overview</a>
+      <a href="#s6"><span class="num">6</span>What</a>
+      <a href="#s7"><span class="num">7</span>When</a>
+      <a href="#s8"><span class="num">8</span>Where</a>
+      <a href="#s9"><span class="num">9</span>How many?</a>
+      <a href="#s10"><span class="num">10</span>Prizes</a>
+      <a href="#s11"><span class="num">11</span>Submission Requirements</a>
+      <a href="#s12"><span class="num">12</span>Judging Criteria</a>
+      <a href="#s13"><span class="num">13</span>**Submission Process**</a>
+      <a href="#s14"><span class="num">14</span>Getting Started</a>
+      <a href="#s15"><span class="num">15</span>Install Prem</a>
+      <a href="#s16"><span class="num">16</span>Run the services in the GUI</a>
+      <a href="#s17"><span class="num">17</span>Start Building Your App</a>
+      <a href="#s18"><span class="num">18</span>More Information</a>
+      <a href="#s19"><span class="num">19</span>Related content</a>
+      <a href="#s20"><span class="num">20</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+    <section class="section" id="s1">
+      <h2>🔍 🎉 Prem Challenge🎉</h2>
+      <p class="lead">The LangChain TeamJune 26, 20236min
+
+Go back to blogShare
+
+
+
+
+
+We&amp;#x27;re excited to announce a challenge hosted by Prem in collaboration with LangChain.</p>
+      <p>The LangChain TeamJune 26, 20236min[</p>
+<p>Go back to blog](/blog)Share[</p>
+<p>](#)We&#x27;re excited to announce a challenge hosted by Prem in collaboration with LangChain.</p>
+<p>At LangChain we try to make it easy as possible to experiment with as many different models as possible. That includes the incredible number of emerging open source models. We&#x27;ve made efforts to make our framework as suitable as possible for experimentation with open source models. This has already enabled several amazing projects to be built on top of LangChain and open-source models.</p>
+<p>We want to see more of these types of projects! Which is why we&#x27;re so excited to be sharing this challenge created by Prem. We&#x27;re also using this as an opportunity to highlight our integration with Prem. Together, we&#x27;re enabling developers to build a new generation of AI applications that leverages LangChain composability and Prem privacy-centric AI model deployments.</p>
+      
+    </section>
+    <section class="section" id="s2">
+      <h2>⚡ About Prem</h2>
+      <p class="lead">Leveraging state-of-the-art Open-Source Large Language Models (LLMs), Prem provides a unified environment to deploy AI models on your infrastructure.</p>
+      <p>Leveraging state-of-the-art Open-Source Large Language Models (LLMs), Prem provides a unified environment to deploy AI models on your infrastructure. Abstracting away all technical complexities for AI deployment and ushering in a new era of privacy-centric AI applications — users can retain control and ownership of their models.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s3">
+      <h2>🏗️ One-click Integration</h2>
+      <p class="lead">All Prem AI services expose APIs in the same way as Open AI does.</p>
+      <p>All Prem AI services expose APIs in the same way as Open AI does. Using the tools together is as simple as downloading the Prem App and tweaking the URL of your API application to point to the Prem AI services, which operate locally with models of your choice.</p>
+<p>If you are used to using LangChain, now you can augment it with Prem. Build AI applications without sensitive data being transferred to any third party.</p>
+      
+    </section>
+    <section class="section" id="s4">
+      <h2>📊 The right abstraction</h2>
+      <p class="lead">Hosting and deploying open-source models today is a headache.</p>
+      <p>Hosting and deploying open-source models today is a headache. You need to:</p>
+<div class="card"><ul><li>Choose and test the model for your specific use case.</li><li>Serve the model using one of the multiple web frameworks available.</li><li>Package the service for production usage.</li></ul></div>
+<p>Thanks to Prem, we remove all of these pain points with a one-click deployment of models and vector stores. So today, if you are using LangChain with OpenAI and want to point to switch to a self-hosted privacy-preserving solution, all you need to do is to install Prem. Then, because Prem exposes the same API as OpenAI, you can easily use any OpenAI class and just change the <code>api_base</code>:</p>
+<p><code>from langchain.chat_models import ChatOpenAI</code></p>
+<div class="code-block"><pre>chat = ChatOpenAI(openai_api_base=&amp;quot;http://localhost:8111/api/v1&amp;quot;, max_tokens=128)</pre></div>
+      
+    </section>
+    <section class="section" id="s5">
+      <h2>🔗 Prem Challenge Overview</h2>
+      <p class="lead">Prem Labs aims to foster an ecosystem of privacy-preserving applications.</p>
+      <p>Prem Labs aims to foster an ecosystem of privacy-preserving applications. We are excited to announce this challenge to incentivize the developer community to build innovative applications, services, and solutions that put users’ privacy first.</p>
+<p>Teams participating in the challenge will leverage Prem to deploy AI models and services on-premise. An important requirement is that the submitted applications shouldn&#x27;t depend on centralized APIs at any point of their stack.</p>
+      
+    </section>
+    <section class="section" id="s6">
+      <h2>💡 What</h2>
+      <p class="lead">🛠 Teams participating in the challenge will develop Mobile, desktop, or web applications using one or many Prem AI services.</p>
+      <p>🛠 Teams participating in the challenge will develop Mobile, desktop, or web applications using one or many Prem AI services. Self-hosted AI models provide several benefits, including efficiency, cost optimization, and privacy.</p>
+<p>To learn more about the challenge and review some reference implementations, head over to our basic tutorial to get up to speed with Prem</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s7">
+      <h2>🛠️ When</h2>
+      <p class="lead">📆 26th of June - 10th of July</p>
+      <p>📆 26th of June - 10th of July</p>
+      
+    </section>
+    <section class="section" id="s8">
+      <h2>📈 Where</h2>
+      <p class="lead">🌍 Anywhere, Virtual</p>
+      <p>🌍 Anywhere, Virtual</p>
+      
+    </section>
+    <section class="section" id="s9">
+      <h2>🎯 How many?</h2>
+      <p class="lead">🚶🚶🚶 Both solo and team accepted.</p>
+      <p>🚶🚶🚶 Both solo and team accepted. Teams can be up to 4 people.</p>
+      
+    </section>
+    <section class="section" id="s10">
+      <h2>🔬 Prizes</h2>
+      <p class="lead">Judges will shortlist and reward 3 of the best application submitted.</p>
+      <p>Judges will shortlist and reward 3 of the best application submitted. 💰Up to $ 10,000+ will be awarded to the final selected projects.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s11">
+      <h2>📝 Submission Requirements</h2>
+      <p class="lead">To qualify for the challenge, your application should:
+
+- Open Source Github Repository As Prem is open-source from the start.</p>
+      <p>To qualify for the challenge, your application should:</p>
+<div class="card"><ul><li>Open Source Github Repository As Prem is open-source from the start. Also, apps and services MUST be open-source in all of their parts.</li><li>Use Prem Services From your local machine in development to production remote servers with the same interface, API, and services.</li><li>Don&#x27;t Log User Data on your server or third parties No centralized API at any point of the stack! Your users want you to keep your data private!</li></ul></div>
+      
+    </section>
+    <section class="section" id="s12">
+      <h2>🧪 Judging Criteria</h2>
+      <p class="lead">- Prompt utilization We all know open-source models are not there yet, like OpenAI with powerful GPUs at their disposal: from constraints, humans can leverage their creativity to produce unexpected re</p>
+      <div class="card"><ul><li>Prompt utilization We all know open-source models are not there yet, like OpenAI with powerful GPUs at their disposal: from constraints, humans can leverage their creativity to produce unexpected results. Be smart at prompting.</li><li>Commodity Hardware If we want to bring the benefits of AI to billions of people in the global south without locking them in the Big Brother sight, we must work around it and make sure anyone can afford to buy computing resources. Run your apps on cheap VPS without GPU or very inexpensive ones.</li><li>Composability Combine all Prem services: LLMs, Diffusers, Embedding, and Vector stores.</li><li>Production Status How polished is your application? Can my grandma use it?</li></ul></div>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s13">
+      <h2>🌐 **Submission Process**</h2>
+      <p class="lead">10th of July - BEFORE 6 PM UTC google form link
+
+Show some love to the Prem App on Github
+
+Follow us on Twitter - https://twitter.</p>
+      <p>10th of July - BEFORE 6 PM UTC google form link</p>
+<p>Show some love to the Prem App on Github</p>
+<p>Follow us on Twitter - https://twitter.com/premai_io</p>
+<p>Join us on Discord - https://discord.com/invite/kpKk6vYVAn</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s14">
+      <h2>📦 Getting Started</h2>
+      <p class="lead"></p>
+      
+      
+    </section>
+    <section class="section" id="s15">
+      <h2>🔄 Install Prem</h2>
+      <p class="lead">You can run Prem in two different ways:
+
+- MacOS: go to https://premai.</p>
+      <p>You can run Prem in two different ways:</p>
+<div class="card"><ul><li>MacOS: go to https://premai.io and download Prem App.</li><li>Server: run the installer script: <code>wget -q &lt;https://get.prem.ninja/install.sh&gt; -O install.sh; sudo bash ./install.sh</code></li></ul></div>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s16">
+      <h2>🎨 Run the services in the GUI</h2>
+      <p class="lead">When the UI is up and running, you can see all the services available.</p>
+      <p>When the UI is up and running, you can see all the services available. With just one click you can download the service you are interested in. In the background, the docker image associated with the service will be downloaded based on your hardware requirements.</p>
+<p>While waiting for the download to be completed, read more about the service, in the detail view. Just click on the card and you will be redirected to the service page. Each service page is packaged with some general info as well as complete documentation giving more details into the model exposed. When the download has been completed, just click on <code>Open</code> and the service will start. You can interact with the service from the playground or from APIs.</p>
+<p>You can check the port on which the service is running from the service detail view.</p>
+      
+    </section>
+    <section class="section" id="s17">
+      <h2>🏆 Start Building Your App</h2>
+      <p class="lead">Now that the service is running, you can connect to it at http://localhost:8111 and start building.</p>
+      <p>Now that the service is running, you can connect to it at http://localhost:8111 and start building. Here is a simple snippet using LangChain to connect to the service.</p>
+<p>from langchain.chat_models import ChatOpenAI
+from langchain.schema import AIMessage, HumanMessage</p>
+<p>os.environ[&quot;OPENAI_API_KEY&quot;] = &quot;random-string&quot;</p>
+<p>chat = ChatOpenAI(openai_api_base=&quot;&lt;http://localhost:8111/api/v1&gt;&quot;, max_tokens=128)</p>
+<div class="code-block"><pre>messages = [
+    HumanMessage(content=&amp;quot;Can you explain what is a large language model?&amp;quot;)
+]
+chat(messages)</pre></div>
+<p>Certainly! A large language model is a type of machine learning algorithm that has been trained on a very large dataset of text to learn how to generate human-like language. These models can be used for tasks such as text generation, question answering, and natural language processing. In this project, we will use the Hugging Face Transformers library to train a large language model on a dataset of text and then fine-tune it on a smaller dataset of text related to fashion and beauty.</p>
+<div class="code-block"><pre>messages = [
+    HumanMessage(content=&amp;quot;Write me a story about a superstar.&amp;quot;)
+]</pre></div>
+<p>Once upon a time, there was a young woman who had always dreamed of becoming a star. She sang like a bird, danced like a dream, and captivated every audience she performed for with her sheer talent and charm.</p>
+<p>When she was just starting out, she worked tirelessly to make her mark on the music industry, taking any opportunity that came her way and honing her skills day by day. Finally, after years of hard work and dedication, she was offered a record deal and shot to fame almost overnight, becoming an instant superstar in the process.</p>
+<p>People everywhere were captivated by this talented young woman, who seemed to have it all: the voice, the looks, the style, and the stage presence that left audiences begging for more. She quickly became a household name, known for her infectious smile, her magnetic energy, and the way she made everyone feel like they knew her personally.</p>
+<p>As she continued to tour and perform, the superstar began to accumulate an enormous following, with fans from all</p>
+<p>And Done 🎉 You are now using Prem with LangChain.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s18">
+      <h2>🔑 More Information</h2>
+      <p class="lead">Check out our documentation at: https://github.</p>
+      <p>Check out our documentation at: https://github.com/premai-io/prem-app</p>
+<p>Check out a simple talk to your data notebook: https://github.com/premAI-io/prem-daemon/blob/main/resources/notebooks/talk_to_your_data.ipynb</p>
+<p>Check out our YouTube tutorials</p>
+<div class="card"><ul><li>Getting Started with Prem: https://www.youtube.com/watch?v=XixH46Ysl5A</li><li>Deploy Prem in your Paperspace instance: https://www.youtube.com/watch?v=aW8t6wouwx0</li></ul></div>
+      
+    </section>
+    <section class="section" id="s19">
+      <h2>📋 Related content</h2>
+      <p class="lead">Deep AgentsAgent ArchitectureOpen Source
+
+#### Tuning Deep Agents to Work Well with Different Models
+
+Vivek TrivedyMason DaughertyApril 29, 20265min[](/blog/tuning-deep-agents-different-models).</p>
+      <p>Deep AgentsAgent ArchitectureOpen Source</p>
+<p>#### Tuning Deep Agents to Work Well with Different Models</p>
+<p>Vivek TrivedyMason DaughertyApril 29, 20265min[](/blog/tuning-deep-agents-different-models).png)Agent ArchitectureLangSmithOpen Source</p>
+<p>#### How LangSmith and LangChain OSS Help You Meet EU AI Act Requirements</p>
+<p>Jacob TalbotBecca WengApril 27, 20267min[](/blog/langsmith-langchain-oss-eu-ai-act).png)Agent ArchitecturePartner</p>
+<p>#### Agentic Engineering: How Swarms of AI Agents Are Redefining Software Engineering</p>
+<p>Renuka KumarPrashanth RamagopalApril 17, 202611min[](/blog/agentic-engineering-redefining-software-engineering)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s20">
+      <h2>🚀 See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+<p>](/contact-sales)</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+  </div>
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/prem-challenge-with-langchain" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

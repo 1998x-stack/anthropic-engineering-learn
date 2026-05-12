@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Winning in AI means mastering the new stack</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--green:#10b981;--emerald:#059669;--teal:#14b8a6;--blue:#3b82f6;--purple:#6366f1;--amber:#f59e0b;--red:#ef4444;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+    .nav{position:sticky;top:0;z-index:100;background:rgba(15,23,42,.85);backdrop-filter:blur(12px);padding:14px 32px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.08)}
+    .nav a{color:#f1f5f9;text-decoration:none;font-weight:500;font-size:14px}
+    .nav .brand{font-weight:700;font-size:16px;color:#10b981}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%);color:#fff;padding:80px 32px 60px;text-align:center}
+    .hero h1{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;margin-bottom:12px;line-height:1.3}
+    .hero .subtitle{font-size:18px;color:rgba(255,255,255,.8);max-width:720px;margin:0 auto 40px}
+    .hero .meta{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:32px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;max-width:800px;margin:0 auto}
+    .stat{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:20px 16px;backdrop-filter:blur(8px)}
+    .stat .num{font-size:28px;font-weight:800;color:#34d399}
+    .stat .label{font-size:13px;color:rgba(255,255,255,.7);margin-top:4px}
+    .page{max-width:900px;margin:0 auto;padding:40px 24px}
+    .toc{margin-bottom:48px}
+    .toc h3{font-size:14px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);margin-bottom:16px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .toc-grid a{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;transition:all .2s}
+    .toc-grid a:hover{border-color:var(--emerald);background:#ecfdf5}
+    .toc-grid .num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-size:12px;font-weight:700;flex-shrink:0}
+    .section{margin-bottom:56px}
+    .section h2{font-size:clamp(1.3rem,3vw,1.7rem);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+    .lead{color:var(--text-secondary);font-size:15px;margin-bottom:24px;line-height:1.6}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}
+    .card h4{font-size:16px;font-weight:600;margin-bottom:8px}
+    .card p,.card li{font-size:14px;color:var(--text-secondary);line-height:1.7}
+    .card ul,.card ol{padding-left:20px}
+    .card li{margin-bottom:4px}
+    p{font-size:15px;color:var(--text-secondary);line-height:1.8;margin-bottom:16px}
+    p code{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:13px;color:#059669}
+    .chart{margin:24px 0}
+    .chart-row{display:flex;align-items:center;margin-bottom:10px;gap:12px}
+    .chart-label{width:150px;font-size:13px;font-weight:500;text-align:right;flex-shrink:0}
+    .chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}
+    .chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;justify-content:flex-end;padding-right:10px;font-size:12px;font-weight:600;color:#fff;transition:width .6s ease}
+    .chart-bar.green{background:linear-gradient(90deg,#059669,#10b981)}
+    .chart-bar.teal{background:linear-gradient(90deg,#14b8a6,#2dd4bf)}
+    .chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+    .chart-bar.purple{background:linear-gradient(90deg,#6366f1,#a78bfa)}
+    .chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}
+    .flow{display:flex;align-items:center;justify-content:center;gap:12px;margin:24px 0;flex-wrap:wrap}
+    .flow-step{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;min-width:120px}
+    .flow-step.green{background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none}
+    .flow-step.teal{background:linear-gradient(135deg,#14b8a6,#2dd4bf);color:#fff;border:none}
+    .flow-step.blue{background:linear-gradient(135deg,#3b82f6,#60a5fa);color:#fff;border:none}
+    .flow-step.purple{background:linear-gradient(135deg,#6366f1,#a78bfa);color:#fff;border:none}
+    .flow-step.amber{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#fff;border:none}
+    .flow-arrow{font-size:20px;color:var(--text-secondary)}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}
+    .compare-card{border-radius:var(--radius);padding:24px}
+    .compare-card.old{background:#fef2f2;border:2px solid #fecaca}
+    .compare-card.new{background:#ecfdf5;border:2px solid #a7f3d0}
+    .compare-card h4{font-size:15px;font-weight:700;margin-bottom:8px}
+    .compare-card p{font-size:13px;color:var(--text-secondary)}
+    .timeline{position:relative;padding-left:32px;margin:24px 0}
+    .timeline::before{content:'';position:absolute;left:7px;top:8px;bottom:8px;width:3px;background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6);border-radius:2px}
+    .tl-item{position:relative;margin-bottom:24px}
+    .tl-dot{position:absolute;left:-29px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid #059669;background:#fff}
+    .tl-item:nth-child(2) .tl-dot{border-color:#14b8a6}
+    .tl-item:nth-child(3) .tl-dot{border-color:#3b82f6}
+    .tl-phase{font-weight:700;font-size:15px;color:var(--text)}
+    .tl-desc{font-size:13px;color:var(--text-secondary);margin-top:4px}
+    .code-block{background:#1e293b;border-radius:var(--radius);padding:20px;margin:16px 0;overflow-x:auto}
+    .code-block pre{color:#e2e8f0;font-family:var(--mono);font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-all}
+    .block-q{background:linear-gradient(135deg,#ecfdf5,#d1fae5);border-left:4px solid #059669;border-radius:0 var(--radius) var(--radius) 0;padding:20px 24px;margin:24px 0}
+    .block-q p{font-size:15px;font-style:italic;color:#064e3b;line-height:1.7}
+    .footer{background:#0f172a;color:#94a3b8;padding:40px 32px;text-align:center;font-size:14px}
+    .footer a{color:#34d399;text-decoration:none}
+    .footer a:hover{text-decoration:underline}
+    .footer .links{margin-top:12px;display:flex;justify-content:center;gap:24px;flex-wrap:wrap}
+    @media(max-width:768px){.compare-grid{grid-template-columns:1fr}.chart-label{width:100px;font-size:12px}.flow{flex-direction:column;gap:8px}.flow-arrow{transform:rotate(90deg)}.toc-grid{grid-template-columns:1fr}.hero{padding:60px 20px 40px}.nav{padding:12px 16px}.stats{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+  <header class="hero">
+    <div class="meta">📚 Tutorials & Guides · LangChain Accounts · 2024-02-16</div>
+    <h1>Winning in AI means mastering the new stack</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">9</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~10min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">-</div><div class="label">代码示例</div></div>
+      <div class="stat"><div class="num">6</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>Winning in AI means mastering </a>
+      <a href="#s2"><span class="num">2</span>AI in 2030</a>
+      <a href="#s3"><span class="num">3</span>Some things don’t change…</a>
+      <a href="#s4"><span class="num">4</span>The challenges going forward</a>
+      <a href="#s5"><span class="num">5</span>The AI Stack</a>
+      <a href="#s6"><span class="num">6</span>Our pledge</a>
+      <a href="#s7"><span class="num">7</span>Bios</a>
+      <a href="#s8"><span class="num">8</span>Related content</a>
+      <a href="#s9"><span class="num">9</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+    <section class="section" id="s1">
+      <h2>🔍 Winning in AI means mastering the new stack</h2>
+      <p class="lead">Harrison ChaseFebruary 16, 20248min
+
+Go back to blogShare
+
+
+
+
+
+Authors: Edo Liberty, Guillermo Rauch</p>
+      <p>Harrison ChaseFebruary 16, 20248min[</p>
+<p>Go back to blog](/blog)Share[</p>
+<p>](#)Authors: Edo Liberty, Guillermo Rauch, Ori Goshen, Robert Nishihara, Harrison Chase</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s2">
+      <h2>⚡ AI in 2030</h2>
+      <p class="lead">AI is rapidly changing.</p>
+      <p>AI is rapidly changing. Too rapidly for most. Ten years ago it was all about big data and ML. Deep Learning was a “buzzy” term that was just picking up steam. The term “AI” was still reserved for the futuristic dream of human level intelligence. The technology was used mostly by hyperscalers for advertising optimizations, search, feed ranking in online media, product recommendation in shopping, abuse prevention online, and a few other core use cases. Five years ago ML Ops was all the rage, as companies started grappling with feature engineering and model deployments. Their ambitions had mostly to do with data labeling, churn prediction, recommendation, image classification, sentiment analysis, natural language processing, and other standard machine learning tasks. Roughly a year ago LLMs and foundational models completely transformed our expectations from AI. Companies started investing in chat bots, and RAG powered knowledge hubs, automating customer support, legal discovery, medical history, and others. Peeking into 2024 and beyond, it would seem that agents and co-pilots are taking center stage. And, that solving hallucinations while making LLMs more trustworthy and usable in user facing products will be a main focus. We don’t know what AI will look like after that, let alone in 2030. We are pretty sure nobody knows.</p>
+<p>Nevertheless, somehow in this head-spinning innovation frenzy, the infrastructure components which power almost all AI based solutions remained surprisingly constant.</p>
+      
+    </section>
+    <section class="section" id="s3">
+      <h2>🏗️ Some things don’t change…</h2>
+      <p class="lead">While there are many AI product architectures, a few core infrastructure building blocks seem to power almost all of them.</p>
+      <p>While there are many AI product architectures, a few core infrastructure building blocks seem to power almost all of them. These include capabilities for model training and hosting, pretrained foundation models, vector databases, model pipelines and data operations, labeling, evaluation frameworks, and AI application hosting.</p>
+<p>These components are not new. Ad serving at Google is using vector search for candidate generation for many years now. Distributed neural network training was being built at Meta for feed-ranking model training for more than a decade. At the same time, multimodal embeddings for shopping recommendations were being generated by Amazon and Microsoft built vector based retrieval and ranking into Bing. These are only a handful of examples.</p>
+<p>The main challenge for the rest of the market was that the AI stack was confined to the hyperscalers. Those were the only companies who had the scale to justify their development and the talent to support it. Other companies had a tough choice between giving up and making a Herculean effort to build inhouse. Companies like Uber, Netflix, Yahoo, Salesforce, Pinterest, and others exemplify those whose investment in AI talent and technologies was quite remarkable (and visionary) compared with the size of their business.</p>
+<p>Today, companies no longer have this dilemma. They have the option to simply use the infrastructure for AI (from companies like ours). In fact, these tools are now readily available, easy to use, and affordable. But, we are getting ahead of ourselves…</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s4">
+      <h2>📊 The challenges going forward</h2>
+      <p class="lead">Before describing the new stack, we outline the current and future challenges AI applications will face.</p>
+      <p>Before describing the new stack, we outline the current and future challenges AI applications will face. Note that AI applications face all the challenges that all other software services face. Issues like code quality, deployments, uptime, speed, correctness, etc. The list below only points to unique new challenges.</p>
+<p>Multimodal data and models will soon be the norm. Today’s text-based applications will be flooded with images and video. Existing services will be far more data intensive and will have to rethink their interfaces across the entire stack.</p>
+<p>Data is growing and becoming more complex. Massive amounts of text and multimodal data will have to be processed by models and made available to AI applications in real time. Such applications expect to access data by meaning as a source of knowledge. Traditional databases, which most engineers are familiar with, struggle mightily with such applications.</p>
+<p>Hardware is changing. A burgeoning ecosystem of hardware accelerators will begin to relieve some of today’s compute shortages, but the need to leverage (and mix between) a broad and evolving set of accelerators will pose new challenges around portability and performance optimization.</p>
+<p>Application development is becoming more AI centric and well integrated with advanced tooling and AI capabilities. This means traditional web development is becoming much more storage and compute intensive.</p>
+<p>Model training is also transitioning. With foundational models, we move away from (only) model development from scratch. Capabilities for model retraining and fine tuning are needed. While this greatly reduces the computational burden it also poses new challenges regarding model customization and composition which will strain our already strained model evaluation capabilities.</p>
+<p>Cloud centrality is becoming a key success factor. Negotiating between data gravity and model gravity requires new cloud native services that are very dynamic and optimized in their use of compute, storage, and networking. Moreover, cloud portability and cross cloud functionality is becoming a core design tenet for many. This is why effectively the entire AI stack is served only as cloud native services with the major cloud providers.</p>
+<p>Needless to say, building these capabilities in-house is unfeasible for most and unnecessary for nearly all. To take advantage of these new opportunities, businesses will need to learn how to use the right infrastructure. That infrastructure must address these needs but also be future proof. That means being optimized for flexibility, iteration speed, and general applicability.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s5">
+      <h2>🔗 The AI Stack</h2>
+      <p class="lead">Foundational Models: Models are expected to either transform a document or perform a task.</p>
+      <p>Foundational Models: Models are expected to either transform a document or perform a task. Transformation usually means generating vector embedding for ingestion in vector databases or feature generation for task completion. Tasks include text and image generation, labeling, summarization, transcription, etc. Both training such models and operating them efficiently in production is very challenging and incredibly expensive. Companies like AI21 Labs offer the best in class LLMs which are highly optimized for embedding and generation, and AI21 Labs also builds highly specialized models that solve specific business challenges. They are not only hosted but are constantly retrained and improved.</p>
+<p>Model training and Deployment: One of the defining characteristics of AI workloads is how compute intensive they are. As such, successful AI teams build with scale in mind. Their need for scale comes from larger models, from larger quantities of data, and from an exploding number of models to build and deploy. Simply computing the embeddings to power a vanilla RAG application can require hundreds of GPUs running for days.</p>
+<p>The need for scale introduces tremendous software engineering challenges around performance, cost, and reliability, all without compromising on developer velocity. Anyscale develops Ray, an open source project used as the foundation of AI infrastructure across the tech industry and used to train some of the world’s largest models like GPT-4.</p>
+<p>Vector Database: Knowledge is at the core of AI and semantic retrieval is the key to making relevant information available to models in real time. To do that Vector databases have matured and specialized to be able to search through billions of embeddings in milliseconds and still remain cost effective. Pinecone recently launched its newly architected, cloud native, and serverless vector database. It now lets companies scale with no limits and build performant applications (like RAG) faster than ever before. Many companies reduce their DB spend by up to 50x with this new product.</p>
+<p>AI Application Hosting: AI applications present unique new challenges for the application rendering, delivery, and security stack. For one, unlike traditional websites, AI apps are more dynamic by nature, making traditional CDN caching less effective, and rely on server rendering and streaming to meet users’ speed and personalization demands. As the AI landscape evolves rapidly, iterating quickly on new models, prompts, experiments, and techniques is essential, and application traffic can grow exponentially, making serverless platforms particularly attractive. In terms of security, AI apps have become a common target of bot attacks to attempt to steal or deny LLM resources or scrape proprietary data. Next.js and Vercel are investing heavily in product infrastructure for GenAI companies, driving iteration velocity for developers and fast, secure delivery to end users.</p>
+<p>LLM Developer Toolkits: Building LLM applications requires taking all the above mentioned components and putting them together to build the “cognitive architecture” of your system. Having an LLM toolkit like LangChain to bring these different components together can allow engineers to build faster and higher quality applications. Important components in this toolkit include: the ability to flexibly create custom chains (there is a good chance you will want to customize your cognitive architecture), a variety of integrations (there are many different components to connect to), and first class streaming support (an important UX consideration for LLM applications).</p>
+<p>LLM Ops: Building a prototype is one thing, taking it into production is a whole other issue. Aside from the logistics of hosting the application (covered above) there emerges a whole other set of issues around the reliability of the application. Common issues include being able to test and evaluate different prompts or models, being able to trace and debug individual calls to figure out what in your system is going wrong, and being able to monitor feedback over time. LangSmith - a platform built by the LangChain team but independent of the framework - is a comprehensive solution for these issues.</p>
+      
+    </section>
+    <section class="section" id="s6">
+      <h2>💡 Our pledge</h2>
+      <p class="lead">As the CEOs building the new AI stack, we are committed to future-proofing your AI applications.</p>
+      <p>As the CEOs building the new AI stack, we are committed to future-proofing your AI applications. We are committed to building the best building blocks. We are committed to constantly improving the integrations between our products. We commit to include and evolve alongside other AI products and services. We are committed to being there with you when your demands evolve over time. We are committed to your success in leveraging AI in the years to come.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s7">
+      <h2>🛠️ Bios</h2>
+      <p class="lead">Edo Liberty, CEO Pinecone
+
+Edo Liberty is the Founder and CEO of Pinecone, the managed database for large-scale vector Search.</p>
+      <p>Edo Liberty, CEO Pinecone</p>
+<p>Edo Liberty is the Founder and CEO of Pinecone, the managed database for large-scale vector Search.  Edo previously was a Director of Research at AWS and Head of Amazon AI Labs and Head of Yahoo’s Research Lab building horizontal machine learning platforms.  Edo received his B.Sc in Physics and Computer Science from Tel Aviv University and Ph.D. in Computer Science from Yale University. After that, he was a Postdoctoral fellow at Yale in theProgram in Applied Mathematics. He is the author of more than 75 academic papers and patents about machine learning, systems, and optimization.</p>
+<p>Guillermo Rauch, CEO Vercel</p>
+<p>Guillermo Rauch is the founder and CEO of Vercel and the creator of Next.js, which powers the leading Generative AI companies on the web. Guillermo previously co-founded LearnBoost and Cloudup, where he served the company as CTO through its acquisition by Automattic in 2013. Originally from Argentina, Guillermo has been a developer since the age of ten and is passionate about contributing to the open-source community.</p>
+<p>Ori Goshen, Co-CEO AI21 Labs</p>
+<p>Ori Goshen is a seasoned entrepreneur and a graduate of IDF&#x27;s elite intelligence unit 8200. Prior to founding AI21 Labs, he co-founded Crowdx, a network analytics company (acquired by Cellwize). Beforehand, Mr. Goshen served as a product manager at Fring (acquired by Genband) and led the development of the first ever made VoIP and messaging app for iPhone and Android. Mr. Goshen brings more than 15 years of experience in technology and product leadership roles.</p>
+<p>Robert Nishihara, CEO Anyscale</p>
+<p>Robert Nishihara is one of the creators of Ray, a distributed framework for seamlessly scaling and productionizing AI workloads. Ray is used by innovative companies like Uber, OpenAI, Netflix, Amazon, and others to scale machine learning training, inference, and data ingest workloads. Robert developed Ray with his co-founders at the UC Berkeley RISELab. He received his PhD in machine learning and co-founded Anyscale to commercialize Ray. Before that, he majored in math at Harvard.</p>
+<p>Harrison Chase, CEO LangChain</p>
+<p>Harrison Chase is the co-founder and CEO of LangChain, a company formed around the popular open source Python/Typescript packages. The goal of LangChain is to make it as easy as possible to use LLMs to develop context-aware reasoning applications. Prior to starting LangChain, he led the ML team at Robust Intelligence (an MLOps company focused on testing and validation of machine learning models), led the entity linking team at Kensho (a fintech startup), and studied stats and CS at Harvard.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s8">
+      <h2>📈 Related content</h2>
+      <p class="lead">Harrison&amp;#x27;s In the Loop
+
+#### Agent observability needs feedback to power learning
+
+Harrison ChaseMay 5, 20268min[](/blog/agent-observability-needs-feedback-to-power-learning)Observability &amp;amp; E</p>
+      <p>Harrison&#x27;s In the Loop</p>
+<p>#### Agent observability needs feedback to power learning</p>
+<p>Harrison ChaseMay 5, 20268min[](/blog/agent-observability-needs-feedback-to-power-learning)Observability &amp; EvalsLangSmith</p>
+<p>#### Reusable Evaluators and Evaluator Templates in LangSmith</p>
+<p>Catherine QiaoJacob TalbotApril 16, 20264min[](/blog/reusable-langsmith-evaluator-templates)Harrison&#x27;s In the Loop</p>
+<p>#### Your harness, your memory</p>
+<p>Harrison ChaseApril 11, 20267min[](/blog/your-harness-your-memory)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s9">
+      <h2>🎯 See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+<p>](/contact-sales)</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+  </div>
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/winning-in-ai-means-mastering-the-new-stack" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

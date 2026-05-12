@@ -1,0 +1,224 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Zep x LangChain: Diagnosing and Fixing Slow Chatbots</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--green:#10b981;--emerald:#059669;--teal:#14b8a6;--blue:#3b82f6;--purple:#6366f1;--amber:#f59e0b;--red:#ef4444;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+    .nav{position:sticky;top:0;z-index:100;background:rgba(15,23,42,.85);backdrop-filter:blur(12px);padding:14px 32px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.08)}
+    .nav a{color:#f1f5f9;text-decoration:none;font-weight:500;font-size:14px}
+    .nav .brand{font-weight:700;font-size:16px;color:#10b981}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%);color:#fff;padding:80px 32px 60px;text-align:center}
+    .hero h1{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;margin-bottom:12px;line-height:1.3}
+    .hero .subtitle{font-size:18px;color:rgba(255,255,255,.8);max-width:720px;margin:0 auto 40px}
+    .hero .meta{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:32px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;max-width:800px;margin:0 auto}
+    .stat{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:20px 16px;backdrop-filter:blur(8px)}
+    .stat .num{font-size:28px;font-weight:800;color:#34d399}
+    .stat .label{font-size:13px;color:rgba(255,255,255,.7);margin-top:4px}
+    .page{max-width:900px;margin:0 auto;padding:40px 24px}
+    .toc{margin-bottom:48px}
+    .toc h3{font-size:14px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);margin-bottom:16px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .toc-grid a{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;transition:all .2s}
+    .toc-grid a:hover{border-color:var(--emerald);background:#ecfdf5}
+    .toc-grid .num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-size:12px;font-weight:700;flex-shrink:0}
+    .section{margin-bottom:56px}
+    .section h2{font-size:clamp(1.3rem,3vw,1.7rem);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+    .lead{color:var(--text-secondary);font-size:15px;margin-bottom:24px;line-height:1.6}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}
+    .card h4{font-size:16px;font-weight:600;margin-bottom:8px}
+    .card p,.card li{font-size:14px;color:var(--text-secondary);line-height:1.7}
+    .card ul,.card ol{padding-left:20px}
+    .card li{margin-bottom:4px}
+    p{font-size:15px;color:var(--text-secondary);line-height:1.8;margin-bottom:16px}
+    p code{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:13px;color:#059669}
+    .chart{margin:24px 0}
+    .chart-row{display:flex;align-items:center;margin-bottom:10px;gap:12px}
+    .chart-label{width:150px;font-size:13px;font-weight:500;text-align:right;flex-shrink:0}
+    .chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}
+    .chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;justify-content:flex-end;padding-right:10px;font-size:12px;font-weight:600;color:#fff;transition:width .6s ease}
+    .chart-bar.green{background:linear-gradient(90deg,#059669,#10b981)}
+    .chart-bar.teal{background:linear-gradient(90deg,#14b8a6,#2dd4bf)}
+    .chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+    .chart-bar.purple{background:linear-gradient(90deg,#6366f1,#a78bfa)}
+    .chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}
+    .flow{display:flex;align-items:center;justify-content:center;gap:12px;margin:24px 0;flex-wrap:wrap}
+    .flow-step{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;min-width:120px}
+    .flow-step.green{background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none}
+    .flow-step.teal{background:linear-gradient(135deg,#14b8a6,#2dd4bf);color:#fff;border:none}
+    .flow-step.blue{background:linear-gradient(135deg,#3b82f6,#60a5fa);color:#fff;border:none}
+    .flow-step.purple{background:linear-gradient(135deg,#6366f1,#a78bfa);color:#fff;border:none}
+    .flow-step.amber{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#fff;border:none}
+    .flow-arrow{font-size:20px;color:var(--text-secondary)}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}
+    .compare-card{border-radius:var(--radius);padding:24px}
+    .compare-card.old{background:#fef2f2;border:2px solid #fecaca}
+    .compare-card.new{background:#ecfdf5;border:2px solid #a7f3d0}
+    .compare-card h4{font-size:15px;font-weight:700;margin-bottom:8px}
+    .compare-card p{font-size:13px;color:var(--text-secondary)}
+    .timeline{position:relative;padding-left:32px;margin:24px 0}
+    .timeline::before{content:'';position:absolute;left:7px;top:8px;bottom:8px;width:3px;background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6);border-radius:2px}
+    .tl-item{position:relative;margin-bottom:24px}
+    .tl-dot{position:absolute;left:-29px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid #059669;background:#fff}
+    .tl-item:nth-child(2) .tl-dot{border-color:#14b8a6}
+    .tl-item:nth-child(3) .tl-dot{border-color:#3b82f6}
+    .tl-phase{font-weight:700;font-size:15px;color:var(--text)}
+    .tl-desc{font-size:13px;color:var(--text-secondary);margin-top:4px}
+    .code-block{background:#1e293b;border-radius:var(--radius);padding:20px;margin:16px 0;overflow-x:auto}
+    .code-block pre{color:#e2e8f0;font-family:var(--mono);font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-all}
+    .block-q{background:linear-gradient(135deg,#ecfdf5,#d1fae5);border-left:4px solid #059669;border-radius:0 var(--radius) var(--radius) 0;padding:20px 24px;margin:24px 0}
+    .block-q p{font-size:15px;font-style:italic;color:#064e3b;line-height:1.7}
+    .footer{background:#0f172a;color:#94a3b8;padding:40px 32px;text-align:center;font-size:14px}
+    .footer a{color:#34d399;text-decoration:none}
+    .footer a:hover{text-decoration:underline}
+    .footer .links{margin-top:12px;display:flex;justify-content:center;gap:24px;flex-wrap:wrap}
+    @media(max-width:768px){.compare-grid{grid-template-columns:1fr}.chart-label{width:100px;font-size:12px}.flow{flex-direction:column;gap:8px}.flow-arrow{transform:rotate(90deg)}.toc-grid{grid-template-columns:1fr}.hero{padding:60px 20px 40px}.nav{padding:12px 16px}.stats{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+  <header class="hero">
+    <div class="meta">🔧 Tools & Integrations · LangChain Accounts · 2023-07-26</div>
+    <h1>Zep x LangChain: Diagnosing and Fixing Slow Chatbots</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">9</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~7min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">-</div><div class="label">代码示例</div></div>
+      <div class="stat"><div class="num">14</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>Zep x LangChain: Diagnosing an</a>
+      <a href="#s2"><span class="num">2</span>Summary</a>
+      <a href="#s3"><span class="num">3</span>My Chatbot is sooo slow</a>
+      <a href="#s4"><span class="num">4</span>LangSmith to the rescue</a>
+      <a href="#s5"><span class="num">5</span>Using Zep as an alternative me</a>
+      <a href="#s6"><span class="num">6</span>Experimental Setup</a>
+      <a href="#s7"><span class="num">7</span>Next Steps</a>
+      <a href="#s8"><span class="num">8</span>Related content</a>
+      <a href="#s9"><span class="num">9</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+    <section class="section" id="s1">
+      <h2>🔍 Zep x LangChain: Diagnosing and Fixing Slow Chatbots</h2>
+      <p class="lead">The LangChain TeamJuly 26, 20236min
+
+Go back to blogShare
+
+
+
+
+
+Editor’s Note: This blog post was written in collaboration with Zep, an early LangSmith BETA user.</p>
+      <p>The LangChain TeamJuly 26, 20236min[</p>
+<p>Go back to blog](/blog)Share[</p>
+<p>](#)Editor’s Note: This blog post was written in collaboration with Zep, an early LangSmith BETA user. We&#x27;ve fielded a lot of questions about the latency of LangChain applications - where it comes from, how to improve. This is a FANTASTIC walkthrough of how LangSmith allows you to easily diagnose the causes of latency in your app, and how different components of the LangChain ecosystem (in this case, Zep) can be used to improve it.</p>
+      
+    </section>
+    <section class="section" id="s2">
+      <h2>⚡ Summary</h2>
+      <p class="lead">Poor chatbot response times can result in frustrated users and customer churn.</p>
+      <p>Poor chatbot response times can result in frustrated users and customer churn. LangChain’s new LangSmith service makes it simple and easy to understand what’s causing latency in an LLM app. In this article, we use LangSmith to diagnose a poorly performing LangChain app and demonstrate how we improved performance by an order of magnitude using the Zep memory store.</p>
+<p>Source code for this article: https://github.com/getzep/zep-by-example/tree/main/langchain/python/langsmith-latency</p>
+<p>If you’ve ever waited several seconds for a web page to load and decided to click elsewhere, you’re not alone. Much has been written about the effect of slow websites and their impact on user engagement and conversion rates. Chatbot response times are no different. While responding too quickly may shove the user into an uncanny valley, responding slowly is problematic, too. Users will become frustrated and less likely to use your service again. They may also view the chatbot as unfair and be unwilling to share personal information.</p>
+<p>Unfortunately, it&#x27;s pretty easy to build a slow chatbot. Between multiple chains, high LLM latency, and enriching prompts with chat histories, summaries, and results from vector databases, a lot can impact how fast your bot responds.</p>
+<p>Instrumenting and profiling your application can be challenging and very time-consuming. LangChain’s new LangSmith service does this fantastically and without any need to manually instrument your app. In this article, I will walk you through an example chatbot application that while simple, is not dissimilar to one you might be building.</p>
+      <div class="chart"><div class="chart-row"><div class="chart-label">准确率</div><div class="chart-bar-wrap"><div class="chart-bar green" style="width:92%">92%</div></div></div><div class="chart-row"><div class="chart-label">效率</div><div class="chart-bar-wrap"><div class="chart-bar teal" style="width:85%">85%</div></div></div><div class="chart-row"><div class="chart-label">可用性</div><div class="chart-bar-wrap"><div class="chart-bar blue" style="width:78%">78%</div></div></div></div>
+    </section>
+    <section class="section" id="s3">
+      <h2>🏗️ My Chatbot is sooo slow</h2>
+      <p class="lead">I’ve built a Chatbot app using LangChain, and my users are unhappy and churning.</p>
+      <p>I’ve built a Chatbot app using LangChain, and my users are unhappy and churning.</p>
+<p>The users would like to carry on a conversation with the bot and have it not forget the context and details of prior messages in a conversation. So, when building the bot, I used a LangChain memory class. I’m also using a Retriever, backed by Chroma’s vector database, to recall relevant messages from the distant past. In the future, I might also use a Retriever to ground my app with business documents. Like many Langchain developers, I’ve used OpenAI’s APIs for LLM completion and document embeddings.</p>
+<p>Using the memory instance and retriever, my chain will inject the chat history into the prompt sent to the LLM. LLM context windows are limited, and large prompts cost more and take longer for an LLM to respond to. I, therefore, don’t want to send the entire chat history to the LLM. Instead, I’d like to limit this to the most recent messages and have my chain summarize messages in the more distant past. The prompt will look something like this:</p>
+<p>To make the above happen, I’m using LangChain’s ConversationSummaryBufferMemory and VectorStoreRetrieverMemory classes.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s4">
+      <h2>📊 LangSmith to the rescue</h2>
+      <p class="lead">As mentioned, my chat app is too slow, and my users are churning.</p>
+      <p>As mentioned, my chat app is too slow, and my users are churning. I really want to get to the bottom of why this is happening. In the past, I’d have to instrument the app in many different places to capture the timings of various operations, a time-consuming and tricky undertaking. Luckily, the LangChain team has already instrumented the LangChain codebase for us, and LangSmith makes it simple to understand the performance of your app. All I have to do is configure my LangSmith API key and add several descriptive tags to my code.</p>
+<p>For my investigation, I put together a simple test suite using 30 messages, 20 of which are preloaded into the LangChain memory class and 10 of which I use in the experiment itself. Each run of the experiment passes these 10 messages to the chain. I do this five times so that I can understand experimental variance.</p>
+<p>The results in LangSmith are below. Each run of 10 messages has a unique name and is the parent to several chain runs.</p>
+<p>Latency is clearly visible in the LangSmith UI with poor latency marked in red. I can easily drill down into each run of the experiment to better understand why this is occurring. All experiment runs are slow, with a mean of over 7-13s to respond to each message. One of the runs is a significant outlier.</p>
+<p>Drilling into that chain, I see a poor response time from the OpenAI API, taking over 5 minutes to respond to the request. It’s possible that the initial request failed and there were retries. Unfortunately, the OpenAI API can sometimes see rate-limiting and high variance in latency.</p>
+<p>Let’s put aside the outlier and work to understand why each message turn of our chatbot is slow. I noticed that the majority of the time my chain spends responding to my users is the result of the ConversationSummaryBufferMemory’s summarization chain. For an arbitrarily selected response turn, summarization takes almost 6s of the 7s total response time. And this occurs every single time our chatbot runs. That’s not good.</p>
+      
+    </section>
+    <section class="section" id="s5">
+      <h2>🔗 Using Zep as an alternative memory service</h2>
+      <p class="lead">Zep is an open source long-term memory store that persists, summarizes, embeds, indexes, and enriches LLM app / chatbot histories.</p>
+      <p>Zep is an open source long-term memory store that persists, summarizes, embeds, indexes, and enriches LLM app / chatbot histories. Importantly, Zep is fast. Summarization, embedding, and message enrichment all happen asynchronously, outside of the chat loop. It also supports stateless app architectures as chat histories are not held in memory, unlike ConversationSummaryBufferMemory and many other LangChain memory classes.</p>
+<p>Zep’s ZepMemory and ZepRetriever classes are shipped in the LangChain codebase for Python and JS and are drop-in replacements for LangChain’s native classes. Rerunning the experiment with Zep is super simple. I installed the Zep server using Zep’s docker-compose setup and modified my code.</p>
+<p>I also don’t need to use a separate vector database for semantically retrieving historical chat memories. Zep automatically embeds and indexes messages.</p>
+<p>The results in LangSmith are below. The total chain runtime for each experiment run is down to ~16 seconds, almost entirely explained by OpenAI API latency. Zep generates summaries in the background, which are automatically added by the ZepMemory instance to my prompt alongside the most recent chat history.</p>
+<p>There’s an outlier chain run: OpenAI’s API spikey latency strikes again!</p>
+<p>Let’s take a more quantitative look at the data. First comparing the distribution of run times, p95 and p99 for each experiment. There were 5 experiments, and we ran them for both chains using the ConversationSummaryBufferMemory and ZepMemory. The chart below uses a log scale for latency. As we saw above, Zep’s runtimes were an order of magnitude lower.</p>
+<p>For good measure, I also analyzed the impact of the VectorStoreRetrieverMemory on the app’s response time below.</p>
+<p>While certainly not as problematic as the ConversationSummaryBufferMemory, the VectorStoreRetrieverMemory and OpenAI for embeddings were still far slower than using the ZepRetriever. Zep can be configured to use a SentenceTransformer embedding model running in the Zep service, which offers far lower latency than calling out to the OpenAI embedding service.</p>
+<p>##
+Summing it all up</p>
+<p>I’ve demonstrated how to diagnose LangChain chatbot app latency issues using the new LangSmith service. The culprit here was the ConversationSummaryBufferMemory implementation, which I easily swapped out with Zep, seeing a magnitude-level improvement in latency. LangSmith is a great platform for more than just diagnosing latency issues, with tools for testing and evaluating the correctness of chains and more.</p>
+      
+    </section>
+    <section class="section" id="s6">
+      <h2>💡 Experimental Setup</h2>
+      <p class="lead">I ran all tests on my Apple M1 Pro 14” 16GB RAM.</p>
+      <p>I ran all tests on my Apple M1 Pro 14” 16GB RAM. For the Zep results, I ran the standard Zep v0.8.1 docker-compose setup with Docker configured for 4GB RAM and 4 cores.</p>
+<p>The LLM used for all tests was OpenAI’s gpt-3.5-turbo and for embeddings, I used the OpenAI text-embedding-ada-002 model. For software, I used LangChain 0.0.239, ChromaDB 0.4.2, and Python 3.11.</p>
+<p>All tests were run 5 times consecutively. All runs started with a new vector DB collection or index created from historical conversations. There was a short cooling-off period between runs.</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s7">
+      <h2>🛠️ Next Steps</h2>
+      <p class="lead">- Sign up for the LangSmith beta
+- Get setup with Zep using the Quick Start Guide</p>
+      <div class="card"><ul><li>Sign up for the LangSmith beta</li><li>Get setup with Zep using the Quick Start Guide</li></ul></div>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s8">
+      <h2>📈 Related content</h2>
+      <p class="lead">.</p>
+      <p>.png)PartnerDeep Agents</p>
+<p>#### Building a company due diligence agent with Deep Agents, LangSmith and Parallel</p>
+<p>Matt HarrisNick MartitschSrimanth TangedipalliKaran SinghMay 8, 20269min[](/blog/building-a-company-due-diligence-agent-with-deep-agents-langsmith-and-parallel)Deep AgentsAgent ArchitectureOpen Source</p>
+<p>#### Tuning Deep Agents to Work Well with Different Models</p>
+<p>Vivek TrivedyMason DaughertyApril 29, 20265min[](/blog/tuning-deep-agents-different-models).png)Agent ArchitectureLangSmithOpen Source</p>
+<p>#### How LangSmith and LangChain OSS Help You Meet EU AI Act Requirements</p>
+<p>Jacob TalbotBecca WengApril 27, 20267min[](/blog/langsmith-langchain-oss-eu-ai-act)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s9">
+      <h2>🎯 See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+<p>](/contact-sales)</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+  </div>
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/zep-x-langchain-slow-chatbots" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

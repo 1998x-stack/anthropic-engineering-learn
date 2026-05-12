@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Unleashing the power of AI Collaboration with Parallelized LLM Agent Actor Trees</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--green:#10b981;--emerald:#059669;--teal:#14b8a6;--blue:#3b82f6;--purple:#6366f1;--amber:#f59e0b;--red:#ef4444;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+    .nav{position:sticky;top:0;z-index:100;background:rgba(15,23,42,.85);backdrop-filter:blur(12px);padding:14px 32px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.08)}
+    .nav a{color:#f1f5f9;text-decoration:none;font-weight:500;font-size:14px}
+    .nav .brand{font-weight:700;font-size:16px;color:#10b981}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%);color:#fff;padding:80px 32px 60px;text-align:center}
+    .hero h1{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;margin-bottom:12px;line-height:1.3}
+    .hero .subtitle{font-size:18px;color:rgba(255,255,255,.8);max-width:720px;margin:0 auto 40px}
+    .hero .meta{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:32px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;max-width:800px;margin:0 auto}
+    .stat{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:20px 16px;backdrop-filter:blur(8px)}
+    .stat .num{font-size:28px;font-weight:800;color:#34d399}
+    .stat .label{font-size:13px;color:rgba(255,255,255,.7);margin-top:4px}
+    .page{max-width:900px;margin:0 auto;padding:40px 24px}
+    .toc{margin-bottom:48px}
+    .toc h3{font-size:14px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);margin-bottom:16px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .toc-grid a{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;transition:all .2s}
+    .toc-grid a:hover{border-color:var(--emerald);background:#ecfdf5}
+    .toc-grid .num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-size:12px;font-weight:700;flex-shrink:0}
+    .section{margin-bottom:56px}
+    .section h2{font-size:clamp(1.3rem,3vw,1.7rem);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+    .lead{color:var(--text-secondary);font-size:15px;margin-bottom:24px;line-height:1.6}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}
+    .card h4{font-size:16px;font-weight:600;margin-bottom:8px}
+    .card p,.card li{font-size:14px;color:var(--text-secondary);line-height:1.7}
+    .card ul,.card ol{padding-left:20px}
+    .card li{margin-bottom:4px}
+    p{font-size:15px;color:var(--text-secondary);line-height:1.8;margin-bottom:16px}
+    p code{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:13px;color:#059669}
+    .chart{margin:24px 0}
+    .chart-row{display:flex;align-items:center;margin-bottom:10px;gap:12px}
+    .chart-label{width:150px;font-size:13px;font-weight:500;text-align:right;flex-shrink:0}
+    .chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}
+    .chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;justify-content:flex-end;padding-right:10px;font-size:12px;font-weight:600;color:#fff;transition:width .6s ease}
+    .chart-bar.green{background:linear-gradient(90deg,#059669,#10b981)}
+    .chart-bar.teal{background:linear-gradient(90deg,#14b8a6,#2dd4bf)}
+    .chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+    .chart-bar.purple{background:linear-gradient(90deg,#6366f1,#a78bfa)}
+    .chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}
+    .flow{display:flex;align-items:center;justify-content:center;gap:12px;margin:24px 0;flex-wrap:wrap}
+    .flow-step{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;min-width:120px}
+    .flow-step.green{background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none}
+    .flow-step.teal{background:linear-gradient(135deg,#14b8a6,#2dd4bf);color:#fff;border:none}
+    .flow-step.blue{background:linear-gradient(135deg,#3b82f6,#60a5fa);color:#fff;border:none}
+    .flow-step.purple{background:linear-gradient(135deg,#6366f1,#a78bfa);color:#fff;border:none}
+    .flow-step.amber{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#fff;border:none}
+    .flow-arrow{font-size:20px;color:var(--text-secondary)}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}
+    .compare-card{border-radius:var(--radius);padding:24px}
+    .compare-card.old{background:#fef2f2;border:2px solid #fecaca}
+    .compare-card.new{background:#ecfdf5;border:2px solid #a7f3d0}
+    .compare-card h4{font-size:15px;font-weight:700;margin-bottom:8px}
+    .compare-card p{font-size:13px;color:var(--text-secondary)}
+    .timeline{position:relative;padding-left:32px;margin:24px 0}
+    .timeline::before{content:'';position:absolute;left:7px;top:8px;bottom:8px;width:3px;background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6);border-radius:2px}
+    .tl-item{position:relative;margin-bottom:24px}
+    .tl-dot{position:absolute;left:-29px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid #059669;background:#fff}
+    .tl-item:nth-child(2) .tl-dot{border-color:#14b8a6}
+    .tl-item:nth-child(3) .tl-dot{border-color:#3b82f6}
+    .tl-phase{font-weight:700;font-size:15px;color:var(--text)}
+    .tl-desc{font-size:13px;color:var(--text-secondary);margin-top:4px}
+    .code-block{background:#1e293b;border-radius:var(--radius);padding:20px;margin:16px 0;overflow-x:auto}
+    .code-block pre{color:#e2e8f0;font-family:var(--mono);font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-all}
+    .block-q{background:linear-gradient(135deg,#ecfdf5,#d1fae5);border-left:4px solid #059669;border-radius:0 var(--radius) var(--radius) 0;padding:20px 24px;margin:24px 0}
+    .block-q p{font-size:15px;font-style:italic;color:#064e3b;line-height:1.7}
+    .footer{background:#0f172a;color:#94a3b8;padding:40px 32px;text-align:center;font-size:14px}
+    .footer a{color:#34d399;text-decoration:none}
+    .footer a:hover{text-decoration:underline}
+    .footer .links{margin-top:12px;display:flex;justify-content:center;gap:24px;flex-wrap:wrap}
+    @media(max-width:768px){.compare-grid{grid-template-columns:1fr}.chart-label{width:100px;font-size:12px}.flow{flex-direction:column;gap:8px}.flow-arrow{transform:rotate(90deg)}.toc-grid{grid-template-columns:1fr}.hero{padding:60px 20px 40px}.nav{padding:12px 16px}.stats{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+  <header class="hero">
+    <div class="meta">📚 Tutorials & Guides · LangChain Accounts · 2023-04-28</div>
+    <h1>Unleashing the power of AI Collaboration with Parallelized LLM Agent Actor Trees</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">9</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~5min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">4</div><div class="label">代码示例</div></div>
+      <div class="stat"><div class="num">8</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>Unleashing the power of AI Col</a>
+      <a href="#s2"><span class="num">2</span>Introduction</a>
+      <a href="#s3"><span class="num">3</span>The Actor Model of Concurrency</a>
+      <a href="#s4"><span class="num">4</span>Key Features and Benefits</a>
+      <a href="#s5"><span class="num">5</span>Exciting Possibilities</a>
+      <a href="#s6"><span class="num">6</span>Getting Started with Agent Act</a>
+      <a href="#s7"><span class="num">7</span>Contributing to Agent Actors</a>
+      <a href="#s8"><span class="num">8</span>Related content</a>
+      <a href="#s9"><span class="num">9</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+    <section class="section" id="s1">
+      <h2>🔍 Unleashing the power of AI Collaboration with Parallelized LLM Agent Actor Trees</h2>
+      <p class="lead">The LangChain TeamApril 28, 20234min
+
+Go back to blogShare
+
+
+
+
+
+Editor&amp;#x27;s note: the following is a guest blog post from Cyrus at Shaman AI.</p>
+      <p>The LangChain TeamApril 28, 20234min[</p>
+<p>Go back to blog](/blog)Share[</p>
+<p>](#)Editor&#x27;s note: the following is a guest blog post from Cyrus at Shaman AI. We use guest blog posts to highlight interesting and novel applciations, and this is certainly that. There&#x27;s been a lot of talk about agents recently, but most have been discussions around a single agent. If multiple agents have been involved, they&#x27;ve been invoked sequentially. This work is novel in that it pushes the boundaries of that and explores multiple agents acting in parallel.</p>
+<p>Important Links:</p>
+<div class="card"><ul><li>GitHub</li></ul></div>
+      
+    </section>
+    <section class="section" id="s2">
+      <h2>⚡ Introduction</h2>
+      <p class="lead">The field of AI has seen significant advancements in recent years, with AI agents now capable of tackling complex tasks.</p>
+      <p>The field of AI has seen significant advancements in recent years, with AI agents now capable of tackling complex tasks. Despite these advances, it has remained a challenge to effectively parallelize and coordinate the efforts of multiple AI agents working together. Introducing Agent Actors - a groundbreaking solution that enables developers to create and manage trees of AI agents that collaborate on complex tasks using the Actor Model of Concurrency.</p>
+<p>In this blog post, we&#x27;ll explore the Actor Model of Concurrency, key features of Agent Actors, the possibilities it opens up, and how you can start building your own agent trees. We hope to inspire the LLM community to experiment with new architectures for self-referencing LLMs.</p>
+      
+    </section>
+    <section class="section" id="s3">
+      <h2>🏗️ The Actor Model of Concurrency</h2>
+      <p class="lead">The Actor Model of Concurrency is a powerful paradigm for managing concurrent computation, making it an ideal foundation for Agent Actors.</p>
+      <p>The Actor Model of Concurrency is a powerful paradigm for managing concurrent computation, making it an ideal foundation for Agent Actors. In the Actor Model, an &quot;actor&quot; is an independent computational entity that communicates with other actors through asynchronous message-passing. Each actor can perform tasks, create new actors, and send messages in response to incoming messages. This model offers several advantages for building stateful AI agents with parallelism:</p>
+<div class="card"><ul><li>Isolation: Actors are self-contained, encapsulating their own state, which prevents unwanted data sharing or race conditions. This isolation ensures that each agent can work independently without affecting others, making it easier to build and maintain parallel AI systems.</li><li>Asynchronous Communication: Actors communicate through message-passing, allowing them to work concurrently without the need for explicit synchronization. This enables more efficient use of system resources and improved scalability.</li><li>Fault Tolerance: The Actor Model allows for better fault isolation and recovery, as errors in one actor do not automatically propagate to others. This enhances the overall robustness of the system, which is particularly important when managing multiple AI agents working together.</li></ul></div>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s4">
+      <h2>📊 Key Features and Benefits</h2>
+      <p class="lead">Agent Actors boasts an array of powerful features that make it possible to build and manage collaborative AI agents:
+
+- Time Weighted Long-Term Memory: Agent Actors utilizes &lt;code&gt;langchain.</p>
+      <p>Agent Actors boasts an array of powerful features that make it possible to build and manage collaborative AI agents:</p>
+<div class="card"><ul><li>Time Weighted Long-Term Memory: Agent Actors utilizes <code>langchain.retrievers.TimeWeightedVectoreStoreRetriever</code> to implement time-weighted long-term memory, allowing agents to access relevant information with ease. This feature helps improve the quality of agent output by ensuring that the most pertinent data is always available.</li><li>Synthesized Working Memory: Agents draw insights from their memories and synthesize them into a working memory of 1-12 items for use with zero-shot prompts. By maintaining a compact working memory, agents can focus on the most important information, leading to more accurate and relevant results.</li><li>Plan-Do-Check-Adjust (PDCA) Framework: Agent Actors implements the PDCA framework for continuous improvement, enabling agents to work more effectively over time. By iteratively refining their performance, agents can produce increasingly better output as they learn from experience, and perform a sort of gradient descent towards task completion.</li><li>Automatic Planning and Task Distribution: The <code>ParentAgent</code> class plans tasks for its children agents and distributes them for parallel execution. This feature streamlines the coordination of agent activities, ensuring that tasks are optimally distributed for maximum efficiency.</li><li>Parallel Execution of Agents: <code>ChildAgent</code>s work in parallel to execute tasks and check results, ensuring efficient use of resources and faster results. By allowing agents to work concurrently, large problems can be solved faster since independent threads can process in parallel.</li><li>Customizable AI Agent Trees: Developers can create their own trees of autonomous AI agents by nesting <code>ParentAgent</code>s or combining them with <code>ChildAgent</code>s. This flexibility enables developers to create tailored solutions that best suit their specific needs.</li></ul></div>
+      
+    </section>
+    <section class="section" id="s5">
+      <h2>🔗 Exciting Possibilities</h2>
+      <p class="lead">Agent Actors unlocks a new world of possibilities for AI collaboration:
+
+- Divide and Conquer Agent Task Execution: Break down complex tasks into smaller, manageable tasks and let AI agents work in pa</p>
+      <p>Agent Actors unlocks a new world of possibilities for AI collaboration:</p>
+<div class="card"><ul><li>Divide and Conquer Agent Task Execution: Break down complex tasks into smaller, manageable tasks and let AI agents work in parallel to solve them. By leveraging the power of parallelism, large problems can be solved more quickly and efficiently.</li><li>Research and Reporting Teams of Agents: Assemble teams of AI agents to collaborate on research and reporting tasks. These teams can harness their collective intelligence to generate comprehensive and insightful analyses.</li><li>Simulation-Driven Organizational Behavior Research: Use agent trees to simulate organizational behavior and gain valuable insights. This approach can help identify patterns and areas for improvement in real-world organizations.</li><li>Developer Teams of AutoGPTs Coding for You: Create teams of AI agents that work together to develop code for your projects. By distributing coding tasks among multiple agents, complex projects can be completed more efficiently.</li></ul></div>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s6">
+      <h2>💡 Getting Started with Agent Actors</h2>
+      <p class="lead">It only takes 5 minutes to learn Agent Actors.</p>
+      <p>It only takes 5 minutes to learn Agent Actors. You&#x27;ll need Python ^3.10, and can install it with your preferred package manager, like Poetry or Pipenv. Check the README for copy/paste instructions. Once installed, you can learn Agent Actors in just 5 minutes by diving into our <code>test_system.py</code>?ref=blog.langchain.com) file. This will help you understand how to create and manage your own agent trees.</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s7">
+      <h2>🛠️ Contributing to Agent Actors</h2>
+      <p class="lead">Agent Actors is an open-source project, and we welcome contributions from the community to help improve and expand its capabilities.</p>
+      <p>Agent Actors is an open-source project, and we welcome contributions from the community to help improve and expand its capabilities. Some areas where you can contribute include:</p>
+<div class="card"><ul><li>Developing better prompts for the Plan, Do, Check, and Adjust chains</li><li>Building visualization tools for exploring and composing execution trees</li><li>Evaluating performance in different contexts</li><li>Unlocking agent-to-agent communication</li></ul></div>
+<p>By exploring the Actor Model of Concurrency and harnessing the potential of parallel execution, Agent Actors provides a powerful new approach to AI collaboration. Whether you&#x27;re a developer looking to build customized agent trees or a company interested in partnering to create tailored solutions, Agent Actors offers an exciting new path for AI innovation.</p>
+<p>At Shaman AI (Twitter), we&#x27;re excited to partner with companies doing meaningful work to improve their workflows using agent tree architectures. We&#x27;re curious to learn more about what you&#x27;re working on, and how we can help — If you&#x27;re interested in collaborating, please reach out here!</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s8">
+      <h2>📈 Related content</h2>
+      <p class="lead">.</p>
+      <p>.png)LangChainPartner</p>
+<p>#### A Developer’s First 10 Minutes: Secure LangChain Agents with Cisco AI Defense</p>
+<p>Siddhant DashApril 16, 20264min[](/blog/secure-agents-cisco-ai-defense)Company AnnouncementsLangChain</p>
+<p>#### LangChain Skills</p>
+<p>The LangChain TeamMarch 4, 20262min[](/blog/langchain-skills)Case StudiesLangChainLangGraph</p>
+<p>#### How Remote uses LangChain and LangGraph to onboard thousands of customers with AI</p>
+<p>The LangChain TeamJanuary 19, 20265min[](/blog/customers-remote)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s9">
+      <h2>🎯 See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+<p>](/contact-sales)</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+  </div>
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/unleashing-the-power-of-ai-collaboration-with-parallelized-llm-agent-actor-trees" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

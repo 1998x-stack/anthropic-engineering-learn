@@ -1,0 +1,117 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>深度解析：Introducing Polly: Your AI Agent Engineer</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--green:#10b981;--teal:#14b8a6;--blue:#3b82f6;--amber:#f59e0b;--pink:#ec4899;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',sans-serif}*{margin:0;padding:0;box-sizing:border-box}body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}.nav{position:sticky;top:0;background:rgba(15,23,42,.92);backdrop-filter:blur(12px);padding:16px 32px;display:flex;justify-content:space-between;align-items:center;z-index:100;border-bottom:1px solid rgba(5,150,105,.3)}.nav-brand{color:#fff;font-weight:700;font-size:18px;text-decoration:none}.nav-back{color:rgba(255,255,255,.7);text-decoration:none;font-size:14px}.nav-back:hover{color:#fff}.hero{background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%);padding:80px 32px;text-align:center;color:#fff}.hero h1{font-size:clamp(24px,4vw,42px);font-weight:800;margin-bottom:16px;line-height:1.2}.hero .subtitle{font-size:16px;color:rgba(255,255,255,.8);max-width:720px;margin:0 auto 40px;line-height:1.6}.hero-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:16px;max-width:800px;margin:0 auto}.stat-card{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:var(--radius);padding:18px;backdrop-filter:blur(8px)}.stat-card .num{font-size:22px;font-weight:800;color:#6ee7b7}.stat-card .label{font-size:12px;color:rgba(255,255,255,.7);margin-top:4px}.page{max-width:900px;margin:0 auto;padding:32px 24px}.toc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:48px}.toc h3{font-size:16px;margin-bottom:16px;color:#059669}.toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px}.toc-grid a{display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--text);font-size:14px;padding:8px 12px;border-radius:8px;transition:background .2s}.toc-grid a:hover{background:rgba(5,150,105,.08)}.toc-grid .num{background:linear-gradient(135deg,#059669,#047857);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}.section{margin-bottom:56px}.section h2{font-size:22px;font-weight:700;margin-bottom:8px}.lead{color:var(--text-secondary);font-size:15px;margin-bottom:20px;border-left:3px solid #059669;padding-left:16px}.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}.card h4{font-size:16px;font-weight:600;margin-bottom:8px}.card p{font-size:14px;color:var(--text-secondary);line-height:1.7}.chart{margin:20px 0}.chart-row{display:flex;align-items:center;gap:12px;margin-bottom:10px}.chart-label{width:140px;font-size:13px;text-align:right;flex-shrink:0}.chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;overflow:hidden;height:28px}.chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;padding:0 10px;font-size:12px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden}.chart-bar.green{background:linear-gradient(90deg,#10b981,#059669)}.chart-bar.teal{background:linear-gradient(90deg,#14b8a6,#0d9488)}.chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#2563eb)}.chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#d97706)}.chart-bar.pink{background:linear-gradient(90deg,#ec4899,#db2777)}.block-q{background:linear-gradient(135deg,rgba(5,150,105,.06),rgba(20,184,166,.06));border-left:4px solid #059669;border-radius:0 var(--radius) var(--radius) 0;padding:20px 24px;margin:20px 0;font-size:15px;font-style:italic;color:var(--text-secondary)}.footer{background:#0f172a;color:rgba(255,255,255,.6);padding:40px 32px;text-align:center;font-size:14px}.footer a{color:#10b981;text-decoration:none}.footer a:hover{text-decoration:underline}
+@media(max-width:768px){.hero{padding:48px 20px}.toc-grid{grid-template-columns:1fr}.chart-label{width:100px;font-size:12px}.hero-stats{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<nav class="nav"><a href="../" class="nav-brand">LangChain 技术博客</a><a href="../" class="nav-back">&larr; Back to Hub</a></nav>
+<header class="hero">
+  <span style="display:inline-block;background:rgba(16,185,129,.2);color:#a7f3d0;padding:4px 12px;border-radius:20px;font-size:12px;margin-bottom:16px">Announcements</span>
+  <h1>Introducing Polly: Your AI Agent Engineer</h1>
+  <p class="subtitle">Announcements &middot; LangChain Team &middot; LangChain Blog</p>
+  <div class="hero-stats"><div class="stat-card"><div class="num">77%</div><div class="label">关键数据指标</div></div>
+<div class="stat-card"><div class="num">4</div><div class="label">核心章节</div></div>
+<div class="stat-card"><div class="num">5</div><div class="label">子话题</div></div>
+<div class="stat-card"><div class="num">21</div><div class="label">关键要点</div></div>
+</div>
+</header>
+<div class="page">
+  <nav class="toc"><h3>📑 目录导航</h3><div class="toc-grid"><a href="#s1"><span class="num">1</span>🤖 Why agents need an AI debugging partner</a>
+<a href="#s2"><span class="num">2</span>📌 Polly helps with debugging traces, analyzing conversations, and engineering better prompts</a>
+<a href="#s3"><span class="num">3</span>💡 How Polly works with LangSmith tracing</a>
+<a href="#s4"><span class="num">4</span>🎬 Get started with Polly</a>
+</div></nav>
+  <section class="section" id="s1"><h2>🤖 Why agents need an AI debugging partner</h2><p class="lead">Through working with thousands of teams building agents on LangSmith, we&x27;ve seen the same debugging challenges emer</p><div class="card"><p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">Through working with thousands of teams building agents on LangSmith, we&#x27;ve seen the same debugging challenges emerge repeatedly. Agents are fundamentally different from simple LLM calls due to:</p>
+<ul style="margin:12px 0;padding-left:20px">
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7"><strong>Longer prompts:</strong> System prompts often span hundreds or thousands of lines. When behavior degrades, finding which instruction is responsible is nearly impossible.</li>
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7"><strong>Longer traces:</strong> Agents can run for hundreds of steps, generating thousands of data points in a single trace - far more than a human can parse effectively.</li>
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7"><strong>Multiple turns:</strong> Agents involve multi-turn conversations that span hours or days. Understanding what happened requires looking across the entire interaction history.</li>
+</ul>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">When something goes wrong, you can&#x27;t easily pinpoint which decision, prompt instruction, or tool call caused it. This is the kind of problem where an AI agent engineer excels - and why we built Polly.</p><div class="chart" style="margin:20px 0"><div class="chart-row"><div class="chart-label">Longer prompts:</div><div class="chart-bar-wrap"><div class="chart-bar green" style="width:95%">System prompts often span hundreds or th</div></div></div>
+<div class="chart-row"><div class="chart-label">Longer traces:</div><div class="chart-bar-wrap"><div class="chart-bar teal" style="width:83%">Agents can run for hundreds of steps, ge</div></div></div>
+<div class="chart-row"><div class="chart-label">Multiple turns:</div><div class="chart-bar-wrap"><div class="chart-bar blue" style="width:71%">Agents involve multi-turn conversations</div></div></div>
+</div></div></section>
+<section class="section" id="s2"><h2>📌 Polly helps with debugging traces, analyzing conversations, and engineering better prompts</h2><p class="lead">Instead of manually scanning through endless traces or guessing which prompt change will fix an issue, you can simply as</p><div class="card"><p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">Instead of manually scanning through endless traces or guessing which prompt change will fix an issue, you can simply ask Polly questions in natural language. It&#x27;s like having an expert agent engineer on your team. Here&#x27;s what Polly can do today:</p>
+<h3 style="font-size:18px;font-weight:600;margin:28px 0 12px;color:var(--text)">Debug Individual Traces</h3>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">![](https://cdn.prod.website-files.com/65c81e88c254bb0f97633a71/69cbaa1c866be8993c5156ad_Screenshot-2025-12-09-at-7.29.41---PM.png)</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">In the Trace view, Polly analyzes single agent executions to help you understand what happened. This is where Polly really shines - deep agents can have traces with hundreds of steps, and failure modes are often subtle, distributed across many steps, or buried in the middle of a long execution.</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">Ask Polly questions like:</p>
+<ul style="margin:12px 0;padding-left:20px">
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7">&quot;Did the agent do anything that could be more efficient?&quot;</li>
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7">&quot;Did the agent make any mistakes?&quot;</li>
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7">&quot;Why did the agent choose this approach instead of that one?&quot;</li>
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7">&quot;Where exactly did things go wrong?&quot;</li>
+</ul>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">Polly doesn&#x27;t just surface information. It understands agent behavior patterns and can identify issues you&#x27;d miss even after careful manual inspection.</p>
+<h3 style="font-size:18px;font-weight:600;margin:28px 0 12px;color:var(--text)">Analyze Entire Conversations</h3>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">![](https://cdn.prod.website-files.com/65c81e88c254bb0f97633a71/69cbaa1c866be8993c5156b7_Screenshot-2025-12-09-at-7.30.46---PM.png)</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">In the Thread view, Polly can access information from entire conversations which sometimes span hours, days, or dozens of back-and-forth interactions. This is context that&#x27;s impossible for a human to keep in their head.</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">Ask Polly to:</p>
+<ul style="margin:12px 0;padding-left:20px">
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7">Summarize what happened across multiple interactions</li>
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7">Identify patterns in agent behavior over time</li>
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7">Explain why the agent&#x27;s approach changed between turns</li>
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7">Spot when the agent lost track of important context</li>
+</ul>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">This is especially powerful for debugging those frustrating issues where &quot;the agent was working fine, and then suddenly it wasn&#x27;t&quot;. Polly can pinpoint exactly where and why things changed.</p>
+<h3 style="font-size:18px;font-weight:600;margin:28px 0 12px;color:var(--text)">Engineer Better Prompts</h3>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">![](https://cdn.prod.website-files.com/65c81e88c254bb0f97633a71/69cbaa1c866be8993c5156b0_Screenshot-2025-12-09-at-7.32.17---PM.png)</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">This is where Polly gets really powerful. The system prompt is the most important part of any deep agent, and Polly is an expert prompt engineer.</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">Just describe the behavior you want in natural language, and Polly will update your prompt accordingly. No more manually tweaking hundreds of lines of instructions, trying to figure out the right phrasing, or wondering if you&#x27;ve broken something else while fixing one issue.</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">Polly can also help you:</p>
+<ul style="margin:12px 0;padding-left:20px">
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7">Define structured output schemas</li>
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7">Configure tool definitions</li>
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7">Add or refine few-shot examples</li>
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7">Optimize prompt length without losing critical instructions</li>
+</ul></div></section>
+<section class="section" id="s3"><h2>💡 How Polly works with LangSmith tracing</h2><p class="lead">Polly&x27;s intelligence comes from LangSmith&x27;s comprehensive tracing infrastructure. LangSmith captures everythin</p><div class="card"><p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">Polly&#x27;s intelligence comes from LangSmith&#x27;s comprehensive tracing infrastructure. LangSmith captures everything your agent does:</p>
+<ul style="margin:12px 0;padding-left:20px">
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7"><strong>Runs:</strong> Individual steps like LLM calls and tool executions</li>
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7"><strong>Traces:</strong> A single execution of your agent, made up of a tree of runs</li>
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7"><strong>Threads:</strong> A full conversation, containing multiple traces</li>
+</ul>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">Setting up tracing in LangSmith takes just a few minutes - <a href="https://www.youtube.com/watch?v=fA9b4D8IsPQ&amp;ref=blog.langchain.com" target="_blank" style="color:#059669;text-decoration:underline">follow this guide</a> to get started. Once your data is flowing into LangSmith, Polly can immediately start helping you analyze agent behavior, identify issues, and improve prompts.</p><div class="chart" style="margin:20px 0"><div class="chart-row"><div class="chart-label">Runs:</div><div class="chart-bar-wrap"><div class="chart-bar green" style="width:95%">Individual steps like LLM calls and tool</div></div></div>
+<div class="chart-row"><div class="chart-label">Traces:</div><div class="chart-bar-wrap"><div class="chart-bar teal" style="width:83%">A single execution of your agent, made u</div></div></div>
+<div class="chart-row"><div class="chart-label">Threads:</div><div class="chart-bar-wrap"><div class="chart-bar blue" style="width:71%">A full conversation, containing multiple</div></div></div>
+</div></div></section>
+<section class="section" id="s4"><h2>🎬 Get started with Polly</h2><p class="lead">Polly can already analyze traces, debug conversations, and engineer prompts. But overtime we will teach it how to analyz</p><div class="card"><p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">Polly can already analyze traces, debug conversations, and engineer prompts. But overtime we will teach it how to analyze experiments, optimize prompts, and more.</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0"><strong>Ready to get started with Polly?</strong></p>
+<ul style="margin:12px 0;padding-left:20px">
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7"><a href="https://www.youtube.com/watch?v=fA9b4D8IsPQ&amp;ref=blog.langchain.com" target="_blank" style="color:#059669;text-decoration:underline">Set up tracing</a> in just a few minutes</li>
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7">Start building and debugging your agents with LangSmith</li>
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7">Chat with Polly and experience the future of agent engineering</li>
+</ul>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">You can see <a href="https://youtu.be/4Ox2gdZnM6c?ref=blog.langchain.com" target="_blank" style="color:#059669;text-decoration:underline">this video walkthrough</a> for more more details on how to start using Polly.</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">LangChain is the agent engineering platform trusted by thousands of teams shipping production agents. And now, with Polly, you have an AI expert helping you every step of the way.</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0"><a href="https://smith.langchain.com/?ref=blog.langchain.com" target="_blank" style="color:#059669;text-decoration:underline">Try Polly today</a>.</p>
+<h3 style="font-size:18px;font-weight:600;margin:28px 0 12px;color:var(--text)">Related content</h3>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">![](https://cdn.prod.website-files.com/65c81e88c254bb0f97633a71/69f20536df00c0eb15eab1d3_blue-77%20characters%20max.png)Deep AgentsAgent ArchitectureOpen Source</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">#### Tuning Deep Agents to Work Well with Different Models</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">![](https://cdn.prod.website-files.com/65c81e88c254bb0f97633a71/69dcefac505b6b48827abf84_vivek-trivedy.png)![](https://cdn.prod.website-files.com/65c81e88c254bb0f97633a71/69dcf032ce65a32e276a4d0a_mason-daugherty.png)Vivek TrivedyMason DaughertyApril 29, 2026![](https://cdn.prod.website-files.com/65b8cd72835ceeacd4449a53/69cd1fd0002272ce39bf1241_Icon-6.svg)5min[](/blog/tuning-deep-agents-different-models)![](https://cdn.prod.website-files.com/65c81e88c254bb0f97633a71/69ef96ff74c638e982ff68c6_86%20(1).png)Agent ArchitectureLangSmithOpen Source</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">#### How LangSmith and LangChain OSS Help You Meet EU AI Act Requirements</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">![](https://cdn.prod.website-files.com/65c81e88c254bb0f97633a71/69e0003a1af368dfae13c23c_jacob-talbot.png)![](https://cdn.prod.website-files.com/65c81e88c254bb0f97633a71/69dd2ddbdd2243fd1398a523_becca-weng%201.png)Jacob TalbotBecca WengApril 27, 2026![](https://cdn.prod.website-files.com/65b8cd72835ceeacd4449a53/69cd1fd0002272ce39bf1241_Icon-6.svg)7min[](/blog/langsmith-langchain-oss-eu-ai-act)![](https://cdn.prod.website-files.com/65c81e88c254bb0f97633a71/69e23754937c2f749d12bb0b_76%20(1).png)Agent ArchitecturePartner</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">#### Agentic Engineering: How Swarms of AI Agents Are Redefining Software Engineering</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">![](https://cdn.prod.website-files.com/65c81e88c254bb0f97633a71/69e234176723e6111407b935_renuka-kumar.png)![](https://cdn.prod.website-files.com/65c81e88c254bb0f97633a71/69e23427e77d2631610e5d62_Prashanth-Ramagopal.png)Renuka KumarPrashanth RamagopalApril 17, 2026![](https://cdn.prod.website-files.com/65b8cd72835ceeacd4449a53/69cd1fd0002272ce39bf1241_Icon-6.svg)11min[](/blog/agentic-engineering-redefining-software-engineering)![](https://cdn.prod.website-files.com/65b8cd72835ceeacd4449a53/69ce01ea562f8cc223cabf25_Frame%202147254328.svg)Sign up for our newsletter to stay up to date</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+<h3 style="font-size:18px;font-weight:600;margin:28px 0 12px;color:var(--text)">See what your agent is really doing</h3>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">[Try LangSmith</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">](https://smith.langchain.com/)[Get a demo</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">](/contact-sales)</p></div></section>
+
+</div>
+<footer class="footer">
+  <p><a href="../">&larr; 返回 Hub</a> &middot; 原文：<a href="https://smith.langchain.com/?ref=blog.langchain.com" target="_blank">langchain.com</a></p>
+  <p style="margin-top:8px">LangChain Blog Deep-Dive &middot; LangChain Team &middot; </p>
+</footer>
+</body>
+</html>

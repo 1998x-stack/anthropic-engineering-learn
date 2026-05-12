@@ -1,0 +1,569 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Evaluating RAG pipelines with Ragas + LangSmith</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafbfc;
+      --surface: #fff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --green: #10b981;
+      --emerald: #059669;
+      --teal: #14b8a6;
+      --blue: #3b82f6;
+      --purple: #6366f1;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans SC', 'Inter', system-ui, sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: var(--sans); background: var(--bg); color: var(--text); line-height:1.7; }
+    .nav { position:sticky; top:0; z-index:100; background:rgba(15,23,42,.85); backdrop-filter:blur(12px); padding:14px 32px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,.08); }
+    .nav a { color:#f1f5f9; text-decoration:none; font-weight:500; font-size:14px; }
+    .nav .brand { font-weight:700; font-size:16px; color:#10b981; }
+    .hero { background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%); color:#fff; padding:80px 32px 60px; text-align:center; }
+    .hero h1 { font-size:clamp(1.8rem,4vw,2.8rem); font-weight:800; margin-bottom:12px; line-height:1.3; }
+    .hero .subtitle { font-size:18px; color:rgba(255,255,255,.8); max-width:720px; margin:0 auto 40px; }
+    .hero .meta { font-size:13px; color:rgba(255,255,255,.5); margin-bottom:32px; }
+    .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:16px; max-width:800px; margin:0 auto; }
+    .stat { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); border-radius:12px; padding:20px 16px; backdrop-filter:blur(8px); }
+    .stat .num { font-size:28px; font-weight:800; color:#34d399; }
+    .stat .label { font-size:13px; color:rgba(255,255,255,.7); margin-top:4px; }
+    .page { max-width:900px; margin:0 auto; padding:40px 24px; }
+    .toc { margin-bottom:48px; }
+    .toc h3 { font-size:14px; text-transform:uppercase; letter-spacing:1.5px; color:var(--text-secondary); margin-bottom:16px; }
+    .toc-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; }
+    .toc-grid a { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--text); font-size:14px; font-weight:500; transition:all .2s; }
+    .toc-grid a:hover { border-color:var(--emerald); background:#ecfdf5; }
+    .toc-grid .num { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:8px; background:linear-gradient(135deg,#059669,#10b981); color:#fff; font-size:12px; font-weight:700; flex-shrink:0; }
+    .section { margin-bottom:56px; }
+    .section h2 { font-size:clamp(1.3rem,3vw,1.7rem); font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:10px; }
+    .lead { color:var(--text-secondary); font-size:15px; margin-bottom:24px; line-height:1.6; }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:24px; margin-bottom:16px; }
+    .card h4 { font-size:16px; font-weight:600; margin-bottom:8px; }
+    .card p, .card li { font-size:14px; color:var(--text-secondary); line-height:1.7; }
+    .card ul, .card ol { padding-left:20px; }
+    .card li { margin-bottom:4px; }
+    p { font-size:15px; color:var(--text-secondary); line-height:1.8; margin-bottom:16px; }
+    p code { background:#f1f5f9; padding:2px 6px; border-radius:4px; font-family:var(--mono); font-size:13px; color:#059669; }
+    .chart { margin:24px 0; }
+    .chart-row { display:flex; align-items:center; margin-bottom:10px; gap:12px; }
+    .chart-label { width:150px; font-size:13px; font-weight:500; text-align:right; flex-shrink:0; }
+    .chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:32px; overflow:hidden; }
+    .chart-bar { height:100%; border-radius:8px; display:flex; align-items:center; justify-content:flex-end; padding-right:10px; font-size:12px; font-weight:600; color:#fff; transition:width .6s ease; }
+    .chart-bar.green { background:linear-gradient(90deg,#059669,#10b981); }
+    .chart-bar.teal { background:linear-gradient(90deg,#14b8a6,#2dd4bf); }
+    .chart-bar.blue { background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+    .chart-bar.purple { background:linear-gradient(90deg,#6366f1,#a78bfa); }
+    .chart-bar.amber { background:linear-gradient(90deg,#f59e0b,#fbbf24); }
+    .chart-bar.red { background:linear-gradient(90deg,#ef4444,#f87171); }
+    .flow { display:flex; align-items:center; justify-content:center; gap:12px; margin:24px 0; flex-wrap:wrap; }
+    .flow-step { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 20px; font-size:14px; font-weight:600; text-align:center; min-width:120px; }
+    .flow-step.green { background:linear-gradient(135deg,#059669,#10b981); color:#fff; border:none; }
+    .flow-step.teal { background:linear-gradient(135deg,#14b8a6,#2dd4bf); color:#fff; border:none; }
+    .flow-step.blue { background:linear-gradient(135deg,#3b82f6,#60a5fa); color:#fff; border:none; }
+    .flow-step.purple { background:linear-gradient(135deg,#6366f1,#a78bfa); color:#fff; border:none; }
+    .flow-step.amber { background:linear-gradient(135deg,#f59e0b,#fbbf24); color:#fff; border:none; }
+    .flow-arrow { font-size:20px; color:var(--text-secondary); }
+    .compare-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:24px 0; }
+    .compare-card { border-radius:var(--radius); padding:24px; }
+    .compare-card.old { background:#fef2f2; border:2px solid #fecaca; }
+    .compare-card.new { background:#ecfdf5; border:2px solid #a7f3d0; }
+    .compare-card h4 { font-size:15px; font-weight:700; margin-bottom:8px; }
+    .compare-card p { font-size:13px; color:var(--text-secondary); }
+    .timeline { position:relative; padding-left:32px; margin:24px 0; }
+    .timeline::before { content:''; position:absolute; left:7px; top:8px; bottom:8px; width:3px; background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:24px; }
+    .tl-dot { position:absolute; left:-29px; top:4px; width:14px; height:14px; border-radius:50%; border:3px solid #059669; background:#fff; }
+    .tl-item:nth-child(2) .tl-dot { border-color:#14b8a6; }
+    .tl-item:nth-child(3) .tl-dot { border-color:#3b82f6; }
+    .tl-item:nth-child(4) .tl-dot { border-color:#6366f1; }
+    .tl-item:nth-child(5) .tl-dot { border-color:#f59e0b; }
+    .tl-phase { font-weight:700; font-size:15px; color:var(--text); }
+    .tl-desc { font-size:13px; color:var(--text-secondary); margin-top:4px; }
+    .code-block { background:#1e293b; border-radius:var(--radius); padding:20px; margin:16px 0; overflow-x:auto; }
+    .code-block pre { color:#e2e8f0; font-family:var(--mono); font-size:13px; line-height:1.6; white-space:pre-wrap; word-break:break-all; }
+    .block-q { background:linear-gradient(135deg,#ecfdf5,#d1fae5); border-left:4px solid #059669; border-radius:0 var(--radius) var(--radius) 0; padding:20px 24px; margin:24px 0; }
+    .block-q p { font-size:15px; font-style:italic; color:#064e3b; line-height:1.7; }
+    .badge { display:inline-block; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600; }
+    .badge-green { background:#ecfdf5; color:#059669; }
+    .badge-teal { background:#f0fdfa; color:#14b8a6; }
+    .badge-blue { background:#eff6ff; color:#3b82f6; }
+    .badge-purple { background:#eef2ff; color:#6366f1; }
+    .badge-amber { background:#fffbeb; color:#d97706; }
+    .footer { background:#0f172a; color:#94a3b8; padding:40px 32px; text-align:center; font-size:14px; }
+    .footer a { color:#34d399; text-decoration:none; }
+    .footer a:hover { text-decoration:underline; }
+    .footer .links { margin-top:12px; display:flex; justify-content:center; gap:24px; flex-wrap:wrap; }
+    @media(max-width:768px) {
+      .compare-grid { grid-template-columns:1fr; }
+      .chart-label { width:100px; font-size:12px; }
+      .flow { flex-direction:column; gap:8px; }
+      .flow-arrow { transform:rotate(90deg); }
+      .toc-grid { grid-template-columns:1fr; }
+      .hero { padding:60px 20px 40px; }
+      .nav { padding:12px 16px; }
+      .stats { grid-template-columns:1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+
+  <header class="hero">
+    <div class="meta">🧠 RAG & Knowledge · LangChain Accounts · 2023-08-24</div>
+    <h1>Evaluating RAG pipelines with Ragas + LangSmith</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">25</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~11min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">1</div><div class="label">代码示例</div></div>
+      <div class="stat"><div class="num">15</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>Evaluating RAG pipelines with </a>
+      <a href="#s2"><span class="num">2</span>Leveraging LLMs for evaluation</a>
+      <a href="#s3"><span class="num">3</span>Introducing Ragas</a>
+      <a href="#s4"><span class="num">4</span>Evaluating a QA chain</a>
+      <a href="#s5"><span class="num">5</span>load the Wikipedia page and cr</a>
+      <a href="#s6"><span class="num">6</span>create the QA chain</a>
+      <a href="#s7"><span class="num">7</span>testing it out</a>
+      <a href="#s8"><span class="num">8</span>output</a>
+      <a href="#s9"><span class="num">9</span>&amp;#x27;New York City got its na</a>
+      <a href="#s10"><span class="num">10</span>make eval chains</a>
+      <a href="#s11"><span class="num">11</span>output</a>
+      <a href="#s12"><span class="num">12</span>faithfulness_score: 1.0</a>
+      <a href="#s13"><span class="num">13</span>answer_relevancy_score: 0.9193</a>
+      <a href="#s14"><span class="num">14</span>context_relevancy_score: 0.074</a>
+      <a href="#s15"><span class="num">15</span>context_recall_score: 0.919345</a>
+      <a href="#s16"><span class="num">16</span>Under the hood</a>
+      <a href="#s17"><span class="num">17</span>Visualising the Evaluations wi</a>
+      <a href="#s18"><span class="num">18</span>check if dataset exists</a>
+      <a href="#s19"><span class="num">19</span>if not create a new one with t</a>
+      <a href="#s20"><span class="num">20</span>output</a>
+      <a href="#s21"><span class="num">21</span>View the evaluation results fo</a>
+      <a href="#s22"><span class="num">22</span>https://smith.langchain.com/pr</a>
+      <a href="#s23"><span class="num">23</span>Conclusion</a>
+      <a href="#s24"><span class="num">24</span>Related content</a>
+      <a href="#s25"><span class="num">25</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+
+    <section class="section" id="s1">
+      <h2>🔍 Evaluating RAG pipelines with Ragas + LangSmith</h2>
+      <p class="lead">The LangChain TeamAugust 23, 202310min
+
+Go back to blogShare
+
+Editor&amp;#x27;s Note: This post was written in collaboration with the Ragas team.</p>
+      <p>The LangChain TeamAugust 23, 202310min[</p>
+<p>Go back to blog](/blog)Share[</p>
+<p>](#)Editor&#x27;s Note: This post was written in collaboration with the Ragas team. One of the things we think and talk about a lot at LangChain is how the industry will evolve to identify new monitoring and evaluation metrics that evolve beyond traditional ML ops metrics. Ragas is an exciting new framework that helps developers evaluate QA pipelines in new ways. This post shows how LangSmith and Ragas can be a powerful combination for teams that want to build reliable LLM apps.</p>
+<div class="block-q"><p>How important evals are to the team is a major differentiator between folks rushing out hot garbage and those seriously building products in the space.</p></div>
+<p>This HackerNews comment emphasizes the importance of having a robust eval strategy when taking your application from a cool demo to a production-ready product. This is especially true when building LLM applications because of the underlying stochastic nature of the models powering them. You can easily build really impressive LLM applications with a few short training and verifying it on a few examples but to make it more robust you have to test it on a test dataset that matches the production distribution. This is an evolutionary process and something you will be doing throughout the lifecycle of your application but let&#x27;s see how Ragas and LangSmith can help you here.</p>
+<p>This article is going to be specifically about QA systems (or RAG systems). Every QA pipeline has 2 components</p>
+<div class="card"><ul>
+  <li>Retriever - which retrieves the most relevant information needed to answer the query</li>
+  <li>Generator - which generates the answer with the retrieved information.</li>
+</ul></div>
+<p>When evaluating a QA pipeline you have to evaluate both of these separately and together to get an overall score as well as the individual scores to pinpoint the aspects you want to improve. For example, using a better chunking strategy or embedding model can improve the retriever while using a different model or prompt can bring about changes to the generation step. You might want to measure the tendency for hallucinations in the generation step or the recall for the retrieval step.</p>
+<p>But what metrics and datasets can you use to measure and benchmark these components? There are many conventional metrics and benchmarks for evaluating QA systems like ROUGE and BLUE but they have poor correlation with human judgment. Furthermore, the correlation between the performance of your pipeline over a standard benchmark (like Beir) and production data can vary depending on the distribution shift between both of them. Moreover, building such a golden test set is an expensive and time-consuming task.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s2">
+      <h2>⚡ Leveraging LLMs for evaluations</h2>
+      <p class="lead">Leveraging a strong LLM for reference-free evaluation is an upcoming solution that has shown a lot of promise.</p>
+      <p>Leveraging a strong LLM for reference-free evaluation is an upcoming solution that has shown a lot of promise. They correlate better with human judgment than traditional metrics and also require less human annotation. Papers like G-Eval have experimented with this and given promising results but there are certain shortcomings too.</p>
+<p>LLM prefers outputs their own outputs and when asked to compare between different outputs the relative position of those outputs matters more. LLMs can also have a bias toward a value when asked to score given a range and they also prefer longer responses. Refer to the Large Language Models are not Fair Evaluators paper for more. Ragas aims to work around these limitations of using LLMs to evaluate your QA pipelines while also providing actionable metrics using as little annotated data as possible, cheaper, and faster.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s3">
+      <h2>🏗️ Introducing Ragas</h2>
+      <p class="lead">Ragas is a framework that helps you evaluate your QA pipelines across these different aspects.</p>
+      <p>Ragas is a framework that helps you evaluate your QA pipelines across these different aspects. It provides you with a few metrics to evaluate the different aspects of your QA systems namely</p>
+<div class="card"><ul>
+  <li>metrics to evaluate retrieval: offers <code>context_relevancy</code> and <code>context_recall</code> which give you the measure of the performance of your retrieval system.</li>
+  <li>metrics to evaluate generation: offers <code>faithfulness</code> which measures hallucinations and <code>answer_relevancy</code> which measures how to the point the answers are to the question.</li>
+</ul></div>
+<p>The harmonic mean of these 4 aspects gives you the ragas score which is a single measure of the performance of your QA system across all the important aspects.</p>
+<p>Most of the measurements do not require any labeled data, making it easier for users to run it without worrying about building a human-annotated test dataset first. In order to run ragas all you need is a few questions and if your using <code>context_recall</code>, a reference answer. (The option to cold start your test dataset is also in the roadmap)</p>
+<p>Now let&#x27;s see Ragas in action and try this by evaluating a QA chain build with Langchain.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s4">
+      <h2>📊 Evaluating a QA chain</h2>
+      <p class="lead">We’re going to build a QA chain over the NYC Wikipedia page and run our evaluations on top of it.</p>
+      <p>We’re going to build a QA chain over the NYC Wikipedia page and run our evaluations on top of it. This is a pretty standard QA chain but feel free to check out the docs.</p>
+<div class="code-block"><pre>from langchain.document_loaders import WebBaseLoader
+from langchain.indexes import VectorstoreIndexCreator
+from langchain.chains import RetrievalQA
+from langchain.chat_models import ChatOpenAI</pre></div>
+      <div class="chart"><div class="chart-row">
+    <div class="chart-label">Method A</div>
+    <div class="chart-bar-wrap"><div class="chart-bar green" style="width:95%">95%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method B</div>
+    <div class="chart-bar-wrap"><div class="chart-bar teal" style="width:80%">80%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method C</div>
+    <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:65%">65%</div></div>
+  </div></div>
+    </section>
+
+    <section class="section" id="s5">
+      <h2>🔗 load the Wikipedia page and create index</h2>
+      <p class="lead">loader = WebBaseLoader(&amp;quot;https://en.</p>
+      <p>loader = WebBaseLoader(&quot;https://en.wikipedia.org/wiki/New_York_City&quot;)
+index = VectorstoreIndexCreator().from_loaders([loader])</p>
+      
+    </section>
+
+    <section class="section" id="s6">
+      <h2>💡 create the QA chain</h2>
+      <p class="lead">llm = ChatOpenAI()
+qa_chain = RetrievalQA.</p>
+      <p>llm = ChatOpenAI()
+qa_chain = RetrievalQA.from_chain_type(
+    llm, retriever=index.vectorstore.as_retriever(), return_source_documents=True
+)</p>
+      
+    </section>
+
+    <section class="section" id="s7">
+      <h2>🛠️ testing it out</h2>
+      <p class="lead">question = &amp;quot;How did New York City get its name?&amp;quot;
+result = qa_chain({&amp;quot;query&amp;quot;: que</p>
+      <p>question = &quot;How did New York City get its name?&quot;
+result = qa_chain({&quot;query&quot;: question})
+result[&quot;result&quot;]</p>
+      <div class="chart"><div class="chart-row">
+    <div class="chart-label">Method A</div>
+    <div class="chart-bar-wrap"><div class="chart-bar green" style="width:95%">95%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method B</div>
+    <div class="chart-bar-wrap"><div class="chart-bar teal" style="width:80%">80%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method C</div>
+    <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:65%">65%</div></div>
+  </div></div>
+    </section>
+
+    <section class="section" id="s8">
+      <h2>📈 output</h2>
+      <p class="lead"></p>
+      
+      
+    </section>
+
+    <section class="section" id="s9">
+      <h2>🎯 &amp;#x27;New York City got its name in 1664 when it was renamed after the Duke of York, who later became King James II of England. The city was originally called New Amsterdam by Dutch colonists and was renamed New York when it came under British control.&amp;#x27;`</h2>
+      <p class="lead">in order to use Ragas with LangChain, first import all the metrics you want to use from ragas.</p>
+      <p>in order to use Ragas with LangChain, first import all the metrics you want to use from ragas.metrics. Next import the RagasEvaluatorChain which is a langchain chain wrapper to convert a ragas metric into a langchain EvaluationChain.</p>
+<div class="code-block"><pre>from ragas.metrics import faithfulness, answer_relevancy, context_relevancy, context_recall
+from ragas.langchain import RagasEvaluatorChain</pre></div>
+      <div class="chart"><div class="chart-row">
+    <div class="chart-label">Method A</div>
+    <div class="chart-bar-wrap"><div class="chart-bar green" style="width:95%">95%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method B</div>
+    <div class="chart-bar-wrap"><div class="chart-bar teal" style="width:80%">80%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method C</div>
+    <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:65%">65%</div></div>
+  </div></div>
+    </section>
+
+    <section class="section" id="s10">
+      <h2>🔬 make eval chains</h2>
+      <p class="lead">eval_chains = {
+    m.</p>
+      <div class="code-block"><pre>eval_chains = {
+    m.name: RagasEvaluatorChain(metric=m)
+    for m in [faithfulness, answer_relevancy, context_relevancy, context_recall]
+}</pre></div>
+<p>Once the evaluator chains are created you can call the chain via the __call__() method with the outputs from the QA chain to run the evaluations</p>
+<div class="code-block"><pre># evaluate
+for name, eval_chain in eval_chains.items():
+    score_name = f&amp;quot;{name}_score&amp;quot;
+    print(f&amp;quot;{score_name}: {eval_chain(result)[score_name]}&amp;quot;)</pre></div>
+      <div class="chart"><div class="chart-row">
+    <div class="chart-label">Method A</div>
+    <div class="chart-bar-wrap"><div class="chart-bar green" style="width:95%">95%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method B</div>
+    <div class="chart-bar-wrap"><div class="chart-bar teal" style="width:80%">80%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method C</div>
+    <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:65%">65%</div></div>
+  </div></div>
+    </section>
+
+    <section class="section" id="s11">
+      <h2>📝 output</h2>
+      <p class="lead"></p>
+      
+      
+    </section>
+
+    <section class="section" id="s12">
+      <h2>🧪 faithfulness_score: 1.0</h2>
+      <p class="lead"></p>
+      
+      <div class="chart"><div class="chart-row">
+    <div class="chart-label">Method A</div>
+    <div class="chart-bar-wrap"><div class="chart-bar green" style="width:95%">95%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method B</div>
+    <div class="chart-bar-wrap"><div class="chart-bar teal" style="width:80%">80%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method C</div>
+    <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:65%">65%</div></div>
+  </div></div>
+    </section>
+
+    <section class="section" id="s13">
+      <h2>🌐 answer_relevancy_score: 0.9193459596511587</h2>
+      <p class="lead"></p>
+      
+      <div class="chart"><div class="chart-row">
+    <div class="chart-label">Method A</div>
+    <div class="chart-bar-wrap"><div class="chart-bar green" style="width:95%">95%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method B</div>
+    <div class="chart-bar-wrap"><div class="chart-bar teal" style="width:80%">80%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method C</div>
+    <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:65%">65%</div></div>
+  </div></div>
+    </section>
+
+    <section class="section" id="s14">
+      <h2>📦 context_relevancy_score: 0.07480974380786602</h2>
+      <p class="lead"></p>
+      
+      <div class="chart"><div class="chart-row">
+    <div class="chart-label">Method A</div>
+    <div class="chart-bar-wrap"><div class="chart-bar green" style="width:95%">95%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method B</div>
+    <div class="chart-bar-wrap"><div class="chart-bar teal" style="width:80%">80%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method C</div>
+    <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:65%">65%</div></div>
+  </div></div>
+    </section>
+
+    <section class="section" id="s15">
+      <h2>🔄 context_recall_score: 0.9193459596511587`</h2>
+      <p class="lead">Ragas uses LLMs under the hood to do the evaluations but leverages them in different ways to get the measurements we care about while overcoming the biases they have.</p>
+      <p>Ragas uses LLMs under the hood to do the evaluations but leverages them in different ways to get the measurements we care about while overcoming the biases they have. Let&#x27;s learn more about how they work under the hood to see how.</p>
+      <div class="chart"><div class="chart-row">
+    <div class="chart-label">Method A</div>
+    <div class="chart-bar-wrap"><div class="chart-bar green" style="width:95%">95%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method B</div>
+    <div class="chart-bar-wrap"><div class="chart-bar teal" style="width:80%">80%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method C</div>
+    <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:65%">65%</div></div>
+  </div></div>
+    </section>
+
+    <section class="section" id="s16">
+      <h2>🎨 Under the hood</h2>
+      <p class="lead">&gt; Optional, not required to follow the next steps but helps understand the inner workings of ragas.</p>
+      <div class="block-q"><p>Optional, not required to follow the next steps but helps understand the inner workings of ragas.</p></div>
+<p>All the metrics are documented here but in this section let&#x27;s try and understand how exactly each Ragas metric works.</p>
+<div class="card"><ul>
+  <li>Faithfulness: measures the factual accuracy of the generated answer with the context provided. This is done in 2 steps. First, given a question and generated answer, Ragas uses an LLM to figure out the statements that the generated answer makes. This gives a list of statements whose validity we have we have to check. In step 2, given the list of statements and the context returned, Ragas uses an LLM to check if the statements provided are supported by the context. The number of correct statements is summed up and divided by the total number of statements in the generated answer to obtain the score for a given example.</li>
+  <li>Answer Relevancy: measures how relevant and to the point the answer is to the question. For a given generated answer Ragas uses an LLM to find out the probable questions that the generated answer would be an answer to and computes similarity to the actual question asked.</li>
+  <li>Context Relevancy: measures the signal-to-noise ratio in the retrieved contexts. Given a question, Ragas calls LLM to figure out sentences from the retrieved context that are needed to answer the question. A ratio between the sentences required and the total sentences in the context gives you the score</li>
+  <li>Context Recall: measures the ability of the retriever to retrieve all the necessary information needed to answer the question. Ragas calculates this by using the provided ground_truth answer and using an LLM to check if each statement from it can be found in the retrieved context. If it is not found that means the retriever was not able to retrieve the information needed to support that statement.</li>
+</ul></div>
+<p>Understanding how each Ragas metric works gives you clues as to how the evaluation was performed making these metrics reproducible and more understandable. One easy way to visualize the results from Ragas is to use the traces from LangSmith and LangSmith’s evaluation features. Let&#x27;s look more into that now</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s17">
+      <h2>🏆 Visualising the Evaluations with LangSmith</h2>
+      <p class="lead">While Ragas provides you with a few insightful metrics, it does not help you in the process of continuously evaluation of your QA pipeline in production.</p>
+      <p>While Ragas provides you with a few insightful metrics, it does not help you in the process of continuously evaluation of your QA pipeline in production. But this is where LangSmith comes in.</p>
+<p>LangSmith is a platform that helps to debug, test, evaluate, and monitor chains and agents built on any LLM framework. LangSmith offers the following benefits</p>
+<div class="card"><ul>
+  <li>a platform to create and store a test dataset and run evaluations.</li>
+  <li>a platform to visualise and dig into the evaluation results. Makes Ragas metrics explainable and reproducible.</li>
+  <li>The ability to continuously add test examples from production logs if your app is also monitored with LangSmith.</li>
+</ul></div>
+<p>With <code>RagasEvaluatorChain</code> you can use the Ragas metrics for running LangSmith evaluations as well. To know more about LangSmith evaluations check out the quickstart.</p>
+<p>Let&#x27;s start with your need to create a dataset inside LangSmith to store the test examples. We’re going to start off with a small dataset with 5 questions and answers to those questions (used only for the <code>context_recall</code> metric).</p>
+<div class="code-block"><pre># test dataset
+eval_questions = [
+    &amp;quot;What is the population of New York City as of 2020?&amp;quot;,
+    &amp;quot;Which borough of New York City has the highest population?&amp;quot;,
+    &amp;quot;What is the economic significance of New York City?&amp;quot;,
+    &amp;quot;How did New York City get its name?&amp;quot;,
+    &amp;quot;What is the significance of the Statue of Liberty in New York City?&amp;quot;,
+]</pre></div>
+<p>eval_answers = [
+    &quot;8,804,000&quot;, # incorrect answer
+    &quot;Queens&quot;,    # incorrect answer
+    &quot;New York City&#x27;s economic significance is vast, as it serves as the global financial capital, housing Wall Street and major financial institutions. Its diverse economy spans technology, media, healthcare, education, and more, making it resilient to economic fluctuations. NYC is a hub for international business, attracting global companies, and boasts a large, skilled labor force. Its real estate market, tourism, cultural industries, and educational institutions further fuel its economic prowess. The city&#x27;s transportation network and global influence amplify its impact on the world stage, solidifying its status as a vital economic player and cultural epicenter.&quot;,
+    &quot;New York City got its name when it came under British control in 1664. King Charles II of England granted the lands to his brother, the Duke of York, who named the city New York in his own honor.&quot;,
+    &#x27;The Statue of Liberty in New York City holds great significance as a symbol of the United States and its ideals of liberty and peace. It greeted millions of immigrants who arrived in the U.S. by ship in the late 19th and early 20th centuries, representing hope and freedom for those seeking a better life. It has since become an iconic landmark and a global symbol of cultural diversity and freedom.&#x27;,
+]</p>
+<p>examples = [{&quot;query&quot;: q, &quot;ground_truths&quot;: [eval_answers[i]]}
+           for i, q in enumerate(eval_questions)]# dataset creation
+from langsmith import Client
+from langsmith.utils import LangSmithError</p>
+<p>client = Client()
+dataset_name = &quot;NYC test&quot;</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s18">
+      <h2>🔑 check if dataset exists</h2>
+      <p class="lead">dataset = client.</p>
+      <p>dataset = client.read_dataset(dataset_name=dataset_name)
+    print(&quot;using existing dataset: &quot;, dataset.name)
+except LangSmithError:</p>
+      
+    </section>
+
+    <section class="section" id="s19">
+      <h2>📋 if not create a new one with the generated query examples</h2>
+      <p class="lead">dataset = client.</p>
+      <p>dataset = client.create_dataset(
+        dataset_name=dataset_name, description=&quot;NYC test dataset&quot;
+    )
+    for q in eval_questions:
+        client.create_example(
+            inputs={&quot;query&quot;: q},
+            dataset_id=dataset.id,
+        )</p>
+<p>print(&quot;Created a new dataset: &quot;, dataset.name)`</p>
+<p>If you go to the LangSmith dashboard and check the datasets section you should be able to see the dataset we just created.</p>
+<p>LangSmith dataset tab with the NYC dataset we created</p>
+<p>To run the evaluations you have to call the run_on_dataset() function from the LangSmith SDK.  but before that, you have to create a chain factory that will return a new QA chain every time this is called. This is so that any states in the QA chain are not reused when evaluating with individual examples. Make sure the QA chains return the context if using metrics that check on context.</p>
+<div class="code-block"><pre># factory function that return a new qa chain
+def create_qa_chain(return_context=True):
+    qa_chain = RetrievalQA.from_chain_type(
+        llm,
+        retriever=index.vectorstore.as_retriever(),
+        return_source_documents=return_context,
+    )
+    return qa_chain</pre></div>
+<p>Now let&#x27;s configure and run the evaluation. You use RunEvalConfig to configure the evaluation with the metrics/evaluator chains that you want to run against and the prediction_key for the returned result. Now call run_on_dataset and LangSmith to use the dataset we uploaded and run it against the chain from the factory and evaluate with the custom_evaluators we provided and upload the results.</p>
+<p>`from langchain.smith import RunEvalConfig, run_on_dataset</p>
+<p>evaluation_config = RunEvalConfig(
+    custom_evaluators=[eval_chains.values()],
+    prediction_key=&quot;result&quot;,
+)</p>
+<p>result = run_on_dataset(
+    client,
+    dataset_name,
+    create_qa_chain,
+    evaluation=evaluation_config,
+    input_mapper=lambda x: x,
+)</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s20">
+      <h2>🚀 output</h2>
+      <p class="lead"></p>
+      
+      
+    </section>
+
+    <section class="section" id="s21">
+      <h2>🔍 View the evaluation results for project &amp;#x27;2023-08-24-03-36-45-RetrievalQA&amp;#x27; at:</h2>
+      <p class="lead"></p>
+      
+      <div class="chart"><div class="chart-row">
+    <div class="chart-label">Method A</div>
+    <div class="chart-bar-wrap"><div class="chart-bar green" style="width:95%">95%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method B</div>
+    <div class="chart-bar-wrap"><div class="chart-bar teal" style="width:80%">80%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method C</div>
+    <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:65%">65%</div></div>
+  </div></div>
+    </section>
+
+    <section class="section" id="s22">
+      <h2>⚡ https://smith.langchain.com/projects/p/9fb78371-150e-49cc-a927-b1247fdb9e8d?eval=true`</h2>
+      <p class="lead">Open up the results and you will see something like this
+
+This shows the output for each example in the training dataset and the Feedback columns show the evaluation results.</p>
+      <p>Open up the results and you will see something like this</p>
+<p>This shows the output for each example in the training dataset and the Feedback columns show the evaluation results. Now if you want to dive more into the reasons for the scores and how to improve them, click on any single example and open the Feedback tab.</p>
+<p>This will show you each score and if you open the pop-up icon it will point you to the evaluation run of the RagasEvaluatorChain.</p>
+<p>You can analyze each result to see why it was so and this will give you ideas on how to improve it.</p>
+<p>Now if your QA pipeline also uses LangSmith for logging, tracing, and monitoring you can leverage the add-to-dataset feature to set up a continuous evaluation pipeline that keeps adding interesting data points (based on human feedback of other indirect methods) into the test to keep the test dataset up to date with a more comprehensive dataset with wider coverage.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s23">
+      <h2>🏗️ Conclusion</h2>
+      <p class="lead">Ragas enhances QA system evaluation by addressing limitations in traditional metrics and leveraging Large Language Models.</p>
+      <p>Ragas enhances QA system evaluation by addressing limitations in traditional metrics and leveraging Large Language Models. LangSmith provides a platform for running evaluations and visualizing results.</p>
+<p>By using Ragas and LangSmith, you can ensure your QA systems are robust and ready for real-world applications, making the development process more efficient and reliable.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s24">
+      <h2>📊 Related content</h2>
+      <p class="lead">.</p>
+      <p>.png)PartnerDeep Agents</p>
+<p>#### Building a company due diligence agent with Deep Agents, LangSmith and Parallel</p>
+<p>Matt HarrisNick MartitschSrimanth TangedipalliKaran SinghMay 8, 20269min[](/blog/building-a-company-due-diligence-agent-with-deep-agents-langsmith-and-parallel).png)Agent ArchitectureLangSmithOpen Source</p>
+<p>#### How LangSmith and LangChain OSS Help You Meet EU AI Act Requirements</p>
+<p>Jacob TalbotBecca WengApril 27, 20267min[](/blog/langsmith-langchain-oss-eu-ai-act).png)Case StudiesLangSmith</p>
+<p>#### How Credit Genie used Insights Agent to improve their AI financial assistant</p>
+<p>David LiJeffrey NgaiGoyo Lozano PalacioCharles YuanApril 20, 20265min[](/blog/credit-genie-insights-agent-financial-assistant)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s25">
+      <h2>🔗 See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+  </div>
+
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/evaluating-rag-pipelines-with-ragas-langsmith" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

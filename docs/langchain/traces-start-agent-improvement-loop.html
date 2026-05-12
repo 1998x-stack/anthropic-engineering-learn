@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deep Dive: The Agent Improvement Loop Starts with a Trace</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafbfc;
+      --surface: #fff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --green: #059669;
+      --emerald: #10b981;
+      --teal: #14b8a6;
+      --blue: #3b82f6;
+      --purple: #6366f1;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --orange: #ea580c;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans SC', 'Inter', system-ui, sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: var(--sans); background: var(--bg); color: var(--text); line-height:1.7; }
+    .nav { position:sticky; top:0; z-index:100; background:rgba(15,23,42,.88); backdrop-filter:blur(14px); padding:14px 32px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,.08); }
+    .nav a { color:#f1f5f9; text-decoration:none; font-weight:500; font-size:14px; }
+    .nav .brand { font-weight:700; font-size:16px; color:#34d399; }
+    .hero { background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%); color:#fff; padding:80px 32px 60px; text-align:center; }
+    .hero h1 { font-size:clamp(1.8rem,4vw,2.6rem); font-weight:800; margin-bottom:12px; line-height:1.3; }
+    .hero .subtitle { font-size:17px; color:rgba(255,255,255,.82); max-width:720px; margin:0 auto 12px; }
+    .hero .meta { font-size:13px; color:rgba(255,255,255,.5); margin-bottom:32px; }
+    .hero .badge-cat { display:inline-block; padding:4px 14px; border-radius:20px; font-size:12px; font-weight:600; background:rgba(52,211,153,.18); color:#6ee7b7; border:1px solid rgba(52,211,153,.3); margin-bottom:16px; }
+    .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; max-width:780px; margin:0 auto; }
+    .stat { background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.11); border-radius:12px; padding:18px 14px; backdrop-filter:blur(8px); }
+    .stat .num { font-size:26px; font-weight:800; color:#34d399; font-family:var(--mono); }
+    .stat .label { font-size:12px; color:rgba(255,255,255,.65); margin-top:4px; }
+    .page { max-width:900px; margin:0 auto; padding:40px 24px; }
+    .toc { margin-bottom:48px; }
+    .toc h3 { font-size:13px; text-transform:uppercase; letter-spacing:1.5px; color:var(--text-secondary); margin-bottom:16px; }
+    .toc-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:10px; }
+    .toc-grid a { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--text); font-size:14px; font-weight:500; transition:all .2s; }
+    .toc-grid a:hover { border-color:var(--green); background:#ecfdf5; }
+    .toc-grid .num { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:8px; background:linear-gradient(135deg,#059669,#14b8a6); color:#fff; font-size:12px; font-weight:700; flex-shrink:0; }
+    .section { margin-bottom:56px; }
+    .section h2 { font-size:clamp(1.3rem,3vw,1.6rem); font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    .lead { color:var(--text-secondary); font-size:15px; margin-bottom:20px; line-height:1.7; }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:22px; margin-bottom:14px; }
+    .card h4 { font-size:15px; font-weight:600; margin-bottom:8px; }
+    .card p { font-size:14px; color:var(--text-secondary); line-height:1.7; }
+    .chart { margin:24px 0; }
+    .chart-row { display:flex; align-items:center; margin-bottom:10px; gap:12px; }
+    .chart-label { width:160px; font-size:13px; font-weight:500; text-align:right; flex-shrink:0; }
+    .chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:30px; overflow:hidden; }
+    .chart-bar { height:100%; border-radius:8px; display:flex; align-items:center; justify-content:flex-end; padding-right:10px; font-size:12px; font-weight:600; color:#fff; transition:width .6s ease; }
+    .chart-bar.green { background:linear-gradient(90deg,#059669,#34d399); }
+    .chart-bar.teal { background:linear-gradient(90deg,#14b8a6,#2dd4bf); }
+    .chart-bar.blue { background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+    .chart-bar.purple { background:linear-gradient(90deg,#6366f1,#a78bfa); }
+    .chart-bar.amber { background:linear-gradient(90deg,#f59e0b,#fbbf24); }
+    .chart-bar.orange { background:linear-gradient(90deg,#ea580c,#fb923c); }
+    .chart-bar.red { background:linear-gradient(90deg,#ef4444,#f87171); }
+    .timeline { position:relative; padding-left:32px; margin:24px 0; }
+    .timeline::before { content:''; position:absolute; left:8px; top:0; bottom:0; width:3px; background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6,#6366f1); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:20px; }
+    .tl-dot { position:absolute; left:-28px; top:4px; width:14px; height:14px; border-radius:50%; border:3px solid #059669; background:#fff; }
+    .tl-item:nth-child(2) .tl-dot { border-color:#14b8a6; }
+    .tl-item:nth-child(3) .tl-dot { border-color:#3b82f6; }
+    .tl-item:nth-child(4) .tl-dot { border-color:#6366f1; }
+    .tl-item:nth-child(5) .tl-dot { border-color:#f59e0b; }
+    .tl-item:nth-child(6) .tl-dot { border-color:#ea580c; }
+    .tl-item:nth-child(7) .tl-dot { border-color:#ef4444; }
+    .tl-phase { font-weight:700; font-size:15px; margin-bottom:4px; }
+    .tl-desc { font-size:13px; color:var(--text-secondary); line-height:1.6; }
+    .compare-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:24px 0; }
+    .compare-card { border-radius:var(--radius); padding:22px; }
+    .compare-card.old { background:#fef2f2; border:2px solid #fecaca; }
+    .compare-card.new { background:#ecfdf5; border:2px solid #a7f3d0; }
+    .compare-card h4 { font-size:15px; font-weight:700; margin-bottom:8px; }
+    .compare-card ul { list-style:none; padding:0; }
+    .compare-card ul li { font-size:13px; padding:4px 0; color:var(--text-secondary); }
+    .flow { display:flex; align-items:center; justify-content:center; gap:12px; margin:24px 0; flex-wrap:wrap; }
+    .flow-step { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px 18px; font-size:13px; font-weight:600; text-align:center; min-width:100px; }
+    .flow-step.green { background:linear-gradient(135deg,#059669,#10b981); color:#fff; border:none; }
+    .flow-step.blue { background:linear-gradient(135deg,#3b82f6,#60a5fa); color:#fff; border:none; }
+    .flow-step.purple { background:linear-gradient(135deg,#6366f1,#a78bfa); color:#fff; border:none; }
+    .flow-step.teal { background:linear-gradient(135deg,#14b8a6,#2dd4bf); color:#fff; border:none; }
+    .flow-step.orange { background:linear-gradient(135deg,#ea580c,#f59e0b); color:#fff; border:none; }
+    .flow-arrow { font-size:20px; color:var(--text-secondary); }
+    .block-q { background:linear-gradient(135deg,#ecfdf5,#d1fae5); border-left:4px solid #059669; border-radius:0 var(--radius) var(--radius) 0; padding:18px 22px; margin:20px 0; }
+    .block-q p { font-size:14px; font-style:italic; color:#064e3b; line-height:1.7; }
+    .badge { display:inline-block; padding:3px 10px; border-radius:6px; font-size:12px; font-weight:600; }
+    .badge-green { background:#ecfdf5; color:#059669; }
+    .badge-teal { background:#f0fdfa; color:#14b8a6; }
+    .badge-blue { background:#eff6ff; color:#3b82f6; }
+    .badge-purple { background:#eef2ff; color:#6366f1; }
+    .footer { text-align:center; padding:48px 24px; border-top:1px solid var(--border); margin-top:40px; }
+    .footer a { color:var(--green); text-decoration:none; font-weight:500; }
+    .footer a:hover { text-decoration:underline; }
+    .footer .foot-links { display:flex; justify-content:center; gap:24px; flex-wrap:wrap; margin-bottom:12px; }
+    .footer .copy { font-size:12px; color:var(--text-secondary); }
+    @media(max-width:768px) {
+      .hero { padding:48px 18px 36px; }
+      .hero h1 { font-size:1.5rem; }
+      .stats { grid-template-columns:1fr 1fr; gap:10px; }
+      .page { padding:28px 16px; }
+      .toc-grid { grid-template-columns:1fr; }
+      .compare-grid { grid-template-columns:1fr; }
+      .flow { flex-direction:column; gap:8px; }
+      .flow-arrow { transform:rotate(90deg); }
+      .chart-label { width:100px; font-size:11px; }
+      .nav { padding:12px 16px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain Blog Hub</a>
+    <a href="../langchain/">&#x2190; Back to Hub</a>
+  </nav>
+
+  <header class="hero">
+    <div class="badge-cat">LangSmith / Observability &amp; Evals</div>
+    <h1>The Agent Improvement Loop Starts with a Trace</h1>
+    <p class="subtitle">LangChain Accounts &middot; 2026-03-31</p>
+    <p class="meta">Source: https://www.langchain.com/blog/traces-start-agent-improvement-loop</p>
+    <div class="stats">
+        <div class="stat">
+          <div class="num">11</div>
+          <div class="label">Core Sections</div>
+        </div>
+        <div class="stat">
+          <div class="num">10 min</div>
+          <div class="label">Reading Time</div>
+        </div>
+        <div class="stat">
+          <div class="num">18</div>
+          <div class="label">Key Points</div>
+        </div>
+        <div class="stat">
+          <div class="num">20</div>
+          <div class="label">External Links</div>
+        </div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc">
+      <h3>&#x1F4D1; Table of Contents</h3>
+      <div class="toc-grid">
+        <a href="#key-takeaways"><span class="num">1</span>Key Takeaways</a>
+        <a href="#traces-are-the-raw-material"><span class="num">2</span>Traces are the raw material</a>
+        <a href="#the-agent-improvement-loop"><span class="num">3</span>The agent improvement loop</a>
+        <a href="#how-langsmith-generates-data-from-traces"><span class="num">4</span>How LangSmith generates data from traces automatic</a>
+        <a href="#where-automation-stops-human-judgment-st"><span class="num">5</span>Where automation stops: human judgment still matte</a>
+        <a href="#what-to-do-with-enriched-traces-build-an"><span class="num">6</span>What to do with enriched traces: build and improve</a>
+        <a href="#turning-production-failures-into-offline"><span class="num">7</span>Turning production failures into offline evaluatio</a>
+        <a href="#online-offline-evals-together"><span class="num">8</span>Online + offline evals together</a>
+        <a href="#coding-agents-in-the-loop"><span class="num">9</span>Coding agents in the loop</a>
+        <a href="#tracing-is-the-cornerstone-of-your-agent"><span class="num">10</span>Tracing is the cornerstone of your agent improveme</a>
+        <a href="#additional-reading"><span class="num">11</span>Additional reading</a>
+      </div>
+    </nav>
+
+    <section class="section" id="key-takeaways">
+      <h2>&#x2705; Key Takeaways</h2>
+      <p class="lead">The agent improvement loop is simple in principle: get traces, enrich them, improve from them, repeat. This guide walks through how to do that in prac...</p>
+        <div class="card"><p>Improving an agent systematically requires a feedback loop. You collect traces of agent behavior, enrich them with evaluations and human feedback, identify what's failing and why, make targeted changes, and validate that those changes worked before shipping. Then you repeat from a higher baseline.</p></div>
+        <div class="card"><p>This loop is powered by traces. These traces can come from many places – from staging environments, benchmark runs, local development, and especially from production. What matters is collecting these traces, enriching them, and using that data to improve the system.</p></div>
+        <div class="card"><p>This guide walks through each step of that feedback loop.</p></div>
+        <div class="card">
+          <ul style="list-style:disc;padding-left:20px;color:var(--text-secondary);font-size:14px;line-height:1.8;">
+            <li>An agent is a system around a model with several layers you can update: the model weights, the orchestration code, and the context (prompts, instructions, skills). Knowing what to change requires evid</li>
+            <li>Traces can come from anywhere: staging, test runs, benchmarks, local development, and especially from production. The improvement loop is the same regardless of source.</li>
+            <li>The loop requires enriching traces with evals and human feedback, identifying failure patterns, making targeted changes, and validating before shipping. Each cycle generates better data and more relia</li>
+            <li>LangSmith connects every step of this loop, from the first trace to the CI/CD gate that prevents regressions from shipping.</li>
+          </ul>
+        </div>
+      <div class="chart">
+        <div class="chart-row">
+          <div class="chart-label">An agent is a system around a model...</div>
+          <div class="chart-bar-wrap">
+            <div class="chart-bar green" style="width:95%">95%</div>
+          </div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-label">Traces can come from anywhere: stag...</div>
+          <div class="chart-bar-wrap">
+            <div class="chart-bar teal" style="width:85%">85%</div>
+          </div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-label">The loop requires enriching traces ...</div>
+          <div class="chart-bar-wrap">
+            <div class="chart-bar blue" style="width:75%">75%</div>
+          </div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-label">LangSmith connects every step of th...</div>
+          <div class="chart-bar-wrap">
+            <div class="chart-bar purple" style="width:65%">65%</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="traces-are-the-raw-material">
+      <h2>&#x1F50D; Traces are the raw material</h2>
+      <p class="lead">Harrison put it directly: &quot;In software, the code documents the app; in AI, the traces do.&quot;...</p>
+        <div class="card"><p>In a traditional application, the code is the authoritative record of what the system does. You can read it, reason about it, test against it, and understand every behavior in principle.</p></div>
+        <div class="card"><p>In an agentic system, the code tells you what the agent is allowed to do. The traces tell you what it actually did in this run, with this input, under these conditions.</p></div>
+        <div class="card"><p>A trace captures the full execution of an agent run: every LLM call, every tool invocation, every retrieval step, every intermediate output, and the sequence of decisions connecting them. It's the record of what the agent actually did with this input, under these conditions, in this run.</p></div>
+        <div class="card"><p>A raw trace tells you what happened. An enriched trace, scored by evaluators and annotated by reviewers, tells you what to do about it. The rest of this loop is about building that enrichment layer and using it to make targeted, validated improvements.</p></div>
+
+    </section>
+
+    <section class="section" id="the-agent-improvement-loop">
+      <h2>&#x1F916; The agent improvement loop</h2>
+      <p class="lead">Once you have traces, improving an agent becomes concrete and repeatable. The loop looks like this:...</p>
+        <div class="card"><p>1. Build and improve: Start with what you know – an agent, a task, and a hypothesis about what could be better. Developers review traces with negative scores, filter for failure patterns, and inspect the trajectory that produced a bad outcome. Instead of guessing at what to fix, they work backward from observed behavior. The failure modes that emerge from real traces become the input to code and prompt changes.</p></div>
+        <div class="card"><p>2. Observe and debug (pre-production): Developers run the updated agent in a staging environment. Traces reveal whether the fix behaves as intended before any formal evaluation.</p></div>
+        <div class="card"><p>3. Offline evals: Enriched traces get converted into reproducible test cases. A recurring failure mode becomes an evaluator. A set of real inputs that exposed a problem becomes a dataset. Before shipping, developers run the offline eval suite against the updated agent, producing a concrete before-and-after comparison. If the fix works, scores improve. If it introduces a regression, that surfaces before it reaches users. Passing evaluations get added to the permanent test suite.</p></div>
+        <div class="card"><p>4. Deploy: The fix ships, and new traces start accumulating. The next cycle begins from a higher starting point.</p></div>
+      <div class="compare-grid">
+        <div class="compare-card old">
+          <h4>&#x26A0; Challenges / Before</h4>
+          <ul>
+                        <li>Once you have traces, improving an agent becomes concrete and repeatable. The loop looks like this:</li>
+            <li>2. Observe and debug (pre-production): Developers run the updated agent in a staging environment. Tr...</li>
+            <li>4. Deploy: The fix ships, and new traces start accumulating. The next cycle begins from a higher sta...</li>
+          </ul>
+        </div>
+        <div class="compare-card new">
+          <h4>&#x2705; Solutions / After</h4>
+          <ul>
+                        <li>1. Build and improve: Start with what you know – an agent, a task, and a hypothesis about what could...</li>
+            <li>3. Offline evals: Enriched traces get converted into reproducible test cases. A recurring failure mo...</li>
+            <li>5. Observe (in production): Every agent run in production generates a trace: inputs, outputs, trajec...</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="how-langsmith-generates-data-from-traces">
+      <h2>&#x1F50D; How LangSmith generates data from traces automatically</h2>
+      <p class="lead">There are two categories of data that drive agent improvement: automatically generated and human generated. LangSmith helps you create both. To genera...</p>
+        <div class="card"><p>Online evaluators run automatically on production traces, scoring outputs against configurable quality criteria. You can configure them to run on all traces, a sampled subset, or filtered subsets based on specific criteria.</p></div>
+        <div class="card"><p>The grading method depends on what you're evaluating.</p></div>
+        <div class="card"><p>For qualitative dimensions without deterministic ground truth, helpfulness, tone, relevance, policy adherence, factual plausibility, use an LLM-as-a-judge. The evaluator calls an LLM to assess not just the final response but the full trajectory: did the agent use the right tools, in the right order, with the right parameters?</p></div>
+        <div class="card"><p>For behaviors with clear right answers, use code-based checks. Schema validation, exact-match conditions, format conformity, business rule compliance, and tool correctness can all be evaluated deterministically, and doing so is faster and cheaper than routing them through an LLM judge.</p></div>
+
+    </section>
+
+    <section class="section" id="where-automation-stops-human-judgment-st">
+      <h2>&#x1F4CC; Where automation stops: human judgment still matters</h2>
+      <p class="lead">Automated evaluators and insights scale well, but they don't replace human judgment....</p>
+        <div class="card"><p>Some agent behaviors can only be assessed by someone with domain expertise. A legal research agent that cites plausible-sounding but inaccurate precedents might fool an LLM judge. A medical information agent that gives technically correct but clinically inappropriate guidance looks fine to an automated check. Nuanced failures in specialized domains require reviewers who understand what &quot;correct&quot; actually means.</p></div>
+        <div class="card"><p>That's where annotation queues come in.</p></div>
+        <div class="card"><p>Teams can route selected production traces into annotation queues using filters: traces with low automated scores, traces from a specific feature area, traces that received thumbs-down feedback from end users. Reviewers see the full context and can leave ratings, corrections, comments, and edited outputs.</p></div>
+        <div class="card"><p>There are four main ways teams use annotation queues in practice:</p></div>
+        <div class="card">
+          <ul style="list-style:disc;padding-left:20px;color:var(--text-secondary);font-size:14px;line-height:1.8;">
+            <li>Aligning online evaluators: Reviewers label traces to calibrate LLM-as-a-judges. When reviewers and the automated evaluator disagree, those labeled examples help tune the grader until its scores refle</li>
+            <li>Creating ground truth for offline datasets: Reviewers label the correct final output for a trace. These become the expected answers in your offline eval suite, letting you test future versions for cor</li>
+            <li>Scoring open-ended outputs: When there's no single correct answer, reviewers label the criteria that define a good response. This structured feedback becomes the basis for evaluators on dimensions tha</li>
+            <li>Natural language annotations: Reviewers attach freeform comments and corrections to traces. These flow into Insights Agent analysis, surfacing patterns that scores alone won't show.</li>
+            <li>General reviewers: Contractors, annotators, customer success teams can assess surface-level quality signals. They judge if the response was helpful, if it was accurate relative to visible information,</li>
+            <li>Domain experts: Product managers, SMEs, and specialists in the field the agent serves can judge whether the agent behaved correctly in context, including failures that automation will miss entirely.</li>
+          </ul>
+        </div>
+
+    </section>
+
+    <section class="section" id="what-to-do-with-enriched-traces-build-an">
+      <h2>&#x2699; What to do with enriched traces: build and improve</h2>
+      <p class="lead">Enriched traces become the raw material for understanding where an agent consistently fails....</p>
+        <div class="card"><p>The pattern that emerges across multiple traces is more actionable than any individual example. You’ll start to see that your agent consistently misunderstands queries of a certain type or always selects the wrong tool in a particular context.</p></div>
+        <div class="card"><p>Pattern-level understanding is hard to gain by spot-checking individual runs. It requires data at scale, with consistent labels, from real production behavior.</p></div>
+        <div class="card"><p>The fix depends on what the traces reveal. If the agent is selecting the wrong tool for a class of queries, that might mean updating tool descriptions or adding routing logic. If the reasoning drifts partway through a multi-step task, a more constrained system prompt or breaking the task into smaller, more focused steps. If the agent produces outputs that are factually correct but miss the user's actual intent, that's usually a prompt-level issue and requires clarifying what &quot;good&quot; loo</p></div>
+        <div class="card"><p>Each of these changes is informed by specific, observed behavior rather than hypothetical failure modes. A developer is rewriting a prompt because they can see exactly which traces failed, how they failed, and what the annotated feedback says about why.</p></div>
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Key Takeaways</div>
+          <div class="tl-desc">The agent improvement loop is simple in principle: get traces, enrich them, impr...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Traces are the raw material</div>
+          <div class="tl-desc">Harrison put it directly: &quot;In software, the code documents the app; in AI, ...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">The agent improvement loop</div>
+          <div class="tl-desc">Once you have traces, improving an agent becomes concrete and repeatable. The lo...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">How LangSmith generates data from traces</div>
+          <div class="tl-desc">There are two categories of data that drive agent improvement: automatically gen...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Where automation stops: human judgment s</div>
+          <div class="tl-desc">Automated evaluators and insights scale well, but they don't replace human judgm...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">What to do with enriched traces: build a</div>
+          <div class="tl-desc">Enriched traces become the raw material for understanding where an agent consist...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Turning production failures into offline</div>
+          <div class="tl-desc">Once you've identified what to fix, you need a way to test that the fix actually...</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="turning-production-failures-into-offline">
+      <h2>&#x1F4CA; Turning production failures into offline evaluations</h2>
+      <p class="lead">Once you've identified what to fix, you need a way to test that the fix actually works. That's where offline evaluations come in....</p>
+        <div class="card"><p>The dataset for those evals should come from production: real traces, real queries, real failures.</p></div>
+        <div class="card"><p>What those evaluations actually measure depends on what the annotation work produced. There are two distinct approaches:</p></div>
+        <div class="card"><p>Every failure mode you encode as an eval should stay in your test suite permanently. That creates a durable record of what your agent has learned to handle, and a gate that ensures future changes don't reintroduce problems you already solved.</p></div>
+        <div class="card">
+          <ul style="list-style:disc;padding-left:20px;color:var(--text-secondary);font-size:14px;line-height:1.8;">
+            <li>Ground truth correctness: When reviewers have labeled the correct final output for a trace, you can test directly for correctness. Run your refined agent against the dataset and compare the agent's ou</li>
+            <li>Criteria-based scoring: Not every output has a single correct answer. For open-ended tasks, reviewers label the criteria that define a good response rather than the response itself. Offline evals use </li>
+          </ul>
+        </div>
+
+    </section>
+
+    <section class="section" id="online-offline-evals-together">
+      <h2>&#x1F538; Online + offline evals together</h2>
+      <p class="lead">Online evaluators monitor live behavior continuously. They catch quality drift, surface emerging failure patterns, and flag traces for human review. B...</p>
+        <div class="card"><p>Offline evaluations help with that. They're controlled experiments you run on curated datasets in development, before any change reaches production.</p></div>
+        <div class="card"><p>Together, they create a bridge between production observation and safe iteration. Online evals tell you what's going wrong. Offline evals confirm whether your fix actually addresses it.</p></div>
+        <div class="card"><p>Every failure mode you encode as an eval should stay in your test suite permanently. That creates a durable record of what your agent has learned to handle, and a gate that ensures future changes don't reintroduce problems you already solved.</p></div>
+        <div class="card"><p>Every prompt change, model update, workflow modification, or architecture change should run against the accumulated eval suite before shipping. Running the same eval sets continuously and comparing scores across versions and model configurations turns the improvement loop into something measurable. You can demonstrate that each iteration produced a better agent, not just a different one.</p></div>
+
+    </section>
+
+    <section class="section" id="coding-agents-in-the-loop">
+      <h2>&#x1F916; Coding agents in the loop</h2>
+      <p class="lead">The improvement loop is becoming more automated, and tracing stays at the center of that too.....</p>
+        <div class="card"><p>The LangSmith CLI and Skills give coding agents expert-level access to LangSmith data directly from the terminal. When equipped with LangSmith Skills, on our eval set, Claude Code's performance jumped from 17% to 92%.</p></div>
+        <div class="card"><p>In practice, a developer can instruct a coding agent to pull the last 30 days of production traces, isolate traces with thumbs-down feedback, identify the failure patterns they represent, draft evaluations from those examples, and propose prompt or code changes to address them. All of that happens within a single terminal session, grounded in real behavioral data.</p></div>
+        <div class="card"><p>But a coding agent without trace data makes changes based on incomplete information. It will propose fixes that look reasonable from a code-review perspective but miss the actual failure mode because they can't see the execution trajectory that produced it. A coding agent working from enriched traces is working from the same information a senior engineer would use.</p></div>
+
+    </section>
+
+    <section class="section" id="tracing-is-the-cornerstone-of-your-agent">
+      <h2>&#x1F916; Tracing is the cornerstone of your agent improvement loop</h2>
+      <p class="lead">Reliable agents aren't built from debugging individual traces. They're built from a trace-centered improvement loop....</p>
+        <div class="card"><p>The loop begins with tracing and returns to tracing. Every evaluator runs on traces. Every annotation is attached to a trace. Every offline dataset is built from traces. Every regression test validates against what was observed in real traces. The coding agent that proposes the next fix reads from traces to do it.</p></div>
+        <div class="card"><p>That is why tracing is not just a debugging tool. It's the primitive that makes the entire improvement loop possible, the foundation from which all evaluation, all human feedback, and all systematic improvement is derived.</p></div>
+        <div class="card"><p>The loop starts with a trace. And the next loop starts with the trace that comes back.</p></div>
+
+    </section>
+
+    <section class="section" id="additional-reading">
+      <h2>&#x1F4CE; Additional reading</h2>
+      <p class="lead">Additional reading</p>
+        <div class="card">
+          <ul style="list-style:disc;padding-left:20px;color:var(--text-secondary);font-size:14px;line-height:1.8;">
+            <li>&quot;Agent observability powers agent evaluation&quot;</li>
+            <li>&quot;You don't know what your agent will do until it's in production&quot;</li>
+            <li>LangSmith Docs - &quot;Offline evaluation types&quot;</li>
+            <li>LangSmith Docs - &quot;Online evaluation types&quot;</li>
+            <li>LangSmith Docs - &quot;Annotation queues&quot;</li>
+            <li>LangSmith Docs - &quot;Insights&quot;</li>
+          </ul>
+        </div>
+      <div class="card">
+        <h4>&#x1F4A1; Key Insight</h4>
+        <p>Additional reading</p>
+      </div>
+    </section>
+
+  </div>
+
+  <footer class="footer">
+    <div class="foot-links">
+      <a href="../langchain/">&#x1F3E0; LangChain Hub</a>
+      <a href="https://www.langchain.com/blog/traces-start-agent-improvement-loop" target="_blank">&#x1F517; Original Article</a>
+    </div>
+    <p class="copy">Auto-generated deep-dive page &middot; Content from LangChain Blog</p>
+  </footer>
+</body>
+</html>

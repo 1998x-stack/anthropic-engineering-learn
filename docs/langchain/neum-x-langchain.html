@@ -1,0 +1,207 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：NeumAI x LangChain: Efficiently maintaining context in sync for AI applications</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--green:#10b981;--emerald:#059669;--teal:#14b8a6;--blue:#3b82f6;--purple:#6366f1;--amber:#f59e0b;--red:#ef4444;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+    .nav{position:sticky;top:0;z-index:100;background:rgba(15,23,42,.85);backdrop-filter:blur(12px);padding:14px 32px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.08)}
+    .nav a{color:#f1f5f9;text-decoration:none;font-weight:500;font-size:14px}
+    .nav .brand{font-weight:700;font-size:16px;color:#10b981}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%);color:#fff;padding:80px 32px 60px;text-align:center}
+    .hero h1{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;margin-bottom:12px;line-height:1.3}
+    .hero .subtitle{font-size:18px;color:rgba(255,255,255,.8);max-width:720px;margin:0 auto 40px}
+    .hero .meta{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:32px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;max-width:800px;margin:0 auto}
+    .stat{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:20px 16px;backdrop-filter:blur(8px)}
+    .stat .num{font-size:28px;font-weight:800;color:#34d399}
+    .stat .label{font-size:13px;color:rgba(255,255,255,.7);margin-top:4px}
+    .page{max-width:900px;margin:0 auto;padding:40px 24px}
+    .toc{margin-bottom:48px}
+    .toc h3{font-size:14px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);margin-bottom:16px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .toc-grid a{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;transition:all .2s}
+    .toc-grid a:hover{border-color:var(--emerald);background:#ecfdf5}
+    .toc-grid .num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-size:12px;font-weight:700;flex-shrink:0}
+    .section{margin-bottom:56px}
+    .section h2{font-size:clamp(1.3rem,3vw,1.7rem);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+    .lead{color:var(--text-secondary);font-size:15px;margin-bottom:24px;line-height:1.6}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}
+    .card h4{font-size:16px;font-weight:600;margin-bottom:8px}
+    .card p,.card li{font-size:14px;color:var(--text-secondary);line-height:1.7}
+    .card ul,.card ol{padding-left:20px}
+    .card li{margin-bottom:4px}
+    p{font-size:15px;color:var(--text-secondary);line-height:1.8;margin-bottom:16px}
+    p code{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:13px;color:#059669}
+    .chart{margin:24px 0}
+    .chart-row{display:flex;align-items:center;margin-bottom:10px;gap:12px}
+    .chart-label{width:150px;font-size:13px;font-weight:500;text-align:right;flex-shrink:0}
+    .chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}
+    .chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;justify-content:flex-end;padding-right:10px;font-size:12px;font-weight:600;color:#fff;transition:width .6s ease}
+    .chart-bar.green{background:linear-gradient(90deg,#059669,#10b981)}
+    .chart-bar.teal{background:linear-gradient(90deg,#14b8a6,#2dd4bf)}
+    .chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+    .chart-bar.purple{background:linear-gradient(90deg,#6366f1,#a78bfa)}
+    .chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}
+    .flow{display:flex;align-items:center;justify-content:center;gap:12px;margin:24px 0;flex-wrap:wrap}
+    .flow-step{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;min-width:120px}
+    .flow-step.green{background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none}
+    .flow-step.teal{background:linear-gradient(135deg,#14b8a6,#2dd4bf);color:#fff;border:none}
+    .flow-step.blue{background:linear-gradient(135deg,#3b82f6,#60a5fa);color:#fff;border:none}
+    .flow-step.purple{background:linear-gradient(135deg,#6366f1,#a78bfa);color:#fff;border:none}
+    .flow-step.amber{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#fff;border:none}
+    .flow-arrow{font-size:20px;color:var(--text-secondary)}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}
+    .compare-card{border-radius:var(--radius);padding:24px}
+    .compare-card.old{background:#fef2f2;border:2px solid #fecaca}
+    .compare-card.new{background:#ecfdf5;border:2px solid #a7f3d0}
+    .compare-card h4{font-size:15px;font-weight:700;margin-bottom:8px}
+    .compare-card p{font-size:13px;color:var(--text-secondary)}
+    .timeline{position:relative;padding-left:32px;margin:24px 0}
+    .timeline::before{content:'';position:absolute;left:7px;top:8px;bottom:8px;width:3px;background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6);border-radius:2px}
+    .tl-item{position:relative;margin-bottom:24px}
+    .tl-dot{position:absolute;left:-29px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid #059669;background:#fff}
+    .tl-item:nth-child(2) .tl-dot{border-color:#14b8a6}
+    .tl-item:nth-child(3) .tl-dot{border-color:#3b82f6}
+    .tl-phase{font-weight:700;font-size:15px;color:var(--text)}
+    .tl-desc{font-size:13px;color:var(--text-secondary);margin-top:4px}
+    .code-block{background:#1e293b;border-radius:var(--radius);padding:20px;margin:16px 0;overflow-x:auto}
+    .code-block pre{color:#e2e8f0;font-family:var(--mono);font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-all}
+    .block-q{background:linear-gradient(135deg,#ecfdf5,#d1fae5);border-left:4px solid #059669;border-radius:0 var(--radius) var(--radius) 0;padding:20px 24px;margin:24px 0}
+    .block-q p{font-size:15px;font-style:italic;color:#064e3b;line-height:1.7}
+    .footer{background:#0f172a;color:#94a3b8;padding:40px 32px;text-align:center;font-size:14px}
+    .footer a{color:#34d399;text-decoration:none}
+    .footer a:hover{text-decoration:underline}
+    .footer .links{margin-top:12px;display:flex;justify-content:center;gap:24px;flex-wrap:wrap}
+    @media(max-width:768px){.compare-grid{grid-template-columns:1fr}.chart-label{width:100px;font-size:12px}.flow{flex-direction:column;gap:8px}.flow-arrow{transform:rotate(90deg)}.toc-grid{grid-template-columns:1fr}.hero{padding:60px 20px 40px}.nav{padding:12px 16px}.stats{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+  <header class="hero">
+    <div class="meta">🔧 Tools & Integrations · LangChain Accounts · 2023-08-09</div>
+    <h1>NeumAI x LangChain: Efficiently maintaining context in sync for AI applications</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">7</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~5min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">-</div><div class="label">代码示例</div></div>
+      <div class="stat"><div class="num">9</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>NeumAI x LangChain: Efficientl</a>
+      <a href="#s2"><span class="num">2</span>Intro</a>
+      <a href="#s3"><span class="num">3</span>**Relevant and up-to-date cont</a>
+      <a href="#s4"><span class="num">4</span>**Enter Neum**</a>
+      <a href="#s5"><span class="num">5</span>See it to believe it</a>
+      <a href="#s6"><span class="num">6</span>Related content</a>
+      <a href="#s7"><span class="num">7</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+    <section class="section" id="s1">
+      <h2>🔍 NeumAI x LangChain: Efficiently maintaining context in sync for AI applications</h2>
+      <p class="lead">The LangChain TeamAugust 9, 20235min
+
+Go back to blogShare
+
+
+
+
+
+Editors Note: This post was written by the NeumAI team and cross-posted from their blog.</p>
+      <p>The LangChain TeamAugust 9, 20235min[</p>
+<p>Go back to blog](/blog)Share[</p>
+<p>](#)Editors Note: This post was written by the NeumAI team and cross-posted from their blog. Keeping source data relevant and up-to-date efficiently is a challenge many builders are facing. It&#x27;s especially painful for teams that are building on top of datasources constantly changing like team documentation (a use-case we see a lot of). Following up on our blog yesterday about making ingestion pipelines more production ready, we&#x27;re really excited to highlight this because it continues in that vein. It adds scheduling and orchestration onto the ingestion pipeline, part of which is powered by LangChain text splitters.</p>
+<p>Last week, we released a blogpost about doing Q&amp;A with thousands of documents and how Neum AI can help developers build large-scale AI apps to support that scenario. In this post, we want to dive deeper into a common problem with building large scale AI applications: Keeping context up to date in a cost-effectively way.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s2">
+      <h2>⚡ Intro</h2>
+      <p class="lead">Let’s set up some context first (see what we did there ;)).</p>
+      <p>Let’s set up some context first (see what we did there ;)). Data is the most important part when building AI applications. If the data you are training the model with is of low quality, then your model with perform poorly. If the data you are using for your prompts is low quality, then your model responses will not be accurate. There are many more examples on why data is important but it is really the fundamental part for bringing accuracy to our AI models.</p>
+<p>Specifically here, let’s delve in context. Many have done chatbots where a massive prompt is passed to the model. This can become problematic for a couple of reasons.</p>
+<div class="card"><ul><li>You might reach a context limit depending on the model you use</li><li>The more tokens you pass the more costly your operation becomes</li></ul></div>
+<p>And so, people have started to include context in the prompt that is fetched depending on the user’s query so as to only pass a subset of relevant information to the model for it to perform accurately. This is also called Retrieval Augmented Generation (RAG). Those who have built this know what I’m talking about but if you aren’t you can check these two blog posts by Pinecone and LangChain for more information.</p>
+<p>Source: Pinecone docs</p>
+<p>One problem not too many seem to talk about is how relevant this context is.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s3">
+      <h2>🏗️ **Relevant and up-to-date context**</h2>
+      <p class="lead">Imagine you are creating a chatbot over a constantly-changing data source like a restaurant’s menu or some team documentation.</p>
+      <p>Imagine you are creating a chatbot over a constantly-changing data source like a restaurant’s menu or some team documentation. You can easily build a chatbot with some of the libraries and tools explained in the previous post - like LangChain, Pinecone, etc. I won’t go into too many details but at a high level it goes something like this:</p>
+<div class="card"><ul><li>Get your source data</li><li>Vectorize it using some embedding model (This is crucial so that whenever we bring context to the prompt, the “search” based on the user query is done semantically and fast)</li><li>Bring the context to the prompt of your model (like GPT-4 for example) and run the model.</li><li>Output to the user</li></ul></div>
+<p>This poses a trivial question. What if your source data changes?</p>
+<p>It could be that the restaurant is no longer offering an item from the menu. That an internal documents or wiki was just updated with some new content.</p>
+<p>Will our chatbot respond with high accuracy?</p>
+<p>Chances are, no. Unless you have a way to give your AI model, up to date context, it probably won’t know that the pepperoni pizza is no longer available or that the documentation for onboarding a new team member to the team changed. It will respond with whatever context had been stored before in the vector store (or even without any context!)</p>
+<p>ChatGPT response with no context</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s4">
+      <h2>📊 **Enter Neum**</h2>
+      <p class="lead">With Neum we automatically synchronize your source data with your vector store.</p>
+      <p>With Neum we automatically synchronize your source data with your vector store. This means that whenever an AI application wants to query the vector db for semantic search or bringing context to an AI model, the information will always be updated. It is important to note that the quality of your model also depends on how you vectorize the data. At Neum, we leverage different LangChain tools to partition the source data depending on the use case.‍</p>
+<p>Neum pipeline builder example for syncing your data between Notion and Pinecone</p>
+<p>These are amongst the top things that are needed when building this synchronization for your LLM data.</p>
+<div class="card"><ul><li>Setting up the infrastructure required to sync the sources</li><li>Setting up your scheduler or real-time pipelines to update the data</li><li>Handling errors if something goes wrong at any given point</li><li>And most importantly, efficiently vectorizing to reduce costs</li></ul></div>
+<p>Now, let’s briefly talk about costs.</p>
+<p>OpenAI embeddings pricing model currently is $0.0001/1k tokens. That might not look like much but at large scale, it translates roughly to 10k per 1TB of data. If your source data is not large, you might get away with it by constantly vectorizing and storing your data in the vector store.</p>
+<p>But what if you have lots of documents? What if you have millions and millions of rows in your database? Vectorizing everything all the time will not only be inefficient but very costly!</p>
+<p>At Neum, we’ve developed tech to help detect differences and only vectorize the necessary information, thus keeping the context up-to-date but in an efficient and cost-saving way.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s5">
+      <h2>🔗 See it to believe it</h2>
+      <p class="lead">To prove this we created a sample chatbot for our Notion workspace that is updated automatically as the Notion is updated with more content.</p>
+      <p>To prove this we created a sample chatbot for our Notion workspace that is updated automatically as the Notion is updated with more content. It allows users to as questions and get up-to-date responses if something changed internally. The sample is built with Vercel as frontend and Pinecone as the vector store. Internally, Neum leverages LangChain for its text splitter tools.</p>
+<p>Behind the scenes, Neum is not only ensuring that updates are extracted, embedded and loaded into Pinecone, but also makes sure that we are only updating data that needs to be. If a section of the Notion workspace didn’t change, we don’t re-embed it. If a section changed, then it is re-embedded. This approach delivers a better user experience by having up to date data that is also more cost effective by only using resources where needed.</p>
+<p>Take a look at the 2min video below for an in-depth look of how it works!</p>
+<p>You can reach out to founders@tryneum.com if interested in these topics!</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s6">
+      <h2>💡 Related content</h2>
+      <p class="lead">.</p>
+      <p>.png)PartnerDeep Agents</p>
+<p>#### Building a company due diligence agent with Deep Agents, LangSmith and Parallel</p>
+<p>Matt HarrisNick MartitschSrimanth TangedipalliKaran SinghMay 8, 20269min[](/blog/building-a-company-due-diligence-agent-with-deep-agents-langsmith-and-parallel).png)Agent ArchitecturePartner</p>
+<p>#### Agentic Engineering: How Swarms of AI Agents Are Redefining Software Engineering</p>
+<p>Renuka KumarPrashanth RamagopalApril 17, 202611min[](/blog/agentic-engineering-redefining-software-engineering).png)LangChainPartner</p>
+<p>#### A Developer’s First 10 Minutes: Secure LangChain Agents with Cisco AI Defense</p>
+<p>Siddhant DashApril 16, 20264min[](/blog/secure-agents-cisco-ai-defense)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s7">
+      <h2>🛠️ See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+<p>](/contact-sales)</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+  </div>
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/neum-x-langchain" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

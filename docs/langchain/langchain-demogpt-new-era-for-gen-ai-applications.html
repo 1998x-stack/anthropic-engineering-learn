@@ -1,0 +1,222 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：LangChain 🤝 DemoGPT: New Era for Gen-AI Applications</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--green:#10b981;--emerald:#059669;--teal:#14b8a6;--blue:#3b82f6;--purple:#6366f1;--amber:#f59e0b;--red:#ef4444;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+    .nav{position:sticky;top:0;z-index:100;background:rgba(15,23,42,.85);backdrop-filter:blur(12px);padding:14px 32px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.08)}
+    .nav a{color:#f1f5f9;text-decoration:none;font-weight:500;font-size:14px}
+    .nav .brand{font-weight:700;font-size:16px;color:#10b981}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%);color:#fff;padding:80px 32px 60px;text-align:center}
+    .hero h1{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;margin-bottom:12px;line-height:1.3}
+    .hero .subtitle{font-size:18px;color:rgba(255,255,255,.8);max-width:720px;margin:0 auto 40px}
+    .hero .meta{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:32px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;max-width:800px;margin:0 auto}
+    .stat{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:20px 16px;backdrop-filter:blur(8px)}
+    .stat .num{font-size:28px;font-weight:800;color:#34d399}
+    .stat .label{font-size:13px;color:rgba(255,255,255,.7);margin-top:4px}
+    .page{max-width:900px;margin:0 auto;padding:40px 24px}
+    .toc{margin-bottom:48px}
+    .toc h3{font-size:14px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);margin-bottom:16px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .toc-grid a{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;transition:all .2s}
+    .toc-grid a:hover{border-color:var(--emerald);background:#ecfdf5}
+    .toc-grid .num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-size:12px;font-weight:700;flex-shrink:0}
+    .section{margin-bottom:56px}
+    .section h2{font-size:clamp(1.3rem,3vw,1.7rem);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+    .lead{color:var(--text-secondary);font-size:15px;margin-bottom:24px;line-height:1.6}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}
+    .card h4{font-size:16px;font-weight:600;margin-bottom:8px}
+    .card p,.card li{font-size:14px;color:var(--text-secondary);line-height:1.7}
+    .card ul,.card ol{padding-left:20px}
+    .card li{margin-bottom:4px}
+    p{font-size:15px;color:var(--text-secondary);line-height:1.8;margin-bottom:16px}
+    p code{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:13px;color:#059669}
+    .chart{margin:24px 0}
+    .chart-row{display:flex;align-items:center;margin-bottom:10px;gap:12px}
+    .chart-label{width:150px;font-size:13px;font-weight:500;text-align:right;flex-shrink:0}
+    .chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}
+    .chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;justify-content:flex-end;padding-right:10px;font-size:12px;font-weight:600;color:#fff;transition:width .6s ease}
+    .chart-bar.green{background:linear-gradient(90deg,#059669,#10b981)}
+    .chart-bar.teal{background:linear-gradient(90deg,#14b8a6,#2dd4bf)}
+    .chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+    .chart-bar.purple{background:linear-gradient(90deg,#6366f1,#a78bfa)}
+    .chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}
+    .flow{display:flex;align-items:center;justify-content:center;gap:12px;margin:24px 0;flex-wrap:wrap}
+    .flow-step{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;min-width:120px}
+    .flow-step.green{background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none}
+    .flow-step.teal{background:linear-gradient(135deg,#14b8a6,#2dd4bf);color:#fff;border:none}
+    .flow-step.blue{background:linear-gradient(135deg,#3b82f6,#60a5fa);color:#fff;border:none}
+    .flow-step.purple{background:linear-gradient(135deg,#6366f1,#a78bfa);color:#fff;border:none}
+    .flow-step.amber{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#fff;border:none}
+    .flow-arrow{font-size:20px;color:var(--text-secondary)}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}
+    .compare-card{border-radius:var(--radius);padding:24px}
+    .compare-card.old{background:#fef2f2;border:2px solid #fecaca}
+    .compare-card.new{background:#ecfdf5;border:2px solid #a7f3d0}
+    .compare-card h4{font-size:15px;font-weight:700;margin-bottom:8px}
+    .compare-card p{font-size:13px;color:var(--text-secondary)}
+    .timeline{position:relative;padding-left:32px;margin:24px 0}
+    .timeline::before{content:'';position:absolute;left:7px;top:8px;bottom:8px;width:3px;background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6);border-radius:2px}
+    .tl-item{position:relative;margin-bottom:24px}
+    .tl-dot{position:absolute;left:-29px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid #059669;background:#fff}
+    .tl-item:nth-child(2) .tl-dot{border-color:#14b8a6}
+    .tl-item:nth-child(3) .tl-dot{border-color:#3b82f6}
+    .tl-phase{font-weight:700;font-size:15px;color:var(--text)}
+    .tl-desc{font-size:13px;color:var(--text-secondary);margin-top:4px}
+    .code-block{background:#1e293b;border-radius:var(--radius);padding:20px;margin:16px 0;overflow-x:auto}
+    .code-block pre{color:#e2e8f0;font-family:var(--mono);font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-all}
+    .block-q{background:linear-gradient(135deg,#ecfdf5,#d1fae5);border-left:4px solid #059669;border-radius:0 var(--radius) var(--radius) 0;padding:20px 24px;margin:24px 0}
+    .block-q p{font-size:15px;font-style:italic;color:#064e3b;line-height:1.7}
+    .footer{background:#0f172a;color:#94a3b8;padding:40px 32px;text-align:center;font-size:14px}
+    .footer a{color:#34d399;text-decoration:none}
+    .footer a:hover{text-decoration:underline}
+    .footer .links{margin-top:12px;display:flex;justify-content:center;gap:24px;flex-wrap:wrap}
+    @media(max-width:768px){.compare-grid{grid-template-columns:1fr}.chart-label{width:100px;font-size:12px}.flow{flex-direction:column;gap:8px}.flow-arrow{transform:rotate(90deg)}.toc-grid{grid-template-columns:1fr}.hero{padding:60px 20px 40px}.nav{padding:12px 16px}.stats{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+  <header class="hero">
+    <div class="meta">🔧 Tools & Integrations · LangChain Accounts · 2023-08-21</div>
+    <h1>LangChain 🤝 DemoGPT: New Era for Gen-AI Applications</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">3</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~8min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">-</div><div class="label">代码示例</div></div>
+      <div class="stat"><div class="num">13</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>LangChain 🤝 DemoGPT: New Era f</a>
+      <a href="#s2"><span class="num">2</span>Related content</a>
+      <a href="#s3"><span class="num">3</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+    <section class="section" id="s1">
+      <h2>🔍 LangChain 🤝 DemoGPT: New Era for Gen-AI Applications</h2>
+      <p class="lead">The LangChain TeamAugust 21, 20237min
+
+Go back to blogShare
+
+
+
+
+
+Editor&amp;#x27;s Note: This post was written in collaboration with the DemoGPT team.</p>
+      <p>The LangChain TeamAugust 21, 20237min[</p>
+<p>Go back to blog](/blog)Share[</p>
+<p>](#)Editor&#x27;s Note: This post was written in collaboration with the DemoGPT team. We&#x27;re excited about what they&#x27;re doing to make it easier to not only build LLM applications, but also get them in the hands of users and build community in the process. We also thought way they built the platform on top of LangChain and Streamlit is really neat–their under-the-hood walkthrough offers some cool ideas for anyone using a language model to generate an app.</p>
+<p>Today we’re happy to announce the collaboration of DemoGPT with LangChain to make generative ai application creation easier. In this blog post, we’ll dig deeper into the details of this collaboration and how to use DemoGPT to build scalable LLM-powered applications with LangChain.</p>
+<p>DemoGPT: Emerging Marketplace for LangChain Applications</p>
+<p>DemoGPT is an open-source project that aspires to keep pushing the boundaries of Large Language Model (LLM) based application development. At its core, DemoGPT synergizes the capabilities of various Foundation Models, enabling the auto-generation of LangChain x Streamlit applications with just a prompt.</p>
+<p>Here’s a look under the hood at how it works and where we see it going in the future.</p>
+<p>Unpacking DemoGPT: A Glimpse into its Technical Core</p>
+<p>DemoGPT Architecture</p>
+<p>Navigating through the architecture of DemoGPT reveals a structured approach to code generation operations. This detailed exploration will take you through its core stages: Planning, Task Creation, Code Snippet Generation, Combining the Code Snippets, and DB Saving. Each stage plays a pivotal role in ensuring optimal functionality and efficiency. Let&#x27;s delve into each of these components to understand the intricacies of DemoGPT&#x27;s workflow.</p>
+<p>Planning: DemoGPT starts by generating a plan from the user&#x27;s instruction.</p>
+<p>When a user submits an instruction, its first port of call is the planning module. This segment is the bedrock of the entire DemoGPT structure because the following steps lean heavily on the valid global planning inspired by HuggingGPT. However, unlike HuggingGPT, which goes straight from instruction to task list, DemoGPT first creates a plan in natural language and later creates a task list. This way of processing is more intuitive for LLMs.</p>
+<p>The Planning module knows all of the available toolsets to minimize hallucinations. It also uses a self-refining strategy so that planning continues until it is validated by itself.</p>
+<p>Task Creation: It then creates specific tasks using the plan and instruction.</p>
+<p>In our experiments, we have seen that using a natural language plan minimizes hallucinations vs. going straight from instruction to task list. Our novel approach reduces the number of refining steps needed in the task creation process. This step also has a self-refining subphase to get rid of hallucinated tasks. During this subphase, the module checks the (input, output) pairs of each task, then according to the result, it gives feedback to itself, then generates the tasks again according to the last iteration and continues until it passes the tests.</p>
+<p>Code Snippet Generation: Tasks are transformed into Python code snippets.</p>
+<p>Each task has its own prompt so that when the corresponding task is converted into a Python code, it uses its custom prompts for this transformation. The transformation process is mindful of previously generated code, so everything works well in tandem.</p>
+<p>Combining the Code Snippets: The code snippets are combined into a final code, resulting in an interactive application.</p>
+<p>All code snippets are put into a prompt to combine them together. Here, the final code is made compatible with Streamlit (such as state management). The output of this module is further improved by a self-refining technique to make sure everything is compatible with Streamlit.</p>
+<p>DB Saving (coming in next release): The generated plan, tasks and code snippets stored in a vector database</p>
+<p>In the whole architecture, each phase is applying self-refining to itself to get rid of hallucinated results. In addition, each module has its own examples for few-shot learning and for most applications. This works pretty well and allows applications to be created by lighter models like GPT-3.5 at 10% of the cost of GPT-4. However, to decrease the cost even more and make it more performant, the DB Saving module aims to save the approved results (plans, tasks, and code snippets) to a vector database so that next time, the relevant examples from the vector database will be fetched and used for the few-shot learning to decrease the number of refining steps. This will decrease the cost of application generation and at the same time make generation faster.</p>
+<p>How to Install DemoGPT?</p>
+<p>Installing DemoGPT is a straightforward process, designed to get you up and running with minimal hassle.</p>
+<p>pip install demogpt</p>
+<p>How to Use DemoGPT?</p>
+<p>You can use the DemoGPT library either via CLI or by using its Python interface.</p>
+<div class="card"><ul><li>As a Command Line Interface (CLI)</li></ul></div>
+<p>You can run the DemoGPT application as a Streamlit app by simply typing:</p>
+<p>Once running; enter your own API key and choose which base model you want to use.</p>
+<p>When everything is ready, you can start creating applications just from a prompt. Let your imagination guide you. You can create a chat with your PDF app in seconds, or create a sentiment analysis tool that takes in a website and returns the tone of text.</p>
+<p>Applications are limited only by prompts given, so with longer prompts you too can create sophisticated and unique AI applications.</p>
+<p>Tweet Generator: An application that can generate tweets from given hashtags and tone of the tweet.</p>
+<p>Web Blogger: An application that can generate Medium blog from given website url</p>
+<div class="card"><ul><li>As a Python Library</li></ul></div>
+<p>You can run the DemoGPT application as a Python library. To incorporate DemoGPT into your Python applications, follow the steps below.</p>
+<p>#### Import the necessary module:</p>
+<p>from demogpt import DemoGPT</p>
+<p>#### Instantiate the DemoGPT agent</p>
+<p>agent = DemoGPT(model_name=&quot;gpt-3.5-turbo-0613&quot;, openai_api_key=&quot;YOUR_API_KEY&quot;, max_steps=10)</p>
+<p>#### Set your instruction and title</p>
+<p>instruction = &quot;Your instruction here&quot;
+title = &quot;Your title here&quot;</p>
+<p>#### Iterate through the generation stages and extract the final code</p>
+<p>code = &quot;&quot;
+for phase in agent(instruction=instruction, title=title):
+    print(phase)  # This will display the resulting JSON for each generation stage.
+    if phase[&quot;done&quot;]:
+        code = phase[&quot;code&quot;]  # Extract the final code.
+print(code)</p>
+<p>For further information, you can visit DemoGPT Docs</p>
+<p>From Idea to Marketplace: The Journey with LangChain x DemoGPT</p>
+<p>To provide a clearer picture of this collaboration, let&#x27;s walk through a potential user journey:</p>
+<p>Imagine Sarah, an AI enthusiast with a brilliant idea for an application that leverages the power of language models. She visits the LangChain website, where she&#x27;s introduced to the integrated DemoGPT application generation tool.</p>
+<p>As a first step, app generation occurs on LangChain website</p>
+<p>With a few prompts and inputs, Sarah crafts her application, watching it come to life in real-time. Once satisfied with her creation, Sarah is presented with the opportunity to showcase her application on the DemoGPT Marketplace. With a simple click, her application is listed, making it accessible to a global audience.</p>
+<p>Once the app is generated, it will be listed on DemoGPT Marketplace</p>
+<p>Other developers, businesses, or AI enthusiasts can now discover Sarah&#x27;s application, interact with it, provide feedback, or even propose collaborative enhancements.</p>
+<p>All the generated apps will be listed and used on DemoGPT Marketplace</p>
+<p>Furthermore, the marketplace offers Sarah the chance to monetize her application, either through licensing or API sales. As her application gains traction, she receives feedback from the community, leading her back to the LangChain website to iterate and refine her application, ensuring it remains relevant and valuable to its users.</p>
+<p>This cyclical process of creation, showcase, feedback, and refinement ensures that the LangChain x DemoGPT ecosystem remains vibrant, innovative, and user-centric.</p>
+<p>The Power of Collaboration: LangChain x DemoGPT</p>
+<p>One of the most exciting prospects of our collaboration is the emergence of the DemoGPT Marketplace. We envision the DemoGPT Marketplace as a platform where the LangChain community, alongside developers and AI enthusiasts globally, can create, showcase, exchange, and even monetize their auto-generated applications.</p>
+<p>This marketplace will be more than just a platform; it will be a vibrant community and a space where LangChain users can collaborate, iterate, and refine applications, ensuring that our ecosystem remains dynamic, user-centric, and on the cutting edge of technological advancements. With the added interactivity and user experience enhancements brought by Streamlit, these applications will promise to be not just functional but truly transformative.</p>
+<p>As users craft their unique applications on LangChain, we hope and envision that these innovative creations will find a new home on the DemoGPT Marketplace. This platform will be set to become a bustling hub where these auto-generated applications are prominently listed and showcased. It will not just be about giving visibility to the applications but also creating a space where a broader audience can discover, interact with, and derive value from these tools.</p>
+<p>The vision behind this collaboration is to establish a synergistic ecosystem. By enabling application generation on LangChain and providing a platform for discovery on the DemoGPT Marketplace, we aim to bridge the gap between creators and consumers.</p>
+<p>Collaboration between LangChain and DemoGPT can be a really huge step for the LLM world!</p>
+<p>We encourage our community to share their feedback, insights, and experiences on LangChain Discord channel. Your input is invaluable to us, and it will play a pivotal role in shaping the future of this collaboration.</p>
+<p>For more detailed information, advanced configurations, or troubleshooting, you can always refer to the DemoGPT GitHub repository or DemoGPT Marketplace and consider giving a star.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s2">
+      <h2>⚡ Related content</h2>
+      <p class="lead">.</p>
+      <p>.png)PartnerDeep Agents</p>
+<p>#### Building a company due diligence agent with Deep Agents, LangSmith and Parallel</p>
+<p>Matt HarrisNick MartitschSrimanth TangedipalliKaran SinghMay 8, 20269min[](/blog/building-a-company-due-diligence-agent-with-deep-agents-langsmith-and-parallel).png)Agent ArchitecturePartner</p>
+<p>#### Agentic Engineering: How Swarms of AI Agents Are Redefining Software Engineering</p>
+<p>Renuka KumarPrashanth RamagopalApril 17, 202611min[](/blog/agentic-engineering-redefining-software-engineering).png)LangChainPartner</p>
+<p>#### A Developer’s First 10 Minutes: Secure LangChain Agents with Cisco AI Defense</p>
+<p>Siddhant DashApril 16, 20264min[](/blog/secure-agents-cisco-ai-defense)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s3">
+      <h2>🏗️ See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+<p>](/contact-sales)</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+  </div>
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/langchain-demogpt-new-era-for-gen-ai-applications" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

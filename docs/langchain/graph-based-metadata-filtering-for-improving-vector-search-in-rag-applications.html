@@ -1,0 +1,745 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Graph-based metadata filtering for improving vector search in RAG applications</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafbfc;
+      --surface: #fff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --green: #10b981;
+      --emerald: #059669;
+      --teal: #14b8a6;
+      --blue: #3b82f6;
+      --purple: #6366f1;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans SC', 'Inter', system-ui, sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: var(--sans); background: var(--bg); color: var(--text); line-height:1.7; }
+    .nav { position:sticky; top:0; z-index:100; background:rgba(15,23,42,.85); backdrop-filter:blur(12px); padding:14px 32px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,.08); }
+    .nav a { color:#f1f5f9; text-decoration:none; font-weight:500; font-size:14px; }
+    .nav .brand { font-weight:700; font-size:16px; color:#10b981; }
+    .hero { background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%); color:#fff; padding:80px 32px 60px; text-align:center; }
+    .hero h1 { font-size:clamp(1.8rem,4vw,2.8rem); font-weight:800; margin-bottom:12px; line-height:1.3; }
+    .hero .subtitle { font-size:18px; color:rgba(255,255,255,.8); max-width:720px; margin:0 auto 40px; }
+    .hero .meta { font-size:13px; color:rgba(255,255,255,.5); margin-bottom:32px; }
+    .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:16px; max-width:800px; margin:0 auto; }
+    .stat { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); border-radius:12px; padding:20px 16px; backdrop-filter:blur(8px); }
+    .stat .num { font-size:28px; font-weight:800; color:#34d399; }
+    .stat .label { font-size:13px; color:rgba(255,255,255,.7); margin-top:4px; }
+    .page { max-width:900px; margin:0 auto; padding:40px 24px; }
+    .toc { margin-bottom:48px; }
+    .toc h3 { font-size:14px; text-transform:uppercase; letter-spacing:1.5px; color:var(--text-secondary); margin-bottom:16px; }
+    .toc-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; }
+    .toc-grid a { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--text); font-size:14px; font-weight:500; transition:all .2s; }
+    .toc-grid a:hover { border-color:var(--emerald); background:#ecfdf5; }
+    .toc-grid .num { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:8px; background:linear-gradient(135deg,#059669,#10b981); color:#fff; font-size:12px; font-weight:700; flex-shrink:0; }
+    .section { margin-bottom:56px; }
+    .section h2 { font-size:clamp(1.3rem,3vw,1.7rem); font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:10px; }
+    .lead { color:var(--text-secondary); font-size:15px; margin-bottom:24px; line-height:1.6; }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:24px; margin-bottom:16px; }
+    .card h4 { font-size:16px; font-weight:600; margin-bottom:8px; }
+    .card p, .card li { font-size:14px; color:var(--text-secondary); line-height:1.7; }
+    .card ul, .card ol { padding-left:20px; }
+    .card li { margin-bottom:4px; }
+    p { font-size:15px; color:var(--text-secondary); line-height:1.8; margin-bottom:16px; }
+    p code { background:#f1f5f9; padding:2px 6px; border-radius:4px; font-family:var(--mono); font-size:13px; color:#059669; }
+    .chart { margin:24px 0; }
+    .chart-row { display:flex; align-items:center; margin-bottom:10px; gap:12px; }
+    .chart-label { width:150px; font-size:13px; font-weight:500; text-align:right; flex-shrink:0; }
+    .chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:32px; overflow:hidden; }
+    .chart-bar { height:100%; border-radius:8px; display:flex; align-items:center; justify-content:flex-end; padding-right:10px; font-size:12px; font-weight:600; color:#fff; transition:width .6s ease; }
+    .chart-bar.green { background:linear-gradient(90deg,#059669,#10b981); }
+    .chart-bar.teal { background:linear-gradient(90deg,#14b8a6,#2dd4bf); }
+    .chart-bar.blue { background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+    .chart-bar.purple { background:linear-gradient(90deg,#6366f1,#a78bfa); }
+    .chart-bar.amber { background:linear-gradient(90deg,#f59e0b,#fbbf24); }
+    .chart-bar.red { background:linear-gradient(90deg,#ef4444,#f87171); }
+    .flow { display:flex; align-items:center; justify-content:center; gap:12px; margin:24px 0; flex-wrap:wrap; }
+    .flow-step { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 20px; font-size:14px; font-weight:600; text-align:center; min-width:120px; }
+    .flow-step.green { background:linear-gradient(135deg,#059669,#10b981); color:#fff; border:none; }
+    .flow-step.teal { background:linear-gradient(135deg,#14b8a6,#2dd4bf); color:#fff; border:none; }
+    .flow-step.blue { background:linear-gradient(135deg,#3b82f6,#60a5fa); color:#fff; border:none; }
+    .flow-step.purple { background:linear-gradient(135deg,#6366f1,#a78bfa); color:#fff; border:none; }
+    .flow-step.amber { background:linear-gradient(135deg,#f59e0b,#fbbf24); color:#fff; border:none; }
+    .flow-arrow { font-size:20px; color:var(--text-secondary); }
+    .compare-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:24px 0; }
+    .compare-card { border-radius:var(--radius); padding:24px; }
+    .compare-card.old { background:#fef2f2; border:2px solid #fecaca; }
+    .compare-card.new { background:#ecfdf5; border:2px solid #a7f3d0; }
+    .compare-card h4 { font-size:15px; font-weight:700; margin-bottom:8px; }
+    .compare-card p { font-size:13px; color:var(--text-secondary); }
+    .timeline { position:relative; padding-left:32px; margin:24px 0; }
+    .timeline::before { content:''; position:absolute; left:7px; top:8px; bottom:8px; width:3px; background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:24px; }
+    .tl-dot { position:absolute; left:-29px; top:4px; width:14px; height:14px; border-radius:50%; border:3px solid #059669; background:#fff; }
+    .tl-item:nth-child(2) .tl-dot { border-color:#14b8a6; }
+    .tl-item:nth-child(3) .tl-dot { border-color:#3b82f6; }
+    .tl-item:nth-child(4) .tl-dot { border-color:#6366f1; }
+    .tl-item:nth-child(5) .tl-dot { border-color:#f59e0b; }
+    .tl-phase { font-weight:700; font-size:15px; color:var(--text); }
+    .tl-desc { font-size:13px; color:var(--text-secondary); margin-top:4px; }
+    .code-block { background:#1e293b; border-radius:var(--radius); padding:20px; margin:16px 0; overflow-x:auto; }
+    .code-block pre { color:#e2e8f0; font-family:var(--mono); font-size:13px; line-height:1.6; white-space:pre-wrap; word-break:break-all; }
+    .block-q { background:linear-gradient(135deg,#ecfdf5,#d1fae5); border-left:4px solid #059669; border-radius:0 var(--radius) var(--radius) 0; padding:20px 24px; margin:24px 0; }
+    .block-q p { font-size:15px; font-style:italic; color:#064e3b; line-height:1.7; }
+    .badge { display:inline-block; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600; }
+    .badge-green { background:#ecfdf5; color:#059669; }
+    .badge-teal { background:#f0fdfa; color:#14b8a6; }
+    .badge-blue { background:#eff6ff; color:#3b82f6; }
+    .badge-purple { background:#eef2ff; color:#6366f1; }
+    .badge-amber { background:#fffbeb; color:#d97706; }
+    .footer { background:#0f172a; color:#94a3b8; padding:40px 32px; text-align:center; font-size:14px; }
+    .footer a { color:#34d399; text-decoration:none; }
+    .footer a:hover { text-decoration:underline; }
+    .footer .links { margin-top:12px; display:flex; justify-content:center; gap:24px; flex-wrap:wrap; }
+    @media(max-width:768px) {
+      .compare-grid { grid-template-columns:1fr; }
+      .chart-label { width:100px; font-size:12px; }
+      .flow { flex-direction:column; gap:8px; }
+      .flow-arrow { transform:rotate(90deg); }
+      .toc-grid { grid-template-columns:1fr; }
+      .hero { padding:60px 20px 40px; }
+      .nav { padding:12px 16px; }
+      .stats { grid-template-columns:1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+
+  <header class="hero">
+    <div class="meta">🧠 RAG & Knowledge · LangChain Accounts · 2024-04-25</div>
+    <h1>Graph-based metadata filtering for improving vector search in RAG applications</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">38</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~12min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">11</div><div class="label">代码示例</div></div>
+      <div class="stat"><div class="num">13</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>Graph-based metadata filtering</a>
+      <a href="#s2"><span class="num">2</span>Optimizing vector retrieval wi</a>
+      <a href="#s3"><span class="num">3</span>Agenda</a>
+      <a href="#s4"><span class="num">4</span>Function Implementation</a>
+      <a href="#s5"><span class="num">5</span>If there is no prefiltering, w</a>
+      <a href="#s6"><span class="num">6</span>Uses parallel runtime where av</a>
+      <a href="#s7"><span class="num">7</span>Map to database</a>
+      <a href="#s8"><span class="num">8</span>No need to disambiguate</a>
+      <a href="#s9"><span class="num">9</span>Retrieve information from the </a>
+      <a href="#s10"><span class="num">10</span>Safely remove embedding before</a>
+      <a href="#s11"><span class="num">11</span>Cypher: CYPHER runtime = paral</a>
+      <a href="#s12"><span class="num">12</span>MATCH (c:Chunk)&amp;lt;-[:HAS_CHUN</a>
+      <a href="#s13"><span class="num">13</span>EXISTS {(a)-[:MENTIONS]-&amp;gt;(:</a>
+      <a href="#s14"><span class="num">14</span>a.sentiment &amp;gt; $sentiment</a>
+      <a href="#s15"><span class="num">15</span>WITH c, a, vector.similarity.c</a>
+      <a href="#s16"><span class="num">16</span>ORDER BY score DESC LIMIT toIn</a>
+      <a href="#s17"><span class="num">17</span>RETURN &amp;#x27;#title &amp;#x27; + a</a>
+      <a href="#s18"><span class="num">18</span>Parameters: {&amp;#x27;k&amp;#x27;: 5,</a>
+      <a href="#s19"><span class="num">19</span>Defining OpenAI agent</a>
+      <a href="#s20"><span class="num">20</span>Implementation testing</a>
+      <a href="#s21"><span class="num">21</span>Cypher: CYPHER runtime = paral</a>
+      <a href="#s22"><span class="num">22</span>MATCH (c:Chunk)&amp;lt;-[:HAS_CHUN</a>
+      <a href="#s23"><span class="num">23</span>EXISTS {(a)-[:MENTIONS]-&amp;gt;(:</a>
+      <a href="#s24"><span class="num">24</span>a.sentiment &amp;gt; $sentiment WI</a>
+      <a href="#s25"><span class="num">25</span>ORDER BY a.date DESC LIMIT toI</a>
+      <a href="#s26"><span class="num">26</span>RETURN &amp;#x27;#title &amp;#x27; + a</a>
+      <a href="#s27"><span class="num">27</span>Parameters: {&amp;#x27;k&amp;#x27;: 5,</a>
+      <a href="#s28"><span class="num">28</span>Cypher: CYPHER runtime = paral</a>
+      <a href="#s29"><span class="num">29</span>MATCH (c:Chunk)&amp;lt;-[:HAS_CHUN</a>
+      <a href="#s30"><span class="num">30</span>EXISTS {(a)-[:MENTIONS]-&amp;gt;(:</a>
+      <a href="#s31"><span class="num">31</span>a.sentiment &amp;lt; $sentiment</a>
+      <a href="#s32"><span class="num">32</span>WITH c, a, vector.similarity.c</a>
+      <a href="#s33"><span class="num">33</span>ORDER BY score DESC LIMIT toIn</a>
+      <a href="#s34"><span class="num">34</span>RETURN &amp;#x27;#title &amp;#x27; + a</a>
+      <a href="#s35"><span class="num">35</span>Parameters: {&amp;#x27;k&amp;#x27;: 5,</a>
+      <a href="#s36"><span class="num">36</span>Summary</a>
+      <a href="#s37"><span class="num">37</span>Related content</a>
+      <a href="#s38"><span class="num">38</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+
+    <section class="section" id="s1">
+      <h2>🔍 Graph-based metadata filtering for improving vector search in RAG applications</h2>
+      <p class="lead">The LangChain TeamApril 25, 202411min
+
+Go back to blogShare
+
+[</p>
+      <p>The LangChain TeamApril 25, 202411min[</p>
+<p>Go back to blog](/blog)Share[</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s2">
+      <h2>⚡ Optimizing vector retrieval with advanced graph-based metadata techniques using LangChain and Neo4j</h2>
+      <p class="lead">Editor&amp;#x27;s Note: the following is a guest blog post from Tomaz Bratanic, who focuses on Graph ML and GenAI research at Neo4j.</p>
+      <p>Editor&#x27;s Note: the following is a guest blog post from Tomaz Bratanic, who focuses on Graph ML and GenAI research at Neo4j. Neo4j is a graph database and analytics company which helps organizations find hidden relationships and patterns across billions of data connections deeply, easily, and quickly.</p>
+<p>Text embeddings and vector similarity search help us find documents by understanding their meanings and how similar they are to each other. However, text embeddings aren’t as effective when sorting information based on specific criteria like dates or categories; for example, if you need to find all documents created in a particular year or documents tagged under a specific category like “science fiction.” This is where metadata filtering or filtered vector search comes into play, as it can effectively handle those structured filters, allowing users to narrow their search results according to specific attributes.</p>
+<p>Metadata filtering using the pre-filtering approach, where you first narrow down the set of relevant documents and then apply vector similarity search on the narrowed set. Image by author.</p>
+<p>In the image provided, the process starts with a user asking whether any new policies were implemented in 2021. A metadata filter is then used to sort through a larger pool of indexed documents by the specified year, which in this case is 2021. This results in a filtered subset of documents from that year only. To further hone in on the most relevant documents, a vector similarity search is performed within this subset. This method allows the system to find documents closely related to the topic of interest from within the contextually relevant pool of documents from the year 2021. This two-step process, metadata filtering followed by vector similarity search, increases the accuracy and relevance of the search results.</p>
+<p>Recently, we introduced LangChain support for metadata filtering in Neo4j based on node properties. However, graph databases like Neo4j can store highly complex and connected structured data alongside unstructured data. Let’s take a look at the following example:</p>
+<p>Graph representation of highly connected data alongside unstructured data. Image by author.</p>
+<p>The unstructured part of the dataset represents articles and their text chunks, located at the top right of the visualization. Text chunk nodes contain text and their text embedding values and are linked to the article nodes, where more information about the article, such as the date, sentiment, author, etc., is present. However, the articles are then further linked to the organizations they mention. In this example, the article mentions Neo4j. Additionally, our dataset includes a wealth of structured information about Neo4j such as its investors, board members, suppliers, and beyond.</p>
+<p>Thus, we can leverage this extensive structured information to execute sophisticated metadata filtering, allowing us to precisely refine our document selection using structured criteria such as:</p>
+<div class="card"><ul>
+  <li>Did any of the companies where Rod Johnson is the board member implement a new work-from-home policy?</li>
+  <li>Are there any negative news about companies that Neo4j invested in?</li>
+  <li>Were there any notable news in connection with supply chain problems for companies that supply Hyundai?</li>
+</ul></div>
+<p>With all these example questions, you can greatly narrow down the relevant document subset using a structured graph-based metadata filter.</p>
+<p>In this blog post, I will show you how to implement graph-based metadata filtering using LangChain in combination with OpenAI function-calling agent. The code is available on GitHub.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s3">
+      <h2>🏗️ Agenda</h2>
+      <p class="lead">We will use the so-called companies graph dataset, available on a public demo server hosted by Neo4j.</p>
+      <p>We will use the so-called companies graph dataset, available on a public demo server hosted by Neo4j. You can access it by using the following credentials.</p>
+<div class="code-block"><pre>Neo4j Browser URI: https://demo.neo4jlabs.com:7473/browser/
+username: companies
+password: companies
+database: companies</pre></div>
+<p>The complete schema of the dataset is the following:</p>
+<p>Graph schema. Image by author.</p>
+<p>The graph schema revolves around Organization nodes. There is vast information available regarding their suppliers, competitors, location, board members, and more. As mentioned before, there also articles mentioning particular organizations with their corresponding text chunks.</p>
+<p>We will implement an OpenAI agent with a single tool, which can dynamically generate Cypher statements based on user input and retrieve relevant text chunks from the graph database. In this example, the tool will have four optional input parameters:</p>
+<div class="card"><ul>
+  <li>topic: Any specific information or topic besides organization, country, and sentiment that the user is interested in.</li>
+  <li>organization: Organization that the user wants to find information about</li>
+  <li>country: Country of organizations that the user is interested in. Use full names like United States of America and France.</li>
+  <li>sentiment: Sentiment of articles</li>
+</ul></div>
+<p>Based on the four input parameters, we will dynamically, but deterministically, construct a corresponding Cypher statement to retrieve relevant information from the graph and use it as context to generate the final answer using an LLM.</p>
+<p>You will require an OpenAI API key to follow along with the code.</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s4">
+      <h2>📊 Function Implementation</h2>
+      <p class="lead">We will begin by defining credentials and relevant connections to Neo4j.</p>
+      <p>We will begin by defining credentials and relevant connections to Neo4j.</p>
+<p>os.environ[&quot;OPENAI_API_KEY&quot;] = &quot;sk-&quot;
+os.environ[&quot;NEO4J_URI&quot;] = &quot;neo4j+s://demo.neo4jlabs.com&quot;
+os.environ[&quot;NEO4J_USERNAME&quot;] = &quot;companies&quot;
+os.environ[&quot;NEO4J_PASSWORD&quot;] = &quot;companies&quot;
+os.environ[&quot;NEO4J_DATABASE&quot;] = &quot;companies&quot;</p>
+<div class="code-block"><pre>embeddings = OpenAIEmbeddings()
+graph = Neo4jGraph()
+vector_index = Neo4jVector.from_existing_index(
+    embeddings,
+    index_name=&amp;quot;news&amp;quot;
+)</pre></div>
+<p>As mentioned, we will be using the OpenAI embeddings, for which you require their API key. Next, we define the graph connection to Neo4j, allowing us to execute arbitrary Cypher statements. Lastly, we instantiate a Neo4jVector connection, which can retrieve information by querying the existing vector index. At the time of writing this article, you cannot use the vector index in combination with the pre-filtering approach; you can only apply post-filtering in combination with the vector index. However, debating post-filtering is beyond the scope of this article as we will focus on pre-filtering approaches combined with an exhaustive vector similarity search.</p>
+<p>More or less, the whole blog post boils down to the following <code>get_organization_news</code> function, which dynamically generates a Cypher statement and retrieves relevant information. For clarity, I will split the code into multiple parts.</p>
+<div class="code-block"><pre>def get_organization_news(
+    topic: Optional[str] = None,
+    organization: Optional[str] = None,
+    country: Optional[str] = None,
+    sentiment: Optional[str] = None,
+) -&amp;gt; str:</pre></div>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s5">
+      <h2>🔗 If there is no prefiltering, we can use vector index</h2>
+      <p class="lead">if topic and not organization and not country and not sentiment:
+        return vector_index.</p>
+      <p>if topic and not organization and not country and not sentiment:
+        return vector_index.similarity_search(topic)</p>
+      
+    </section>
+
+    <section class="section" id="s6">
+      <h2>💡 Uses parallel runtime where available</h2>
+      <p class="lead">base_query = (
+        &amp;quot;CYPHER runtime = parallel parallelRuntimeSupport=all &amp;quot;
+        &amp;quot;MATCH (c:Chunk)&amp;lt;-[:HAS_CHUNK]-(a:Article) WHERE &amp;quot;
+    )
+    where_queries = []
+    par...</p>
+      <div class="code-block"><pre>base_query = (
+        &amp;quot;CYPHER runtime = parallel parallelRuntimeSupport=all &amp;quot;
+        &amp;quot;MATCH (c:Chunk)&amp;lt;-[:HAS_CHUNK]-(a:Article) WHERE &amp;quot;
+    )
+    where_queries = []
+    params = {&amp;quot;k&amp;quot;: 5} # Define the number of text chunks to retrieve</pre></div>
+<p>We begin by defining the input parameters. As you can observe, all of them are optional strings. The <code>topic</code> parameter is used to find specific information within documents. In practice, we embed the value of the <code>topic</code> parameter and use it as input for vector similarity search. The other three parameters will be used to demonstrate the pre-filtering approach.</p>
+<p>If all of the pre-filtering parameters are empty, we can find the relevant documents using the existing vector index. Otherwise, we start preparing the base Cypher statement that will be used for the pre-filtered metadata approach. The clause <code>CYPHER runtime = parallel parallelRuntimeSupport=all</code> instructs the Neo4j database to use parallel runtime where available. Next, we prepare a match statement that selects <code>Chunk</code> nodes and their corresponding <code>Article</code> nodes.</p>
+<p>Now we are ready to dynamically append metadata filters to the Cypher statement. We will begin with <code>Organization</code>filter.</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s7">
+      <h2>🛠️ Map to database</h2>
+      <p class="lead">candidates = get_candidates(organization)
+    if len(candidates) &amp;gt; 1:  # Ask for follow up if too many options
+        return (
+         &amp;quot;Ask a follow up question which of the available org...</p>
+      <div class="code-block"><pre>candidates = get_candidates(organization)
+    if len(candidates) &amp;gt; 1:  # Ask for follow up if too many options
+        return (
+         &amp;quot;Ask a follow up question which of the available organizations &amp;quot;
+         f&amp;quot;did the user mean. Available options: {candidates}&amp;quot;
+        )
+    where_queries.append(
+        &amp;quot;EXISTS {(a)-[:MENTIONS]-&amp;gt;(:Organization {name: $organization})}&amp;quot;
+    )
+    params[&amp;quot;organization&amp;quot;] = candidates[0]</pre></div>
+<p>If the LLM identifies any particular organization the user is interested in, we must first map the value to the database with the <code>get_candidates</code>function. Under the hood, the <code>get_candidates</code>function uses keyword search utilizing a full-text index to find candidate nodes. If multiple candidates are found, we instruct the LLM to ask a follow-up question to the user to clarify which organization they meant exactly. Otherwise we append an existential subquery that filters the articles which mention the particular organization to the list of filters. To prevent any Cypher injection, we use query parameters instead of concatenating the query.</p>
+<p>Next, we handle situations when a user wants to pre-filter text chunks based on the country of the mentioned organizations.</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s8">
+      <h2>📈 No need to disambiguate</h2>
+      <p class="lead">where_queries.</p>
+      <div class="code-block"><pre>where_queries.append(
+        &amp;quot;EXISTS {(a)-[:MENTIONS]-&amp;gt;(:Organization)-[:IN_CITY]-&amp;gt;()-[:IN_COUNTRY]-&amp;gt;(:Country {name: $country})}&amp;quot;
+    )
+    params[&amp;quot;country&amp;quot;] = country</pre></div>
+<p>Since countries follow standard naming, we don’t have to map values to the database, as LLMs are familiar with most country naming standards.</p>
+<p>Similarly, we also handle sentiment metadata filtering.</p>
+<div class="code-block"><pre>if sentiment:
+    if sentiment == &amp;quot;positive&amp;quot;:
+        where_queries.append(&amp;quot;a.sentiment &amp;gt; $sentiment&amp;quot;)
+        params[&amp;quot;sentiment&amp;quot;] = 0.5
+    else:
+        where_queries.append(&amp;quot;a.sentiment &amp;lt; $sentiment&amp;quot;)
+        params[&amp;quot;sentiment&amp;quot;] = -0.5</pre></div>
+<p>We will instruct the LLM to only use two values for a sentiment input value, either positive or negative. We then map these two values to appropriate filter values.</p>
+<p>We handle the <code>topic</code>parameter slightly differently as it’s not used for prefiltering but rather vector similarity search.</p>
+<div class="code-block"><pre>if topic:  # Do vector comparison
+    vector_snippet = (
+        &amp;quot; WITH c, a, vector.similarity.cosine(c.embedding,$embedding) AS score &amp;quot;
+        &amp;quot;ORDER BY score DESC LIMIT toInteger($k) &amp;quot;
+    )
+    params[&amp;quot;embedding&amp;quot;] = embeddings.embed_query(topic)
+else:  # Just return the latest data
+    vector_snippet = &amp;quot; WITH c, a ORDER BY a.date DESC LIMIT toInteger($k) &amp;quot;</pre></div>
+<p>If the LLM identifies that the user is interested in a particular topic in the news, we use the topic input’s text embedding to find the most relevant documents. On the other hand, if no specific topic is identified, we simply return the latest couple of articles and avoid vector similarity search altogether.</p>
+<p>Now, we have to put the Cypher statement together and use it to retrieve information from the database.</p>
+<p>`return_snippet = &quot;RETURN &#x27;#title &#x27; + a.title + &#x27;\n#date &#x27; + toString(a.date) + &#x27;\n#text &#x27; + c.text AS output&quot;</p>
+<p>complete_query = (
+    base_query + &quot; AND &quot;.join(where_queries) + vector_snippet + return_snippet
+)</p>
+      <div class="chart"><div class="chart-row">
+    <div class="chart-label">Method A</div>
+    <div class="chart-bar-wrap"><div class="chart-bar green" style="width:95%">95%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method B</div>
+    <div class="chart-bar-wrap"><div class="chart-bar teal" style="width:80%">80%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method C</div>
+    <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:65%">65%</div></div>
+  </div></div>
+    </section>
+
+    <section class="section" id="s9">
+      <h2>🎯 Retrieve information from the database</h2>
+      <p class="lead">data = graph.</p>
+      <p>data = graph.query(complete_query, params)
+print(f&quot;Cypher: {complete_query}\n&quot;)</p>
+      
+    </section>
+
+    <section class="section" id="s10">
+      <h2>🔬 Safely remove embedding before printing</h2>
+      <p class="lead">params.</p>
+      <div class="code-block"><pre>params.pop(&amp;#x27;embedding&amp;#x27;, None)
+print(f&amp;quot;Parameters: {params}&amp;quot;)
+return &amp;quot;###Article: &amp;quot;.join([el[&amp;quot;output&amp;quot;] for el in data])</pre></div>
+<p>We construct the final <code>complete_query</code> by combining all the query snippets. After that, we use the dynamically generated Cypher statement to retrieve information from the database and return it to the LLM. Let’s examine the generated Cypher statement for an example input.</p>
+<div class="code-block"><pre>get_organization_news(
+  organization=&amp;#x27;neo4j&amp;#x27;,
+  sentiment=&amp;#x27;positive&amp;#x27;,
+  topic=&amp;#x27;remote work&amp;#x27;
+)</pre></div>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s11">
+      <h2>📝 Cypher: CYPHER runtime = parallel parallelRuntimeSupport=all</h2>
+      <p class="lead"></p>
+      
+      
+    </section>
+
+    <section class="section" id="s12">
+      <h2>🧪 MATCH (c:Chunk)&amp;lt;-[:HAS_CHUNK]-(a:Article) WHERE</h2>
+      <p class="lead"></p>
+      
+      
+    </section>
+
+    <section class="section" id="s13">
+      <h2>🌐 EXISTS {(a)-[:MENTIONS]-&amp;gt;(:Organization {name: $organization})} AND</h2>
+      <p class="lead"></p>
+      
+      
+    </section>
+
+    <section class="section" id="s14">
+      <h2>📦 a.sentiment &amp;gt; $sentiment</h2>
+      <p class="lead"></p>
+      
+      
+    </section>
+
+    <section class="section" id="s15">
+      <h2>🔄 WITH c, a, vector.similarity.cosine(c.embedding,$embedding) AS score</h2>
+      <p class="lead"></p>
+      
+      <div class="chart"><div class="chart-row">
+    <div class="chart-label">Method A</div>
+    <div class="chart-bar-wrap"><div class="chart-bar green" style="width:95%">95%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method B</div>
+    <div class="chart-bar-wrap"><div class="chart-bar teal" style="width:80%">80%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method C</div>
+    <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:65%">65%</div></div>
+  </div></div>
+    </section>
+
+    <section class="section" id="s16">
+      <h2>🎨 ORDER BY score DESC LIMIT toInteger($k)</h2>
+      <p class="lead"></p>
+      
+      <div class="chart"><div class="chart-row">
+    <div class="chart-label">Method A</div>
+    <div class="chart-bar-wrap"><div class="chart-bar green" style="width:95%">95%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method B</div>
+    <div class="chart-bar-wrap"><div class="chart-bar teal" style="width:80%">80%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method C</div>
+    <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:65%">65%</div></div>
+  </div></div>
+    </section>
+
+    <section class="section" id="s17">
+      <h2>🏆 RETURN &amp;#x27;#title &amp;#x27; + a.title + &amp;#x27;\ndate &amp;#x27; + toString(a.date) + &amp;#x27;\ntext &amp;#x27; + c.text AS output</h2>
+      <p class="lead"></p>
+      
+      
+    </section>
+
+    <section class="section" id="s18">
+      <h2>🔑 Parameters: {&amp;#x27;k&amp;#x27;: 5, &amp;#x27;organization&amp;#x27;: &amp;#x27;Neo4j&amp;#x27;, &amp;#x27;sentiment&amp;#x27;: 0.5}`</h2>
+      <p class="lead">The dynamic query generations works as expected, and is able to retrieve relevant information from the database.</p>
+      <p>The dynamic query generations works as expected, and is able to retrieve relevant information from the database.</p>
+      
+    </section>
+
+    <section class="section" id="s19">
+      <h2>📋 Defining OpenAI agent</h2>
+      <p class="lead">Next, we need to wrap the function as an Agent tool.</p>
+      <p>Next, we need to wrap the function as an Agent tool. First, we will add input parameter descriptions.</p>
+<div class="code-block"><pre>fewshot_examples = &amp;quot;&amp;quot;&amp;quot;{Input:What are the health benefits for Google employees in the news? Query: Health benefits}
+{Input: What is the latest positive news about Google? Query: None}
+{Input: Are there any news about VertexAI regarding Google? Query: VertexAI}
+{Input: Are there any news about new products regarding Google? Query: new products}
+&amp;quot;&amp;quot;&amp;quot;</pre></div>
+<div class="code-block"><pre>class NewsInput(BaseModel):
+    topic: Optional[str] = Field(
+        description=&amp;quot;Any specific information or topic besides organization, country, and sentiment that the user is interested in. Here are some examples: &amp;quot;
+        + fewshot_examples
+    )
+    organization: Optional[str] = Field(
+        description=&amp;quot;Organization that the user wants to find information about&amp;quot;
+    )
+    country: Optional[str] = Field(
+        description=&amp;quot;Country of organizations that the user is interested in. Use full names like United States of America and France.&amp;quot;
+    )
+    sentiment: Optional[str] = Field(
+        description=&amp;quot;Sentiment of articles&amp;quot;, enum=[&amp;quot;positive&amp;quot;, &amp;quot;negative&amp;quot;]
+    )</pre></div>
+<p>The pre-filtering parameters were quite simple to describe, but I had some problems with getting the <code>topic</code> parameter to work as expected. In the end, I decided to add some examples so that the LLM would understand it better. Additionally, you can observe that we give the LLM information about the <code>country</code>naming format as well as provide enumeration for <code>sentiment</code> .</p>
+<p>Now, we can define a custom tool by giving it a name and description containing instructions for an LLM on when to use it.</p>
+<div class="code-block"><pre>class NewsTool(BaseTool):
+    name = &amp;quot;NewsInformation&amp;quot;
+    description = (
+        &amp;quot;useful for when you need to find relevant information in the news&amp;quot;
+    )
+    args_schema: Type[BaseModel] = NewsInput</pre></div>
+<div class="code-block"><pre>def _run(
+        self,
+        topic: Optional[str] = None,
+        organization: Optional[str] = None,
+        country: Optional[str] = None,
+        sentiment: Optional[str] = None,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -&amp;gt; str:
+        &amp;quot;&amp;quot;&amp;quot;Use the tool.&amp;quot;&amp;quot;&amp;quot;
+        return get_organization_news(topic, organization, country, sentiment)</pre></div>
+<p>One last thing is to define the Agent executor. I just reuse the LCEL implementation of an OpenAI agent I implemented some time ago.</p>
+<div class="code-block"><pre>llm = ChatOpenAI(temperature=0, model=&amp;quot;gpt-4-turbo&amp;quot;, streaming=True)
+tools = [NewsTool()]</pre></div>
+<p>llm_with_tools = llm.bind(functions=[format_tool_to_openai_function(t) for t in tools])</p>
+<p>prompt = ChatPromptTemplate.from_messages(
+    [
+        (
+            &quot;system&quot;,
+            &quot;You are a helpful assistant that finds information about movies &quot;
+            &quot; and recommends them. If tools require follow up questions, &quot;
+            &quot;make sure to ask the user for clarification. Make sure to include any &quot;
+            &quot;available options that need to be clarified in the follow up questions &quot;
+            &quot;Do only the things the user specifically requested. &quot;,
+        ),
+        MessagesPlaceholder(variable_name=&quot;chat_history&quot;),
+        (&quot;user&quot;, &quot;{input}&quot;),
+        MessagesPlaceholder(variable_name=&quot;agent_scratchpad&quot;),
+    ]
+)</p>
+<p>agent = (
+    {
+        &quot;input&quot;: lambda x: x[&quot;input&quot;],
+        &quot;chat_history&quot;: lambda x: _format_chat_history(x[&quot;chat_history&quot;])
+        if x.get(&quot;chat_history&quot;)
+        else [],
+        &quot;agent_scratchpad&quot;: lambda x: format_to_openai_function_messages(
+            x[&quot;intermediate_steps&quot;]
+        ),
+    }
+    | prompt
+    | llm_with_tools
+    | OpenAIFunctionsAgentOutputParser()
+)</p>
+<p>agent_executor = AgentExecutor(agent=agent, tools=tools)
+`</p>
+<p>The agent has a single tool it can use to retrieve information about the news. We also added the <code>chat_history</code> message placeholder, making the agent conversational and allowing follow-up questions and replies.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s20">
+      <h2>🚀 Implementation testing</h2>
+      <p class="lead">Let’s run a couple of inputs and examine the generated Cypher statements and parameters.</p>
+      <p>Let’s run a couple of inputs and examine the generated Cypher statements and parameters.</p>
+<div class="code-block"><pre>agent_executor.invoke(
+  {&amp;quot;input&amp;quot;: &amp;quot;What are some positive news regarding neo4j?&amp;quot;}
+)</pre></div>
+      
+    </section>
+
+    <section class="section" id="s21">
+      <h2>🔍 Cypher: CYPHER runtime = parallel parallelRuntimeSupport=all</h2>
+      <p class="lead"></p>
+      
+      
+    </section>
+
+    <section class="section" id="s22">
+      <h2>⚡ MATCH (c:Chunk)&amp;lt;-[:HAS_CHUNK]-(a:Article) WHERE</h2>
+      <p class="lead"></p>
+      
+      
+    </section>
+
+    <section class="section" id="s23">
+      <h2>🏗️ EXISTS {(a)-[:MENTIONS]-&amp;gt;(:Organization {name: $organization})} AND</h2>
+      <p class="lead"></p>
+      
+      
+    </section>
+
+    <section class="section" id="s24">
+      <h2>📊 a.sentiment &amp;gt; $sentiment WITH c, a</h2>
+      <p class="lead"></p>
+      
+      
+    </section>
+
+    <section class="section" id="s25">
+      <h2>🔗 ORDER BY a.date DESC LIMIT toInteger($k)</h2>
+      <p class="lead"></p>
+      
+      
+    </section>
+
+    <section class="section" id="s26">
+      <h2>💡 RETURN &amp;#x27;#title &amp;#x27; + a.title + &amp;#x27;date &amp;#x27; + toString(a.date) + &amp;#x27;text &amp;#x27; + c.text AS output</h2>
+      <p class="lead"></p>
+      
+      
+    </section>
+
+    <section class="section" id="s27">
+      <h2>🛠️ Parameters: {&amp;#x27;k&amp;#x27;: 5, &amp;#x27;organization&amp;#x27;: &amp;#x27;Neo4j&amp;#x27;, &amp;#x27;sentiment&amp;#x27;: 0.5}`</h2>
+      <p class="lead">The generated Cypher statement is valid.</p>
+      <p>The generated Cypher statement is valid. Since we didn’t specify any particular topic, it returns the last five text chunks from positive articles mentioning Neo4j. Let’s something a bit more complex:</p>
+<div class="code-block"><pre>agent_executor.invoke(
+   {&amp;quot;input&amp;quot;: &amp;quot;What are some of the latest negative news about employee happiness for companies from France?&amp;quot;}
+)</pre></div>
+      
+    </section>
+
+    <section class="section" id="s28">
+      <h2>📈 Cypher: CYPHER runtime = parallel parallelRuntimeSupport=all</h2>
+      <p class="lead"></p>
+      
+      
+    </section>
+
+    <section class="section" id="s29">
+      <h2>🎯 MATCH (c:Chunk)&amp;lt;-[:HAS_CHUNK]-(a:Article) WHERE</h2>
+      <p class="lead"></p>
+      
+      
+    </section>
+
+    <section class="section" id="s30">
+      <h2>🔬 EXISTS {(a)-[:MENTIONS]-&amp;gt;(:Organization)-[:IN_CITY]-&amp;gt;()-[:IN_COUNTRY]-&amp;gt;(:Country {name: $country})} AND</h2>
+      <p class="lead"></p>
+      
+      
+    </section>
+
+    <section class="section" id="s31">
+      <h2>📝 a.sentiment &amp;lt; $sentiment</h2>
+      <p class="lead"></p>
+      
+      
+    </section>
+
+    <section class="section" id="s32">
+      <h2>🧪 WITH c, a, vector.similarity.cosine(c.embedding,$embedding) AS score</h2>
+      <p class="lead"></p>
+      
+      <div class="chart"><div class="chart-row">
+    <div class="chart-label">Method A</div>
+    <div class="chart-bar-wrap"><div class="chart-bar green" style="width:95%">95%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method B</div>
+    <div class="chart-bar-wrap"><div class="chart-bar teal" style="width:80%">80%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method C</div>
+    <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:65%">65%</div></div>
+  </div></div>
+    </section>
+
+    <section class="section" id="s33">
+      <h2>🌐 ORDER BY score DESC LIMIT toInteger($k)</h2>
+      <p class="lead"></p>
+      
+      <div class="chart"><div class="chart-row">
+    <div class="chart-label">Method A</div>
+    <div class="chart-bar-wrap"><div class="chart-bar green" style="width:95%">95%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method B</div>
+    <div class="chart-bar-wrap"><div class="chart-bar teal" style="width:80%">80%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method C</div>
+    <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:65%">65%</div></div>
+  </div></div>
+    </section>
+
+    <section class="section" id="s34">
+      <h2>📦 RETURN &amp;#x27;#title &amp;#x27; + a.title + &amp;#x27;date &amp;#x27; + toString(a.date) + &amp;#x27;text &amp;#x27; + c.text AS output</h2>
+      <p class="lead"></p>
+      
+      
+    </section>
+
+    <section class="section" id="s35">
+      <h2>🔄 Parameters: {&amp;#x27;k&amp;#x27;: 5, &amp;#x27;country&amp;#x27;: &amp;#x27;France&amp;#x27;, &amp;#x27;sentiment&amp;#x27;: -0.5, &amp;#x27;topic&amp;#x27;: &amp;#x27;employee happiness&amp;#x27;}`</h2>
+      <p class="lead">The LLM agent correctly generated prefiltering parameters but also identified a specific employee happiness topic.</p>
+      <p>The LLM agent correctly generated prefiltering parameters but also identified a specific employee happiness topic. This topic is used as input to vector similarity search, allowing us to refine the retrieval process even more.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s36">
+      <h2>🎨 Summary</h2>
+      <p class="lead">In this blog post, we’ve implemented example graph-based metadata filters, enhancing vector search accuracy.</p>
+      <p>In this blog post, we’ve implemented example graph-based metadata filters, enhancing vector search accuracy. However, the dataset has extensive and interconnected options that allow for much more sophisticated pre-filtering queries. With a graph data representation, the possibilities for structured filters are virtually limitless when combined with the LLM function-calling feature to generate Cypher statements dynamically.</p>
+<p>Additionally, your agent could have tools that retrieve unstructured text, as shown in this blog post, as well as other tools that can retrieve structured information, making a knowledge graph an excellent solution for many RAG applications.</p>
+<p>The code is available on GitHub.</p>
+      <div class="chart"><div class="chart-row">
+    <div class="chart-label">Method A</div>
+    <div class="chart-bar-wrap"><div class="chart-bar green" style="width:95%">95%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method B</div>
+    <div class="chart-bar-wrap"><div class="chart-bar teal" style="width:80%">80%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method C</div>
+    <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:65%">65%</div></div>
+  </div></div>
+    </section>
+
+    <section class="section" id="s37">
+      <h2>🏆 Related content</h2>
+      <p class="lead">Tutorials &amp;amp; How-Tos
+
+#### How we built LangChain’s GTM Agent
+
+The LangChain TeamMarch 9, 202611min[](/blog/how-we-built-langchains-gtm-agent)Deep AgentsAgent ArchitectureTutorials &amp;amp; How-Tos...</p>
+      <p>Tutorials &amp; How-Tos</p>
+<p>#### How we built LangChain’s GTM Agent</p>
+<p>The LangChain TeamMarch 9, 202611min[](/blog/how-we-built-langchains-gtm-agent)Deep AgentsAgent ArchitectureTutorials &amp; How-Tos</p>
+<p>#### Evaluating Deep Agents: Our Learnings</p>
+<p>The LangChain TeamDecember 3, 20259min[](/blog/evaluating-deep-agents-our-learnings)Company AnnouncementsTutorials &amp; How-Tos</p>
+<p>#### Why We Rebuilt LangChain’s Chatbot and What We Learned</p>
+<p>The LangChain TeamNovember 5, 202513min[](/blog/rebuilding-chat-langchain)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s38">
+      <h2>🔑 See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+  </div>
+
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/graph-based-metadata-filtering-for-improving-vector-search-in-rag-applications" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

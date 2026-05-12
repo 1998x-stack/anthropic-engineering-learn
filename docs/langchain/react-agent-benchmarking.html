@@ -1,0 +1,349 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deep Dive: Benchmarking Single Agent Performance</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafbfc;
+      --surface: #fff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --green: #059669;
+      --emerald: #10b981;
+      --teal: #14b8a6;
+      --blue: #3b82f6;
+      --purple: #6366f1;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --orange: #ea580c;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans SC', 'Inter', system-ui, sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: var(--sans); background: var(--bg); color: var(--text); line-height:1.7; }
+    .nav { position:sticky; top:0; z-index:100; background:rgba(15,23,42,.88); backdrop-filter:blur(14px); padding:14px 32px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,.08); }
+    .nav a { color:#f1f5f9; text-decoration:none; font-weight:500; font-size:14px; }
+    .nav .brand { font-weight:700; font-size:16px; color:#34d399; }
+    .hero { background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%); color:#fff; padding:80px 32px 60px; text-align:center; }
+    .hero h1 { font-size:clamp(1.8rem,4vw,2.6rem); font-weight:800; margin-bottom:12px; line-height:1.3; }
+    .hero .subtitle { font-size:17px; color:rgba(255,255,255,.82); max-width:720px; margin:0 auto 12px; }
+    .hero .meta { font-size:13px; color:rgba(255,255,255,.5); margin-bottom:32px; }
+    .hero .badge-cat { display:inline-block; padding:4px 14px; border-radius:20px; font-size:12px; font-weight:600; background:rgba(52,211,153,.18); color:#6ee7b7; border:1px solid rgba(52,211,153,.3); margin-bottom:16px; }
+    .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; max-width:780px; margin:0 auto; }
+    .stat { background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.11); border-radius:12px; padding:18px 14px; backdrop-filter:blur(8px); }
+    .stat .num { font-size:26px; font-weight:800; color:#34d399; font-family:var(--mono); }
+    .stat .label { font-size:12px; color:rgba(255,255,255,.65); margin-top:4px; }
+    .page { max-width:900px; margin:0 auto; padding:40px 24px; }
+    .toc { margin-bottom:48px; }
+    .toc h3 { font-size:13px; text-transform:uppercase; letter-spacing:1.5px; color:var(--text-secondary); margin-bottom:16px; }
+    .toc-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:10px; }
+    .toc-grid a { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--text); font-size:14px; font-weight:500; transition:all .2s; }
+    .toc-grid a:hover { border-color:var(--green); background:#ecfdf5; }
+    .toc-grid .num { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:8px; background:linear-gradient(135deg,#059669,#14b8a6); color:#fff; font-size:12px; font-weight:700; flex-shrink:0; }
+    .section { margin-bottom:56px; }
+    .section h2 { font-size:clamp(1.3rem,3vw,1.6rem); font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    .lead { color:var(--text-secondary); font-size:15px; margin-bottom:20px; line-height:1.7; }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:22px; margin-bottom:14px; }
+    .card h4 { font-size:15px; font-weight:600; margin-bottom:8px; }
+    .card p { font-size:14px; color:var(--text-secondary); line-height:1.7; }
+    .chart { margin:24px 0; }
+    .chart-row { display:flex; align-items:center; margin-bottom:10px; gap:12px; }
+    .chart-label { width:160px; font-size:13px; font-weight:500; text-align:right; flex-shrink:0; }
+    .chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:30px; overflow:hidden; }
+    .chart-bar { height:100%; border-radius:8px; display:flex; align-items:center; justify-content:flex-end; padding-right:10px; font-size:12px; font-weight:600; color:#fff; transition:width .6s ease; }
+    .chart-bar.green { background:linear-gradient(90deg,#059669,#34d399); }
+    .chart-bar.teal { background:linear-gradient(90deg,#14b8a6,#2dd4bf); }
+    .chart-bar.blue { background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+    .chart-bar.purple { background:linear-gradient(90deg,#6366f1,#a78bfa); }
+    .chart-bar.amber { background:linear-gradient(90deg,#f59e0b,#fbbf24); }
+    .chart-bar.orange { background:linear-gradient(90deg,#ea580c,#fb923c); }
+    .chart-bar.red { background:linear-gradient(90deg,#ef4444,#f87171); }
+    .timeline { position:relative; padding-left:32px; margin:24px 0; }
+    .timeline::before { content:''; position:absolute; left:8px; top:0; bottom:0; width:3px; background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6,#6366f1); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:20px; }
+    .tl-dot { position:absolute; left:-28px; top:4px; width:14px; height:14px; border-radius:50%; border:3px solid #059669; background:#fff; }
+    .tl-item:nth-child(2) .tl-dot { border-color:#14b8a6; }
+    .tl-item:nth-child(3) .tl-dot { border-color:#3b82f6; }
+    .tl-item:nth-child(4) .tl-dot { border-color:#6366f1; }
+    .tl-item:nth-child(5) .tl-dot { border-color:#f59e0b; }
+    .tl-item:nth-child(6) .tl-dot { border-color:#ea580c; }
+    .tl-item:nth-child(7) .tl-dot { border-color:#ef4444; }
+    .tl-phase { font-weight:700; font-size:15px; margin-bottom:4px; }
+    .tl-desc { font-size:13px; color:var(--text-secondary); line-height:1.6; }
+    .compare-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:24px 0; }
+    .compare-card { border-radius:var(--radius); padding:22px; }
+    .compare-card.old { background:#fef2f2; border:2px solid #fecaca; }
+    .compare-card.new { background:#ecfdf5; border:2px solid #a7f3d0; }
+    .compare-card h4 { font-size:15px; font-weight:700; margin-bottom:8px; }
+    .compare-card ul { list-style:none; padding:0; }
+    .compare-card ul li { font-size:13px; padding:4px 0; color:var(--text-secondary); }
+    .flow { display:flex; align-items:center; justify-content:center; gap:12px; margin:24px 0; flex-wrap:wrap; }
+    .flow-step { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px 18px; font-size:13px; font-weight:600; text-align:center; min-width:100px; }
+    .flow-step.green { background:linear-gradient(135deg,#059669,#10b981); color:#fff; border:none; }
+    .flow-step.blue { background:linear-gradient(135deg,#3b82f6,#60a5fa); color:#fff; border:none; }
+    .flow-step.purple { background:linear-gradient(135deg,#6366f1,#a78bfa); color:#fff; border:none; }
+    .flow-step.teal { background:linear-gradient(135deg,#14b8a6,#2dd4bf); color:#fff; border:none; }
+    .flow-step.orange { background:linear-gradient(135deg,#ea580c,#f59e0b); color:#fff; border:none; }
+    .flow-arrow { font-size:20px; color:var(--text-secondary); }
+    .block-q { background:linear-gradient(135deg,#ecfdf5,#d1fae5); border-left:4px solid #059669; border-radius:0 var(--radius) var(--radius) 0; padding:18px 22px; margin:20px 0; }
+    .block-q p { font-size:14px; font-style:italic; color:#064e3b; line-height:1.7; }
+    .badge { display:inline-block; padding:3px 10px; border-radius:6px; font-size:12px; font-weight:600; }
+    .badge-green { background:#ecfdf5; color:#059669; }
+    .badge-teal { background:#f0fdfa; color:#14b8a6; }
+    .badge-blue { background:#eff6ff; color:#3b82f6; }
+    .badge-purple { background:#eef2ff; color:#6366f1; }
+    .footer { text-align:center; padding:48px 24px; border-top:1px solid var(--border); margin-top:40px; }
+    .footer a { color:var(--green); text-decoration:none; font-weight:500; }
+    .footer a:hover { text-decoration:underline; }
+    .footer .foot-links { display:flex; justify-content:center; gap:24px; flex-wrap:wrap; margin-bottom:12px; }
+    .footer .copy { font-size:12px; color:var(--text-secondary); }
+    @media(max-width:768px) {
+      .hero { padding:48px 18px 36px; }
+      .hero h1 { font-size:1.5rem; }
+      .stats { grid-template-columns:1fr 1fr; gap:10px; }
+      .page { padding:28px 16px; }
+      .toc-grid { grid-template-columns:1fr; }
+      .compare-grid { grid-template-columns:1fr; }
+      .flow { flex-direction:column; gap:8px; }
+      .flow-arrow { transform:rotate(90deg); }
+      .chart-label { width:100px; font-size:11px; }
+      .nav { padding:12px 16px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain Blog Hub</a>
+    <a href="../langchain/">&#x2190; Back to Hub</a>
+  </nav>
+
+  <header class="hero">
+    <div class="badge-cat">LangSmith / Observability &amp; Evals</div>
+    <h1>Benchmarking Single Agent Performance</h1>
+    <p class="subtitle">LangChain Accounts &middot; 2025-02-10</p>
+    <p class="meta">Source: https://www.langchain.com/blog/react-agent-benchmarking</p>
+    <div class="stats">
+        <div class="stat">
+          <div class="num">6</div>
+          <div class="label">Core Sections</div>
+        </div>
+        <div class="stat">
+          <div class="num">12 min</div>
+          <div class="label">Reading Time</div>
+        </div>
+        <div class="stat">
+          <div class="num">25</div>
+          <div class="label">Key Points</div>
+        </div>
+        <div class="stat">
+          <div class="num">9</div>
+          <div class="label">External Links</div>
+        </div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc">
+      <h3>&#x1F4D1; Table of Contents</h3>
+      <div class="toc-grid">
+        <a href="#problem-statement-and-terminology"><span class="num">1</span>**Problem Statement and Terminology**</a>
+        <a href="#experiment-design"><span class="num">2</span>Experiment Design</a>
+        <a href="#calendar-scheduling-tasks"><span class="num">3</span>Calendar Scheduling Tasks</a>
+        <a href="#customer-support-tasks"><span class="num">4</span>Customer Support Tasks</a>
+        <a href="#performance-across-trajectory-lengths"><span class="num">5</span>Performance across Trajectory Lengths</a>
+        <a href="#general-trends"><span class="num">6</span>General Trends</a>
+      </div>
+    </nav>
+
+    <section class="section" id="problem-statement-and-terminology">
+      <h2>&#x1F4A1; **Problem Statement and Terminology**</h2>
+      <p class="lead">First, let’s reshape the above question to use a few terms that we introduce for clarity. Our problem statement is:...</p>
+        <div class="card"><p>&gt; As we increase the number of domains that a ReAct agent is given, how does this affect the agent’s ability to perform tasks?</p></div>
+        <div class="card"><p>Domain: A topic or area of responsibility for the agent. A domain is a conceptual term for a set of instructions and tools.
+e.g. Calendar Scheduling, Customer Support, Human Resources, etc</p></div>
+        <div class="card"><p>Instructions: A prompt that instructs how an agent should fulfill tasks for a certain domain.
+e.g. Customer Support Domain Instructions</p></div>
+        <div class="card"><p>Customer Support Domain Instructions</p></div>
+        <div class="card">
+          <ul style="list-style:disc;padding-left:20px;color:var(--text-secondary);font-size:14px;line-height:1.8;">
+            <li>get_customer_info: pass in email address, get their info for all organizations they are a part of</li>
+            <li>apply_grant: Apply grant for a specific org (by billing id). This can be used to give refunds.</li>
+            <li>In order to set deployments/seats, you will need to get their org ID. If they don't provide in their email, you can try calling get_customer_info to see it there.</li>
+            <li>If a user belongs to multiple orgs, clarify which one they are talking about</li>
+          </ul>
+        </div>
+      <div class="chart">
+        <div class="chart-row">
+          <div class="chart-label">get_customer_info: pass in email ad...</div>
+          <div class="chart-bar-wrap">
+            <div class="chart-bar green" style="width:95%">95%</div>
+          </div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-label">apply_grant: Apply grant for a spec...</div>
+          <div class="chart-bar-wrap">
+            <div class="chart-bar teal" style="width:85%">85%</div>
+          </div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-label">In order to set deployments/seats, ...</div>
+          <div class="chart-bar-wrap">
+            <div class="chart-bar blue" style="width:75%">75%</div>
+          </div>
+        </div>
+        <div class="chart-row">
+          <div class="chart-label">If a user belongs to multiple orgs,...</div>
+          <div class="chart-bar-wrap">
+            <div class="chart-bar purple" style="width:65%">65%</div>
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="experiment-design">
+      <h2>&#x1F3D7; Experiment Design</h2>
+      <p class="lead">There are many existing benchmarks for tool-use and tool-calling, but for the purposes of this experiment, we wanted to evaluate a practical agent tha...</p>
+        <div class="card"><p>- Calendar Scheduling Domain
+Instructions: Guidelines for when to schedule certain meetings with different parties and restrictions on meeting times.
+- Tools: get_cal, schedule_cal</p></div>
+        <div class="card"><p>- Customer Support Domain
+Instructions: Guidelines for how to provide support to customers by fetching information, editing organization settings, etc.
+- Tools: get_org_info, get_customer_info, set_seats, set_deployments, apply_grant, get_billing_id, get_customer_invoices</p></div>
+        <div class="card"><p>For each of these two domains, we have constructed a list of tasks (test cases) that will judge our agent’s efficacy at following instructions and calling the right tools. Let’s walk through an example task.</p></div>
+        <div class="card"><p>Customer Support Task Example</p></div>
+        <div class="card">
+          <ul style="list-style:disc;padding-left:20px;color:var(--text-secondary);font-size:14px;line-height:1.8;">
+            <li>Calendar Scheduling Domain</li>
+            <li>Tools: get_cal, schedule_cal</li>
+            <li>Customer Support Domain</li>
+            <li>Tools: get_org_info, get_customer_info, set_seats, set_deployments, apply_grant, get_billing_id, get_customer_invoices</li>
+            <li>{'name': 'get_customer_info', 'args': {'email': 'joe@gmail.com'}}, *</li>
+            <li>{'name': 'set_deployments', 'args': {'org_id': 1, 'number': 4}} *</li>
+          </ul>
+        </div>
+
+    </section>
+
+    <section class="section" id="calendar-scheduling-tasks">
+      <h2>&#x1F537; Calendar Scheduling Tasks</h2>
+      <p class="lead">This graph compares model performance on Calendar Scheduling tasks with varying context sizes (from adding domains). Each task only required use of at...</p>
+        <div class="card"><p>For Calendar Scheduling tasks, gpt-4o performed worse than claude-3.5-sonnet, o1 and o3 across the various context sizes. gpt-4o’s performance dropped off more sharply than the other models when larger context was provided, dropping to 2% when increasing context to 7 domains. In a similar vein, llama-3.3-70B couldn’t remember to call the send_email tool as the final step of execution to respond to the user, so it failed every test case. In contrast, claude-3.5-sonnet, o1, and o3-mini all consist</p></div>
+        <div class="card"><p>As mentioned above, Calendar Scheduling tasks didn’t require much tool calling (only two scheduling tools, and one email tool). These tasks were more focused on passing the correct arguments to those tool calls and following specific domain instructions. We see that both o1 and o3-mini do a great job when only Scheduling instructions and tools are provided. o1 is able to keep up this performance as we add irrelevant domains — however, o3-mini’s performance drops quickly as the irrelevant domains</p></div>
+        <div class="card"><p>claude-3.5-sonnet does not perform as well on Calendar Scheduling tasks as o1 and o3-mini, even for the “control agent”, which is only provided the calendar scheduling domain. However, despite an early drop, claude-3.5-sonnet’s performance is more stable as a lot of irrelevant domains are added. Both claude-3.5-sonnet and o1 have relatively stable performance as more context is added.</p></div>
+      <div class="compare-grid">
+        <div class="compare-card old">
+          <h4>&#x26A0; Challenges / Before</h4>
+          <ul>
+                        <li>This graph compares model performance on Calendar Scheduling tasks with varying context sizes (from ...</li>
+            <li>As mentioned above, Calendar Scheduling tasks didn’t require much tool calling (only two scheduling ...</li>
+          </ul>
+        </div>
+        <div class="compare-card new">
+          <h4>&#x2705; Solutions / After</h4>
+          <ul>
+                        <li>For Calendar Scheduling tasks, gpt-4o performed worse than claude-3.5-sonnet, o1 and o3 across the v...</li>
+            <li>claude-3.5-sonnet does not perform as well on Calendar Scheduling tasks as o1 and o3-mini, even for ...</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="customer-support-tasks">
+      <h2>&#x1F539; Customer Support Tasks</h2>
+      <p class="lead">This graph compares model performance on Customer Support tasks with varying context sizes (from adding domains). Each task required use of at most se...</p>
+        <div class="card"><p>The Customer Support domain contains more tools to choose from than the Calendar Scheduling domain, and the tool-calling trajectories are generally longer (2.7 tools calls on average). claude-3.5-sonnet, o3-mini, and o1 are our best models with only Customer Support domain provided. This is interesting, recall that claude-3.5-sonnet was significantly worse than both o1 and o3-mini on Calendar Scheduling tasks.</p></div>
+        <div class="card"><p>As we increase the number of domains provided to this agent, both o3-mini and o1 (to a lesser extent) see performance drops. claude-3.5-sonnet has a shallower performance drop, even as we increase to 14 domains. When we increase the context window size to 47k and 77k tokens, we see a larger performance drop off from claude-3.5-sonnet.</p></div>
+        <div class="card"><p>Similarly to the Calendar Scheduling tasks, gpt-4o performed worse than claude-3.5-sonnet, o1, and o3-mini across all context sizes. gpt-4o again had a significant initial drop in performance as we increased from 1 to 7 domains. llama-3.3-70B also struggled with calling the correct tools again, though it was at least able to pass some tasks.</p></div>
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">**Problem Statement and Terminology**</div>
+          <div class="tl-desc">First, let’s reshape the above question to use a few terms that we introduce for...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Experiment Design</div>
+          <div class="tl-desc">There are many existing benchmarks for tool-use and tool-calling, but for the pu...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Calendar Scheduling Tasks</div>
+          <div class="tl-desc">This graph compares model performance on Calendar Scheduling tasks with varying ...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Customer Support Tasks</div>
+          <div class="tl-desc">This graph compares model performance on Customer Support tasks with varying con...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Performance across Trajectory Lengths</div>
+          <div class="tl-desc">As mentioned above, our Customer Support Tasks generally required longer traject...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">General Trends</div>
+          <div class="tl-desc">Summarizing our model performance across both Calendar Scheduling tasks and Cust...</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="performance-across-trajectory-lengths">
+      <h2>&#x1F4CA; Performance across Trajectory Lengths</h2>
+      <p class="lead">As mentioned above, our Customer Support Tasks generally required longer trajectories (sequence of tool calls) to complete than Calendar Scheduling ta...</p>
+        <div class="card"><p>Our sample size was 17 tasks (51 runs) with shorter trajectories, and 13 tasks (39 runs) with longer trajectories. For all three models, we see that our tasks which required longer trajectories (3, 4, 5, or 6) had steeper initial rates of decline compared to our tasks with shorter trajectories (1 or 2) when increasing from Customer Support Domain to 7 domains.</p></div>
+
+    </section>
+
+    <section class="section" id="general-trends">
+      <h2>&#x1F538; General Trends</h2>
+      <p class="lead">Summarizing our model performance across both Calendar Scheduling tasks and Customer Support tasks, we saw the following trends...</p>
+        <div class="card"><p>We saw that as more context was provided, instruction following became worse. Some of our tasks were designed to follow niche specific instructions (e.g. do not perform a certain action for EU based customers). We found that these instructions would be successfully followed by agents with fewer domains, but as the number of domains increased, these instructions were more often forgotten, and the tasks were subsequently failed.</p></div>
+        <div class="card"><p>Other Thoughts and Notes</p></div>
+        <div class="card"><p>For both sets of tasks, the ReAct architecture was not performing perfectly, and it is likely that with a more custom workflow for each domain, we could have achieved better performance. However, to keep things consistent, we decided to stay with the ReAct architecture.</p></div>
+        <div class="card"><p>We also only had 30 tasks each for testing Calendar Scheduling and Customer Support, and we ran each test case three times to average out stochasticity to some extent.</p></div>
+        <div class="card">
+          <ul style="list-style:disc;padding-left:20px;color:var(--text-secondary);font-size:14px;line-height:1.8;">
+            <li>Both more context and more tools degrade agent performance</li>
+            <li>Agents that require longer trajectories degrade more quickly</li>
+            <li>o1, o3-mini, and claude-3.5 sonnet are comparable and in a different league than gpt-4o and llama-3.3-70B</li>
+            <li>o3-mini performs as well as o1 and claude-3.5-sonnet with smaller context, but sees a steeper performance drop as context grows</li>
+          </ul>
+        </div>
+      <div class="compare-grid">
+        <div class="compare-card old">
+          <h4>&#x26A0; Challenges / Before</h4>
+          <ul>
+                        <li>Summarizing our model performance across both Calendar Scheduling tasks and Customer Support tasks, ...</li>
+            <li>Other Thoughts and Notes</li>
+            <li>We also only had 30 tasks each for testing Calendar Scheduling and Customer Support, and we ran each...</li>
+          </ul>
+        </div>
+        <div class="compare-card new">
+          <h4>&#x2705; Solutions / After</h4>
+          <ul>
+                        <li>We saw that as more context was provided, instruction following became worse. Some of our tasks were...</li>
+            <li>For both sets of tasks, the ReAct architecture was not performing perfectly, and it is likely that w...</li>
+            <li>We did not investigate the effect of the location of instructions from each domain within the system...</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <footer class="footer">
+    <div class="foot-links">
+      <a href="../langchain/">&#x1F3E0; LangChain Hub</a>
+      <a href="https://www.langchain.com/blog/react-agent-benchmarking" target="_blank">&#x1F517; Original Article</a>
+    </div>
+    <p class="copy">Auto-generated deep-dive page &middot; Content from LangChain Blog</p>
+  </footer>
+</body>
+</html>

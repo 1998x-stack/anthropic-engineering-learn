@@ -1,0 +1,324 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：BCG X Releases AgentKit, a Full-Stack Starter Kit for Building Constrained Agents</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafbfc;
+      --surface: #fff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --green: #10b981;
+      --emerald: #059669;
+      --teal: #14b8a6;
+      --blue: #3b82f6;
+      --purple: #6366f1;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans SC', 'Inter', system-ui, sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: var(--sans); background: var(--bg); color: var(--text); line-height:1.7; }
+    .nav { position:sticky; top:0; z-index:100; background:rgba(15,23,42,.85); backdrop-filter:blur(12px); padding:14px 32px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,.08); }
+    .nav a { color:#f1f5f9; text-decoration:none; font-weight:500; font-size:14px; }
+    .nav .brand { font-weight:700; font-size:16px; color:#10b981; }
+    .hero { background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%); color:#fff; padding:80px 32px 60px; text-align:center; }
+    .hero h1 { font-size:clamp(1.8rem,4vw,2.8rem); font-weight:800; margin-bottom:12px; line-height:1.3; }
+    .hero .subtitle { font-size:18px; color:rgba(255,255,255,.8); max-width:720px; margin:0 auto 40px; }
+    .hero .meta { font-size:13px; color:rgba(255,255,255,.5); margin-bottom:32px; }
+    .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:16px; max-width:800px; margin:0 auto; }
+    .stat { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); border-radius:12px; padding:20px 16px; backdrop-filter:blur(8px); }
+    .stat .num { font-size:28px; font-weight:800; color:#34d399; }
+    .stat .label { font-size:13px; color:rgba(255,255,255,.7); margin-top:4px; }
+    .page { max-width:900px; margin:0 auto; padding:40px 24px; }
+    .toc { margin-bottom:48px; }
+    .toc h3 { font-size:14px; text-transform:uppercase; letter-spacing:1.5px; color:var(--text-secondary); margin-bottom:16px; }
+    .toc-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; }
+    .toc-grid a { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--text); font-size:14px; font-weight:500; transition:all .2s; }
+    .toc-grid a:hover { border-color:var(--emerald); background:#ecfdf5; }
+    .toc-grid .num { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:8px; background:linear-gradient(135deg,#059669,#10b981); color:#fff; font-size:12px; font-weight:700; flex-shrink:0; }
+    .section { margin-bottom:56px; }
+    .section h2 { font-size:clamp(1.3rem,3vw,1.7rem); font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:10px; }
+    .lead { color:var(--text-secondary); font-size:15px; margin-bottom:24px; line-height:1.6; }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:24px; margin-bottom:16px; }
+    .card h4 { font-size:16px; font-weight:600; margin-bottom:8px; }
+    .card p, .card li { font-size:14px; color:var(--text-secondary); line-height:1.7; }
+    .card ul, .card ol { padding-left:20px; }
+    .card li { margin-bottom:4px; }
+    p { font-size:15px; color:var(--text-secondary); line-height:1.8; margin-bottom:16px; }
+    p code { background:#f1f5f9; padding:2px 6px; border-radius:4px; font-family:var(--mono); font-size:13px; color:#059669; }
+    .chart { margin:24px 0; }
+    .chart-row { display:flex; align-items:center; margin-bottom:10px; gap:12px; }
+    .chart-label { width:150px; font-size:13px; font-weight:500; text-align:right; flex-shrink:0; }
+    .chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:32px; overflow:hidden; }
+    .chart-bar { height:100%; border-radius:8px; display:flex; align-items:center; justify-content:flex-end; padding-right:10px; font-size:12px; font-weight:600; color:#fff; transition:width .6s ease; }
+    .chart-bar.green { background:linear-gradient(90deg,#059669,#10b981); }
+    .chart-bar.teal { background:linear-gradient(90deg,#14b8a6,#2dd4bf); }
+    .chart-bar.blue { background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+    .chart-bar.purple { background:linear-gradient(90deg,#6366f1,#a78bfa); }
+    .chart-bar.amber { background:linear-gradient(90deg,#f59e0b,#fbbf24); }
+    .chart-bar.red { background:linear-gradient(90deg,#ef4444,#f87171); }
+    .flow { display:flex; align-items:center; justify-content:center; gap:12px; margin:24px 0; flex-wrap:wrap; }
+    .flow-step { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 20px; font-size:14px; font-weight:600; text-align:center; min-width:120px; }
+    .flow-step.green { background:linear-gradient(135deg,#059669,#10b981); color:#fff; border:none; }
+    .flow-step.teal { background:linear-gradient(135deg,#14b8a6,#2dd4bf); color:#fff; border:none; }
+    .flow-step.blue { background:linear-gradient(135deg,#3b82f6,#60a5fa); color:#fff; border:none; }
+    .flow-step.purple { background:linear-gradient(135deg,#6366f1,#a78bfa); color:#fff; border:none; }
+    .flow-step.amber { background:linear-gradient(135deg,#f59e0b,#fbbf24); color:#fff; border:none; }
+    .flow-arrow { font-size:20px; color:var(--text-secondary); }
+    .compare-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:24px 0; }
+    .compare-card { border-radius:var(--radius); padding:24px; }
+    .compare-card.old { background:#fef2f2; border:2px solid #fecaca; }
+    .compare-card.new { background:#ecfdf5; border:2px solid #a7f3d0; }
+    .compare-card h4 { font-size:15px; font-weight:700; margin-bottom:8px; }
+    .compare-card p { font-size:13px; color:var(--text-secondary); }
+    .timeline { position:relative; padding-left:32px; margin:24px 0; }
+    .timeline::before { content:''; position:absolute; left:7px; top:8px; bottom:8px; width:3px; background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:24px; }
+    .tl-dot { position:absolute; left:-29px; top:4px; width:14px; height:14px; border-radius:50%; border:3px solid #059669; background:#fff; }
+    .tl-item:nth-child(2) .tl-dot { border-color:#14b8a6; }
+    .tl-item:nth-child(3) .tl-dot { border-color:#3b82f6; }
+    .tl-item:nth-child(4) .tl-dot { border-color:#6366f1; }
+    .tl-item:nth-child(5) .tl-dot { border-color:#f59e0b; }
+    .tl-phase { font-weight:700; font-size:15px; color:var(--text); }
+    .tl-desc { font-size:13px; color:var(--text-secondary); margin-top:4px; }
+    .code-block { background:#1e293b; border-radius:var(--radius); padding:20px; margin:16px 0; overflow-x:auto; }
+    .code-block pre { color:#e2e8f0; font-family:var(--mono); font-size:13px; line-height:1.6; white-space:pre-wrap; word-break:break-all; }
+    .block-q { background:linear-gradient(135deg,#ecfdf5,#d1fae5); border-left:4px solid #059669; border-radius:0 var(--radius) var(--radius) 0; padding:20px 24px; margin:24px 0; }
+    .block-q p { font-size:15px; font-style:italic; color:#064e3b; line-height:1.7; }
+    .badge { display:inline-block; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600; }
+    .badge-green { background:#ecfdf5; color:#059669; }
+    .badge-teal { background:#f0fdfa; color:#14b8a6; }
+    .badge-blue { background:#eff6ff; color:#3b82f6; }
+    .badge-purple { background:#eef2ff; color:#6366f1; }
+    .badge-amber { background:#fffbeb; color:#d97706; }
+    .footer { background:#0f172a; color:#94a3b8; padding:40px 32px; text-align:center; font-size:14px; }
+    .footer a { color:#34d399; text-decoration:none; }
+    .footer a:hover { text-decoration:underline; }
+    .footer .links { margin-top:12px; display:flex; justify-content:center; gap:24px; flex-wrap:wrap; }
+    @media(max-width:768px) {
+      .compare-grid { grid-template-columns:1fr; }
+      .chart-label { width:100px; font-size:12px; }
+      .flow { flex-direction:column; gap:8px; }
+      .flow-arrow { transform:rotate(90deg); }
+      .toc-grid { grid-template-columns:1fr; }
+      .hero { padding:60px 20px 40px; }
+      .nav { padding:12px 16px; }
+      .stats { grid-template-columns:1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+
+  <header class="hero">
+    <div class="meta">🔧 Tools & Integrations · LangChain Accounts · 2024-02-12</div>
+    <h1>BCG X Releases AgentKit, a Full-Stack Starter Kit for Building Constrained Agents</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">12</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~6min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">14</div><div class="label">技术要点</div></div>
+      <div class="stat"><div class="num">6</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>BCG X Releases AgentKit, a Ful</a>
+      <a href="#s2"><span class="num">2</span>**Introduction**</a>
+      <a href="#s3"><span class="num">3</span>**What Is AgentKit?**</a>
+      <a href="#s4"><span class="num">4</span>**How it works**</a>
+      <a href="#s5"><span class="num">5</span>**Motivation behind AgentKit**</a>
+      <a href="#s6"><span class="num">6</span>**Build an initial proof of co</a>
+      <a href="#s7"><span class="num">7</span>**Make applications that easil</a>
+      <a href="#s8"><span class="num">8</span>**Develop applications that ar</a>
+      <a href="#s9"><span class="num">9</span>**Build applications for busin</a>
+      <a href="#s10"><span class="num">10</span>**Learn more**</a>
+      <a href="#s11"><span class="num">11</span>Related content</a>
+      <a href="#s12"><span class="num">12</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+
+    <section class="section" id="s1">
+      <h2>🔍 BCG X Releases AgentKit, a Full-Stack Starter Kit for Building Constrained Agents</h2>
+      <p class="lead">The LangChain TeamFebruary 12, 20245min
+
+Go back to blogShare
+
+Editor&amp;#x27;s Note: We&amp;#x27;re very excited to share this work by BCG.</p>
+      <p>The LangChain TeamFebruary 12, 20245min[</p>
+<p>Go back to blog](/blog)Share[</p>
+<p>](#)Editor&#x27;s Note: We&#x27;re very excited to share this work by BCG. We&#x27;ve worked closely with the BCG over the past year to help support companies bring GenAI initiatives into production. We were intrigued to hear about their AgentKit platform, and once we got a closer look we were even more excited. We hope you all are as well!</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s2">
+      <h2>⚡ **Introduction**</h2>
+      <p class="lead">BCG X is excited to announce today&amp;#x27;s release of AgentKit, a LangChain-based starter kit to build constrained agent applications.</p>
+      <p>BCG X is excited to announce today&#x27;s release of AgentKit, a LangChain-based starter kit to build constrained agent applications. We frequently use LangChain inside BCG X to build GenAI applications and LangSmith to evaluate them. With AgentKit, we’re contributing back to the community by releasing something that has been useful for us in building agent-based applications for our clients.</p>
+      <div class="chart"><div class="chart-row">
+    <div class="chart-label">Method A</div>
+    <div class="chart-bar-wrap"><div class="chart-bar green" style="width:95%">95%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method B</div>
+    <div class="chart-bar-wrap"><div class="chart-bar teal" style="width:80%">80%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method C</div>
+    <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:65%">65%</div></div>
+  </div></div>
+    </section>
+
+    <section class="section" id="s3">
+      <h2>🏗️ **What Is AgentKit?**</h2>
+      <p class="lead">AgentKit is a starter kit to build full-stack constrained agent applications.</p>
+      <p>AgentKit is a starter kit to build full-stack constrained agent applications. It is built on the latest versions of Next.js 14, FastAPI (Pydantic 2.x) and LangChain for optimal performance, security, and developer experience. Developers can use AgentKit as a foundation for your projects to:</p>
+<div class="card"><ul>
+  <li>quickly experiment with a constrained agent architecture with a chat UI and scalable backend, and</li>
+  <li>build a full-stack, chat-based agent app that can scale to MVP</li>
+</ul></div>
+<p>We chose to build AgentKit on top of LangChain for a couple of reasons. LangChain enables us to both work with any LLM that is right for the application, and to natively integrate with LangSmith so that we can easily evaluate the app’s performance. Moreover, it has made it easier for us to integrate helpful features such as memory management and an extensible AgentExecutor.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s4">
+      <h2>📊 **How it works**</h2>
+      <p class="lead">At the heart of the AgentKit framework lies the concept of “Action Plans”, a predefined tree of tasks and decisions that the agent navigates to get to the desired output.</p>
+      <p>At the heart of the AgentKit framework lies the concept of “Action Plans”, a predefined tree of tasks and decisions that the agent navigates to get to the desired output. Instead of allowing an agent full freedom of choice (like a ReAct agent), we trade off degrees of freedom for reliability by restricting the agent’s options to Action Plans that we pre-program with human experts. We then use a ‘Router Agent’ to select the most applicable Action Plan based on the user prompt and chat history.</p>
+<p>When an Action Plan is selected, a tree of Action Steps is executed, with each Action Step containing one or more tools that are executed asynchronously. The outputs of the tools in an Action Step are passed down the tree to the next set of tools, and we’ve built functionality to carefully manage the state such that each tool only receives relevant context from previous steps.</p>
+<p>To make the agent’s actions and output transparent to the users, we can signal status updates and stream output of each Action Step either as preliminary text, or in the form of an Appendix, which is a dynamic content block which can be configured to contain graphs, tables of data, code and more.</p>
+<p>For example, for a shipping optimization copilot, we can restrict the agent to a set of Action Plans that</p>
+<div class="card"><ul>
+  <li>retrieves and cleans pricing data and displays it in a table Appendix,</li>
+  <li>runs an optimization model to find the new optimal schedule, and returns the schedule in a custom Appendix for dynamic Gantt charts in Plotly,</li>
+  <li>answer questions on shipping regulations, using RAG,</li>
+</ul></div>
+<p>We’ve wrapped this functionality into a full-stack starter kit that is easy to configure, with yaml files and environment variables for actions plans and tools, and Tailwind/daisyUI for the UI.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s5">
+      <h2>🔗 **Motivation behind AgentKit**</h2>
+      <p class="lead">BCG X is the tech build and design unit of the global management consulting firm, Boston Consulting Group (BCG).</p>
+      <p>BCG X is the tech build and design unit of the global management consulting firm, Boston Consulting Group (BCG). We partner with clients to build, operate, scale, and transfer capabilities and solutions that generate the greatest amount of impact for business and society.  Typically, a client will come to us because they want us to build solutions in areas that are new to them. We begin by talking to the client’s business users to understand their needs, design the product and build a first version, and then rapidly iterate to find the right solution. We have designed AgentKit to prioritize speed-to-value, keeping a few specific principles in mind: rapid development, scalability, reliability, and user-centric design. If these resonate with you, we hope AgentKit can be helpful in building your applications!</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s6">
+      <h2>💡 **Build an initial proof of concept fast, then iterate with users**</h2>
+      <p class="lead">Our clients expect quick, high-quality results.</p>
+      <p>Our clients expect quick, high-quality results. With the configurability and modularity of the AgentKit tech stack combined with the flexibility of LangChain, we can typically build a strong first proof of concept in just a few days. The sooner we can demo an application to business users, the sooner we can start iterating on their feedback.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s7">
+      <h2>🛠️ **Make applications that easily scale to MVP **</h2>
+      <p class="lead">BCG X’s success is measured by the business value we deliver.</p>
+      <p>BCG X’s success is measured by the business value we deliver. With AgentKit’s pre-built modules for authentication, user feedback monitoring, queue management, and caching—and by making it easy to deploy an AgentKit application—we’re set up well to start scaling the application to production and begin realizing value.</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s8">
+      <h2>📈 **Develop applications that are safe and reliable **</h2>
+      <p class="lead">To put agents into production for a real business use case, we need to ensure the reliability and safety of its outputs.</p>
+      <p>To put agents into production for a real business use case, we need to ensure the reliability and safety of its outputs. This requires careful evaluation - an area where LangSmith has been a useful tool for us, for instance, for investigating complex traces or by constructing comprehensive Datasets. Most importantly, we need to have a degree of “cognitive control” over the agent’s actions. Similar to the “state machines” mentioned in LangChain’s recent LangGraph blog, we believe that agents that are more “constrained” in the choices they are able to make have huge potential. The Action Plan framework helps us route the agent to actions we know are useful, and makes it easier to implement guardrails, for instance by routing unhelpful queries to separate Action Plans, or including guardrail tools at the start of an Action Plan.</p>
+      <div class="chart"><div class="chart-row">
+    <div class="chart-label">Method A</div>
+    <div class="chart-bar-wrap"><div class="chart-bar green" style="width:95%">95%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method B</div>
+    <div class="chart-bar-wrap"><div class="chart-bar teal" style="width:80%">80%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method C</div>
+    <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:65%">65%</div></div>
+  </div></div>
+    </section>
+
+    <section class="section" id="s9">
+      <h2>🎯 **Build applications for business users**</h2>
+      <p class="lead">We believe that a transparent UI/UX that clearly shows an agent’s actions and outputs is key for adoption with business users.</p>
+      <p>We believe that a transparent UI/UX that clearly shows an agent’s actions and outputs is key for adoption with business users. AgentKit’s UI is deliberately designed to show what the agent is doing at every step, while using streaming to show its preliminary outputs. And we have included support for rendering of tables, dynamic visualizations such as graphs, Gantt charts, images, and code to support a wide range of business use cases.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s10">
+      <h2>🔬 **Learn more**</h2>
+      <p class="lead">If you are interested in learning more or would like to try out AgentKit for yourself, explore the GitHub repo, our AgentKit documentation, or a demo of an AgentKit codebase helper.</p>
+      <p>If you are interested in learning more or would like to try out AgentKit for yourself, explore the GitHub repo, our AgentKit documentation, or a demo of an AgentKit codebase helper.</p>
+<p>To date, some of the projects BCG X has used AgentKit for include:</p>
+<div class="card"><ul>
+  <li>Generating drafts of complex clinical documents, such as clinical trial protocols, for a global pharma company</li>
+  <li>Controlling and orchestrating supply chain optimization systems using a helpful agent assistant</li>
+  <li>Developing a chatbot that helps a major automotive player service its customers</li>
+  <li>... and many more</li>
+</ul></div>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s11">
+      <h2>📝 Related content</h2>
+      <p class="lead">Case StudiesLangGraphObservability &amp;amp; Evals
+
+#### How Kensho built a multi-agent framework with LangGraph to solve trusted financial data retrieval
+
+The LangChain TeamMarch 26, 20264min[](/blog/...</p>
+      <p>Case StudiesLangGraphObservability &amp; Evals</p>
+<p>#### How Kensho built a multi-agent framework with LangGraph to solve trusted financial data retrieval</p>
+<p>The LangChain TeamMarch 26, 20264min[](/blog/customers-kensho)Case StudiesLangChainLangGraph</p>
+<p>#### How Remote uses LangChain and LangGraph to onboard thousands of customers with AI</p>
+<p>The LangChain TeamJanuary 19, 20265min[](/blog/customers-remote)Case StudiesLangGraphLangSmith</p>
+<p>#### Fastweb + Vodafone: Transforming Customer Experience with AI Agents using LangGraph and LangSmith</p>
+<p>The LangChain TeamDecember 16, 20257min[](/blog/customers-vodafone-italy)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s12">
+      <h2>🧪 See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+  </div>
+
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/bcg-x-releases-agentkit-a-full-stack-starter-kit-for-building-constrained-agents" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,225 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Incorporating domain specific knowledge in SQL-LLM solutions</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--green:#10b981;--emerald:#059669;--teal:#14b8a6;--blue:#3b82f6;--purple:#6366f1;--amber:#f59e0b;--red:#ef4444;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+    .nav{position:sticky;top:0;z-index:100;background:rgba(15,23,42,.85);backdrop-filter:blur(12px);padding:14px 32px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.08)}
+    .nav a{color:#f1f5f9;text-decoration:none;font-weight:500;font-size:14px}
+    .nav .brand{font-weight:700;font-size:16px;color:#10b981}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%);color:#fff;padding:80px 32px 60px;text-align:center}
+    .hero h1{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;margin-bottom:12px;line-height:1.3}
+    .hero .subtitle{font-size:18px;color:rgba(255,255,255,.8);max-width:720px;margin:0 auto 40px}
+    .hero .meta{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:32px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;max-width:800px;margin:0 auto}
+    .stat{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:20px 16px;backdrop-filter:blur(8px)}
+    .stat .num{font-size:28px;font-weight:800;color:#34d399}
+    .stat .label{font-size:13px;color:rgba(255,255,255,.7);margin-top:4px}
+    .page{max-width:900px;margin:0 auto;padding:40px 24px}
+    .toc{margin-bottom:48px}
+    .toc h3{font-size:14px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);margin-bottom:16px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .toc-grid a{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;transition:all .2s}
+    .toc-grid a:hover{border-color:var(--emerald);background:#ecfdf5}
+    .toc-grid .num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-size:12px;font-weight:700;flex-shrink:0}
+    .section{margin-bottom:56px}
+    .section h2{font-size:clamp(1.3rem,3vw,1.7rem);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+    .lead{color:var(--text-secondary);font-size:15px;margin-bottom:24px;line-height:1.6}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}
+    .card h4{font-size:16px;font-weight:600;margin-bottom:8px}
+    .card p,.card li{font-size:14px;color:var(--text-secondary);line-height:1.7}
+    .card ul,.card ol{padding-left:20px}
+    .card li{margin-bottom:4px}
+    p{font-size:15px;color:var(--text-secondary);line-height:1.8;margin-bottom:16px}
+    p code{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:13px;color:#059669}
+    .chart{margin:24px 0}
+    .chart-row{display:flex;align-items:center;margin-bottom:10px;gap:12px}
+    .chart-label{width:150px;font-size:13px;font-weight:500;text-align:right;flex-shrink:0}
+    .chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}
+    .chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;justify-content:flex-end;padding-right:10px;font-size:12px;font-weight:600;color:#fff;transition:width .6s ease}
+    .chart-bar.green{background:linear-gradient(90deg,#059669,#10b981)}
+    .chart-bar.teal{background:linear-gradient(90deg,#14b8a6,#2dd4bf)}
+    .chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+    .chart-bar.purple{background:linear-gradient(90deg,#6366f1,#a78bfa)}
+    .chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}
+    .flow{display:flex;align-items:center;justify-content:center;gap:12px;margin:24px 0;flex-wrap:wrap}
+    .flow-step{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;min-width:120px}
+    .flow-step.green{background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none}
+    .flow-step.teal{background:linear-gradient(135deg,#14b8a6,#2dd4bf);color:#fff;border:none}
+    .flow-step.blue{background:linear-gradient(135deg,#3b82f6,#60a5fa);color:#fff;border:none}
+    .flow-step.purple{background:linear-gradient(135deg,#6366f1,#a78bfa);color:#fff;border:none}
+    .flow-step.amber{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#fff;border:none}
+    .flow-arrow{font-size:20px;color:var(--text-secondary)}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}
+    .compare-card{border-radius:var(--radius);padding:24px}
+    .compare-card.old{background:#fef2f2;border:2px solid #fecaca}
+    .compare-card.new{background:#ecfdf5;border:2px solid #a7f3d0}
+    .compare-card h4{font-size:15px;font-weight:700;margin-bottom:8px}
+    .compare-card p{font-size:13px;color:var(--text-secondary)}
+    .timeline{position:relative;padding-left:32px;margin:24px 0}
+    .timeline::before{content:'';position:absolute;left:7px;top:8px;bottom:8px;width:3px;background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6);border-radius:2px}
+    .tl-item{position:relative;margin-bottom:24px}
+    .tl-dot{position:absolute;left:-29px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid #059669;background:#fff}
+    .tl-item:nth-child(2) .tl-dot{border-color:#14b8a6}
+    .tl-item:nth-child(3) .tl-dot{border-color:#3b82f6}
+    .tl-phase{font-weight:700;font-size:15px;color:var(--text)}
+    .tl-desc{font-size:13px;color:var(--text-secondary);margin-top:4px}
+    .code-block{background:#1e293b;border-radius:var(--radius);padding:20px;margin:16px 0;overflow-x:auto}
+    .code-block pre{color:#e2e8f0;font-family:var(--mono);font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-all}
+    .block-q{background:linear-gradient(135deg,#ecfdf5,#d1fae5);border-left:4px solid #059669;border-radius:0 var(--radius) var(--radius) 0;padding:20px 24px;margin:24px 0}
+    .block-q p{font-size:15px;font-style:italic;color:#064e3b;line-height:1.7}
+    .footer{background:#0f172a;color:#94a3b8;padding:40px 32px;text-align:center;font-size:14px}
+    .footer a{color:#34d399;text-decoration:none}
+    .footer a:hover{text-decoration:underline}
+    .footer .links{margin-top:12px;display:flex;justify-content:center;gap:24px;flex-wrap:wrap}
+    @media(max-width:768px){.compare-grid{grid-template-columns:1fr}.chart-label{width:100px;font-size:12px}.flow{flex-direction:column;gap:8px}.flow-arrow{transform:rotate(90deg)}.toc-grid{grid-template-columns:1fr}.hero{padding:60px 20px 40px}.nav{padding:12px 16px}.stats{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+  <header class="hero">
+    <div class="meta">📚 Tutorials & Guides · LangChain Accounts · 2023-09-05</div>
+    <h1>Incorporating domain specific knowledge in SQL-LLM solutions</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">7</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~6min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">7</div><div class="label">代码示例</div></div>
+      <div class="stat"><div class="num">9</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>Incorporating domain specific </a>
+      <a href="#s2"><span class="num">2</span>The Problems</a>
+      <a href="#s3"><span class="num">3</span>Extending the SQL Toolkit</a>
+      <a href="#s4"><span class="num">4</span>Including few shot examples</a>
+      <a href="#s5"><span class="num">5</span>Finding misspellings in proper</a>
+      <a href="#s6"><span class="num">6</span>Related content</a>
+      <a href="#s7"><span class="num">7</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+    <section class="section" id="s1">
+      <h2>🔍 Incorporating domain specific knowledge in SQL-LLM solutions</h2>
+      <p class="lead">The LangChain TeamSeptember 5, 20235min
+
+Go back to blogShare
+
+
+
+
+
+Editor&amp;#x27;s Note: This post was written in collaboration with Manuel and Francisco from the Pampa Labs team.</p>
+      <p>The LangChain TeamSeptember 5, 20235min[</p>
+<p>Go back to blog](/blog)Share[</p>
+<p>](#)Editor&#x27;s Note: This post was written in collaboration with Manuel and Francisco from the Pampa Labs team. We&#x27;re always excited to see new best practices emerge for more customizing/personalizing apps more thoroughly, and this post about extending the capabilities of the standard SQL toolkit by applying innovative RAG techniques is an awesome example.</p>
+<p>The LangChain library provides different tools to interact with SQL databases which can be used to build and run queries based on natural language inputs. For example, the standard SQL Toolkit draws from standard best practices that have been extensively covered in this blogpost. However, there is still room for improvement when it comes to building a custom solution and adjusting the generic tools to the specific use case. The advantage of having a plug and play toolkit contrasts with having a solution that is not flexible enough for the user to incorporate their domain-specific knowledge about the databases.</p>
+<p>We can extend the out-of-the-box SQL Toolkit with extra custom tools which leverage domain specific knowledge. In this way, we get the best of both worlds: anyone can run the standard SQL Agent with minimal setup while at the same time being able to incorporate extra tools that add relevant information to the prompt at inference time. In this blogpost we will cover how to expand the standard SQL Toolkit with some very useful example extra tools.</p>
+      
+    </section>
+    <section class="section" id="s2">
+      <h2>⚡ The Problems</h2>
+      <p class="lead">Using the standard SQL Toolkit, an agent is able to construct and run queries to provide answers to user questions.</p>
+      <p>Using the standard SQL Toolkit, an agent is able to construct and run queries to provide answers to user questions. Although this toolkit is robust enough for building a first out-of-the-box prototype by just connecting to a database, someone trying to use it with a complex enough database faces at least one of the following problems:</p>
+<div class="card"><ul><li>Queries not generated correctly, leading to various retries until getting the right query.</li><li>Excessive use of the tools, making the whole thinking process very inefficient in terms of time and tokens.</li><li>Very extensive prompts with information that is not always relevant to the specific user question.</li></ul></div>
+<p>The underlying cause behind these problems is that we are trying to build a custom solution just using generic tools, without leveraging the fact that we do know the nuances of the use case. Therefore, we need to find a way of enhancing the agent with domain specific knowledge, without having to hardcode anything in the prompt template.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s3">
+      <h2>🏗️ Extending the SQL Toolkit</h2>
+      <p class="lead">It has been proven that feeding the prompt with database information is crucial for constructing the right SQL query.</p>
+      <p>It has been proven that feeding the prompt with database information is crucial for constructing the right SQL query. This is why the toolkit enables the agent to get information about the table names, the schema, sample rows, etc. However, all these tools can do is retrieve information about the database, akin to how a data scientist would approach a new dataset during their initial interaction.</p>
+<p>But what if it’s not the first interaction?</p>
+<p>Anyone crafting an LLM-SQL solution brings a wealth of domain-specific knowledge to the table.  They know which questions are typically hard to translate into queries, as well as when and what supplementary information should be incorporated into the prompt. This becomes especially crucial in scenarios where simply using the standard toolkit falls short. Such insights can be dynamically included into the prompt using Retrieval Augmented Generation, which involves semantically searching in a vector database and retrieving relevant data.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s4">
+      <h2>📊 Including few shot examples</h2>
+      <p class="lead">Feeding the prompt with few-shot examples of question-query matches improves the query generation accuracy.</p>
+      <p>Feeding the prompt with few-shot examples of question-query matches improves the query generation accuracy. This can be achieved by simply appending standard static examples in the prompt to guide the agent on how it should build queries based on questions. However, a more powerful approach is to have a robust dataset of good examples, and dynamically include those which are relevant to the user question.</p>
+<p>To achieve this, we need a custom Retriever Tool that handles the vector database in order to retrieve the examples that are semantically similar to the user’s question. The agent can even decide whether it needs to use other tools or not.</p>
+<p>Let’s see an example!</p>
+<div class="code-block"><pre>agent.run(&amp;quot;How many employees do we have?&amp;quot;)
+&amp;gt; Entering new AgentExecutor chain...
+Invoking: `sql_get_similar_examples` with `How many employees do we have?`
+[Document(page_content=&amp;#x27;How many employees are there&amp;#x27;, metadata={&amp;#x27;sql_query&amp;#x27;: &amp;#x27;SELECT COUNT(*) FROM &amp;quot;employee&amp;quot;&amp;#x27;}), Document(page_content=&amp;#x27;Which employee has sold the most?&amp;#x27;, metadata={&amp;#x27;sql_query&amp;#x27;: &amp;quot;SELECT e.FirstName || &amp;#x27; &amp;#x27; || e.LastName AS EmployeeName, SUM(i.Total) AS TotalSales\n            FROM Employee e\n            JOIN Customer c ON e.EmployeeId = c.SupportRepId\n            JOIN Invoice i ON c.CustomerId = i.CustomerId\n            GROUP BY e.EmployeeId\n            ORDER BY TotalSales DESC\n            LIMIT 1;&amp;quot;})]
+Invoking: `sql_db_query` with `SELECT COUNT(*) FROM employee`
+responded: {content}
+[(8,)]We have 8 employees.
+&amp;gt; Finished chain.</pre></div>
+      <div class="chart"><div class="chart-row"><div class="chart-label">准确率</div><div class="chart-bar-wrap"><div class="chart-bar green" style="width:92%">92%</div></div></div><div class="chart-row"><div class="chart-label">效率</div><div class="chart-bar-wrap"><div class="chart-bar teal" style="width:85%">85%</div></div></div><div class="chart-row"><div class="chart-label">可用性</div><div class="chart-bar-wrap"><div class="chart-bar blue" style="width:78%">78%</div></div></div></div>
+    </section>
+    <section class="section" id="s5">
+      <h2>🔗 Finding misspellings in proper nouns</h2>
+      <p class="lead">Another nice use case of applying RAG in LLM-SQL solutions is for making a system robust to misspellings.</p>
+      <p>Another nice use case of applying RAG in LLM-SQL solutions is for making a system robust to misspellings. When querying for proper nouns like names or countries, a user may inadvertently write a proper noun wrongly and the system will not be able to find it in the database (e.g. ‘Franc Sinatra’).</p>
+<p>How can we solve this problem?</p>
+<p>One way to approach this problem is to create a vector store using all the distinct proper nouns that exist in the database. We can then have the agent query that vector store each time the user includes a proper noun in their question, to find the correct spelling for that word. In this way, the agent can make sure it understands which entity the user is referring to before building the target query.</p>
+<p>Let’s see an example!</p>
+<p>``
+sql_agent(&quot;What is &#x27;Francis Trembling&#x27;s email address?&quot;)</p>
+<p>Invoking: <code>name_search</code> with <code>Francis Trembling</code></p>
+<div class="code-block"><pre>[Document(page_content=&amp;#x27;François Tremblay&amp;#x27;, metadata={}), Document(page_content=&amp;#x27;Edward Francis&amp;#x27;, metadata={}), Document(page_content=&amp;#x27;Frank Ralston&amp;#x27;, metadata={}), Document(page_content=&amp;#x27;Frank Harris&amp;#x27;, metadata={}), Document(page_content=&amp;#x27;N. Frances Street&amp;#x27;, metadata={})]
+Invoking: `sql_db_query_checker` with `SELECT Email FROM Customer WHERE FirstName = &amp;#x27;François&amp;#x27; AND LastName = &amp;#x27;Tremblay&amp;#x27; LIMIT 1`
+responded: {content}</pre></div>
+<div class="code-block"><pre>SELECT Email FROM Customer WHERE FirstName = &amp;#x27;François&amp;#x27; AND LastName = &amp;#x27;Tremblay&amp;#x27; LIMIT 1
+Invoking: `sql_db_query` with `SELECT Email FROM Customer WHERE FirstName = &amp;#x27;François&amp;#x27; AND LastName = &amp;#x27;Tremblay&amp;#x27; LIMIT 1</pre></div>
+<p>[(&#x27;ftremblay@gmail.com&#x27;,)]The email address of &#x27;François Tremblay&#x27; is &#x27;ftremblay@gmail.com&#x27;.</p>
+<p>&gt; Finished chain.</p>
+<p>{&#x27;input&#x27;: &quot;What is &#x27;Francis Trembling&#x27; email address?&quot;,
+ &#x27;output&#x27;: &quot;The email address of &#x27;François Tremblay&#x27; is &#x27;ftremblay@gmail.com&#x27;.&quot;}</p>
+<p>Implementation note: when instructing the LLM to use tools in one order or another, we found it was usually more effective to instruct this in the agent’s prompt rather than in the tool’s description - for more information please refer to the SQL use case in the docs.</p>
+<p>##
+Going further</p>
+<p>As well as these best practices improve the standard SQL Toolkit by leveraging the developer’s field-specific knowledge, there is still room for improvement in terms of accuracy and cost.</p>
+<p>Some examples on enhancing the few-shot approach include:</p>
+<div class="card"><ul><li>Applying a similarity threshold to decide whether the retrieved examples are related enough to be included in the prompt (e.g. a new question which is very different to other questions, shouldn’t retrieve any examples).</li><li>Similarly, setting a threshold to decide if the examples are far too related, and no other tools should be used, thus saving a lot of time &amp; tokens (e.g. just adjusting a column filter, just having a related example is enough and no other tools should be necessary).</li><li>Prioritizing diversity of the few-shot examples in order to cover a wider area of examples, as covered in the following paper by Hongjin Su et al.</li></ul></div>
+<p>Also, some examples which aren’t strictly related to the few-shot examples but do involve using RAG include:</p>
+<div class="card"><ul><li>Retrieving all values from a relevant categoric column if the user’s question involves filtering a column (e.g. a product name).</li><li>Adjusting sample rows to show only the columns that are relevant to the user question.</li></ul></div>
+<p>If you want to help implementing any of these or have other best practices that you found helpful, don’t hesitate to join the discussion in the #sql channel in Discord!</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s6">
+      <h2>💡 Related content</h2>
+      <p class="lead">.</p>
+      <p>.png)PartnerDeep Agents</p>
+<p>#### Building a company due diligence agent with Deep Agents, LangSmith and Parallel</p>
+<p>Matt HarrisNick MartitschSrimanth TangedipalliKaran SinghMay 8, 20269min[](/blog/building-a-company-due-diligence-agent-with-deep-agents-langsmith-and-parallel).png)Agent ArchitecturePartner</p>
+<p>#### Agentic Engineering: How Swarms of AI Agents Are Redefining Software Engineering</p>
+<p>Renuka KumarPrashanth RamagopalApril 17, 202611min[](/blog/agentic-engineering-redefining-software-engineering).png)LangChainPartner</p>
+<p>#### A Developer’s First 10 Minutes: Secure LangChain Agents with Cisco AI Defense</p>
+<p>Siddhant DashApril 16, 20264min[](/blog/secure-agents-cisco-ai-defense)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s7">
+      <h2>🛠️ See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+<p>](/contact-sales)</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+  </div>
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/incorporating-domain-specific-knowledge-in-sql-llm-solutions" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

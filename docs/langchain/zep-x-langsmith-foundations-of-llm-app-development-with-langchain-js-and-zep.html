@@ -1,0 +1,429 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Zep x LangSmith: Foundations of LLM app development with LangChain.js and Zep</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--green:#10b981;--emerald:#059669;--teal:#14b8a6;--blue:#3b82f6;--purple:#6366f1;--amber:#f59e0b;--red:#ef4444;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+    .nav{position:sticky;top:0;z-index:100;background:rgba(15,23,42,.85);backdrop-filter:blur(12px);padding:14px 32px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.08)}
+    .nav a{color:#f1f5f9;text-decoration:none;font-weight:500;font-size:14px}
+    .nav .brand{font-weight:700;font-size:16px;color:#10b981}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%);color:#fff;padding:80px 32px 60px;text-align:center}
+    .hero h1{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;margin-bottom:12px;line-height:1.3}
+    .hero .subtitle{font-size:18px;color:rgba(255,255,255,.8);max-width:720px;margin:0 auto 40px}
+    .hero .meta{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:32px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;max-width:800px;margin:0 auto}
+    .stat{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:20px 16px;backdrop-filter:blur(8px)}
+    .stat .num{font-size:28px;font-weight:800;color:#34d399}
+    .stat .label{font-size:13px;color:rgba(255,255,255,.7);margin-top:4px}
+    .page{max-width:900px;margin:0 auto;padding:40px 24px}
+    .toc{margin-bottom:48px}
+    .toc h3{font-size:14px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);margin-bottom:16px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .toc-grid a{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;transition:all .2s}
+    .toc-grid a:hover{border-color:var(--emerald);background:#ecfdf5}
+    .toc-grid .num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-size:12px;font-weight:700;flex-shrink:0}
+    .section{margin-bottom:56px}
+    .section h2{font-size:clamp(1.3rem,3vw,1.7rem);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+    .lead{color:var(--text-secondary);font-size:15px;margin-bottom:24px;line-height:1.6}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}
+    .card h4{font-size:16px;font-weight:600;margin-bottom:8px}
+    .card p,.card li{font-size:14px;color:var(--text-secondary);line-height:1.7}
+    .card ul,.card ol{padding-left:20px}
+    .card li{margin-bottom:4px}
+    p{font-size:15px;color:var(--text-secondary);line-height:1.8;margin-bottom:16px}
+    p code{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:13px;color:#059669}
+    .chart{margin:24px 0}
+    .chart-row{display:flex;align-items:center;margin-bottom:10px;gap:12px}
+    .chart-label{width:150px;font-size:13px;font-weight:500;text-align:right;flex-shrink:0}
+    .chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}
+    .chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;justify-content:flex-end;padding-right:10px;font-size:12px;font-weight:600;color:#fff;transition:width .6s ease}
+    .chart-bar.green{background:linear-gradient(90deg,#059669,#10b981)}
+    .chart-bar.teal{background:linear-gradient(90deg,#14b8a6,#2dd4bf)}
+    .chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+    .chart-bar.purple{background:linear-gradient(90deg,#6366f1,#a78bfa)}
+    .chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}
+    .flow{display:flex;align-items:center;justify-content:center;gap:12px;margin:24px 0;flex-wrap:wrap}
+    .flow-step{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;min-width:120px}
+    .flow-step.green{background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none}
+    .flow-step.teal{background:linear-gradient(135deg,#14b8a6,#2dd4bf);color:#fff;border:none}
+    .flow-step.blue{background:linear-gradient(135deg,#3b82f6,#60a5fa);color:#fff;border:none}
+    .flow-step.purple{background:linear-gradient(135deg,#6366f1,#a78bfa);color:#fff;border:none}
+    .flow-step.amber{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#fff;border:none}
+    .flow-arrow{font-size:20px;color:var(--text-secondary)}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}
+    .compare-card{border-radius:var(--radius);padding:24px}
+    .compare-card.old{background:#fef2f2;border:2px solid #fecaca}
+    .compare-card.new{background:#ecfdf5;border:2px solid #a7f3d0}
+    .compare-card h4{font-size:15px;font-weight:700;margin-bottom:8px}
+    .compare-card p{font-size:13px;color:var(--text-secondary)}
+    .timeline{position:relative;padding-left:32px;margin:24px 0}
+    .timeline::before{content:'';position:absolute;left:7px;top:8px;bottom:8px;width:3px;background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6);border-radius:2px}
+    .tl-item{position:relative;margin-bottom:24px}
+    .tl-dot{position:absolute;left:-29px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid #059669;background:#fff}
+    .tl-item:nth-child(2) .tl-dot{border-color:#14b8a6}
+    .tl-item:nth-child(3) .tl-dot{border-color:#3b82f6}
+    .tl-phase{font-weight:700;font-size:15px;color:var(--text)}
+    .tl-desc{font-size:13px;color:var(--text-secondary);margin-top:4px}
+    .code-block{background:#1e293b;border-radius:var(--radius);padding:20px;margin:16px 0;overflow-x:auto}
+    .code-block pre{color:#e2e8f0;font-family:var(--mono);font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-all}
+    .block-q{background:linear-gradient(135deg,#ecfdf5,#d1fae5);border-left:4px solid #059669;border-radius:0 var(--radius) var(--radius) 0;padding:20px 24px;margin:24px 0}
+    .block-q p{font-size:15px;font-style:italic;color:#064e3b;line-height:1.7}
+    .footer{background:#0f172a;color:#94a3b8;padding:40px 32px;text-align:center;font-size:14px}
+    .footer a{color:#34d399;text-decoration:none}
+    .footer a:hover{text-decoration:underline}
+    .footer .links{margin-top:12px;display:flex;justify-content:center;gap:24px;flex-wrap:wrap}
+    @media(max-width:768px){.compare-grid{grid-template-columns:1fr}.chart-label{width:100px;font-size:12px}.flow{flex-direction:column;gap:8px}.flow-arrow{transform:rotate(90deg)}.toc-grid{grid-template-columns:1fr}.hero{padding:60px 20px 40px}.nav{padding:12px 16px}.stats{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+  <header class="hero">
+    <div class="meta">🔧 Tools & Integrations · LangChain Accounts · 2023-08-17</div>
+    <h1>Zep x LangSmith: Foundations of LLM app development with LangChain.js and Zep</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">9</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~12min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">28</div><div class="label">代码示例</div></div>
+      <div class="stat"><div class="num">16</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>Zep x LangSmith: Foundations o</a>
+      <a href="#s2"><span class="num">2</span>An overview of the LangChain f</a>
+      <a href="#s3"><span class="num">3</span>A simple conversational bot re</a>
+      <a href="#s4"><span class="num">4</span>Building a Q&amp;amp;A over Docs /</a>
+      <a href="#s5"><span class="num">5</span>Building a REACT-type agent wi</a>
+      <a href="#s6"><span class="num">6</span>Summing it up</a>
+      <a href="#s7"><span class="num">7</span>Next Steps</a>
+      <a href="#s8"><span class="num">8</span>Related content</a>
+      <a href="#s9"><span class="num">9</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+    <section class="section" id="s1">
+      <h2>🔍 Zep x LangSmith: Foundations of LLM app development with LangChain.js and Zep</h2>
+      <p class="lead">The LangChain TeamAugust 17, 202310min
+
+Go back to blogShare
+
+
+
+
+
+Learn how to build three foundational LLM apps using TypeScript, LangChain.</p>
+      <p>The LangChain TeamAugust 17, 202310min[</p>
+<p>Go back to blog](/blog)Share[</p>
+<p>](#)Learn how to build three foundational LLM apps using TypeScript, LangChain.js, and Zep.</p>
+<p>Editor&#x27;s Note: This post was written in collaboration with the Zep team. The post walks, step-by-step, through the process of building three foundational LLM apps using TypeScript, LangChain.js, and Zep. We think it&#x27;s a really compelling exploration of RAG and agents accessing to tools, combined with LangSmith for visibility into model behavior. And, we think–and hope–more developers will try these same approaches in their apps!</p>
+<p>Python gets much of the love in the LLM space. However, most web apps are built using TypeScript, JavaScript, and related technologies. Zep has first-class support for TypeScript and JavaScript, and this article explores using Zep and LangChain.js to build the foundation for various types of LLM apps.</p>
+<p>Zep&#x27;s long-term memory store makes it simple for developers to add relevant documents, chat history memory &amp; rich user data to their prompts and without having to manage multiple pieces of infrastructure. Zep also automatically embeds chat history and documents, reducing reliance on 3rd-party embedding APIs.</p>
+<p>The source code for this post may be found in the Zep By Example Repo.</p>
+      
+    </section>
+    <section class="section" id="s2">
+      <h2>⚡ An overview of the LangChain features we&amp;#x27;ll use</h2>
+      <p class="lead">We&amp;#x27;re going to build the foundations for three types of applications, all using LangChain&amp;#x27;s &lt;code&gt;ZepMemory&lt;/code&gt; and &lt;code&gt;ZepVectorStore&lt;/code&gt; classes.</p>
+      <p>We&#x27;re going to build the foundations for three types of applications, all using LangChain&#x27;s <code>ZepMemory</code> and <code>ZepVectorStore</code> classes.</p>
+<div class="card"><ul><li>A simple conversational bot using a <code>ConversationChain</code>. We&#x27;ll use this to demonstrate the ability to recall past conversations.</li><li>A Retrieval Augmented Generation app using a <code>ConversationalRetrievalQAChain</code>. We&#x27;ll demonstrate how to populate Zep&#x27;s VectorStore with several books, and ask the LLM questions about the books.</li><li>Lastly, we&#x27;ll build a REACT-type agent that has access to two tools. The first, a <code>peopleRetriever</code> tool, provides search access to historical chat messages but filtered by entity for people&#x27;s names. The second, the <code>bookSearch</code> tool, provides search access over our book collection.</li></ul></div>
+<p>We&#x27;ll use LangChain&#x27;s new LangSmith platform for observability, providing insight into what our chains and agent are doing under the hood.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s3">
+      <h2>🏗️ A simple conversational bot recalling past conversations</h2>
+      <p class="lead">This somewhat trivial example demonstrates preloading historical conversation into Zep and passing an instance of &lt;code&gt;ZepMemory&lt;/code&gt; to the chain.</p>
+      <p>This somewhat trivial example demonstrates preloading historical conversation into Zep and passing an instance of <code>ZepMemory</code> to the chain.</p>
+<p>Let&#x27;s start off by initializing Zep in our app and creating a <code>sessionId</code>, a unique key representing the user or a user&#x27;s chat session. We&#x27;ll then load some test data into the chat history for this session.</p>
+<div class="code-block"><pre>// Create a new ZepClient instance
+const client = await ZepClient.init(ZEP_API_URL, ZEP_API_KEY);</pre></div>
+<p>// Create a session ID for our conversation. This ID could represent our user, or a
+// conversation thread with a user. i.e. You can map multiple sessions to a single user
+// in your data model.
+const sessionId = randomUUID();</p>
+<div class="code-block"><pre>// add the sample chat history to the Zep memory
+const messages = history.map(
+  ({ role, content }: { role: string; content: string }) =&amp;gt;
+    new Message({ role, content }),
+);
+const zepMemory = new Memory({ messages });
+await client.memory.addMemory(sessionId, zepMemory);</pre></div>
+<p>Let&#x27;s now create an instance of <code>ZepMemory</code> initialized for the above session, and create our chain. We&#x27;ll ask the LLM what we&#x27;ve discussed so far, giving it the opportunity review the chat history provided by Zep.</p>
+<div class="code-block"><pre>// Create a new ChatOpenAI model instance. We&amp;#x27;ll use this for both oru chain and agent.
+const model = new ChatOpenAI({
+  modelName: &amp;quot;gpt-3.5-turbo&amp;quot;,
+  temperature: 0,
+});</pre></div>
+<p>// Let&#x27;s create a new ZepMemory instance with very simple configuration.
+// We&#x27;ll use this in our first chain to demonstrate the basics by recalling the
+// chat history we&#x27;ve just added to Zep.
+const memorySimple = new ZepMemory({
+  sessionId,
+  baseURL: ZEP_API_URL,
+  apiKey: ZEP_API_KEY,
+});</p>
+<div class="code-block"><pre>// Let&amp;#x27;s start with a simple chain and ask the LLM what we&amp;#x27;ve discussed so far.
+const conversationChain = new ConversationChain({
+  llm: model,
+  memory: memorySimple,
+});
+const res1 = await conversationChain.run(&amp;quot;What have we discussed so far?&amp;quot;);
+console.log(res1);</pre></div>
+<p>Thanks to LangSmith, we have visibility into the data sent to the LLM. You&#x27;ll note below that Zep has automatically summarized the long chat history and provided it to our chain as a system message. Zep does this asynchronously on the server in order to avoid impacting the user experience.</p>
+<p>LangSmith has the nifty ability to share traces and you can find the trace for this chain here.</p>
+<p>For each subsequent turn of the conversation, LangChain will persist AI and human messages to Zep. These messages will be automatically added to later prompts.</p>
+<p>Alongside summarization, Zep also enriches memories with named entities, an intent analysis, and token counts. We&#x27;ll use some of this metadata later when we build our agent.</p>
+<div class="code-block"><pre>{
+      &amp;quot;uuid&amp;quot;: &amp;quot;d02a90a7-0981-43ae-92bf-95e448f6fff4&amp;quot;,
+      &amp;quot;created_at&amp;quot;: &amp;quot;2023-08-17T04:11:43.520994Z&amp;quot;,
+      &amp;quot;role&amp;quot;: &amp;quot;AI&amp;quot;,
+      &amp;quot;content&amp;quot;: &amp;quot;So far, we have discussed the authors Kurt Vonnegut, Jules Verne, and Philip K. Dick. We talked about their most famous books, some other notable works, the genres they wrote in, the awards they won, and the influences on their writing styles. We also mentioned the common themes in their works, such as critiques of society, exploration of the human condition, and speculations about future technologies.&amp;quot;,
+      &amp;quot;token_count&amp;quot;: 88,
+      &amp;quot;metadata&amp;quot;: {
+        &amp;quot;system&amp;quot;: {
+          &amp;quot;entities&amp;quot;: [
+            {
+              &amp;quot;Label&amp;quot;: &amp;quot;PERSON&amp;quot;,
+              &amp;quot;Matches&amp;quot;: [
+                {
+                  &amp;quot;End&amp;quot;: 51,
+                  &amp;quot;Start&amp;quot;: 38,
+                  &amp;quot;Text&amp;quot;: &amp;quot;Kurt Vonnegut&amp;quot;
+                }
+              ],
+              &amp;quot;Name&amp;quot;: &amp;quot;Kurt Vonnegut&amp;quot;
+            },
+            {
+              &amp;quot;Label&amp;quot;: &amp;quot;PERSON&amp;quot;,
+              &amp;quot;Matches&amp;quot;: [
+                {
+                  &amp;quot;End&amp;quot;: 64,
+                  &amp;quot;Start&amp;quot;: 53,
+                  &amp;quot;Text&amp;quot;: &amp;quot;Jules Verne&amp;quot;
+                }
+              ],
+              &amp;quot;Name&amp;quot;: &amp;quot;Jules Verne&amp;quot;
+            },
+            {
+              &amp;quot;Label&amp;quot;: &amp;quot;PERSON&amp;quot;,
+              &amp;quot;Matches&amp;quot;: [
+                {
+                  &amp;quot;End&amp;quot;: 84,
+                  &amp;quot;Start&amp;quot;: 70,
+                  &amp;quot;Text&amp;quot;: &amp;quot;Philip K. Dick&amp;quot;
+                }
+              ],
+              &amp;quot;Name&amp;quot;: &amp;quot;Philip K. Dick&amp;quot;
+            }
+          ]
+        }
+      }
+    }</pre></div>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s4">
+      <h2>📊 Building a Q&amp;amp;A over Docs / RAG-type app</h2>
+      <p class="lead">Next, we&amp;#x27;ll use Zep&amp;#x27;s VectorStore to support a &lt;code&gt;ConversationalRetrievalQAChain&lt;/code&gt; searching over a Zep document Collection.</p>
+      <p>Next, we&#x27;ll use Zep&#x27;s VectorStore to support a <code>ConversationalRetrievalQAChain</code> searching over a Zep document Collection. We&#x27;ve downloaded three public domain scifi books and will be using these for our demo.</p>
+<p>How we approach chunking can significantly effect the performance of our app. Since we have multiple books and will be chunking each of these, we&#x27;ve included the file name as a prefix to each chunk. This ensures the LLM can relate a chunk to its source.</p>
+<div class="code-block"><pre>async function loadDocs(path: string): Promise&amp;lt;Document[]&amp;gt; {
+  return new DirectoryLoader(path, {
+    &amp;quot;.txt&amp;quot;: (path) =&amp;gt; new TextLoader(path),
+  }).load();
+}</pre></div>
+<div class="code-block"><pre>async function loadDocsIntoVectorStore(
+  config: IZepConfig,
+): Promise&amp;lt;ZepVectorStore&amp;gt; {
+  const docs = await loadDocs(&amp;quot;./books&amp;quot;);
+  console.log(`Loaded ${docs.length} documents`);</pre></div>
+<p>// Split the documents into chunks
+  const splitter = new RecursiveCharacterTextSplitter({
+    chunkSize: 1000,
+    chunkOverlap: 200,
+    separators: [&quot;\n\n&quot;, &quot;\n&quot;, &quot; &quot;, &quot;&quot;, &quot;\r&quot;, &quot;\r\n&quot;], // add carriage returns to the list of separators
+  });</p>
+<p>// Split the documents into chunks. We also add the source of the document as a header to each chunk.
+  const chunks = (
+    await Promise.all(
+      docs.map((doc) =&gt;
+        splitter.splitDocuments([doc], {
+          chunkHeader: doc.metadata.source
+            ? &quot;SOURCE: &quot; + doc.metadata.source.split(&quot;/&quot;).pop() + &quot;\n\n&quot;
+            : &quot;&quot;,
+          appendChunkOverlapHeader: true,
+        }),
+      ),
+    )
+  ).flat();</p>
+<p>return ZepVectorStore.fromDocuments(chunks, new FakeEmbeddings(), config);
+}`</p>
+<p>We&#x27;re creating a new Zep Collection, and so the config we pass into the <code>loadDocsIntoStore</code> function includes mandatory <code>embeddingDimensions</code> and <code>isAutoEmbedded</code> fields. The first specifies the width of the vectors generated by the embedding model we&#x27;ll use, and the second tells Zep whether it should embed the documents for us. We can alternatively pass in embedding vectors.</p>
+<div class="code-block"><pre>const config: IZepConfig = {
+  apiUrl: ZEP_API_URL,
+  apiKey: ZEP_API_KEY,
+  collectionName: ZEP_COLLECTION_NAME,
+  embeddingDimensions: 768, // Set to the width of the model configured in Zep. Use 1536 for OpenAI
+  isAutoEmbedded: true,
+};</pre></div>
+<p>Let&#x27;s populate our collection with documents and wait for Zep to embed them. Zep Collections have a <code>status</code> field that we can poll to determine whether all present documents have been embedded.</p>
+<div class="code-block"><pre>// Create a new ZepVectorStore instance and load a document collection into it
+  const vectorStore = await loadDocsIntoVectorStore(ZEP_COLLECTION_CONFIG);</pre></div>
+<div class="code-block"><pre>// Wait for the ZepVectorStore to finish embedding the documents
+  console.log(&amp;quot;Waiting for Zep to finish embedding documents...&amp;quot;);
+  while (true) {
+    const c = await client.document.getCollection(ZEP_COLLECTION_NAME);
+    console.log(
+      `Embedding status: ${c.document_embedded_count}/${c.document_count} documents embedded`,
+    );
+    await new Promise((resolve) =&amp;gt; setTimeout(resolve, 1000));
+    if (c.status === &amp;quot;ready&amp;quot;) {
+      break;
+    }
+  }</pre></div>
+<p>Next, we&#x27;ll configure our memory and chain classes and question the LLM about the books. We&#x27;ve configured the <code>ZepMemory</code> with a <code>memoryKey</code> and other fields. These need to be aligned with the prompts a chain uses and are dependent on the chain class.</p>
+<div class="code-block"><pre>// Let&amp;#x27;s create a new ZepMemory instance. This will be used to store the current state of the conversation.
+// Zep will also auto-summarize and enrich memories for you.
+const memory = new ZepMemory({
+  sessionId,
+  baseURL: ZEP_API_URL,
+  apiKey: ZEP_API_KEY,
+  memoryKey: &amp;quot;chat_history&amp;quot;,
+  inputKey: &amp;quot;question&amp;quot;, // The key for the input to the chain
+  outputKey: &amp;quot;text&amp;quot;, // The key for the final conversational output of the chain
+});</pre></div>
+<div class="code-block"><pre>// Create a new ConversationalRetrievalQAChain instance
+// Initialize the chain with the model, the vector store, and the memory
+// We&amp;#x27;ll configure the VectorStore&amp;#x27;s Retriever to use Maximal Marginal Relevance reranking.
+// This will re-rank the search results to ensure that the results are diverse.
+const chain = ConversationalRetrievalQAChain.fromLLM(
+  model,
+  vectorStore.asRetriever({
+    searchType: &amp;quot;mmr&amp;quot;,
+    k: 4,
+  }),
+  { memory: memory },
+);</pre></div>
+<p>In the code above, we&#x27;re passing in the <code>ZepVectorStore</code> class as a LangChain <code>Retriever. </code>Under the hood, Zep uses cosine similarity normalized to [0,1] to order search results. Here, we&#x27;re configuring the Zep retriever to use Maximal Marginal Relevance to re-rank search results for diversity. This is useful for RAG apps but domain-dependent, and you should explore how helpful it is for your use case.</p>
+<p>The trace for a call to the chain is above. With the <code>ConversationalRetrievalQAChain</code>, multiple calls are made to the LLM. First, depicted above, the LLM is provided with the user&#x27;s question and the chat history and is asked to rephrase the question given this context. The rephrased question is then used to search over the document collection.</p>
+<p>This approach is helpful when a user&#x27;s question alone does not convey enough context to search the vector database.</p>
+<p>I mentioned above how a thoughtful approach to chunking is essential to how well our app works. Well, so is data preparation. In looking at the search results from the vector store, I see that the first result is the Project Gutenberg preface to the book, as it is close in the vector space to our book-related query.</p>
+<p>We&#x27;d probably want to remove the preface when loading the files and before chunking to improve our results. The other three results are, however, relevant.</p>
+<p>Next, the search results are added to the prompt, along with the rephrased question. The LLM&#x27;s response is highlighted in green below. It does a pretty good job of making sense of the document chunks we&#x27;ve provided it. The &quot;source&quot; header we added to each chunk has ensured that results relevant to Philip K. Dick are returned.</p>
+<p>There are alternative approaches to summarizing and refining search results before populating them into a prompt. These do come at the cost of additional LLM calls, so it&#x27;s worth exploring the value trade-off for your app.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s5">
+      <h2>🔗 Building a REACT-type agent with Zep Memory Retrieval and Search as Tools</h2>
+      <p class="lead">The last type of app we&amp;#x27;ll build is an agent that uses Zep&amp;#x27;s conversational history and vector store as tools.</p>
+      <p>The last type of app we&#x27;ll build is an agent that uses Zep&#x27;s conversational history and vector store as tools. We&#x27;ll take a quick look at the set up below, but will spend time on the tools themselves.</p>
+<p>We&#x27;re using the <code>initializeAgentExecutorWithOptions</code> helper function to initialize the agent, passing in our tool list and LLM. Passing in a ZepMemory class is also possible, but we&#x27;ll keep it simple for this demonstration.</p>
+<p>Each tool has a description that the LLM uses to determine which tool will most likely help it with its task. Note that the agent and tool setup below is fairly primitive. You can build far more sophisticated ones using Zod and OpenAI Functions.</p>
+<div class="code-block"><pre>// Let&amp;#x27;s build an agent!
+const zepMemoryRetriever = await new ZepRetriever({
+    url: ZEP_API_URL,
+    apiKey: ZEP_API_KEY,
+    sessionId: sessionId,
+});</pre></div>
+<div class="code-block"><pre>// Create some tools.
+const tools = [
+  new DynamicTool({
+    name: &amp;quot;peopleRetriever&amp;quot;,
+    description: `call this if you want to search for authors, characters, or people we may have discussed in the
+past. input should be a search string`,
+    func: async (query) =&amp;gt;
+      await getPeopleFromMemoryTool(query, zepMemoryRetriever),
+  }),
+  new DynamicTool({
+    name: &amp;quot;bookSearch&amp;quot;,
+    description:
+      &amp;quot;call this if to search for passages in sci-fi books. input should be a search string&amp;quot;,
+    func: async (query) =&amp;gt; await getBookSearchTool(query, vectorStore),
+  }),
+];</pre></div>
+<div class="code-block"><pre>const executor = await initializeAgentExecutorWithOptions(tools, model, {
+  agentType: &amp;quot;zero-shot-react-description&amp;quot;,
+});</pre></div>
+<p>Zep has a special LangChain Retriever, the aptly named <code>ZepRetriever</code>, for searching over a session&#x27;s chat history. We&#x27;re using this above in our first tool, the <code>peopleRetriever</code>. As the description implies, this tool searches over historical chat messages for a person. The tool also filters chat message results using Zep&#x27;s entity metadata for <code>PERSON</code> entities.</p>
+<div class="code-block"><pre>async function getPeopleFromMemoryTool(
+  query: string,
+  retriever: ZepRetriever,
+): Promise&amp;lt;string&amp;gt; {
+  return retriever
+    .getRelevantDocuments(query, {
+      metadata: {
+        where: { jsonpath: &amp;#x27;$.system.entities[*] ? (@.Label == &amp;quot;PERSON&amp;quot;)&amp;#x27; },
+      },
+    })
+    .then((docs) =&amp;gt; {
+      const filteredDocs = docs.filter((doc) =&amp;gt; doc.metadata.dist &amp;gt;= 0.8);
+      return (
+        filteredDocs.length &amp;gt; 0
+          ? filteredDocs.map((doc) =&amp;gt; doc.pageContent)
+          : [&amp;quot;No results&amp;quot;]
+      ).join(&amp;quot;\n\n&amp;quot;);
+    });
+}</pre></div>
+<p>The function also filters for a cosine similarity above 0.8 to ensure that irrelevant chat messages are not returned to the LLM.</p>
+<p>In the trace above, we can see that we&#x27;ve asked the agent whether we&#x27;ve previously discussed Kurt Vonnegut. The agent has correctly determined that it should use the <code>peopleRetriever</code> tool with input <code>Kurt Vonnegut</code>.</p>
+<p>Next, the search results are returned from the tool, passed to the LLM, and it has determined that we have indeed mentioned Kurt Vonnegut in our prior conversations.</p>
+<p>Finally, let&#x27;s take a look at the agent&#x27;s use of the <code>bookSearch</code> tool. We&#x27;ve asked it the following question: Which sci-fi novel featured a gun club headquartered in Baltimore?</p>
+<p>Viewing the trace below, we see the agent chose the correct tool and searched the book collection for gun club Baltimore. The vector database returned book chunks relevant to the query, and the agent responds with From the Earth to the Moon by Jules Verne.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s6">
+      <h2>💡 Summing it up</h2>
+      <p class="lead">We&amp;#x27;ve explored how to build three foundational LLM app types using LangChain.</p>
+      <p>We&#x27;ve explored how to build three foundational LLM app types using LangChain.js and Zep, and, using LangSmith, took a look under the hood as to how things worked.</p>
+<p>As mentioned above, the chains, agents, and tools we used are quite primitive. The LangChain docs are worth exploring as you consider how to solve different problems when building your app. You&#x27;ll see most value from Zep&#x27;s features, including message metadata, when you start to customize or build your own agents and tools.</p>
+      
+    </section>
+    <section class="section" id="s7">
+      <h2>🛠️ Next Steps</h2>
+      <p class="lead">- Sign up for the LangSmith beta
+- Get setup with Zep using the Quick Start Guide</p>
+      <div class="card"><ul><li>Sign up for the LangSmith beta</li><li>Get setup with Zep using the Quick Start Guide</li></ul></div>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s8">
+      <h2>📈 Related content</h2>
+      <p class="lead">.</p>
+      <p>.png)PartnerDeep Agents</p>
+<p>#### Building a company due diligence agent with Deep Agents, LangSmith and Parallel</p>
+<p>Matt HarrisNick MartitschSrimanth TangedipalliKaran SinghMay 8, 20269min[](/blog/building-a-company-due-diligence-agent-with-deep-agents-langsmith-and-parallel).png)Agent ArchitectureLangSmithOpen Source</p>
+<p>#### How LangSmith and LangChain OSS Help You Meet EU AI Act Requirements</p>
+<p>Jacob TalbotBecca WengApril 27, 20267min[](/blog/langsmith-langchain-oss-eu-ai-act).png)Case StudiesLangSmith</p>
+<p>#### How Credit Genie used Insights Agent to improve their AI financial assistant</p>
+<p>David LiJeffrey NgaiGoyo Lozano PalacioCharles YuanApril 20, 20265min[](/blog/credit-genie-insights-agent-financial-assistant)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s9">
+      <h2>🎯 See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+<p>](/contact-sales)</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+  </div>
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/zep-x-langsmith-foundations-of-llm-app-development-with-langchain-js-and-zep" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

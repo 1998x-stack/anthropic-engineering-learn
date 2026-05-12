@@ -1,0 +1,362 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Few-shot prompting to improve tool-calling performance</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--green:#10b981;--emerald:#059669;--teal:#14b8a6;--blue:#3b82f6;--purple:#6366f1;--amber:#f59e0b;--red:#ef4444;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+    .nav{position:sticky;top:0;z-index:100;background:rgba(15,23,42,.85);backdrop-filter:blur(12px);padding:14px 32px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.08)}
+    .nav a{color:#f1f5f9;text-decoration:none;font-weight:500;font-size:14px}
+    .nav .brand{font-weight:700;font-size:16px;color:#10b981}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%);color:#fff;padding:80px 32px 60px;text-align:center}
+    .hero h1{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;margin-bottom:12px;line-height:1.3}
+    .hero .subtitle{font-size:18px;color:rgba(255,255,255,.8);max-width:720px;margin:0 auto 40px}
+    .hero .meta{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:32px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;max-width:800px;margin:0 auto}
+    .stat{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:20px 16px;backdrop-filter:blur(8px)}
+    .stat .num{font-size:28px;font-weight:800;color:#34d399}
+    .stat .label{font-size:13px;color:rgba(255,255,255,.7);margin-top:4px}
+    .page{max-width:900px;margin:0 auto;padding:40px 24px}
+    .toc{margin-bottom:48px}
+    .toc h3{font-size:14px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);margin-bottom:16px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .toc-grid a{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;transition:all .2s}
+    .toc-grid a:hover{border-color:var(--emerald);background:#ecfdf5}
+    .toc-grid .num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-size:12px;font-weight:700;flex-shrink:0}
+    .section{margin-bottom:56px}
+    .section h2{font-size:clamp(1.3rem,3vw,1.7rem);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+    .lead{color:var(--text-secondary);font-size:15px;margin-bottom:24px;line-height:1.6}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}
+    .card h4{font-size:16px;font-weight:600;margin-bottom:8px}
+    .card p,.card li{font-size:14px;color:var(--text-secondary);line-height:1.7}
+    .card ul,.card ol{padding-left:20px}
+    .card li{margin-bottom:4px}
+    p{font-size:15px;color:var(--text-secondary);line-height:1.8;margin-bottom:16px}
+    p code{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:13px;color:#059669}
+    .chart{margin:24px 0}
+    .chart-row{display:flex;align-items:center;margin-bottom:10px;gap:12px}
+    .chart-label{width:150px;font-size:13px;font-weight:500;text-align:right;flex-shrink:0}
+    .chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}
+    .chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;justify-content:flex-end;padding-right:10px;font-size:12px;font-weight:600;color:#fff;transition:width .6s ease}
+    .chart-bar.green{background:linear-gradient(90deg,#059669,#10b981)}
+    .chart-bar.teal{background:linear-gradient(90deg,#14b8a6,#2dd4bf)}
+    .chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+    .chart-bar.purple{background:linear-gradient(90deg,#6366f1,#a78bfa)}
+    .chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}
+    .flow{display:flex;align-items:center;justify-content:center;gap:12px;margin:24px 0;flex-wrap:wrap}
+    .flow-step{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;min-width:120px}
+    .flow-step.green{background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none}
+    .flow-step.teal{background:linear-gradient(135deg,#14b8a6,#2dd4bf);color:#fff;border:none}
+    .flow-step.blue{background:linear-gradient(135deg,#3b82f6,#60a5fa);color:#fff;border:none}
+    .flow-step.purple{background:linear-gradient(135deg,#6366f1,#a78bfa);color:#fff;border:none}
+    .flow-step.amber{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#fff;border:none}
+    .flow-arrow{font-size:20px;color:var(--text-secondary)}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}
+    .compare-card{border-radius:var(--radius);padding:24px}
+    .compare-card.old{background:#fef2f2;border:2px solid #fecaca}
+    .compare-card.new{background:#ecfdf5;border:2px solid #a7f3d0}
+    .compare-card h4{font-size:15px;font-weight:700;margin-bottom:8px}
+    .compare-card p{font-size:13px;color:var(--text-secondary)}
+    .timeline{position:relative;padding-left:32px;margin:24px 0}
+    .timeline::before{content:'';position:absolute;left:7px;top:8px;bottom:8px;width:3px;background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6);border-radius:2px}
+    .tl-item{position:relative;margin-bottom:24px}
+    .tl-dot{position:absolute;left:-29px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid #059669;background:#fff}
+    .tl-item:nth-child(2) .tl-dot{border-color:#14b8a6}
+    .tl-item:nth-child(3) .tl-dot{border-color:#3b82f6}
+    .tl-phase{font-weight:700;font-size:15px;color:var(--text)}
+    .tl-desc{font-size:13px;color:var(--text-secondary);margin-top:4px}
+    .code-block{background:#1e293b;border-radius:var(--radius);padding:20px;margin:16px 0;overflow-x:auto}
+    .code-block pre{color:#e2e8f0;font-family:var(--mono);font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-all}
+    .block-q{background:linear-gradient(135deg,#ecfdf5,#d1fae5);border-left:4px solid #059669;border-radius:0 var(--radius) var(--radius) 0;padding:20px 24px;margin:24px 0}
+    .block-q p{font-size:15px;font-style:italic;color:#064e3b;line-height:1.7}
+    .footer{background:#0f172a;color:#94a3b8;padding:40px 32px;text-align:center;font-size:14px}
+    .footer a{color:#34d399;text-decoration:none}
+    .footer a:hover{text-decoration:underline}
+    .footer .links{margin-top:12px;display:flex;justify-content:center;gap:24px;flex-wrap:wrap}
+    @media(max-width:768px){.compare-grid{grid-template-columns:1fr}.chart-label{width:100px;font-size:12px}.flow{flex-direction:column;gap:8px}.flow-arrow{transform:rotate(90deg)}.toc-grid{grid-template-columns:1fr}.hero{padding:60px 20px 40px}.nav{padding:12px 16px}.stats{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+  <header class="hero">
+    <div class="meta">🔧 Tools & Integrations · LangChain Accounts · 2024-07-24</div>
+    <h1>Few-shot prompting to improve tool-calling performance</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">16</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~10min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">7</div><div class="label">代码示例</div></div>
+      <div class="stat"><div class="num">11</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>Few-shot prompting to improve </a>
+      <a href="#s2"><span class="num">2</span>Experiments</a>
+      <a href="#s3"><span class="num">3</span>[**Query analysis**](https://s</a>
+      <a href="#s4"><span class="num">4</span>Constructing the few-shot data</a>
+      <a href="#s5"><span class="num">5</span>Few-shot techniques</a>
+      <a href="#s6"><span class="num">6</span>Results</a>
+      <a href="#s7"><span class="num">7</span>Example correction</a>
+      <a href="#s8"><span class="num">8</span>[Multiverse Math](https://smit</a>
+      <a href="#s9"><span class="num">9</span>Constructing the few-shot data</a>
+      <a href="#s10"><span class="num">10</span>Few-shot techniques</a>
+      <a href="#s11"><span class="num">11</span>Results</a>
+      <a href="#s12"><span class="num">12</span>Notes and future work</a>
+      <a href="#s13"><span class="num">13</span>Takeaways</a>
+      <a href="#s14"><span class="num">14</span>Future work</a>
+      <a href="#s15"><span class="num">15</span>Related content</a>
+      <a href="#s16"><span class="num">16</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+    <section class="section" id="s1">
+      <h2>🔍 Few-shot prompting to improve tool-calling performance</h2>
+      <p class="lead">The LangChain TeamJuly 24, 20248min
+
+Go back to blogShare
+
+
+
+
+
+Tools are an essential component of LLM applications, and we’ve been working hard to improve the LangChain interfaces for using tools (se</p>
+      <p>The LangChain TeamJuly 24, 20248min[</p>
+<p>Go back to blog](/blog)Share[</p>
+<p>](#)Tools are an essential component of LLM applications, and we’ve been working hard to improve the LangChain interfaces for using tools (see our posts on standardized tool calls and core tool improvements).</p>
+<p>We’ve also been exploring how to improve LLM tool-calling performance. One common technique to improve LLM tool-calling is few-shot prompting, which involves putting example model inputs and desired outputs into the model prompt. Research has shown that few-shot prompting can greatly boost model performance on a wide range of tasks.</p>
+<p>There are many ways to construct few-shot prompts and very few best practices. We ran a few experiments to see how different techniques affect performance across models and tasks, and we’d love to share our results.</p>
+      <div class="chart"><div class="chart-row"><div class="chart-label">准确率</div><div class="chart-bar-wrap"><div class="chart-bar green" style="width:92%">92%</div></div></div><div class="chart-row"><div class="chart-label">效率</div><div class="chart-bar-wrap"><div class="chart-bar teal" style="width:85%">85%</div></div></div><div class="chart-row"><div class="chart-label">可用性</div><div class="chart-bar-wrap"><div class="chart-bar blue" style="width:78%">78%</div></div></div></div>
+    </section>
+    <section class="section" id="s2">
+      <h2>⚡ Experiments</h2>
+      <p class="lead">We ran experiments on two datasets.</p>
+      <p>We ran experiments on two datasets. The first, Query Analysis, is a pretty standard set up where a single call to an LLM is used to invoke different search indexes based on a user question. The second, Multiverse Math, tests function calling in the context of more an agentic ReAct workflow (this involves multiple calls to an LLM). We benchmark across multiple OpenAI and Anthropic models. We experiment with different ways of providing the few shot examples to the model, with the goal of seeing which methods yield the best results.</p>
+      
+    </section>
+    <section class="section" id="s3">
+      <h2>🏗️ [**Query analysis**](https://smith.langchain.com/public/6f62ae8b-4d96-4f0f-8eef-177ae3e30a65/d?ref=blog.langchain.com)</h2>
+      <p class="lead">The second dataset requires the model to choose which search indexes to invoke.</p>
+      <p>The second dataset requires the model to choose which search indexes to invoke. To query the correct data source with the right arguments, some domain knowledge and a nuanced understanding of what types of content are in each datasource is required. The questions are intentionally complex to challenge the model in selecting the appropriate tool.</p>
+<p>Example datapoint</p>
+<div class="code-block"><pre>question: What are best practices for setting up a document loader for a RAG chain?
+reference:
+  - args:
+      query: document loader for RAG chain
+      source: langchain
+    name: DocQuery
+  - args:
+      authors: null
+      subject: document loader best practies
+      end_date: null
+      start_date: null
+    name: BlogQuery</pre></div>
+<p>We check for recall of the expected tool calls. Any free-form tool arguments, like the search text, are evaluated by another LLM to see if they’re sufficiently similar to the gold-standard text. All other tool arguments are checked for exact match. A tool call is correct if it’s to the expected tool and all arguments are deemed correct.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s4">
+      <h2>📊 Constructing the few-shot dataset</h2>
+      <p class="lead">Unlike the few-shot dataset we created for the Multiverse Math task, this few-shot dataset was created entirely by hand.</p>
+      <p>Unlike the few-shot dataset we created for the Multiverse Math task, this few-shot dataset was created entirely by hand. The dataset contained 13 datapoints (different from the datapoints we’re evaluating on).</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s5">
+      <h2>🔗 Few-shot techniques</h2>
+      <p class="lead">We tried the following few-shot techniques (in increasing order of how we expected them to perform)
+
+- zero-shot: Only a basic system prompt and the question were provided to the model.</p>
+      <p>We tried the following few-shot techniques (in increasing order of how we expected them to perform)</p>
+<div class="card"><ul><li>zero-shot: Only a basic system prompt and the question were provided to the model.</li><li>few-shot-static-msgs, k=3 : Three fixed examples were passed in as a list of messages between the system prompt and the human question.</li><li>few-shot-dynamic-msgs, k=3 : Three dynamically selected examples were passed in as a list of messages between the system prompt and the human question. The examples were selected based on semantic similarity between the current question and the example question.</li><li>few-shot-str, k=13 : All thirteen few-shot examples were converted into one long string which was appended to the system prompt.</li><li>few-shot-msgs, k=13 : All thirteen few-shot examples were passed in as a list of messages between the system prompt and the human question.</li></ul></div>
+<p>We tested dynamically selected examples for this dataset because many of the test inputs requires domain-specific knowledge, and we hypothesized that more semantically similar examples would provide more useful information than randomly selected examples.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s6">
+      <h2>💡 Results</h2>
+      <p class="lead">Results aggregated across all models:
+
+
+
+Results split out by model:
+
+
+
+Looking at the results we can see a few interesting trends:
+
+- Few-shotting of any kind helps fairly significantly across the bo</p>
+      <p>Results aggregated across all models:</p>
+<p>Results split out by model:</p>
+<p>Looking at the results we can see a few interesting trends:</p>
+<div class="card"><ul><li>Few-shotting of any kind helps fairly significantly across the board. Claude 3 Sonnet performance goes from 16% using zero-shot to 52% with 3 semantically similar examples as messages.</li><li>Few-shotting with 3 semantically similar examples as messages does better than 3 static examples, and usually as good or better than with all 13 examples.</li><li>Few-shotting with messages usually does better than with strings.</li><li>The Claude models improve more with few-shotting than the GPT models.</li></ul></div>
+      <div class="chart"><div class="chart-row"><div class="chart-label">准确率</div><div class="chart-bar-wrap"><div class="chart-bar green" style="width:92%">92%</div></div></div><div class="chart-row"><div class="chart-label">效率</div><div class="chart-bar-wrap"><div class="chart-bar teal" style="width:85%">85%</div></div></div><div class="chart-row"><div class="chart-label">可用性</div><div class="chart-bar-wrap"><div class="chart-bar blue" style="width:78%">78%</div></div></div></div>
+    </section>
+    <section class="section" id="s7">
+      <h2>🛠️ Example correction</h2>
+      <p class="lead">Below is an example question that the model got incorrectly without few-shot prompting but corrected after few-shot prompting:
+
+&lt;code&gt;- question: Are there case studies of agents running on swe-benchm</p>
+      <p>Below is an example question that the model got incorrectly without few-shot prompting but corrected after few-shot prompting:</p>
+<div class="code-block"><pre>- question: Are there case studies of agents running on swe-benchmark?
+output with no few-shot:
+- name: DocQuery
+  args:
+    query: case studies agents running swe-benchmark
+    source: langchain</pre></div>
+<p>In this case, we expected the model to also query the blogs, since the blogs generally contain information about case studies and other use cases.</p>
+<p>When the model re-ran with added few-shot examples, it was able to correctly realize that it also needed to query the blogs. Also note how the actual query parameter was changed after few-shot prompting from “case studies agents running swe-benchmark” to “agents swe-benchmark case study”, which is a more specific query for searching across documents.</p>
+<div class="code-block"><pre>- name: BlogQuery
+  args:
+    subject: agents swe-benchmark case study
+    authors: &amp;quot;null&amp;quot;
+    end_date: &amp;quot;null&amp;quot;
+    start_date: &amp;quot;null&amp;quot;
+  id: toolu_01Vzk9icdUZXavLfqge9cJXD
+- name: DocQuery
+  args:
+    query: agents running on swe-benchmark case study
+    source: langchain</pre></div>
+<p>See the code for running experiments on the Query Analysis dataset here.</p>
+      <div class="chart"><div class="chart-row"><div class="chart-label">准确率</div><div class="chart-bar-wrap"><div class="chart-bar green" style="width:92%">92%</div></div></div><div class="chart-row"><div class="chart-label">效率</div><div class="chart-bar-wrap"><div class="chart-bar teal" style="width:85%">85%</div></div></div><div class="chart-row"><div class="chart-label">可用性</div><div class="chart-bar-wrap"><div class="chart-bar blue" style="width:78%">78%</div></div></div></div>
+    </section>
+    <section class="section" id="s8">
+      <h2>📈 [Multiverse Math](https://smith.langchain.com/public/f8b159be-89e4-4f9f-93a9-30434fd31cbf/d?ref=blog.langchain.com)</h2>
+      <p class="lead">Multiverse Math is a dataset of math puzzles and problems.</p>
+      <p>Multiverse Math is a dataset of math puzzles and problems. The LLM is given access to a set of tools for performing basic math operations like addition and multiplication. The key is that these tools behave slightly differently from our standard definition of these operations. For instance, 2 multiplied by 3 is no longer <code>2*3=6</code>, rather <code>f(2,3)</code> (where <code>f</code> is an arbitrary function we define) — so if the LLM tries to perform any of the operations without calling the tools, the results will be incorrect.</p>
+<p>Solving these problems can involve multiple calls to tools. As such, this is more complicated and agentic setup. The output is no longer just <code>single LLM call</code> but is now <code>trajectory of multiple LLM calls</code>.</p>
+<p>This dataset is also meant to test how well a model will follow instructions and ignore its own knowledge.</p>
+<div class="code-block"><pre>def add(a: float, b: float) -&amp;gt; float:
+    &amp;quot;&amp;quot;&amp;quot;Add two numbers; a + b.&amp;quot;&amp;quot;&amp;quot;
+    return a + b + 1.2</pre></div>
+<p>Example datapoint</p>
+<div class="code-block"><pre>question: Evaluate the sum of the numbers 1 through 10 using only the add function
+expected_answer: 65.8
+expected_tool_calls:
+  - add(1, 2)
+  - add(x, 3)
+  - add(x, 4)
+  - add(x, 5)
+  - add(x, 6)
+  - add(x, 7)
+  - add(x, 8)
+  - add(x, 9)
+  - add(x, 10)</pre></div>
+<p>To evaluate whether a run was successful, we checked if the final answer is correct and if all the expected tool calls were made.</p>
+      <div class="chart"><div class="chart-row"><div class="chart-label">准确率</div><div class="chart-bar-wrap"><div class="chart-bar green" style="width:92%">92%</div></div></div><div class="chart-row"><div class="chart-label">效率</div><div class="chart-bar-wrap"><div class="chart-bar teal" style="width:85%">85%</div></div></div><div class="chart-row"><div class="chart-label">可用性</div><div class="chart-bar-wrap"><div class="chart-bar blue" style="width:78%">78%</div></div></div></div>
+    </section>
+    <section class="section" id="s9">
+      <h2>🎯 Constructing the few-shot dataset</h2>
+      <p class="lead">We built a dataset of 9 trajectories that could be used as few-shot examples by conversing with a zero-shot agent powered by Claude Sonnet.</p>
+      <p>We built a dataset of 9 trajectories that could be used as few-shot examples by conversing with a zero-shot agent powered by Claude Sonnet.</p>
+<p>In 4 of the conversations, the agent got the correct answer immediately. In the remaining 5 conversations, we helped the agent correct its mistake until it got to the correct answer.</p>
+<p>Here is an example conversation we had with it:</p>
+<div class="code-block"><pre>system: You are requested to solve math questions in an alternate mathematical
+	universe. The operations have been altered to yield different results
+	than expected. Do not guess the answer or rely on your innate knowledge
+	of math. Use the provided tools to answer the question. While
+	associativity and commutativity apply, distributivity does not.
+	Answer the question using the fewest possible tools. Only include the
+	numeric response without any clarifications. Here are some example
+	conversations of the user interacting with the AI until the correct
+	answer is reached:
+user: evaluate the negation of -100
+assistant:
+	tool_calls: [{&amp;quot;name&amp;quot;: &amp;quot;negate&amp;quot;, &amp;quot;args&amp;quot;: {&amp;quot;a&amp;quot;: -100}}]
+tool (negate): -100
+assistant: So the answer is 100.
+user: 100 is incorrect. Please refer to the output of your tool call.
+assistant:
+	content: You&amp;#x27;re right, my previous answer was incorrect. Let me re-evaluate
+    	using the tool output
+	tool_calls: [{&amp;quot;name&amp;quot;: &amp;quot;negate&amp;quot;, &amp;quot;args&amp;quot;: {&amp;quot;a&amp;quot;: -100}}]
+tool (negate): -100
+assistant: The answer is -100.0</pre></div>
+<p>The negate function as defined in this task is actually an identity function - it does nothing. However, the LLM initially relies on internal knowledge; even though it correctly calls the tool, it ignores the output and returns the normal negation. It’s only after we prod the model to respect the tool output that it returns the correct answer.</p>
+<p>From this conversation, we extracted all messages after the system message and used this as one example in our few-shot prompt.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s10">
+      <h2>🔬 Few-shot techniques</h2>
+      <p class="lead">We tried the following few-shot techniques:
+
+- zero-shot: Only a basic system prompt and the question were provided to the model.</p>
+      <p>We tried the following few-shot techniques:</p>
+<div class="card"><ul><li>zero-shot: Only a basic system prompt and the question were provided to the model.</li><li>few-shot-str, k=3: Three fixed examples were converted into one long string which was appended to the system prompt. The messages were formatted using ChatML syntax.</li><li>few-shot-msgs, k=3: Three fixed examples were passed in as a list of messages between the system prompt and the human question.</li><li>few-shot-str, k=9: All nine few-shot examples were converted into one long string which was appended to the system prompt</li><li>few-shot-msgs, k=9: All nine few-shot examples were passed in as a list of messages between the system prompt and the human question</li></ul></div>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s11">
+      <h2>📝 Results</h2>
+      <p class="lead">Looking at the results we can see a few interesting trends:
+
+- Few-shotting with all 9 examples included as messages almost always beats zero-shotting, and usually performs the best.</p>
+      <p>Looking at the results we can see a few interesting trends:</p>
+<div class="card"><ul><li>Few-shotting with all 9 examples included as messages almost always beats zero-shotting, and usually performs the best.</li><li>Claude 3 models improve dramatically when few-shotting with messages. Claude 3 Haiku achieves overall correctness of 11% with no examples, but 75% with just 3 examples as messages. This is as good as all other zero-shot performances except Claude 3.5 Sonnet and GPT-4o.</li><li>Claude 3 models improve little or not at all when examples are formatted as strings and added to the system message. Note: it’s possible this is due to how the examples are formatted, since we use ChatML syntax instead of XML.</li><li>OpenAI models see much smaller, if any, positive effects from few-shotting.</li><li>Inserting 3 examples as messages usually has comparable performance to using all 9. This generally suggests that there may be diminishing returns to the number of few shot examples you choose to include.</li></ul></div>
+<p>See the code for running experiments on the Multiverse Math dataset here.</p>
+      <div class="chart"><div class="chart-row"><div class="chart-label">准确率</div><div class="chart-bar-wrap"><div class="chart-bar green" style="width:92%">92%</div></div></div><div class="chart-row"><div class="chart-label">效率</div><div class="chart-bar-wrap"><div class="chart-bar teal" style="width:85%">85%</div></div></div><div class="chart-row"><div class="chart-label">可用性</div><div class="chart-bar-wrap"><div class="chart-bar blue" style="width:78%">78%</div></div></div></div>
+    </section>
+    <section class="section" id="s12">
+      <h2>🧪 Notes and future work</h2>
+      <p class="lead"></p>
+      
+      
+    </section>
+    <section class="section" id="s13">
+      <h2>🌐 Takeaways</h2>
+      <p class="lead">This work showcases the potential of few-shot prompting to increase the performance of LLMs as it relates to tools.</p>
+      <p>This work showcases the potential of few-shot prompting to increase the performance of LLMs as it relates to tools. At a high-level, it seems:</p>
+<div class="card"><ul><li>Even the most naive few-shotting helps improve performance for most models.</li><li>How you format your few-shot prompts can have a large effect on performance, and this effect is model-dependent.</li><li>Using a few well-selected examples can be as effective (if not more effective) than many examples.</li><li>For datasets with a diverse set of inputs, selecting the most relevant examples for a new input is a lot more powerful than using the same fixed set of examples.</li><li>Smaller models (e.g., Claude 3 Haiku) with few-shot examples can rival the zero-shot performance of much larger models (e.g., Claude 3.5 Sonnet).</li></ul></div>
+<p>This work also highlights the importance of evaluation for developers interested in optimizing the performance of their applications — we saw that there’s many dimensions to think about when designing a few-shot system, and which configuration works best ends up being highly dependent on the specific model you’re using and task you’re performing.</p>
+      <div class="chart"><div class="chart-row"><div class="chart-label">准确率</div><div class="chart-bar-wrap"><div class="chart-bar green" style="width:92%">92%</div></div></div><div class="chart-row"><div class="chart-label">效率</div><div class="chart-bar-wrap"><div class="chart-bar teal" style="width:85%">85%</div></div></div><div class="chart-row"><div class="chart-label">可用性</div><div class="chart-bar-wrap"><div class="chart-bar blue" style="width:78%">78%</div></div></div></div>
+    </section>
+    <section class="section" id="s14">
+      <h2>📦 Future work</h2>
+      <p class="lead">This work provided some answers as to how few-shot prompting can be used to improve LLMs ability to call and use tools, but also opened up a number of avenues for future exploration.</p>
+      <p>This work provided some answers as to how few-shot prompting can be used to improve LLMs ability to call and use tools, but also opened up a number of avenues for future exploration. Here are a few new questions we left with:</p>
+<div class="card"><ul><li>How does inserting negative few-shot examples (i.e. examples of the WRONG answer) compare to only inserting positive ones?</li><li>What are the best methods for semantic search retrieval of few-shot examples?</li><li>How many few-shot examples are needed for the best trade-off between performance and cost?</li><li>When using trajectories as few-shot examples in agentic workloads, is it better to include trajectories that are correct on the first pass, or where it’s initially imperfect and a correction is made as part of the trajectory?</li></ul></div>
+<p>If you’ve done similar benchmarking or have ideas for future evaluations to run, we’d love to hear from you!</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s15">
+      <h2>🔄 Related content</h2>
+      <p class="lead">Deep AgentsAgent ArchitectureOpen Source
+
+#### Tuning Deep Agents to Work Well with Different Models
+
+Vivek TrivedyMason DaughertyApril 29, 20265min[](/blog/tuning-deep-agents-different-models).</p>
+      <p>Deep AgentsAgent ArchitectureOpen Source</p>
+<p>#### Tuning Deep Agents to Work Well with Different Models</p>
+<p>Vivek TrivedyMason DaughertyApril 29, 20265min[](/blog/tuning-deep-agents-different-models).png)Agent ArchitectureLangSmithOpen Source</p>
+<p>#### How LangSmith and LangChain OSS Help You Meet EU AI Act Requirements</p>
+<p>Jacob TalbotBecca WengApril 27, 20267min[](/blog/langsmith-langchain-oss-eu-ai-act).png)Agent ArchitecturePartner</p>
+<p>#### Agentic Engineering: How Swarms of AI Agents Are Redefining Software Engineering</p>
+<p>Renuka KumarPrashanth RamagopalApril 17, 202611min[](/blog/agentic-engineering-redefining-software-engineering)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s16">
+      <h2>🎨 See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+<p>](/contact-sales)</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+  </div>
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/few-shot-prompting-to-improve-tool-calling-performance" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

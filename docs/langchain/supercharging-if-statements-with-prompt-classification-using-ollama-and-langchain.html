@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Supercharging If-Statements With Prompt Classification Using Ollama and LangChain</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--green:#10b981;--emerald:#059669;--teal:#14b8a6;--blue:#3b82f6;--purple:#6366f1;--amber:#f59e0b;--red:#ef4444;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+    .nav{position:sticky;top:0;z-index:100;background:rgba(15,23,42,.85);backdrop-filter:blur(12px);padding:14px 32px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.08)}
+    .nav a{color:#f1f5f9;text-decoration:none;font-weight:500;font-size:14px}
+    .nav .brand{font-weight:700;font-size:16px;color:#10b981}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%);color:#fff;padding:80px 32px 60px;text-align:center}
+    .hero h1{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;margin-bottom:12px;line-height:1.3}
+    .hero .subtitle{font-size:18px;color:rgba(255,255,255,.8);max-width:720px;margin:0 auto 40px}
+    .hero .meta{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:32px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;max-width:800px;margin:0 auto}
+    .stat{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:20px 16px;backdrop-filter:blur(8px)}
+    .stat .num{font-size:28px;font-weight:800;color:#34d399}
+    .stat .label{font-size:13px;color:rgba(255,255,255,.7);margin-top:4px}
+    .page{max-width:900px;margin:0 auto;padding:40px 24px}
+    .toc{margin-bottom:48px}
+    .toc h3{font-size:14px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);margin-bottom:16px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .toc-grid a{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;transition:all .2s}
+    .toc-grid a:hover{border-color:var(--emerald);background:#ecfdf5}
+    .toc-grid .num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-size:12px;font-weight:700;flex-shrink:0}
+    .section{margin-bottom:56px}
+    .section h2{font-size:clamp(1.3rem,3vw,1.7rem);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+    .lead{color:var(--text-secondary);font-size:15px;margin-bottom:24px;line-height:1.6}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}
+    .card h4{font-size:16px;font-weight:600;margin-bottom:8px}
+    .card p,.card li{font-size:14px;color:var(--text-secondary);line-height:1.7}
+    .card ul,.card ol{padding-left:20px}
+    .card li{margin-bottom:4px}
+    p{font-size:15px;color:var(--text-secondary);line-height:1.8;margin-bottom:16px}
+    p code{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:13px;color:#059669}
+    .chart{margin:24px 0}
+    .chart-row{display:flex;align-items:center;margin-bottom:10px;gap:12px}
+    .chart-label{width:150px;font-size:13px;font-weight:500;text-align:right;flex-shrink:0}
+    .chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}
+    .chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;justify-content:flex-end;padding-right:10px;font-size:12px;font-weight:600;color:#fff;transition:width .6s ease}
+    .chart-bar.green{background:linear-gradient(90deg,#059669,#10b981)}
+    .chart-bar.teal{background:linear-gradient(90deg,#14b8a6,#2dd4bf)}
+    .chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+    .chart-bar.purple{background:linear-gradient(90deg,#6366f1,#a78bfa)}
+    .chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}
+    .flow{display:flex;align-items:center;justify-content:center;gap:12px;margin:24px 0;flex-wrap:wrap}
+    .flow-step{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;min-width:120px}
+    .flow-step.green{background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none}
+    .flow-step.teal{background:linear-gradient(135deg,#14b8a6,#2dd4bf);color:#fff;border:none}
+    .flow-step.blue{background:linear-gradient(135deg,#3b82f6,#60a5fa);color:#fff;border:none}
+    .flow-step.purple{background:linear-gradient(135deg,#6366f1,#a78bfa);color:#fff;border:none}
+    .flow-step.amber{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#fff;border:none}
+    .flow-arrow{font-size:20px;color:var(--text-secondary)}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}
+    .compare-card{border-radius:var(--radius);padding:24px}
+    .compare-card.old{background:#fef2f2;border:2px solid #fecaca}
+    .compare-card.new{background:#ecfdf5;border:2px solid #a7f3d0}
+    .compare-card h4{font-size:15px;font-weight:700;margin-bottom:8px}
+    .compare-card p{font-size:13px;color:var(--text-secondary)}
+    .timeline{position:relative;padding-left:32px;margin:24px 0}
+    .timeline::before{content:'';position:absolute;left:7px;top:8px;bottom:8px;width:3px;background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6);border-radius:2px}
+    .tl-item{position:relative;margin-bottom:24px}
+    .tl-dot{position:absolute;left:-29px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid #059669;background:#fff}
+    .tl-item:nth-child(2) .tl-dot{border-color:#14b8a6}
+    .tl-item:nth-child(3) .tl-dot{border-color:#3b82f6}
+    .tl-phase{font-weight:700;font-size:15px;color:var(--text)}
+    .tl-desc{font-size:13px;color:var(--text-secondary);margin-top:4px}
+    .code-block{background:#1e293b;border-radius:var(--radius);padding:20px;margin:16px 0;overflow-x:auto}
+    .code-block pre{color:#e2e8f0;font-family:var(--mono);font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-all}
+    .block-q{background:linear-gradient(135deg,#ecfdf5,#d1fae5);border-left:4px solid #059669;border-radius:0 var(--radius) var(--radius) 0;padding:20px 24px;margin:24px 0}
+    .block-q p{font-size:15px;font-style:italic;color:#064e3b;line-height:1.7}
+    .footer{background:#0f172a;color:#94a3b8;padding:40px 32px;text-align:center;font-size:14px}
+    .footer a{color:#34d399;text-decoration:none}
+    .footer a:hover{text-decoration:underline}
+    .footer .links{margin-top:12px;display:flex;justify-content:center;gap:24px;flex-wrap:wrap}
+    @media(max-width:768px){.compare-grid{grid-template-columns:1fr}.chart-label{width:100px;font-size:12px}.flow{flex-direction:column;gap:8px}.flow-arrow{transform:rotate(90deg)}.toc-grid{grid-template-columns:1fr}.hero{padding:60px 20px 40px}.nav{padding:12px 16px}.stats{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+  <header class="hero">
+    <div class="meta">🔧 Tools & Integrations · LangChain Accounts · 2024-02-19</div>
+    <h1>Supercharging If-Statements With Prompt Classification Using Ollama and LangChain</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">10</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~7min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">14</div><div class="label">代码示例</div></div>
+      <div class="stat"><div class="num">24</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>Supercharging If-Statements Wi</a>
+      <a href="#s2"><span class="num">2</span>Reintroducing Lumos! 🪄</a>
+      <a href="#s3"><span class="num">3</span>Rebuilding the Calculator 🧮</a>
+      <a href="#s4"><span class="num">4</span>Prompt Classification with Oll</a>
+      <a href="#s5"><span class="num">5</span>`456 x 4343 = `1980408 🔢</a>
+      <a href="#s6"><span class="num">6</span>Scaling Classification For Com</a>
+      <a href="#s7"><span class="num">7</span>What’s Next For Lumos? 🔮</a>
+      <a href="#s8"><span class="num">8</span>References</a>
+      <a href="#s9"><span class="num">9</span>Related content</a>
+      <a href="#s10"><span class="num">10</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+    <section class="section" id="s1">
+      <h2>🔍 Supercharging If-Statements With Prompt Classification Using Ollama and LangChain</h2>
+      <p class="lead">The LangChain TeamFebruary 19, 20246min
+
+Go back to blogShare
+
+
+
+
+
+Editor&amp;#x27;s Note: Andrew Nguonly has been building one of the more impressive projects we&amp;#x27;ve seen recently - an LLM co-pilot f</p>
+      <p>The LangChain TeamFebruary 19, 20246min[</p>
+<p>Go back to blog](/blog)Share[</p>
+<p>](#)Editor&#x27;s Note: Andrew Nguonly has been building one of the more impressive projects we&#x27;ve seen recently - an LLM co-pilot for browsing the web, powered by local LLMs. There are a lot of small architectural decisions made that contain a ton of nuance, and so we&#x27;re super excited to post this blog by him going over one of them in detail.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s2">
+      <h2>⚡ Reintroducing Lumos! 🪄</h2>
+      <p class="lead">I’ve written extensively about Lumos in the past so I’ll keep the reintroduction short and sweet.</p>
+      <p>I’ve written extensively about Lumos in the past so I’ll keep the reintroduction short and sweet. Lumos is an LLM co-pilot for browsing the web, powered by local LLMs. It’s a Chrome extension that scrapes the content on the current page and processes the parsed results in an online, in-memory RAG workflow, all in a single request context. Lumos is built on LangChain and powered by Ollama. It’s open-source and free to use.</p>
+<p>Lumos is great for tasks that we know LLMs are strong at:</p>
+<div class="card"><ul><li>summarizing news articles, threads, and chat histories</li><li>asking questions about restaurant and product reviews</li><li>extracting details from dense technical documentation</li></ul></div>
+<p>I’ve even found Lumos to be helpful with my Spanish studies. The ergonomics of the app are incredibly convenient. As I’m using the app more and more, I’m discovering new ways that LLMs in the browser can be handy.</p>
+      
+    </section>
+    <section class="section" id="s3">
+      <h2>🏗️ Rebuilding the Calculator 🧮</h2>
+      <p class="lead">For text-based tasks, LLMs are creative and clever.</p>
+      <p>For text-based tasks, LLMs are creative and clever. However, they are not designed to be deterministic. Andrej Karpathy once described LLMs as “dream machines.” An operation as simple as computing <code>456*4343</code> is not guaranteed by an LLM. For a complex equation with several operands and operators, even the top models don’t stand a chance.</p>
+<p>What’s <code>456*4343 — 56/(443-11+4)</code>?</p>
+<p>GPT-3.5 incorrectly “computes” 4564343Llama2 incorrectly “computes” 4564343</p>
+<p>LLMs need additional tools for certain work, such as executing code or solving math problems. Lumos is no exception. I don’t recall exactly why I needed a calculator in my browser (calculating taxes?), but I know I didn’t want to pull out my phone or open a new tab. I just wanted my LLM to answer the math problem correctly.</p>
+<p>So, I decided to build a calculator into Lumos.</p>
+      
+    </section>
+    <section class="section" id="s4">
+      <h2>📊 Prompt Classification with Ollama 🦙</h2>
+      <p class="lead">I previously experimented with prompt classification using Ollama and deemed that the technique was very valuable.</p>
+      <p>I previously experimented with prompt classification using Ollama and deemed that the technique was very valuable. The output of a “classification prompt” could supercharge if-statements and branching logic if reliable.</p>
+<p>Although Lumos is not implemented as a LangChain Agent, I wanted the experience of using it to be like that of interacting with one. It should execute tools independent of direct instruction. The app should just know when to use a calculator. Using Ollama to determine if a prompt needed the calculator tool was easy to implement.</p>
+<div class="code-block"><pre>const isArithmeticExpression = async (
+  baseURL: string,
+  model: string,
+  prompt: string,
+): Promise&amp;lt;boolean&amp;gt; =&amp;gt; {
+  // check for prefix trigger
+  if (prompt.trim().toLowerCase().startsWith(&amp;quot;calculate:&amp;quot;)) {
+    return new Promise((resolve) =&amp;gt; resolve(true));
+  }</pre></div>
+<div class="code-block"><pre>// otherwise, attempt to classify prompt
+  const ollama = new Ollama({ baseUrl: baseURL, model: model, temperature: 0, stop: [&amp;quot;.&amp;quot;, &amp;quot;,&amp;quot;]});
+  const question = `Is the following prompt a math equation with numbers and operators? Answer with &amp;#x27;yes&amp;#x27; or &amp;#x27;no&amp;#x27;.\n\nPrompt: ${prompt}`;
+  return ollama.invoke(question).then((response) =&amp;gt; {
+    console.log(`isArithmeticExpression classification response: ${response}`);
+    const answer = response.trim().split(&amp;quot; &amp;quot;)[0].toLowerCase();
+    return answer.includes(&amp;quot;yes&amp;quot;);
+  });
+};</pre></div>
+<p>Simply ask the LLM if the prompt was a math equation with numbers and operators and check if the response contained a “yes” or “no”. Dead simple. The implementation is even reliable without JSON mode or function calling. Prompting an LLM for a binary response contrasts with the approach of asking it to classify against an arbitrary number of potentially unrelated categories. This scenario arises when trying to match prompts with tools.</p>
+<p>Llama2 and Mistral both performed well in my testing. Setting the model temperature to 0 and configuring stop sequences (<code>[&quot;.&quot;, &quot;,&quot;]</code>) improved reliability and response latency even further. Relative to the average inference time experienced by a user for regular prompts (e.g. several seconds), the elapsed time for classification was only incremental. Admittedly, this added latency may not be sufficient for some use cases.</p>
+<p>Lumos console logs</p>
+<p>It’s also important to reiterate that leveraging local LLMs makes this operation effectively free. The utility of Ollama truly shines for this use case. To give users maximum control, the mechanism also includes functionality for a trigger, a prefix that the user can include in the prompt to guarantee that a tool will be executed. This is similar to ChatGPT’s <code>@</code> reference to invoke specific GPTs.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s5">
+      <h2>🔗 `456 x 4343 = `1980408 🔢</h2>
+      <p class="lead">Lumos correctly computes 456*4343
+
+The implementation of Lumos’s calculator is straightforward.</p>
+      <p>Lumos correctly computes 456*4343</p>
+<p>The implementation of Lumos’s calculator is straightforward. It’s built as a LangChain Tool to preserve future portability of the app into a robust Agent. For custom tools, LangChain suggests building a <code>DynamicTool</code> or <code>DynamicStructuredTool</code>, but it’s easy to subclass the base <code>Tool</code> class as well.</p>
+<p>`import { Tool } from &quot;@langchain/core/tools&quot;;</p>
+<p>export class Calculator extends Tool {
+  name = &quot;calculator&quot;;
+  description = &quot;A tool for evaluating arithmetic expressions&quot;;</p>
+<p>constructor() {
+    super();
+  }</p>
+<div class="code-block"><pre>protected _call = (expression: string): Promise&amp;lt;string&amp;gt; =&amp;gt; {
+    const tokens = this._extractTokens(expression);
+    let answer;
+    try {
+      answer = this._evaluateExpression(tokens);
+    } catch (error) {
+      if (error instanceof Error) {
+        answer = `Error: ${error.message}`;
+      } else {
+        answer = &amp;quot;Error: Unable to execute calculator tool.&amp;quot;;
+      }
+    }
+    return Promise.resolve(answer.toString());
+  };</pre></div>
+<p>_extractTokens = (expression: string): string[] =&gt; { ... };</p>
+<p>_evaluateExpression = (tokens: string[]): number =&gt; { ... };
+}`</p>
+<p>When Lumos receives a prompt that resembles a math equation, simple or complex, it simply knows to invoke the calculator.</p>
+      
+    </section>
+    <section class="section" id="s6">
+      <h2>💡 Scaling Classification For Complex Conditionals 🌲</h2>
+      <p class="lead">The classification technique is replicated again for Lumos’s multimodal functionality.</p>
+      <p>The classification technique is replicated again for Lumos’s multimodal functionality. If a user asks about an image, the app should know to download the image from the page. Otherwise, it should skip the download for obvious efficiency reasons. I decided to generalize the approach and make a configurable function.</p>
+<div class="code-block"><pre>const classifyPrompt = async (
+  baseURL: string,
+  model: string,
+  type: string,
+  originalPrompt: string,
+  classifcationPrompt: string,
+  prefixTrigger?: string,
+): Promise&amp;lt;boolean&amp;gt; =&amp;gt; {
+  // check for prefix trigger
+  if (prefixTrigger) {
+    if (originalPrompt.trim().toLowerCase().startsWith(prefixTrigger)) {
+      return new Promise((resolve) =&amp;gt; resolve(true));
+    }
+  }</pre></div>
+<div class="code-block"><pre>// otherwise, attempt to classify prompt
+  const ollama = new Ollama({
+    baseUrl: baseURL,
+    model: model,
+    temperature: 0,
+    stop: [&amp;quot;.&amp;quot;, &amp;quot;,&amp;quot;],
+  });
+  const finalPrompt = `${classifcationPrompt} Answer with &amp;#x27;yes&amp;#x27; or &amp;#x27;no&amp;#x27;.\n\nPrompt: ${originalPrompt}`;
+  return ollama.invoke(finalPrompt).then((response) =&amp;gt; {
+    console.log(`${type} classification response: ${response}`);
+    const answer = response.trim().split(&amp;quot; &amp;quot;)[0].toLowerCase();
+    return answer.includes(&amp;quot;yes&amp;quot;);
+  });
+};</pre></div>
+<p>Now, <code>classifyPrompt()</code> accepts a “classification prompt” and a trigger parameter. The function can be reused throughout the application code.</p>
+<p>The decision to download an image is also predicated on the availability of a multimodal model (e.g. LLaVA). A user must have downloaded one before issuing a prompt to describe an image. In Lumos, user configuration is also checked as part of the download decision.</p>
+<p>`import { getLumosOptions, isMultimodal } from &quot;../pages/Options&quot;;</p>
+<p>const CLS_IMG_TYPE = &quot;isImagePrompt&quot;;
+const CLS_IMG_PROMPT = &quot;Is the following prompt referring to an image or asking to describe an image?&quot;;
+const CLS_IMG_TRIGGER = &quot;based on the image&quot;;</p>
+<p>const options = await getLumosOptions();</p>
+<div class="code-block"><pre>if (
+  isMultimodal(options.ollamaModel) &amp;amp;&amp;amp;
+  (await classifyPrompt(
+    options.ollamaHost,
+    options.ollamaModel,
+    CLS_IMG_TYPE,
+    prompt,
+    CLS_IMG_PROMPT,
+    CLS_IMG_TRIGGER,
+  ))
+) {
+  // download images
+  ...
+}</pre></div>
+<p>Including the classification result in an if-statement expression felt natural, simple, and effective. With this method, a developer has full control over the execution of an application. To some degree, code branches that depend on LLMs potentially become testable!</p>
+<p>For Lumos to determine whether an image is downloaded or not, the classification result is combined with the user’s configuration state. Moreover, consistent decision-making based on combining complex application states (e.g. user configuration, access controls, cache state, etc) and classification results may be more challenging for LLMs to accomplish at scale.</p>
+<p>A/B testing several LLM features at once may benefit from this approach. For sensitive use cases such as permissioned tool execution or privileged data access for RAG, this design may be attractive. No decision can be left to chance.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s7">
+      <h2>🛠️ What’s Next For Lumos? 🔮</h2>
+      <p class="lead">In the short term, I’ll continue to explore integrating more tools into Lumos.</p>
+      <p>In the short term, I’ll continue to explore integrating more tools into Lumos. I’ll evaluate the benefits of migrating to an Agent architecture and chip away at some of the known efficiency and speed challenges with running local LLM apps.</p>
+<p>In the long term, however, there is a bigger opportunity to consider. A Chrome extension is powerful, but it is still very limited in its capability. As I’m thinking through new use cases for LLMs in the browser, it’s worth examining whether or not a new browser is needed altogether. For now, these are just ideas. In the meantime, I’ll just enjoy the rollercoaster that is building LLM apps at this early and exciting time. LangChain and Ollama make the ride a little bit smoother. 😎</p>
+      <div class="chart"><div class="chart-row"><div class="chart-label">准确率</div><div class="chart-bar-wrap"><div class="chart-bar green" style="width:92%">92%</div></div></div><div class="chart-row"><div class="chart-label">效率</div><div class="chart-bar-wrap"><div class="chart-bar teal" style="width:85%">85%</div></div></div><div class="chart-row"><div class="chart-label">可用性</div><div class="chart-bar-wrap"><div class="chart-bar blue" style="width:78%">78%</div></div></div></div>
+    </section>
+    <section class="section" id="s8">
+      <h2>📈 References</h2>
+      <p class="lead">- Lumos (GitHub)
+- Local LLM in the Browser Powered by Ollama (Part 1)
+- Local LLM in the Browser Po</p>
+      <div class="card"><ul><li>Lumos (GitHub)</li><li>Local LLM in the Browser Powered by Ollama (Part 1)</li><li>Local LLM in the Browser Powered by Ollama (Part 2)</li><li>Let’s Normalize Online, In-Memory RAG! (Part 3)</li></ul></div>
+      
+    </section>
+    <section class="section" id="s9">
+      <h2>🎯 Related content</h2>
+      <p class="lead">.</p>
+      <p>.png)PartnerDeep Agents</p>
+<p>#### Building a company due diligence agent with Deep Agents, LangSmith and Parallel</p>
+<p>Matt HarrisNick MartitschSrimanth TangedipalliKaran SinghMay 8, 20269min[](/blog/building-a-company-due-diligence-agent-with-deep-agents-langsmith-and-parallel).png)Agent ArchitecturePartner</p>
+<p>#### Agentic Engineering: How Swarms of AI Agents Are Redefining Software Engineering</p>
+<p>Renuka KumarPrashanth RamagopalApril 17, 202611min[](/blog/agentic-engineering-redefining-software-engineering).png)LangChainPartner</p>
+<p>#### A Developer’s First 10 Minutes: Secure LangChain Agents with Cisco AI Defense</p>
+<p>Siddhant DashApril 16, 20264min[](/blog/secure-agents-cisco-ai-defense)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s10">
+      <h2>🔬 See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+<p>](/contact-sales)</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+  </div>
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/supercharging-if-statements-with-prompt-classification-using-ollama-and-langchain" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

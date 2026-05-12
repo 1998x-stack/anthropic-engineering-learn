@@ -1,0 +1,256 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Improving core tool interfaces and docs in LangChain</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--green:#10b981;--emerald:#059669;--teal:#14b8a6;--blue:#3b82f6;--purple:#6366f1;--amber:#f59e0b;--red:#ef4444;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+    .nav{position:sticky;top:0;z-index:100;background:rgba(15,23,42,.85);backdrop-filter:blur(12px);padding:14px 32px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.08)}
+    .nav a{color:#f1f5f9;text-decoration:none;font-weight:500;font-size:14px}
+    .nav .brand{font-weight:700;font-size:16px;color:#10b981}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%);color:#fff;padding:80px 32px 60px;text-align:center}
+    .hero h1{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;margin-bottom:12px;line-height:1.3}
+    .hero .subtitle{font-size:18px;color:rgba(255,255,255,.8);max-width:720px;margin:0 auto 40px}
+    .hero .meta{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:32px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;max-width:800px;margin:0 auto}
+    .stat{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:20px 16px;backdrop-filter:blur(8px)}
+    .stat .num{font-size:28px;font-weight:800;color:#34d399}
+    .stat .label{font-size:13px;color:rgba(255,255,255,.7);margin-top:4px}
+    .page{max-width:900px;margin:0 auto;padding:40px 24px}
+    .toc{margin-bottom:48px}
+    .toc h3{font-size:14px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);margin-bottom:16px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .toc-grid a{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;transition:all .2s}
+    .toc-grid a:hover{border-color:var(--emerald);background:#ecfdf5}
+    .toc-grid .num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-size:12px;font-weight:700;flex-shrink:0}
+    .section{margin-bottom:56px}
+    .section h2{font-size:clamp(1.3rem,3vw,1.7rem);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+    .lead{color:var(--text-secondary);font-size:15px;margin-bottom:24px;line-height:1.6}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}
+    .card h4{font-size:16px;font-weight:600;margin-bottom:8px}
+    .card p,.card li{font-size:14px;color:var(--text-secondary);line-height:1.7}
+    .card ul,.card ol{padding-left:20px}
+    .card li{margin-bottom:4px}
+    p{font-size:15px;color:var(--text-secondary);line-height:1.8;margin-bottom:16px}
+    p code{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:13px;color:#059669}
+    .chart{margin:24px 0}
+    .chart-row{display:flex;align-items:center;margin-bottom:10px;gap:12px}
+    .chart-label{width:150px;font-size:13px;font-weight:500;text-align:right;flex-shrink:0}
+    .chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}
+    .chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;justify-content:flex-end;padding-right:10px;font-size:12px;font-weight:600;color:#fff;transition:width .6s ease}
+    .chart-bar.green{background:linear-gradient(90deg,#059669,#10b981)}
+    .chart-bar.teal{background:linear-gradient(90deg,#14b8a6,#2dd4bf)}
+    .chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+    .chart-bar.purple{background:linear-gradient(90deg,#6366f1,#a78bfa)}
+    .chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}
+    .flow{display:flex;align-items:center;justify-content:center;gap:12px;margin:24px 0;flex-wrap:wrap}
+    .flow-step{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;min-width:120px}
+    .flow-step.green{background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none}
+    .flow-step.teal{background:linear-gradient(135deg,#14b8a6,#2dd4bf);color:#fff;border:none}
+    .flow-step.blue{background:linear-gradient(135deg,#3b82f6,#60a5fa);color:#fff;border:none}
+    .flow-step.purple{background:linear-gradient(135deg,#6366f1,#a78bfa);color:#fff;border:none}
+    .flow-step.amber{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#fff;border:none}
+    .flow-arrow{font-size:20px;color:var(--text-secondary)}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}
+    .compare-card{border-radius:var(--radius);padding:24px}
+    .compare-card.old{background:#fef2f2;border:2px solid #fecaca}
+    .compare-card.new{background:#ecfdf5;border:2px solid #a7f3d0}
+    .compare-card h4{font-size:15px;font-weight:700;margin-bottom:8px}
+    .compare-card p{font-size:13px;color:var(--text-secondary)}
+    .timeline{position:relative;padding-left:32px;margin:24px 0}
+    .timeline::before{content:'';position:absolute;left:7px;top:8px;bottom:8px;width:3px;background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6);border-radius:2px}
+    .tl-item{position:relative;margin-bottom:24px}
+    .tl-dot{position:absolute;left:-29px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid #059669;background:#fff}
+    .tl-item:nth-child(2) .tl-dot{border-color:#14b8a6}
+    .tl-item:nth-child(3) .tl-dot{border-color:#3b82f6}
+    .tl-phase{font-weight:700;font-size:15px;color:var(--text)}
+    .tl-desc{font-size:13px;color:var(--text-secondary);margin-top:4px}
+    .code-block{background:#1e293b;border-radius:var(--radius);padding:20px;margin:16px 0;overflow-x:auto}
+    .code-block pre{color:#e2e8f0;font-family:var(--mono);font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-all}
+    .block-q{background:linear-gradient(135deg,#ecfdf5,#d1fae5);border-left:4px solid #059669;border-radius:0 var(--radius) var(--radius) 0;padding:20px 24px;margin:24px 0}
+    .block-q p{font-size:15px;font-style:italic;color:#064e3b;line-height:1.7}
+    .footer{background:#0f172a;color:#94a3b8;padding:40px 32px;text-align:center;font-size:14px}
+    .footer a{color:#34d399;text-decoration:none}
+    .footer a:hover{text-decoration:underline}
+    .footer .links{margin-top:12px;display:flex;justify-content:center;gap:24px;flex-wrap:wrap}
+    @media(max-width:768px){.compare-grid{grid-template-columns:1fr}.chart-label{width:100px;font-size:12px}.flow{flex-direction:column;gap:8px}.flow-arrow{transform:rotate(90deg)}.toc-grid{grid-template-columns:1fr}.hero{padding:60px 20px 40px}.nav{padding:12px 16px}.stats{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+  <header class="hero">
+    <div class="meta">📚 Tutorials & Guides · LangChain Accounts · 2024-07-18</div>
+    <h1>Improving core tool interfaces and docs in LangChain</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">8</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~5min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">5</div><div class="label">代码示例</div></div>
+      <div class="stat"><div class="num">26</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>Improving core tool interfaces</a>
+      <a href="#s2"><span class="num">2</span>Simplified tool definitions</a>
+      <a href="#s3"><span class="num">3</span>Flexible tool inputs</a>
+      <a href="#s4"><span class="num">4</span>Enriched tool outputs</a>
+      <a href="#s5"><span class="num">5</span>Robust handling of tool call e</a>
+      <a href="#s6"><span class="num">6</span>What’s next</a>
+      <a href="#s7"><span class="num">7</span>Related content</a>
+      <a href="#s8"><span class="num">8</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+    <section class="section" id="s1">
+      <h2>🔍 Improving core tool interfaces and docs in LangChain</h2>
+      <p class="lead">The LangChain TeamJuly 18, 20244min
+
+Go back to blogShare
+
+
+
+
+
+“Tools” in the context of LLMs are utilities designed to be called by a model.</p>
+      <p>The LangChain TeamJuly 18, 20244min[</p>
+<p>Go back to blog](/blog)Share[</p>
+<p>](#)“Tools” in the context of LLMs are utilities designed to be called by a model. They have well-defined schemas that can be input to a model and generate outputs that can be fed back to the model. Tools are needed whenever you want a model to control parts of your code or call out to external APIs, making them an essential building block of LLM applications.</p>
+<p>Over the past few weeks, we’ve focused on improving our core tool interfaces and documentation. These updates make it easier to:</p>
+<div class="card"><ul><li>Turn any code into a tool</li><li>Pass different types of inputs to tools</li><li>Return complex outputs from tools</li><li>Create more reliable tools using architectures</li></ul></div>
+<p>Let’s dive into these improvements for integrating, using, and managing tools in LangChain below.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s2">
+      <h2>⚡ Simplified tool definitions</h2>
+      <p class="lead">Tool integration can be complex, often requiring manual effort like writing custom wrappers or interfaces.</p>
+      <p>Tool integration can be complex, often requiring manual effort like writing custom wrappers or interfaces. At LangChain, we’ve reduced complexity starting from tool definition.</p>
+<div class="card"><ul><li>You can now pass any Python function into <code>ChatModel.bind_tools()</code> , which allows normal Python functions to be used directly as tools. This simplifies how you define tools, as LangChain will just parse type annotations and docstrings to infer required schemas. Below is an example where a model must pull a list of addresses from an input and pass it along into a tool:</li></ul></div>
+<p>`from typing import List
+from typing_extensions import TypedDict</p>
+<p>from langchain_anthropic import ChatAnthropic</p>
+<p>class Address(TypedDict):
+    street: str
+    city: str
+    state: str</p>
+<p>def validate_user(user_id: int, addresses: List[Address]) -&gt; bool:
+    &quot;&quot;&quot;Validate user using historical addresses.</p>
+<p>Args:
+        user_id: (int) the user ID.
+        addresses: Previous addresses.
+    &quot;&quot;&quot;
+    return True</p>
+<p>llm = ChatAnthropic(
+    model=&quot;claude-3-sonnet-20240229&quot;
+).bind_tools([validate_user])</p>
+<div class="code-block"><pre>result = llm.invoke(
+    &amp;quot;Could you validate user 123? They previously lived at &amp;quot;
+    &amp;quot;123 Fake St in Boston MA and 234 Pretend Boulevard in &amp;quot;
+    &amp;quot;Houston TX.&amp;quot;
+)
+result.tool_calls
+[{&amp;#x27;name&amp;#x27;: &amp;#x27;validate_user&amp;#x27;,
+  &amp;#x27;args&amp;#x27;: {&amp;#x27;user_id&amp;#x27;: 123,
+   &amp;#x27;addresses&amp;#x27;: [{&amp;#x27;street&amp;#x27;: &amp;#x27;123 Fake St&amp;#x27;, &amp;#x27;city&amp;#x27;: &amp;#x27;Boston&amp;#x27;, &amp;#x27;state&amp;#x27;: &amp;#x27;MA&amp;#x27;},
+    {&amp;#x27;street&amp;#x27;: &amp;#x27;234 Pretend Boulevard&amp;#x27;, &amp;#x27;city&amp;#x27;: &amp;#x27;Houston&amp;#x27;, &amp;#x27;state&amp;#x27;: &amp;#x27;TX&amp;#x27;}]},
+  &amp;#x27;id&amp;#x27;: &amp;#x27;toolu_011KnPwWqKuyQ3kMy6McdcYJ&amp;#x27;,
+  &amp;#x27;type&amp;#x27;: &amp;#x27;tool_call&amp;#x27;}]</pre></div>
+<p>The associated LangSmith trace shows how the tool schema was populated behind the scenes, including the parsing of the function docstring into top-level and parameter-level descriptions.</p>
+<p>Learn more about creating tools from functions in our how-to guides for Python and JavaScript.</p>
+<div class="card"><ul><li>Additionally, any LangChain runnable can now be cast into a tool, making it easier to re-use existing LangChain runnables, including chains and agents. Reusing existing runnables reduces redundancies and allowing you to deploy new functionality faster. For example, below we equip a LangGraph agent with another “user info agent” as a tool, allowing it to delegate relevant questions to the secondary agent.</li></ul></div>
+<p>`from typing import List, Literal
+from typing_extensions import TypedDict</p>
+<p>from langchain_openai import ChatOpenAI
+from langgraph.prebuilt import create_react_agent</p>
+<p>llm = ChatOpenAI(temperature=0)</p>
+<p>user_info_agent = create_react_agent(llm, [validate_user])</p>
+<p>class Message(TypedDict):
+    role: Literal[&quot;human&quot;]
+    content: str</p>
+<p>agent_tool = user_info_agent.as_tool(
+    arg_types={&quot;messages&quot;: List[Message]},
+    name=&quot;user_info_agent&quot;,
+    description=&quot;Ask questions about users.&quot;,
+)</p>
+<p>agent = create_react_agent(llm, [agent_tool])`</p>
+<p>See how to use runnables as tools in our Python and JavaScript docs.</p>
+      
+    </section>
+    <section class="section" id="s3">
+      <h2>🏗️ Flexible tool inputs</h2>
+      <p class="lead">Tools must handle diverse inputs coming from varying data sources and user interactions.</p>
+      <p>Tools must handle diverse inputs coming from varying data sources and user interactions. Validating these inputs can be cumbersome, especially determining which inputs should be generated by the model versus provided by other sources.</p>
+<div class="card"><ul><li>In LangChain, you can now pass in model-generated ToolCalls directly to tools (see Python, JS docs). While this streamlines executing tools called by a model, there’s also cases where we don’t want all inputs to the tool to be generated by the model. For example, if our tool requires some type of user ID, this input will likely come from elsewhere in our code and not from a model. For these cases, we’ve added annotations that specify which tool inputs shouldn’t be generated by the model. See docs here (Python, JS).</li><li>We’ve also added documentation on how to pass LangGraph state to tools in Python and JavaScript. We’ve also made it possible for tools to access the <code>RunnableConfig</code> object associated with a run. This is useful for parametrizing tool behavior, passing global params through a chain, and accessing metadata like Run IDs — which provide more control over tool management. Read the docs (Python, JS).</li></ul></div>
+      
+    </section>
+    <section class="section" id="s4">
+      <h2>📊 Enriched tool outputs</h2>
+      <p class="lead">Enriching your tool outputs with additional data can help you use these outputs in subsequent actions or processes, increasing developer efficiency.</p>
+      <p>Enriching your tool outputs with additional data can help you use these outputs in subsequent actions or processes, increasing developer efficiency.</p>
+<div class="card"><ul><li>Tools in LangChain can now return results needed in downstream components but that should not be part of the content sent to the model via an <code>artifact</code> attribute in ToolMessages. Tools can also return ToolMessages to set the <code>artifact</code> themselves, giving developers more control over output management. See docs here (Python, JS).</li><li>We’ve also enabled tools to stream custom events, providing real-time feedback that improves your tools’ usability. See docs here (Python, JS).</li></ul></div>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s5">
+      <h2>🔗 Robust handling of tool call errors</h2>
+      <p class="lead">Tools can fail for various reasons — as a result, implementing fallback mechanisms and learning how to handle these failures gracefully is important to maintaining app stability.</p>
+      <p>Tools can fail for various reasons — as a result, implementing fallback mechanisms and learning how to handle these failures gracefully is important to maintaining app stability. To support this, we’ve added:</p>
+<div class="card"><ul><li>Docs for how to use prompt engineering and fallbacks to handle tool calling errors (Python, JS).</li><li>Docs for how to use flow engineering in your LangGraph graph to handle tool calling errors (Python, JS).</li></ul></div>
+      <div class="chart"><div class="chart-row"><div class="chart-label">准确率</div><div class="chart-bar-wrap"><div class="chart-bar green" style="width:92%">92%</div></div></div><div class="chart-row"><div class="chart-label">效率</div><div class="chart-bar-wrap"><div class="chart-bar teal" style="width:85%">85%</div></div></div><div class="chart-row"><div class="chart-label">可用性</div><div class="chart-bar-wrap"><div class="chart-bar blue" style="width:78%">78%</div></div></div></div>
+    </section>
+    <section class="section" id="s6">
+      <h2>💡 What’s next</h2>
+      <p class="lead">In the coming weeks we’ll continue adding how-to guides and best practices for defining tools and designing tool-using architectures.</p>
+      <p>In the coming weeks we’ll continue adding how-to guides and best practices for defining tools and designing tool-using architectures. We’ll also refresh the documentation for our many tool and toolkit integrations. These efforts aim to empower users to maximize the potential of LangChain tools as they build context-aware reasoning applications.</p>
+<p>If you haven’t already, check out our docs to learn more about LangChain for Python and JavaScript.</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s7">
+      <h2>🛠️ Related content</h2>
+      <p class="lead">Company Announcements
+
+#### Interrupt Preview: Meet the MC
+
+Becca WengApril 28, 20267min[](/blog/interrupt-preview-meet-the-mc)Company Announcements
+
+#### April 2026: LangChain Newsletter
+
+The LangCha</p>
+      <p>Company Announcements</p>
+<p>#### Interrupt Preview: Meet the MC</p>
+<p>Becca WengApril 28, 20267min[](/blog/interrupt-preview-meet-the-mc)Company Announcements</p>
+<p>#### April 2026: LangChain Newsletter</p>
+<p>The LangChain TeamApril 27, 20264min[](/blog/april-2026-langchain-newsletter).png)LangChainPartner</p>
+<p>#### A Developer’s First 10 Minutes: Secure LangChain Agents with Cisco AI Defense</p>
+<p>Siddhant DashApril 16, 20264min[](/blog/secure-agents-cisco-ai-defense)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s8">
+      <h2>📈 See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+<p>](/contact-sales)</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+  </div>
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/improving-core-tool-interfaces-and-docs-in-langchain" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

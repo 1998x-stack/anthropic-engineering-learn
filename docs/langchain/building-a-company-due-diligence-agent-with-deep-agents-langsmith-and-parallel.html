@@ -1,0 +1,281 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>深度解析：Building a company due diligence agent with Deep Agents, LangSmith and Parallel</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--green:#10b981;--teal:#14b8a6;--blue:#3b82f6;--amber:#f59e0b;--pink:#ec4899;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',sans-serif}*{margin:0;padding:0;box-sizing:border-box}body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}.nav{position:sticky;top:0;background:rgba(15,23,42,.92);backdrop-filter:blur(12px);padding:16px 32px;display:flex;justify-content:space-between;align-items:center;z-index:100;border-bottom:1px solid rgba(5,150,105,.3)}.nav-brand{color:#fff;font-weight:700;font-size:18px;text-decoration:none}.nav-back{color:rgba(255,255,255,.7);text-decoration:none;font-size:14px}.nav-back:hover{color:#fff}.hero{background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%);padding:80px 32px;text-align:center;color:#fff}.hero h1{font-size:clamp(24px,4vw,42px);font-weight:800;margin-bottom:16px;line-height:1.2}.hero .subtitle{font-size:16px;color:rgba(255,255,255,.8);max-width:720px;margin:0 auto 40px;line-height:1.6}.hero-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:16px;max-width:800px;margin:0 auto}.stat-card{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:var(--radius);padding:18px;backdrop-filter:blur(8px)}.stat-card .num{font-size:22px;font-weight:800;color:#6ee7b7}.stat-card .label{font-size:12px;color:rgba(255,255,255,.7);margin-top:4px}.page{max-width:900px;margin:0 auto;padding:32px 24px}.toc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:48px}.toc h3{font-size:16px;margin-bottom:16px;color:#059669}.toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px}.toc-grid a{display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--text);font-size:14px;padding:8px 12px;border-radius:8px;transition:background .2s}.toc-grid a:hover{background:rgba(5,150,105,.08)}.toc-grid .num{background:linear-gradient(135deg,#059669,#047857);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}.section{margin-bottom:56px}.section h2{font-size:22px;font-weight:700;margin-bottom:8px}.lead{color:var(--text-secondary);font-size:15px;margin-bottom:20px;border-left:3px solid #059669;padding-left:16px}.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}.card h4{font-size:16px;font-weight:600;margin-bottom:8px}.card p{font-size:14px;color:var(--text-secondary);line-height:1.7}.chart{margin:20px 0}.chart-row{display:flex;align-items:center;gap:12px;margin-bottom:10px}.chart-label{width:140px;font-size:13px;text-align:right;flex-shrink:0}.chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;overflow:hidden;height:28px}.chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;padding:0 10px;font-size:12px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden}.chart-bar.green{background:linear-gradient(90deg,#10b981,#059669)}.chart-bar.teal{background:linear-gradient(90deg,#14b8a6,#0d9488)}.chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#2563eb)}.chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#d97706)}.chart-bar.pink{background:linear-gradient(90deg,#ec4899,#db2777)}.block-q{background:linear-gradient(135deg,rgba(5,150,105,.06),rgba(20,184,166,.06));border-left:4px solid #059669;border-radius:0 var(--radius) var(--radius) 0;padding:20px 24px;margin:20px 0;font-size:15px;font-style:italic;color:var(--text-secondary)}.footer{background:#0f172a;color:rgba(255,255,255,.6);padding:40px 32px;text-align:center;font-size:14px}.footer a{color:#10b981;text-decoration:none}.footer a:hover{text-decoration:underline}
+@media(max-width:768px){.hero{padding:48px 20px}.toc-grid{grid-template-columns:1fr}.chart-label{width:100px;font-size:12px}.hero-stats{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<nav class="nav"><a href="../" class="nav-brand">LangChain 技术博客</a><a href="../" class="nav-back">&larr; Back to Hub</a></nav>
+<header class="hero">
+  <span style="display:inline-block;background:rgba(16,185,129,.2);color:#a7f3d0;padding:4px 12px;border-radius:20px;font-size:12px;margin-bottom:16px">Deep Agents</span>
+  <h1>Building a company due diligence agent with Deep Agents, LangSmith and Parallel</h1>
+  <p class="subtitle">Deep Agents &middot; LangChain Team &middot; LangChain Blog</p>
+  <div class="hero-stats"><div class="stat-card"><div class="num">2020%</div><div class="label">关键数据指标</div></div>
+<div class="stat-card"><div class="num">7</div><div class="label">核心章节</div></div>
+<div class="stat-card"><div class="num">13</div><div class="label">子话题</div></div>
+<div class="stat-card"><div class="num">8</div><div class="label">代码示例</div></div>
+</div>
+</header>
+<div class="page">
+  <nav class="toc"><h3>📑 目录导航</h3><div class="toc-grid"><a href="#s1"><span class="num">1</span>🎬 Overview</a>
+<a href="#s2"><span class="num">2</span>💻 Implementation</a>
+<a href="#s3"><span class="num">3</span>📋 Your Process</a>
+<a href="#s4"><span class="num">4</span>📌 Citation and Confidence Guidelines</a>
+<a href="#s5"><span class="num">5</span>🎯 Observability with LangSmith</a>
+<a href="#s6"><span class="num">6</span>📌 Who this is for</a>
+<a href="#s7"><span class="num">7</span>🌐 Resources</a>
+</div></nav>
+  <section class="section" id="s1"><h2>🎬 Overview</h2><p class="lead">The agent orchestrates five research tracks, each handled by a dedicated subagent:</p><div class="card"><p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">The agent orchestrates five research tracks, each handled by a dedicated subagent:</p>
+<ul style="margin:12px 0;padding-left:20px">
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7"><strong>Corporate profile</strong> — legal entity structure, key officers, founding history, headcount, office locations</li>
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7"><strong>Financial health</strong> — funding history, revenue signals, valuation indicators, profitability markers</li>
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7"><strong>Litigation and regulatory</strong> — lawsuits, SEC filings, sanctions screening, regulatory actions, settlements</li>
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7"><strong>News and reputation</strong> — recent press coverage, leadership changes, controversy flags, media sentiment</li>
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7"><strong>Competitive landscape</strong> — identifies the top three direct competitors and the target&#x27;s positioning</li>
+</ul>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">Once <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:0.9em;color:#059669">competitive-landscape</code> returns its named list, the orchestrator dispatches a separate <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:0.9em;color:#059669">competitor-analysis</code> subagent <strong>once per competitor</strong>, in parallel — the canonical Deep Agents fan-out shape, with each instance running in its own isolated context. The orchestrator then reads every workpaper, cross-references for contradictions and low-confidence findings, runs ad-hoc lookups via Parallel&#x27;s Search API when discrepancies surface, and writes the final report with risk flags and citation trails.</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">DD requires this multi-step architecture because earlier findings change what needs to be investigated next. If the corporate profile reveals the target is a subsidiary, the financial analysis needs to cover the parent. If the litigation scan surfaces an SEC investigation, the risk assessment changes. Deep Agents&#x27; planning tool lets the orchestrator adapt when findings shift the research plan.</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">Each research track uses a <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:0.9em;color:#059669">pro-fast</code> processor Task API call. Validated end-to-end on Rivian Automotive (NASDAQ: RIVN): nine calls in ~23 minutes. See <a href="https://docs.parallel.ai/getting-started/pricing" target="_blank" style="color:#059669;text-decoration:underline">Parallel pricing</a> for current rates.</p><div class="chart" style="margin:20px 0"><div class="chart-row"><div class="chart-label">Corporate profile</div><div class="chart-bar-wrap"><div class="chart-bar green" style="width:95%">— legal entity structure, key officers,</div></div></div>
+<div class="chart-row"><div class="chart-label">Financial health</div><div class="chart-bar-wrap"><div class="chart-bar teal" style="width:83%">— funding history, revenue signals, valu</div></div></div>
+<div class="chart-row"><div class="chart-label">Litigation and regul</div><div class="chart-bar-wrap"><div class="chart-bar blue" style="width:71%">— lawsuits, SEC filings, sanctions scree</div></div></div>
+<div class="chart-row"><div class="chart-label">News and reputation</div><div class="chart-bar-wrap"><div class="chart-bar amber" style="width:59%">— recent press coverage, leadership chan</div></div></div>
+<div class="chart-row"><div class="chart-label">Competitive landscap</div><div class="chart-bar-wrap"><div class="chart-bar pink" style="width:47%">— identifies the top three direct compet</div></div></div>
+</div></div></section>
+<section class="section" id="s2"><h2>💻 Implementation</h2><div class="card"><pre style="background:#1e293b;color:#e2e8f0;padding:16px;border-radius:10px;overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.6;margin:16px 0">uv pip install deepagents langchain-parallel langchain-anthropic</pre>
+<pre style="background:#1e293b;color:#e2e8f0;padding:16px;border-radius:10px;overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.6;margin:16px 0">export ANTHROPIC_API_KEY=&amp;quot;your-anthropic-api-key&amp;quot;
+export PARALLEL_API_KEY=&amp;quot;your-parallel-api-key&amp;quot;
+</pre>
+<h3 style="font-size:18px;font-weight:600;margin:28px 0 12px;color:var(--text)">Defining the Parallel research tools</h3>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">We define two tools. The first wraps Parallel&#x27;s Task API for structured research with Basis-aware confidence handling. The second uses the LangChain integration&#x27;s web search tool for quick factual lookups during synthesis.</p>
+<pre style="background:#1e293b;color:#e2e8f0;padding:16px;border-radius:10px;overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.6;margin:16px 0">from typing import Optional
+
+from langchain_core.tools import tool
+from langchain_parallel import (
+    ParallelTaskRunTool,
+    ParallelWebSearchTool,
+    parse_basis,
+)
+
+@tool
+def research_task(
+    query: str,
+    output_description: str,
+    previous_interaction_id: Optional[str] = None,
+) -&amp;gt; dict:
+    &amp;quot;&amp;quot;&amp;quot;Run structured web research via Parallel&amp;#x27;s Task API.
+
+    Returns findings with per-field citations and confidence scores (Basis).
+    Use previous_interaction_id to chain follow-up queries that build on
+    prior research context.
+    &amp;quot;&amp;quot;&amp;quot;
+    runner = ParallelTaskRunTool(
+        processor=&amp;quot;pro-fast&amp;quot;,
+        task_output_schema=output_description,
+    )
+    invoke_args: dict = {&amp;quot;input&amp;quot;: query}
+    if previous_interaction_id:
+        invoke_args[&amp;quot;previous_interaction_id&amp;quot;] = previous_interaction_id
+
+    result = runner.invoke(invoke_args)
+    parsed = parse_basis(result)
+
+    output = result[&amp;quot;output&amp;quot;]
+    findings = output.get(&amp;quot;content&amp;quot;) if isinstance(output, dict) else output
+
+    response: dict = {
+        &amp;quot;findings&amp;quot;: findings,
+        &amp;quot;citations_by_field&amp;quot;: parsed[&amp;quot;citations_by_field&amp;quot;],
+        &amp;quot;interaction_id&amp;quot;: parsed[&amp;quot;interaction_id&amp;quot;],
+    }
+    if parsed[&amp;quot;low_confidence_fields&amp;quot;]:
+        response[&amp;quot;low_confidence_warning&amp;quot;] = (
+            &amp;quot;These fields came back with low confidence and should be &amp;quot;
+            &amp;quot;verified, ideally by chaining a follow-up query with &amp;quot;
+            &amp;quot;previous_interaction_id: &amp;quot;
+            + &amp;quot;, &amp;quot;.join(parsed[&amp;quot;low_confidence_fields&amp;quot;])
+        )
+    return response
+
+# Quick search tool for fast factual lookups during synthesis
+quick_search = ParallelWebSearchTool()
+</pre>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">The tool does three things beyond a raw API call. It calls <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:0.9em;color:#059669">parse_basis(result)</code> to extract per-field citations and the names of any low-confidence fields. It surfaces those names as an explicit <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:0.9em;color:#059669">low_confidence_warning</code> in the tool&#x27;s return value, so the calling subagent&#x27;s reasoning loop can decide to chain a follow-up. And it returns the <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:0.9em;color:#059669">interaction_id</code> so the chained call can anchor to the same research thread via <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:0.9em;color:#059669">previous_interaction_id</code>.</p>
+<h3 style="font-size:18px;font-weight:600;margin:28px 0 12px;color:var(--text)">Defining the research subagents</h3>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">Each research track gets its own subagent with a specialized system prompt and access to the <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:0.9em;color:#059669">research_task</code> tool.</p>
+<pre style="background:#1e293b;color:#e2e8f0;padding:16px;border-radius:10px;overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.6;margin:16px 0">corporate_profile_subagent = {
+    &amp;quot;name&amp;quot;: &amp;quot;corporate-profile&amp;quot;,
+    &amp;quot;description&amp;quot;: &amp;quot;Research corporate structure, leadership, founding history, and headcount&amp;quot;,
+    &amp;quot;system_prompt&amp;quot;: &amp;quot;&amp;quot;&amp;quot;You are a corporate research analyst.
+
+Given a company, use the research_task tool to find:
+- Legal entity name, incorporation state/country, founding date
+- Current CEO and key executives (names, titles, approximate tenure)
+- Headquarters location and major office locations
+- Employee headcount (current and recent trend)
+- Corporate structure (parent company, major subsidiaries)
+
+For the output_description parameter, request these as structured fields.
+
+If the result includes a low_confidence_warning, chain a follow-up query
+using the returned interaction_id to verify the flagged fields.
+
+Write your findings (including citations_by_field) to corporate-profile.md.&amp;quot;&amp;quot;&amp;quot;,
+    &amp;quot;tools&amp;quot;: [research_task],
+}</pre>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">The other Phase-1 subagents (<code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:0.9em;color:#059669">financial-health</code>, <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:0.9em;color:#059669">litigation-regulatory</code>, <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:0.9em;color:#059669">news-reputation</code>, <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:0.9em;color:#059669">competitive-landscape</code>) follow the same shape with their own focused prompts. The full set is in <a href="https://github.com/parallel-web/parallel-cookbook/blob/306f5f6416817542df78136c412db2ca0bcebf35/python-recipes/parallel-deepagents-due-diligence/agent.py" target="_blank" style="color:#059669;text-decoration:underline"><code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:0.9em;color:#059669">agent.py</code></a>.</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">The Phase-2 fan-out subagent is invoked once per competitor identified by <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:0.9em;color:#059669">competitive-landscape</code>:</p>
+<pre style="background:#1e293b;color:#e2e8f0;padding:16px;border-radius:10px;overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.6;margin:16px 0">competitor_analysis_subagent = {
+    &amp;quot;name&amp;quot;: &amp;quot;competitor-analysis&amp;quot;,
+    &amp;quot;description&amp;quot;: &amp;quot;Produce a focused profile of one named competitor&amp;quot;,
+    &amp;quot;system_prompt&amp;quot;: &amp;quot;&amp;quot;&amp;quot;You are a competitive intelligence researcher.
+
+The orchestrator will pass you a single competitor name and the original
+DD target. Make one research_task call requesting:
+- Corporate snapshot (HQ, public/private, headcount, founding year)
+- Most recent revenue and growth signals
+- Funding or market cap status
+- Product / positioning vs. the original DD target
+- Recent strategic moves in the last 12 months
+- Notable strengths and weaknesses relative to the target
+
+Write your findings to competitor-&amp;lt;slug&amp;gt;.md.&amp;quot;&amp;quot;&amp;quot;,
+    &amp;quot;tools&amp;quot;: [research_task],
+}</pre>
+<h3 style="font-size:18px;font-weight:600;margin:28px 0 12px;color:var(--text)">Creating the orchestrator agent</h3>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">The main agent coordinates the subagents, reviews findings for contradictions, and produces the final report. We back it with a <a href="https://docs.langchain.com/oss/python/deepagents/filesystem" target="_blank" style="color:#059669;text-decoration:underline"><code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:0.9em;color:#059669">FilesystemBackend</code></a> so workpapers and the final memo persist to disk under <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:0.9em;color:#059669">./reports/</code> rather than evaporating with the agent state.</p></div></section>
+<section class="section" id="s3"><h2>📋 Your Process</h2><p class="lead">1. Plan the research: Use write_todos to lay out the diligence as a</p><div class="card"><div style="display:flex;gap:12px;margin:10px 0;align-items:flex-start"><span style="background:linear-gradient(135deg,#059669,#047857);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">1</span><span style="font-size:14px;color:var(--text-secondary);line-height:1.7"><strong>Plan the research</strong>: Use write_todos to lay out the diligence as a</span></div>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">   checklist. Phase 1 dispatches the five Phase-1 subagents. Phase 2</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">   dispatches one competitor-analysis subagent per competitor identified</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">   by competitive-landscape.</p>
+<div style="display:flex;gap:12px;margin:10px 0;align-items:flex-start"><span style="background:linear-gradient(135deg,#059669,#047857);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">2</span><span style="font-size:14px;color:var(--text-secondary);line-height:1.7"><strong>Phase 1 — parallel research</strong>: Use the task tool to dispatch</span></div>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">   corporate-profile, financial-health, litigation-regulatory,</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">   news-reputation, and competitive-landscape concurrently.</p>
+<div style="display:flex;gap:12px;margin:10px 0;align-items:flex-start"><span style="background:linear-gradient(135deg,#059669,#047857);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">3</span><span style="font-size:14px;color:var(--text-secondary);line-height:1.7"><strong>Phase 2 — competitor fan-out</strong>: Read competitive-landscape.md and</span></div>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">   parse the three named competitors. Dispatch a separate</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">   competitor-analysis subagent instance per competitor, in parallel.</p>
+<div style="display:flex;gap:12px;margin:10px 0;align-items:flex-start"><span style="background:linear-gradient(135deg,#059669,#047857);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">4</span><span style="font-size:14px;color:var(--text-secondary);line-height:1.7"><strong>Review and cross-reference</strong>: Read every workpaper. Look for</span></div>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">   contradictions, low-confidence findings, and gaps. Use quick_search</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">   for ad-hoc lookups during synthesis.</p>
+<div style="display:flex;gap:12px;margin:10px 0;align-items:flex-start"><span style="background:linear-gradient(135deg,#059669,#047857);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;flex-shrink:0">5</span><span style="font-size:14px;color:var(--text-secondary);line-height:1.7"><strong>Synthesize the report</strong> with: executive summary, corporate profile,</span></div>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">   financial overview, litigation and regulatory risk assessment, news</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">   and reputation analysis, competitive landscape (with per-competitor</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">   sub-sections), confidence and verification notes, and key risk flags.</p><div style="display:flex;flex-wrap:wrap;align-items:center;gap:8px;margin:20px 0;justify-content:center"><div style="background:linear-gradient(135deg,#ecfdf5,#d1fae5);border:1px solid #a7f3d0;border-radius:10px;padding:12px 16px;font-size:13px;text-align:center;min-width:100px">Plan the research: Use write_to</div><div style="color:#059669;font-size:20px">&rarr;</div><div style="background:linear-gradient(135deg,#ecfdf5,#d1fae5);border:1px solid #a7f3d0;border-radius:10px;padding:12px 16px;font-size:13px;text-align:center;min-width:100px">Phase 1 — parallel research: Us</div><div style="color:#059669;font-size:20px">&rarr;</div><div style="background:linear-gradient(135deg,#ecfdf5,#d1fae5);border:1px solid #a7f3d0;border-radius:10px;padding:12px 16px;font-size:13px;text-align:center;min-width:100px">Phase 2 — competitor fan-out: R</div><div style="color:#059669;font-size:20px">&rarr;</div><div style="background:linear-gradient(135deg,#ecfdf5,#d1fae5);border:1px solid #a7f3d0;border-radius:10px;padding:12px 16px;font-size:13px;text-align:center;min-width:100px">Review and cross-reference: Rea</div><div style="color:#059669;font-size:20px">&rarr;</div><div style="background:linear-gradient(135deg,#ecfdf5,#d1fae5);border:1px solid #a7f3d0;border-radius:10px;padding:12px 16px;font-size:13px;text-align:center;min-width:100px">Synthesize the report with: exe</div></div></div></section>
+<section class="section" id="s4"><h2>📌 Citation and Confidence Guidelines</h2><p class="lead">- Include source URLs for key claims.</p><div class="card"><ul style="margin:12px 0;padding-left:20px">
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7">Include source URLs for key claims.</li>
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7">Call out any finding where confidence was low. These need human verification.</li>
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7">If two tracks produced contradictory information, note the discrepancy</li>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">  explicitly with citations from both sources.</p>
+</ul>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">&quot;&quot;&quot;</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">agent = create_deep_agent(</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">    model=&quot;anthropic:claude-sonnet-4-6&quot;,</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">    tools=[quick_search],</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">    subagents=[</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">        corporate_profile_subagent,</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">        financial_health_subagent,</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">        litigation_subagent,</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">        news_reputation_subagent,</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">        competitive_landscape_subagent,</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">        competitor_analysis_subagent,</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">    ],</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">    system_prompt=diligence_instructions,</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">    backend=FilesystemBackend(root_dir=REPORTS_DIR, virtual_mode=True),</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">)</p>
+<pre style="background:#1e293b;color:#e2e8f0;padding:16px;border-radius:10px;overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.6;margin:16px 0">
+### Running the agent
+</pre>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">result = agent.invoke({</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">    &quot;messages&quot;: [{</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">        &quot;role&quot;: &quot;user&quot;,</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">        &quot;content&quot;: &quot;Conduct a full due diligence report on Rivian Automotive&quot;,</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">    }]</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">})</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">print(result[&quot;messages&quot;][-1].content)</p>
+<pre style="background:#1e293b;color:#e2e8f0;padding:16px;border-radius:10px;overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.6;margin:16px 0">
+### Streaming execution progress
+
+For long-running diligence runs, stream the agent&amp;#x27;s progress to see planning, tool calls, and subagent activity in real time. Pass `subgraphs=True` to receive events from inside subagent execution.
+</pre>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">for chunk in agent.stream(</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">    {&quot;messages&quot;: [{&quot;role&quot;: &quot;user&quot;, &quot;content&quot;: &quot;Conduct a full due diligence report on Rivian Automotive&quot;}]},</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">    stream_mode=&quot;updates&quot;,</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">    subgraphs=True,</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">    version=&quot;v2&quot;,</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">):</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">    if chunk.get(&quot;type&quot;) == &quot;updates&quot;:</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">        source = f&quot;[subagent: {chunk[&#x27;ns&#x27;]}]&quot; if chunk.get(&quot;ns&quot;) else &quot;[orchestrator]&quot;</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">        print(f&quot;{source} {chunk.get(&#x27;data&#x27;)}&quot;)</p></div></section>
+<section class="section" id="s5"><h2>🎯 Observability with LangSmith</h2><p class="lead">Why observability matters for FSI</p><div class="card"><h3 style="font-size:18px;font-weight:600;margin:28px 0 12px;color:var(--text)">Why observability matters for FSI</h3>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">In FSI, regulators, auditors, and risk teams increasingly expect firms to reconstruct how AI-assisted outputs were produced, especially when those outputs influence material business decisions. Six months from now, an internal auditor, compliance reviewer, model-risk team, investment committee, or regulator may ask how an AI-assisted diligence memo was produced. Which sources informed each material conclusion? What confidence was attached? Where did a human review or override the output? Was the agent’s process logged well enough to reconstruct? In FSI, “the agent gave me an answer” is not a defensible control posture.</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">The agent compounds non-determinism (LLM output, prompt sensitivity, the open web), spends real money on real web research, and ends in a memo a regulator may eventually audit. Every claim has to map back to a primary source with an explicit confidence label, and that mapping has to remain auditable months after the run finishes. Once the agent reaches production, most of its failures surface there too, where pre-launch testing rarely catches them. The trace is the artifact that survives the run.</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">This is why the trace matters in FSI specifically:</p>
+<ul style="margin:12px 0;padding-left:20px">
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7"><strong>Logging is increasingly mandated.</strong> The EU AI Act requires automatic event logging for high-risk AI systems, and US bank regulators apply model risk management expectations to AI agents in practice even where formal scope is unsettled. The trace is the artifact both frameworks contemplate.</li>
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7"><strong>Decision explainability requires per-claim grounding.</strong> When AI input feeds a regulated decision such as consumer credit, investment recommendations, or any process subject to fiduciary obligations, the institution has to explain how that input was formed. The basis payload (source URLs and per-output confidence) is what makes that explanation reproducible months after the run.</li>
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7"><strong>Third-party AI requires ongoing supervision.</strong> The stack uses an external model provider and an external research API (Parallel). A trace records what was sent to each provider, what came back, and how those outputs influenced the final memo, supporting issue investigation and vendor oversight.</li>
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7"><strong>Operational resilience depends on fast root-cause analysis. </strong>If an agent failure contributes to a material operational disruption or reportable ICT incident, the trace gives teams a concrete starting point for reconstruction, remediation, and reporting.</li>
+</ul>
+<h3 style="font-size:18px;font-weight:600;margin:28px 0 12px;color:var(--text)">How compliance and audit work today</h3>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">FSI teams already have a system for proving how a research memo was produced: analyst workpapers, citation lists, source approvals, version history, and compliance review. That model works because the analyst is the unit of accountability. When an examiner, auditor, or compliance reviewer asks how a conclusion was reached, the analyst can walk through the reasoning, with workpapers and citations backing up the final deliverable. AI agents change that model.</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">The “analyst” is no longer just a person. It is a graph of LLM calls, tool invocations, retrieved sources, intermediate outputs, and state transitions. Unless those steps are captured at runtime, the final memo may survive, but the process that produced it can disappear into logs, context windows, and vendor calls that are difficult to reconstruct later. The trace restores the attach point. It becomes the machine-side workpaper: an inspectable record of which sources informed each material conclusion, what confidence was attached, which tools were called, where human review occurred, and how the final output was produced.</p>
+<h3 style="font-size:18px;font-weight:600;margin:28px 0 12px;color:var(--text)">What LangSmith captures</h3>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">LangSmith records every Deep Agents step and every <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:0.9em;color:#059669">ParallelTaskRunTool</code> invocation in this agent: the prompt the subagent constructed, the URLs Parallel returned, the basis payload with confidence, and the structured findings, with no changes to the agent code. Each run is also broken down into per-node cost across every model call, tool call, and subagent, so you can see exactly which step drove which share of tokens and time. When two runs come back at very different cost, the trace shows whether the difference lives in subagent reasoning, additional Parallel calls, or the final synthesis pass.</p>
+<h3 style="font-size:18px;font-weight:600;margin:28px 0 12px;color:var(--text)">What the trace shows</h3>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">Open any run and the first thing you see is the orchestrator&#x27;s plan: a four-phase TODO that lays out the research strategy before any subagent runs.</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">![](https://cdn.prod.website-files.com/65c81e88c254bb0f97633a71/69fbd5b1c7636f0d319369f3_01-orchestrator-plan.png)<em>Orchestrator&#x27;s four-phase plan, generated by write_todos at the start of the run.</em></p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">Phase 1 then dispatches all five research subagents in parallel: <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:0.9em;color:#059669">corporate-profile</code>, <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:0.9em;color:#059669">financial-health</code>, <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:0.9em;color:#059669">litigation-regulatory</code>, <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:0.9em;color:#059669">news-reputation</code>, and <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:0.9em;color:#059669">competitive-landscape</code>. Each subagent receives a focused mission described in plain English in the dispatch tool call. Click into any of those <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:0.9em;color:#059669">task</code> nodes in the trace and you can see exactly what that subagent is doing: the prompt it issued, the Parallel calls it made, and the sources that came back.</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">![](https://cdn.prod.website-files.com/65c81e88c254bb0f97633a71/69fbd62197a2044d0db7ffc0_02-phase1-fanout.png)<em>Phase 1 fan-out: five research subagents dispatched in parallel.</em></p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">After Phase 1 completes, the orchestrator fans out per-competitor analyses (Phase 2), cross-references workpapers for contradictions (Phase 3), and synthesizes the final memo (Phase 4). Every tool call is captured along the way.</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">Selecting any subagent&#x27;s <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:0.9em;color:#059669">research_task</code> shows the full structured findings Parallel returned: every field, every excerpt, and every URL, including content beyond the summary that lands in the workpaper.</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">![](https://cdn.prod.website-files.com/65c81e88c254bb0f97633a71/69fbd81fc6bfd0781c79c411_03-research-task.png)<em>A subagent&#x27;s research_task output: structured findings returned by Parallel.</em></p>
+<h3 style="font-size:18px;font-weight:600;margin:28px 0 12px;color:var(--text)">Citations and confidence</h3>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">For a compliance reviewer, the relevant view is the basis payload inside <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:0.9em;color:#059669">parallel_task_run</code>. Parallel attaches each output with source URLs, a confidence label (high / medium / low), and a one-line reasoning trace explaining how the answer was assembled.</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">![](https://cdn.prod.website-files.com/65c81e88c254bb0f97633a71/69fbd7ee90598597f1c65594_04-basis-payload.png)<em>Basis payload: source URLs, confidence label, and reasoning trace.</em></p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">In the Rivian corporate-profile call shown above, the agent&#x27;s <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:0.9em;color:#059669">medium</code>-confidence output is grounded in four sources: Rivian&#x27;s 10-K and 2026 annual report on SEC.gov, a third-party reproduction of the 2026 proxy statement, and Wikipedia. That mix of two primary SEC filings, one secondary reproduction, and one tertiary source is exactly the kind of grounding pattern a compliance reviewer would want to flag. With the trace, the grounding is inspectable per claim, and sourcing patterns like this one become correctable across runs. A workpaper without this layer would list the same four URLs flat, with no signal about which were primary.</p>
+<h3 style="font-size:18px;font-weight:600;margin:28px 0 12px;color:var(--text)">Beyond a single trace</h3>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">For one DD memo, the trace is the audit trail. For a portfolio of memos run across a quarter, you also need pattern discovery: which subagent produces the most low-confidence outputs, which targets force the most chained Parallel follow-ups, which sources have started returning thinner content. LangSmith builds on the trace foundation with cross-run analytics for exactly that. For an FSI team running diligence at scale, that capability turns an audit trail into an operating discipline.</p><div class="chart" style="margin:20px 0"><div class="chart-row"><div class="chart-label">Logging is increasin</div><div class="chart-bar-wrap"><div class="chart-bar green" style="width:95%">The EU AI Act requires automatic event l</div></div></div>
+<div class="chart-row"><div class="chart-label">Decision explainabil</div><div class="chart-bar-wrap"><div class="chart-bar teal" style="width:83%">When AI input feeds a regulated decision</div></div></div>
+<div class="chart-row"><div class="chart-label">Third-party AI requi</div><div class="chart-bar-wrap"><div class="chart-bar blue" style="width:71%">The stack uses an external model provide</div></div></div>
+<div class="chart-row"><div class="chart-label">Operational resilien</div><div class="chart-bar-wrap"><div class="chart-bar amber" style="width:59%">If an agent failure contributes to a mat</div></div></div>
+</div></div></section>
+<section class="section" id="s6"><h2>📌 Who this is for</h2><p class="lead">This architecture applies to any team running structured research workflows on companies, including deal screening, cred</p><div class="card"><p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">This architecture applies to any team running structured research workflows on companies, including deal screening, credit underwriting, KYB/KYC onboarding, M&amp;A target evaluation, and vendor risk assessment.</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">The five research tracks here are a starting point. Swap in tracks relevant to your workflow: add management background checks and beneficial ownership tracing for compliance-heavy diligence, add IP portfolio analysis for M&amp;A screening, add SOC 2 verification for vendor assessment. Each additional track is a new subagent dict with a system prompt and the same <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:0.9em;color:#059669">research_task</code> tool.</p></div></section>
+<section class="section" id="s7"><h2>🌐 Resources</h2><p class="lead">- Full source code(https://github.com/parallel-web/parallel-cookbook/tree/main/python-recipes/parallel-deepagents-due-</p><div class="card"><ul style="margin:12px 0;padding-left:20px">
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7"><a href="https://github.com/parallel-web/parallel-cookbook/tree/main/python-recipes/parallel-deepagents-due-diligence" target="_blank" style="color:#059669;text-decoration:underline">Full source code</a></li>
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7"><a href="https://docs.langchain.com/oss/python/deepagents/overview" target="_blank" style="color:#059669;text-decoration:underline">Deep Agents documentation</a></li>
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7"><a href="https://docs.parallel.ai/task-api/task-quickstart" target="_blank" style="color:#059669;text-decoration:underline">Parallel Task API</a></li>
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7"><a href="https://docs.parallel.ai/task-api/guides/access-research-basis" target="_blank" style="color:#059669;text-decoration:underline">Parallel Basis and citations</a></li>
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7"><a href="https://docs.parallel.ai/task-api/guides/interactions" target="_blank" style="color:#059669;text-decoration:underline">Parallel interactive research</a></li>
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7"><a href="https://github.com/parallel-web/langchain-parallel" target="_blank" style="color:#059669;text-decoration:underline"><code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:0.9em;color:#059669">langchain-parallel</code> SDK</a></li>
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7"><a href="https://platform.parallel.ai/" target="_blank" style="color:#059669;text-decoration:underline">Get a Parallel API key</a></li>
+</ul>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">‍</p>
+<h3 style="font-size:18px;font-weight:600;margin:28px 0 12px;color:var(--text)">Related content</h3>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">![](https://cdn.prod.website-files.com/65c81e88c254bb0f97633a71/69f20536df00c0eb15eab1d3_blue-77%20characters%20max.png)Deep AgentsAgent ArchitectureOpen Source</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">#### Tuning Deep Agents to Work Well with Different Models</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">![](https://cdn.prod.website-files.com/65c81e88c254bb0f97633a71/69dcefac505b6b48827abf84_vivek-trivedy.png)![](https://cdn.prod.website-files.com/65c81e88c254bb0f97633a71/69dcf032ce65a32e276a4d0a_mason-daugherty.png)Vivek TrivedyMason DaughertyApril 29, 2026![](https://cdn.prod.website-files.com/65b8cd72835ceeacd4449a53/69cd1fd0002272ce39bf1241_Icon-6.svg)5min[](/blog/tuning-deep-agents-different-models)![](https://cdn.prod.website-files.com/65c81e88c254bb0f97633a71/69ea236ce872ec8be413bd2f_runtime-behind-production-deep-agents-thumbnail.png)Conceptual GuideDeep Agents</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">#### The runtime behind production deep agents</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">![](https://cdn.prod.website-files.com/65c81e88c254bb0f97633a71/69dcee60745f0e15b18ad4d5_sydney-runkle.png)![](https://cdn.prod.website-files.com/65c81e88c254bb0f97633a71/69dcefac505b6b48827abf84_vivek-trivedy.png)Sydney RunkleVivek TrivedyApril 20, 2026![](https://cdn.prod.website-files.com/65b8cd72835ceeacd4449a53/69cd1fd0002272ce39bf1241_Icon-6.svg)24min[](/blog/runtime-behind-production-deep-agents)![](https://cdn.prod.website-files.com/65c81e88c254bb0f97633a71/69e23754937c2f749d12bb0b_76%20(1).png)Agent ArchitecturePartner</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">#### Agentic Engineering: How Swarms of AI Agents Are Redefining Software Engineering</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">![](https://cdn.prod.website-files.com/65c81e88c254bb0f97633a71/69e234176723e6111407b935_renuka-kumar.png)![](https://cdn.prod.website-files.com/65c81e88c254bb0f97633a71/69e23427e77d2631610e5d62_Prashanth-Ramagopal.png)Renuka KumarPrashanth RamagopalApril 17, 2026![](https://cdn.prod.website-files.com/65b8cd72835ceeacd4449a53/69cd1fd0002272ce39bf1241_Icon-6.svg)11min[](/blog/agentic-engineering-redefining-software-engineering)![](https://cdn.prod.website-files.com/65b8cd72835ceeacd4449a53/69ce01ea562f8cc223cabf25_Frame%202147254328.svg)Sign up for our newsletter to stay up to date</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+<h3 style="font-size:18px;font-weight:600;margin:28px 0 12px;color:var(--text)">See what your agent is really doing</h3>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">[Try LangSmith</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">](https://smith.langchain.com/)[Get a demo</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">](/contact-sales)</p></div></section>
+
+</div>
+<footer class="footer">
+  <p><a href="../">&larr; 返回 Hub</a> &middot; 原文：<a href="https://docs.langchain.com/oss/python/deepagents/overview" target="_blank">langchain.com</a></p>
+  <p style="margin-top:8px">LangChain Blog Deep-Dive &middot; LangChain Team &middot; </p>
+</footer>
+</body>
+</html>

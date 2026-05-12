@@ -1,0 +1,612 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Why We Rebuilt LangChain’s Chatbot and What We Learned</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafbfc;
+      --surface: #fff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --green: #10b981;
+      --emerald: #059669;
+      --teal: #14b8a6;
+      --blue: #3b82f6;
+      --purple: #6366f1;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans SC', 'Inter', system-ui, sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: var(--sans); background: var(--bg); color: var(--text); line-height:1.7; }
+    .nav { position:sticky; top:0; z-index:100; background:rgba(15,23,42,.85); backdrop-filter:blur(12px); padding:14px 32px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,.08); }
+    .nav a { color:#f1f5f9; text-decoration:none; font-weight:500; font-size:14px; }
+    .nav .brand { font-weight:700; font-size:16px; color:#10b981; }
+    .hero { background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%); color:#fff; padding:80px 32px 60px; text-align:center; }
+    .hero h1 { font-size:clamp(1.8rem,4vw,2.8rem); font-weight:800; margin-bottom:12px; line-height:1.3; }
+    .hero .subtitle { font-size:18px; color:rgba(255,255,255,.8); max-width:720px; margin:0 auto 40px; }
+    .hero .meta { font-size:13px; color:rgba(255,255,255,.5); margin-bottom:32px; }
+    .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:16px; max-width:800px; margin:0 auto; }
+    .stat { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); border-radius:12px; padding:20px 16px; backdrop-filter:blur(8px); }
+    .stat .num { font-size:28px; font-weight:800; color:#34d399; }
+    .stat .label { font-size:13px; color:rgba(255,255,255,.7); margin-top:4px; }
+    .page { max-width:900px; margin:0 auto; padding:40px 24px; }
+    .toc { margin-bottom:48px; }
+    .toc h3 { font-size:14px; text-transform:uppercase; letter-spacing:1.5px; color:var(--text-secondary); margin-bottom:16px; }
+    .toc-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; }
+    .toc-grid a { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--text); font-size:14px; font-weight:500; transition:all .2s; }
+    .toc-grid a:hover { border-color:var(--emerald); background:#ecfdf5; }
+    .toc-grid .num { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:8px; background:linear-gradient(135deg,#059669,#10b981); color:#fff; font-size:12px; font-weight:700; flex-shrink:0; }
+    .section { margin-bottom:56px; }
+    .section h2 { font-size:clamp(1.3rem,3vw,1.7rem); font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:10px; }
+    .lead { color:var(--text-secondary); font-size:15px; margin-bottom:24px; line-height:1.6; }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:24px; margin-bottom:16px; }
+    .card h4 { font-size:16px; font-weight:600; margin-bottom:8px; }
+    .card p, .card li { font-size:14px; color:var(--text-secondary); line-height:1.7; }
+    .card ul, .card ol { padding-left:20px; }
+    .card li { margin-bottom:4px; }
+    p { font-size:15px; color:var(--text-secondary); line-height:1.8; margin-bottom:16px; }
+    p code { background:#f1f5f9; padding:2px 6px; border-radius:4px; font-family:var(--mono); font-size:13px; color:#059669; }
+    .chart { margin:24px 0; }
+    .chart-row { display:flex; align-items:center; margin-bottom:10px; gap:12px; }
+    .chart-label { width:150px; font-size:13px; font-weight:500; text-align:right; flex-shrink:0; }
+    .chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:32px; overflow:hidden; }
+    .chart-bar { height:100%; border-radius:8px; display:flex; align-items:center; justify-content:flex-end; padding-right:10px; font-size:12px; font-weight:600; color:#fff; transition:width .6s ease; }
+    .chart-bar.green { background:linear-gradient(90deg,#059669,#10b981); }
+    .chart-bar.teal { background:linear-gradient(90deg,#14b8a6,#2dd4bf); }
+    .chart-bar.blue { background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+    .chart-bar.purple { background:linear-gradient(90deg,#6366f1,#a78bfa); }
+    .chart-bar.amber { background:linear-gradient(90deg,#f59e0b,#fbbf24); }
+    .chart-bar.red { background:linear-gradient(90deg,#ef4444,#f87171); }
+    .flow { display:flex; align-items:center; justify-content:center; gap:12px; margin:24px 0; flex-wrap:wrap; }
+    .flow-step { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 20px; font-size:14px; font-weight:600; text-align:center; min-width:120px; }
+    .flow-step.green { background:linear-gradient(135deg,#059669,#10b981); color:#fff; border:none; }
+    .flow-step.teal { background:linear-gradient(135deg,#14b8a6,#2dd4bf); color:#fff; border:none; }
+    .flow-step.blue { background:linear-gradient(135deg,#3b82f6,#60a5fa); color:#fff; border:none; }
+    .flow-step.purple { background:linear-gradient(135deg,#6366f1,#a78bfa); color:#fff; border:none; }
+    .flow-step.amber { background:linear-gradient(135deg,#f59e0b,#fbbf24); color:#fff; border:none; }
+    .flow-arrow { font-size:20px; color:var(--text-secondary); }
+    .compare-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:24px 0; }
+    .compare-card { border-radius:var(--radius); padding:24px; }
+    .compare-card.old { background:#fef2f2; border:2px solid #fecaca; }
+    .compare-card.new { background:#ecfdf5; border:2px solid #a7f3d0; }
+    .compare-card h4 { font-size:15px; font-weight:700; margin-bottom:8px; }
+    .compare-card p { font-size:13px; color:var(--text-secondary); }
+    .timeline { position:relative; padding-left:32px; margin:24px 0; }
+    .timeline::before { content:''; position:absolute; left:7px; top:8px; bottom:8px; width:3px; background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:24px; }
+    .tl-dot { position:absolute; left:-29px; top:4px; width:14px; height:14px; border-radius:50%; border:3px solid #059669; background:#fff; }
+    .tl-item:nth-child(2) .tl-dot { border-color:#14b8a6; }
+    .tl-item:nth-child(3) .tl-dot { border-color:#3b82f6; }
+    .tl-item:nth-child(4) .tl-dot { border-color:#6366f1; }
+    .tl-item:nth-child(5) .tl-dot { border-color:#f59e0b; }
+    .tl-phase { font-weight:700; font-size:15px; color:var(--text); }
+    .tl-desc { font-size:13px; color:var(--text-secondary); margin-top:4px; }
+    .code-block { background:#1e293b; border-radius:var(--radius); padding:20px; margin:16px 0; overflow-x:auto; }
+    .code-block pre { color:#e2e8f0; font-family:var(--mono); font-size:13px; line-height:1.6; white-space:pre-wrap; word-break:break-all; }
+    .block-q { background:linear-gradient(135deg,#ecfdf5,#d1fae5); border-left:4px solid #059669; border-radius:0 var(--radius) var(--radius) 0; padding:20px 24px; margin:24px 0; }
+    .block-q p { font-size:15px; font-style:italic; color:#064e3b; line-height:1.7; }
+    .badge { display:inline-block; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600; }
+    .badge-green { background:#ecfdf5; color:#059669; }
+    .badge-teal { background:#f0fdfa; color:#14b8a6; }
+    .badge-blue { background:#eff6ff; color:#3b82f6; }
+    .badge-purple { background:#eef2ff; color:#6366f1; }
+    .badge-amber { background:#fffbeb; color:#d97706; }
+    .footer { background:#0f172a; color:#94a3b8; padding:40px 32px; text-align:center; font-size:14px; }
+    .footer a { color:#34d399; text-decoration:none; }
+    .footer a:hover { text-decoration:underline; }
+    .footer .links { margin-top:12px; display:flex; justify-content:center; gap:24px; flex-wrap:wrap; }
+    @media(max-width:768px) {
+      .compare-grid { grid-template-columns:1fr; }
+      .chart-label { width:100px; font-size:12px; }
+      .flow { flex-direction:column; gap:8px; }
+      .flow-arrow { transform:rotate(90deg); }
+      .toc-grid { grid-template-columns:1fr; }
+      .hero { padding:60px 20px 40px; }
+      .nav { padding:12px 16px; }
+      .stats { grid-template-columns:1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+
+  <header class="hero">
+    <div class="meta">🧠 RAG & Knowledge · LangChain Accounts · 2025-11-05</div>
+    <h1>Why We Rebuilt LangChain’s Chatbot and What We Learned</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">26</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~16min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">6</div><div class="label">代码示例</div></div>
+      <div class="stat"><div class="num">21</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>Why We Rebuilt LangChain’s Cha</a>
+      <a href="#s2"><span class="num">2</span>Background</a>
+      <a href="#s3"><span class="num">3</span>We Decided to Automate It</a>
+      <a href="#s4"><span class="num">4</span>Then We Had a Realization</a>
+      <a href="#s5"><span class="num">5</span>How We Built The New Agent</a>
+      <a href="#s6"><span class="num">6</span>For Simple Docs: Create Agent</a>
+      <a href="#s7"><span class="num">7</span>For answering using code: Deep</a>
+      <a href="#s8"><span class="num">8</span>Why We Got Moved Away from Vec</a>
+      <a href="#s9"><span class="num">9</span>The Better Approach: Direct AP</a>
+      <a href="#s10"><span class="num">10</span>Tool Design: Building for Huma</a>
+      <a href="#s11"><span class="num">11</span>Documentation Search: Full Pag</a>
+      <a href="#s12"><span class="num">12</span>Knowledge Base Search: Scan, T</a>
+      <a href="#s13"><span class="num">13</span>Codebase Search: Search, Navig</a>
+      <a href="#s14"><span class="num">14</span>How Deep Agent and Subgraphs S</a>
+      <a href="#s15"><span class="num">15</span>**Making It Production-Ready**</a>
+      <a href="#s16"><span class="num">16</span>Getting the Agent to Users</a>
+      <a href="#s17"><span class="num">17</span>**Loading User Threads:**</a>
+      <a href="#s18"><span class="num">18</span>S**treaming Responses in Real </a>
+      <a href="#s19"><span class="num">19</span>Conversation Memory</a>
+      <a href="#s20"><span class="num">20</span>The Results</a>
+      <a href="#s21"><span class="num">21</span>Key Takeaways</a>
+      <a href="#s22"><span class="num">22</span>What&amp;#x27;s Next</a>
+      <a href="#s23"><span class="num">23</span>Try It Yourself</a>
+      <a href="#s24"><span class="num">24</span>Join the Conversation</a>
+      <a href="#s25"><span class="num">25</span>Related content</a>
+      <a href="#s26"><span class="num">26</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+
+    <section class="section" id="s1">
+      <h2>🔍 Why We Rebuilt LangChain’s Chatbot and What We Learned</h2>
+      <p class="lead">The LangChain TeamNovember 5, 202513min
+
+Go back to blogShare
+
+By Liam Bush</p>
+      <p>The LangChain TeamNovember 5, 202513min[</p>
+<p>Go back to blog](/blog)Share[</p>
+      
+    </section>
+
+    <section class="section" id="s2">
+      <h2>⚡ Background</h2>
+      <p class="lead">Every successful platform needs reliable support, but we realized our own team was spending hours tracking down answers to technical questions.</p>
+      <p>Every successful platform needs reliable support, but we realized our own team was spending hours tracking down answers to technical questions. This friction wasn&#x27;t just slowing down our engineers—it was a critical bottleneck for our users.</p>
+<p>We set out to solve this using the very tools we champion: LangChain, LangGraph and LangSmith. We originally built chat.langchain.com as a prototype, explicitly designed to serve two functions:</p>
+<div class="card"><ul>
+  <li>Product Q&amp;A: Help users—and our own team—get instant, authoritative answers to product questions.</li>
+  <li>Customer Prototype: Serve as a living example demonstrating how customers could build sophisticated, reliable agents using the LangChain stack.</li>
+</ul></div>
+<p>We had a strong intent and a functional product. But we have a confession: our support engineers weren&#x27;t actively using the LangChain Chatbot. That&#x27;s where our real learning began. This is the story of how we fixed our own agent—and what we learned about building truly reliable, production-grade applications that our customers can adapt and use.</p>
+<p>Our team was not actively using Chat LangChain not because it was broken and not because they didn&#x27;t believe in it. But because when someone asked &quot;Why isn&#x27;t streaming working in production?&quot; they needed something more thorough than just using docs as it’s only resource. We all know there’s never enough documentation.</p>
+<p>So they built their own workflow:</p>
+<div class="card"><ul>
+  <li>Step 1: Search our docs (docs.langchain.com) to understand what the feature is supposed to do.</li>
+  <li>Step 2: Check our knowledge base (support.langchain.com) to see if other users hit the same issue and how it was resolved.</li>
+  <li>Step 3: Open <code>Claude Code</code>, search the actual implementation, and verify what the code actually does.</li>
+</ul></div>
+<p>Docs for the official story. Knowledge base for real-world issues. Codebase for ground truth.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s3">
+      <h2>🏗️ We Decided to Automate It</h2>
+      <p class="lead">This three-step ritual worked incredibly well.</p>
+      <p>This three-step ritual worked incredibly well. We watched them do it dozens of times a day and thought: what if we just automated this exact workflow?</p>
+<p>So we built an internal <code>Deep Agent</code> (a library for building agents that can tackle complex, multi-step tasks) with three specialized subagents — one for docs, one for knowledge base, one for codebase search — each one asking follow-up questions and filtering results before passing insights to a main orchestrator agent.</p>
+<p>The main agent would synthesize everything and deliver answers like this:</p>
+<div class="block-q"><p>Example output:</p></div>
+<p>&quot;To stream from subgraphs, set subgraphs: true in your stream config according to the LangGraph streaming docs. There&#x27;s a support article titled &#x27;Why is token streaming not working after upgrade?](https://support.langchain.com/articles/7150806184-Why-is-token-by-token-streaming-not-working-after-upgrading-LangGraph?)%5B?%5D(https://www.notion.so/263808527b1780db9f26fa75aed5e7e3?pvs=21)&amp;ref=blog.langchain.com)&#x27; that explains this exact issue — you need to enable subgraph streaming to get token-level updates from nested agents. The implementation is in pregel/main.py lines 3373-3279, where the subgraphs flag controls whether nested graph outputs are included in the stream.&quot;</p>
+<p>Our engineers loved it.</p>
+<p>It saved them hours every week on complex debugging. They&#x27;d describe a production issue and get back a comprehensive answer that cited documentation, referenced known solutions, and pointed to the exact lines of code that mattered.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s4">
+      <h2>📊 Then We Had a Realization</h2>
+      <p class="lead">Then someone asked the obvious question: if this works so well for us, why doesn&amp;#x27;t our public Chat LangChain work this way?
+
+It was a fair point.</p>
+      <p>Then someone asked the obvious question: if this works so well for us, why doesn&#x27;t our public Chat LangChain work this way?</p>
+<p>It was a fair point. Our public tool was chunking documents into fragments, generating embeddings, storing them in a vector database. We had to reindex constantly as docs updated. Users got answers, but the citations needed love and the context was fragmented.</p>
+<p>We&#x27;d accidentally built something better internally just by copying what worked. It was time to bring that same approach to the public product.</p>
+<p>When we started rebuilding, we quickly realized we needed to combine two different architectures driven by two broad categories of questions. Most questions could be answered using docs and knowledge base. The remainder would require analysis of foundation of code.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s5">
+      <h2>🔗 How We Built The New Agent</h2>
+      <p class="lead"></p>
+      
+      
+    </section>
+
+    <section class="section" id="s6">
+      <h2>💡 For Simple Docs: Create Agent</h2>
+      <p class="lead">We chose &lt;code&gt;createAgent&lt;/code&gt; (Agent abstraction in &lt;code&gt;langchain&lt;/code&gt;) for chat.</p>
+      <p>We chose <code>createAgent</code> (Agent abstraction in <code>langchain</code>) for chat.langchain.com as the default mode because it&#x27;s best for speed.</p>
+<p>There&#x27;s no planning phase, no orchestration overhead — just immediate tool calls and answers. The agent searches the docs, checks the knowledge base if needed, refines its query if the results are unclear, and returns an answer. Most documentation questions can be handled with 3-6 tool calls, and Create Agent executes those in seconds.</p>
+<p>We give end-users access to multiple models — <code>Claude Haiku 4.5</code>, <code>GPT-4o Mini</code>, and <code>GPT-4o-nano</code> — and we&#x27;ve found that Haiku 4.5 is exceptionally fast at tool calling while maintaining strong accuracy. The combination of createAgent and Haiku 4.5 delivers sub-15-second responses for most queries, which is exactly what documentation Q&amp;A demands.</p>
+<p>We used <code>LangSmith</code> to trace every conversation, identify where the agent was making unnecessary tool calls, and refine our prompts. The data showed us that most questions could be answered with 3-6 tool calls if we taught the agent to ask better follow-up questions. LangSmith&#x27;s evaluation suite let us A/B test different prompting strategies and measure improvements in both speed and accuracy.</p>
+<p>This 30-second trace includes 7 tool calls: 4 doc searches, a knowledge-base article lookup, and 2 article reads, with 20 seconds devoted to streaming the final response. View Here</p>
+      <div class="chart"><div class="chart-row">
+    <div class="chart-label">createAgent</div>
+    <div class="chart-bar-wrap"><div class="chart-bar green" style="width:95%">95%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">langchain</div>
+    <div class="chart-bar-wrap"><div class="chart-bar teal" style="width:80%">80%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">speed</div>
+    <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:65%">65%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">GPT-4o Mini</div>
+    <div class="chart-bar-wrap"><div class="chart-bar purple" style="width:50%">50%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">GPT-4o-nano</div>
+    <div class="chart-bar-wrap"><div class="chart-bar amber" style="width:35%">35%</div></div>
+  </div></div>
+    </section>
+
+    <section class="section" id="s7">
+      <h2>🛠️ For answering using code: Deep Agent with Subgraphs</h2>
+      <p class="lead">A lot of questions needed searching diving into our codebases to verify implementation details in addition to leveraging documentation, knowledge bases and cross-referencing known issues as resources.</p>
+      <p>A lot of questions needed searching diving into our codebases to verify implementation details in addition to leveraging documentation, knowledge bases and cross-referencing known issues as resources.</p>
+<p>For these tasks, we built a <code>Deep Agent</code> with specialized subgraphs: one for documentation search, one for knowledge base search, and one for codebase search.</p>
+<p>Each subagent operates independently, asking follow-up questions, filtering through information, and extracting only the most relevant insights before passing them up to a main orchestrator agent. This prevents the main agent from drowning in context while allowing each domain expert to dig as deep as necessary.</p>
+<p>The codebase search advantage:</p>
+<p>The codebase search subagent is particularly powerful. It can search our private repositories using pattern matching, navigate file structures to understand context, and read specific implementations with line-number precision.</p>
+<p>This deep agent architecture takes longer to run — sometimes 1-3 minutes for complex queries — but the thoroughness is worth it. We leverage DeepAgent when the initial response is not addressing the core question.</p>
+<p>Disclaimer: This mode is only enabled for a subset of users at launch and will be made generally available in a few days.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s8">
+      <h2>📈 Why We Got Moved Away from Vector Embeddings</h2>
+      <p class="lead">The standard approach to documentation search — chunk docs into pieces, generate embeddings, store in a vector database, retrieve by similarity — works fine for unstructured content like PDFs.</p>
+      <p>The standard approach to documentation search — chunk docs into pieces, generate embeddings, store in a vector database, retrieve by similarity — works fine for unstructured content like PDFs. But for structured product documentation, we kept hitting three problems.</p>
+<p>Chunking breaks structure. When you chop documentation into 500-token fragments, you lose headers, subsections, and context. The agent would cite <code>&quot;set streaming=True&quot;</code> without explaining why or when. Users had to hunt through pages to find what they needed.</p>
+<p>Constant reindexing. Our docs update multiple times daily. Every change meant re-chunking, re-embedding, and re-uploading. It slowed us down.</p>
+<p>Vague citations. Users couldn&#x27;t verify answers or trace where information came from.</p>
+<p>The breakthrough was realizing we were solving the wrong problem. Documentation is already organized. Knowledge bases are already categorized. Codebases are already navigable. We didn&#x27;t need smarter retrieval — we needed to give the agent direct access to that existing structure.</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s9">
+      <h2>🎯 The Better Approach: Direct API Access and Smart Prompting</h2>
+      <p class="lead">Instead of chunking and embedding, we gave the agent direct access to the real thing.</p>
+      <p>Instead of chunking and embedding, we gave the agent direct access to the real thing. For documentation, we use <code>Mintlify&#x27;s API</code>, which returns full pages with all their headers, subsections, and code examples intact. For the knowledge base, we query our support articles by title first, then read the most promising ones in full. For codebase search, we uploaded our codebase to our LangGraph Cloud deployment and use <code>ripgrep</code>for pattern matching, directory traversal to understand structure, and file reading to extract specific implementations.</p>
+<p>The agent doesn&#x27;t retrieve based on similarity scores. It searches like a human would — with keywords, refinement, and follow-up questions.</p>
+<p>This is where the magic happens. We don&#x27;t just tell the agent to search once and return whatever it finds. We prompt it to think critically about whether it has enough information. If the results are ambiguous or incomplete, the agent refines its query and searches again. If documentation mentions a concept without explaining it, the agent searches for that concept specifically. If multiple interpretations are possible, the agent narrows down to the most relevant one.</p>
+      <div class="chart"><div class="chart-row">
+    <div class="chart-label">full pages</div>
+    <div class="chart-bar-wrap"><div class="chart-bar green" style="width:95%">95%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">ripgrep</div>
+    <div class="chart-bar-wrap"><div class="chart-bar teal" style="width:80%">80%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">think critically</div>
+    <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:65%">65%</div></div>
+  </div></div>
+    </section>
+
+    <section class="section" id="s10">
+      <h2>🔬 Tool Design: Building for Human Workflows</h2>
+      <p class="lead">We designed our tools to mirror how humans actually search, not how retrieval algorithms work.</p>
+      <p>We designed our tools to mirror how humans actually search, not how retrieval algorithms work.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s11">
+      <h2>📝 Documentation Search: Full Pages, Not Fragments</h2>
+      <p class="lead">The documentation search tool queries &lt;code&gt;Mintlify&amp;#x27;s API&lt;/code&gt; and returns complete pages.</p>
+      <p>The documentation search tool queries <code>Mintlify&#x27;s API</code> and returns complete pages. When someone asks about streaming, the agent doesn&#x27;t get three disjointed paragraphs from different sections — it gets the entire streaming documentation page, structured exactly as a human would read it.</p>
+<div class="code-block"><pre>@tool
+def SearchDocsByLangChain(query: str, page_size: int = 5, language: Optional[str] = None) -&amp;gt; str:
+    &amp;quot;&amp;quot;&amp;quot;Search LangChain documentation via Mintlify API&amp;quot;&amp;quot;&amp;quot;
+    params = {&amp;quot;query&amp;quot;: query, &amp;quot;page_size&amp;quot;: page_size}
+    if language:
+        params[&amp;quot;language&amp;quot;] = language
+    response = requests.get(MINTLIFY_API_URL, params=params)
+    return _format_search_results(response.json())</pre></div>
+<p>But we don&#x27;t stop there. We prompt the agent to evaluate whether the initial results actually answer the question. Is this the right section? Are there related concepts that need clarification? Would a more specific search term be better?</p>
+<p>The agent has a budget of 4-6 tool calls, and we encourage it to use them strategically to refine its understanding before responding.</p>
+<p>Here&#x27;s what that looks like in practice:</p>
+<p>A user asks, &quot;How do I add memory to my agent?&quot;</p>
+<p>The agent searches for <code>&quot;memory&quot;</code> and gets results that cover checkpointing, conversation history, and the Store API. Instead of picking one at random, the agent realizes the question is ambiguous — memory could mean persisting conversation state within a thread or storing facts across multiple conversations.</p>
+<p>It searches again with <code>&quot;checkpointing&quot;</code> to narrow down thread-level persistence, fetches the support article &quot;How do I configure checkpointing in LangGraph?&quot; and recognizes it doesn&#x27;t cover cross-thread memory.</p>
+<p>So it searches for <code>&quot;store API&quot;</code> to fill the gap.</p>
+<p>The final answer covers both checkpointing for conversation history and the Store API for long-term memory, with precise citations to the support article and documentation used.</p>
+<p>This iterative search process happens in seconds with Create Agent, but it fundamentally changes the quality of responses. The agent isn&#x27;t just retrieving — it&#x27;s reasoning about what the user actually needs.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s12">
+      <h2>🧪 Knowledge Base Search: Scan, Then Read</h2>
+      <p class="lead">We built the knowledge base (powered by Pylon) search as a two-step process because that&amp;#x27;s how humans use knowledge bases.</p>
+      <p>We built the knowledge base (powered by Pylon) search as a two-step process because that&#x27;s how humans use knowledge bases.</p>
+<p>First, the agent retrieves article titles — sometimes dozens of them — and scans them to identify which ones seem relevant. Then it reads only those articles in full.</p>
+<div class="code-block"><pre>@tool
+def search_support_articles(collections: str = &amp;quot;all&amp;quot;, limit: int = 50) -&amp;gt; str:
+    &amp;quot;&amp;quot;&amp;quot;Step 1: Get article titles to scan&amp;quot;&amp;quot;&amp;quot;
+    articles = pylon_client.list_articles(collections=collections, limit=limit)
+    return json.dumps([{
+        &amp;quot;id&amp;quot;: a[&amp;quot;id&amp;quot;],
+        &amp;quot;title&amp;quot;: a[&amp;quot;title&amp;quot;],
+        &amp;quot;url&amp;quot;: a[&amp;quot;url&amp;quot;]
+    } for a in articles])</pre></div>
+<p>@tool
+def get_article_content(article_ids: List[str]) -&gt; str:
+    &quot;&quot;&quot;Step 2: Read the most relevant articles&quot;&quot;&quot;
+    articles = pylon_client.get_articles(article_ids)
+    return &quot;\\n\\n---\\n\\n&quot;.join([
+        f&quot;# {a[&#x27;title&#x27;]}\\n\\n{a[&#x27;content&#x27;]}\\n\\nSource: {a[&#x27;url&#x27;]}&quot;
+        for a in articles
+    ])</p>
+<p>This prevents the agent from drowning in information. Instead of passing 30 full articles to the context window, the agent filters down to the 2-3 that actually matter, reads them thoroughly, and extracts the key insights.</p>
+<p>The prompting reinforces this: focus on quality over quantity, narrow your search if needed, and return only the information that directly answers the question.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s13">
+      <h2>🌐 Codebase Search: Search, Navigate, Verify</h2>
+      <p class="lead">This is where our &lt;code&gt;Deep Agent&lt;/code&gt; shines.</p>
+      <p>This is where our <code>Deep Agent</code> shines.</p>
+<p>We gave the agent three tools that mirror the workflow from the opening — the same pattern our engineers follow when using <code>Claude Code</code>:</p>
+<div class="code-block"><pre>@tool
+def search_public_code(pattern: str, path: Optional[str] = None) -&amp;gt; str:
+    &amp;quot;&amp;quot;&amp;quot;Step 1: Find code matching a pattern&amp;quot;&amp;quot;&amp;quot;
+    cmd = [&amp;quot;rg&amp;quot;, pattern, str(path or search_path)]
+    return subprocess.run(cmd, capture_output=True, text=True).stdout</pre></div>
+<p>@tool
+def list_public_directory(path: str, max_depth: int = 2) -&gt; str:
+    &quot;&quot;&quot;Step 2: Understand the file structure&quot;&quot;&quot;
+    cmd = [&quot;tree&quot;, &quot;-L&quot;, str(max_depth), str(path)]
+    return subprocess.run(cmd, capture_output=True, text=True).stdout</p>
+<p>@tool
+def read_public_file(file_path: str, start_line: int = 1, num_lines: int = 100) -&gt; str:
+    &quot;&quot;&quot;Step 3: Read the actual implementation&quot;&quot;&quot;
+    with open(file_path, &quot;r&quot;) as f:
+        lines = f.readlines()
+    return &quot;\\n&quot;.join(lines[start_line-1:start_line-1+num_lines])</p>
+<p>First, it searches the codebase for a pattern using <code>ripgrep</code>. Then it lists the directory structure to understand how files are organized. Finally, it reads the specific file, focusing on the relevant section, and returns the implementation with line numbers.</p>
+<p>A user reports that streaming tokens hang in production. The docs subagent finds that streaming configuration involves buffer settings. The knowledge base subagent surfaces a support article about token streaming issues after upgrades.</p>
+<p>But the codebase subagent is the one that finds the actual implementation — it searches for <code>&quot;streaming buffer&quot;</code>, navigates to <code>callbacks/streaming.py</code>, and returns lines 47-83 where the default buffer size is hardcoded.</p>
+<p>That&#x27;s the kind of deep investigation that solves real problems.</p>
+<p>The difference? The <code>Deep Agent</code> can work in parallel across all three domains, and summarize the interim findings into one coherent answer.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s14">
+      <h2>📦 How Deep Agent and Subgraphs Solve Context Overload</h2>
+      <p class="lead">When we first built the deep agent as a single system with access to all three tools, it would return everything it found.</p>
+      <p>When we first built the deep agent as a single system with access to all three tools, it would return everything it found. The main agent would get five documentation pages, twelve knowledge base articles, and twenty code snippets — all at once.</p>
+<p>The context window would explode, and the final response would either be bloated with irrelevant details or miss the key insight entirely.</p>
+<p>That&#x27;s when we restructured it with specialized subgraphs.</p>
+<p>Each subagent operates independently. It searches its domain, asks follow-up questions to clarify ambiguity, filters through the results, and extracts only the golden data: the essential facts, citations, and context needed to answer the question.</p>
+<p>The main orchestrator agent never sees the raw search results. It only receives the refined insights from each domain expert. Look at a full trace along with prompts **here.</p>
+<p>The docs subagent might read five full pages but return only two key paragraphs. The knowledge base subagent might scan twenty article titles but return only three relevant summaries. The codebase subagent might search fifty files but return only the specific implementation with line numbers.</p>
+<p>The main agent gets clean, curated information that it can synthesize into a comprehensive answer.</p>
+      <div class="chart"><div class="chart-row">
+    <div class="chart-label">Method A</div>
+    <div class="chart-bar-wrap"><div class="chart-bar green" style="width:95%">95%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method B</div>
+    <div class="chart-bar-wrap"><div class="chart-bar teal" style="width:80%">80%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method C</div>
+    <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:65%">65%</div></div>
+  </div></div>
+    </section>
+
+    <section class="section" id="s15">
+      <h2>🔄 **Making It Production-Ready**</h2>
+      <p class="lead">Even elegant agent designs need production infrastructure to survive contact with real users.</p>
+      <p>Even elegant agent designs need production infrastructure to survive contact with real users. We built modular middleware to handle the operational concerns that would otherwise clutter our prompts.</p>
+<div class="code-block"><pre>middleware = [
+    guardrails_middleware,      # Filter off-topic queries
+    model_retry_middleware,     # Retry on API failures
+    model_fallback_middleware,  # Switch models if needed
+    anthropic_cache_middleware  # Cache expensive calls
+]</pre></div>
+<p>What each layer does:</p>
+<p>Guardrails filter out off-topic queries so the agent stays focused on LangChain questions.</p>
+<p>Retry middleware handles temporary API failures gracefully, so users never see cryptic error messages.</p>
+<p>Fallback middleware switches between Haiku, GPT-4o Mini, and Gemini Nano if a model is unavailable.</p>
+<p>Caching reduces costs by reusing results for identical queries.</p>
+<p>These layers are invisible to users, but they&#x27;re essential for reliability. They let the agent focus on reasoning while the infrastructure handles failure modes, cost optimization, and quality control.</p>
+      <div class="chart"><div class="chart-row">
+    <div class="chart-label">Guardrails</div>
+    <div class="chart-bar-wrap"><div class="chart-bar green" style="width:95%">95%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Retry middleware</div>
+    <div class="chart-bar-wrap"><div class="chart-bar teal" style="width:80%">80%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Fallback middlewar</div>
+    <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:65%">65%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Caching</div>
+    <div class="chart-bar-wrap"><div class="chart-bar purple" style="width:50%">50%</div></div>
+  </div></div>
+    </section>
+
+    <section class="section" id="s16">
+      <h2>🎨 Getting the Agent to Users</h2>
+      <p class="lead">Building a great agent is only half the battle.</p>
+      <p>Building a great agent is only half the battle. The other half? Getting it to users in a way that feels fast and intelligent.</p>
+<p>We use the LangGraph SDK to handle all the complexity of streaming and state management.</p>
+      
+    </section>
+
+    <section class="section" id="s17">
+      <h2>🏆 **Loading User Threads:**</h2>
+      <p class="lead">When someone opens Chat LangChain, we fetch their conversation history using the LangGraph SDK:
+
+&lt;code&gt;const userThreads = await client.</p>
+      <p>When someone opens Chat LangChain, we fetch their conversation history using the LangGraph SDK:</p>
+<div class="code-block"><pre>const userThreads = await client.threads.search({
+  metadata: { user_id: userId },
+  limit: THREAD_FETCH_LIMIT,
+})</pre></div>
+<p>Every thread stores the user&#x27;s ID in metadata, so conversations stay private and persistent across sessions. The LangGraph SDK handles the filtering automatically.</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s18">
+      <h2>🔑 S**treaming Responses in Real Time:**</h2>
+      <p class="lead">When a user sends a message, the LangGraph SDK streams the response as it generates:
+
+typescript
+
+&lt;code&gt;const streamResponse = client.</p>
+      <p>When a user sends a message, the LangGraph SDK streams the response as it generates:</p>
+<div class="code-block"><pre>const streamResponse = client.runs.stream(threadId, &amp;quot;docs_agent&amp;quot;, {
+  input: { messages: [{ role: &amp;quot;user&amp;quot;, content: userMessage }] },
+  streamMode: [&amp;quot;values&amp;quot;, &amp;quot;updates&amp;quot;, &amp;quot;messages&amp;quot;],
+  streamSubgraphs: true,
+})</pre></div>
+<div class="code-block"><pre>for await (const chunk of streamResponse) {
+  if (chunk.event === &amp;quot;messages/partial&amp;quot;) {
+    setMessages(prev =&amp;gt; updateWithPartialContent(chunk.data.content))
+  }
+}</pre></div>
+<p>Three stream modes show the agent&#x27;s entire thought process:</p>
+<div class="card"><ul>
+  <li><code>messages</code> — Tokens appear progressively as the agent writes</li>
+  <li><code>updates</code> — Tool calls reveal what the agent is searching</li>
+  <li><code>values</code> — Final complete state after processing</li>
+</ul></div>
+<p>Users watch the agent think, search docs, check the knowledge base, and build the response token-by-token. No loading spinners.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s19">
+      <h2>📋 Conversation Memory</h2>
+      <p class="lead">Pass the same &lt;code&gt;thread_id&lt;/code&gt; across messages and LangGraph&amp;#x27;s checkpointer handles the rest.</p>
+      <p>Pass the same <code>thread_id</code> across messages and LangGraph&#x27;s checkpointer handles the rest. It stores conversation history, retrieves context for each turn, and maintains state across sessions. We set a 7-day TTL. That&#x27;s it.</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s20">
+      <h2>🚀 The Results</h2>
+      <p class="lead">Since launching the new systems, we&amp;#x27;ve seen dramatic improvements.</p>
+      <p>Since launching the new systems, we&#x27;ve seen dramatic improvements.</p>
+<p>For public Chat LangChain, users get sub-15-second responses with precise citations. They can verify answers immediately because we link directly to the relevant documentation page or knowledge base article. And we no longer spend hours reindexing — the documentation updates automatically.</p>
+<p>Internally, our support engineers use the <code>Deep Agent</code> to handle the most complex tickets. It searches documentation, cross-references known issues, and dives into our private codebase to find the implementation details that actually explain what&#x27;s happening. The agent doesn&#x27;t replace our engineers — it amplifies them, handling the research so they can focus on solving the problem.</p>
+      <div class="chart"><div class="chart-row">
+    <div class="chart-label">Method A</div>
+    <div class="chart-bar-wrap"><div class="chart-bar green" style="width:95%">95%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method B</div>
+    <div class="chart-bar-wrap"><div class="chart-bar teal" style="width:80%">80%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method C</div>
+    <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:65%">65%</div></div>
+  </div></div>
+    </section>
+
+    <section class="section" id="s21">
+      <h2>🔍 Key Takeaways</h2>
+      <p class="lead">- Follow the user&amp;#x27;s workflow: Don&amp;#x27;t reinvent the wheel; automate the successful workflow your best users (or internal experts) already use.</p>
+      <div class="card"><ul>
+  <li>Follow the user&#x27;s workflow: Don&#x27;t reinvent the wheel; automate the successful workflow your best users (or internal experts) already use. For LangChain, this meant replicating the three-step ritual of checking docs, the knowledge base, and the codebase.</li>
+  <li>Evaluate if vector embeddings are appropriate: For structured content like product documentation and code, using vector embeddings could break the document structure, leads to vague citations, and requires constant reindexing. Vector embeddings are fantastic for unstructured content or shorter blocks or clustering use cases.</li>
+  <li>Give the agent direct access to structure: This approach allows the agent direct API access to the content&#x27;s existing structure. This allows the agent to search like a human, with keywords and refinement.</li>
+  <li>Prioritize reasoning over retrieval: Design tools to mirror human workflows: scan article titles then read content, and use pattern matching and directory navigation for code. Prompt the agent to ask follow-up questions and refine its query if initial results are ambiguous, ensuring the final answer covers the user&#x27;s real need.</li>
+  <li>Use Deep Agents and subgraphs to manage context: For complex, multi-domain questions, using a Deep Agent with specialized subgraphs prevents the main orchestrator agent from drowning in raw search results. Each subagent filters and extracts only the &quot;golden data&quot; from its domain before passing the refined insights up.</li>
+  <li>The need for production middleware: Even an elegant agent design needs robust infrastructure to be reliable. Implementing modular middleware for guardrails (filtering off-topic queries), retries (on API failures), fallbacks (switching models), and caching is essential for production-grade reliability, cost-optimization, and quality control.</li>
+</ul></div>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s22">
+      <h2>⚡ What&amp;#x27;s Next</h2>
+      <p class="lead">Public codebase search (launching in the next few days) — When docs and knowledge base aren&amp;#x27;t s</p>
+      <p>Public codebase search (launching in the next few days) — When docs and knowledge base aren&#x27;t sufficient, the agent will search our public repositories to verify implementations and cite exact line numbers</p>
+      
+    </section>
+
+    <section class="section" id="s23">
+      <h2>🏗️ Try It Yourself</h2>
+      <p class="lead">Chat LangChain is live at chat.</p>
+      <p>Chat LangChain is live at chat.langchain.com. Try it with <code>Claude Haiku 4.5</code> for the fastest responses, or experiment with <code>GPT-5 Mini</code> and <code>GPT-5 Nano</code> to see how different models perform.</p>
+      
+    </section>
+
+    <section class="section" id="s24">
+      <h2>📊 Join the Conversation</h2>
+      <p class="lead">Building agents that balance speed and depth is hard, and we&amp;#x27;re still learning.</p>
+      <p>Building agents that balance speed and depth is hard, and we&#x27;re still learning. If you&#x27;re working on similar problems, we&#x27;d love to hear what you&#x27;re discovering.</p>
+<p>Join the LangChain community on our forum or follow us on Twitter.</p>
+<p>Subscribe to our newsletter for updates from the team and community.</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s25">
+      <h2>🔗 Related content</h2>
+      <p class="lead">Company Announcements
+
+#### Interrupt Preview: Meet the MC
+
+Becca WengApril 28, 20267min[](/blog/interrupt-preview-meet-the-mc)Company Announcements
+
+#### April 2026: LangChain Newsletter
+
+The Lang...</p>
+      <p>Company Announcements</p>
+<p>#### Interrupt Preview: Meet the MC</p>
+<p>Becca WengApril 28, 20267min[](/blog/interrupt-preview-meet-the-mc)Company Announcements</p>
+<p>#### April 2026: LangChain Newsletter</p>
+<p>The LangChain TeamApril 27, 20264min[](/blog/april-2026-langchain-newsletter)Company Announcements</p>
+<p>#### Previewing Interrupt 2026: Agents at Enterprise Scale</p>
+<p>Becca WengApril 9, 20264min[](/blog/previewing-interrupt-2026-agents-at-enterprise-scale)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s26">
+      <h2>💡 See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+  </div>
+
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/rebuilding-chat-langchain" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,367 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Multi Needle in a Haystack</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafbfc;
+      --surface: #fff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --green: #10b981;
+      --emerald: #059669;
+      --teal: #14b8a6;
+      --blue: #3b82f6;
+      --purple: #6366f1;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans SC', 'Inter', system-ui, sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: var(--sans); background: var(--bg); color: var(--text); line-height:1.7; }
+    .nav { position:sticky; top:0; z-index:100; background:rgba(15,23,42,.85); backdrop-filter:blur(12px); padding:14px 32px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,.08); }
+    .nav a { color:#f1f5f9; text-decoration:none; font-weight:500; font-size:14px; }
+    .nav .brand { font-weight:700; font-size:16px; color:#10b981; }
+    .hero { background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%); color:#fff; padding:80px 32px 60px; text-align:center; }
+    .hero h1 { font-size:clamp(1.8rem,4vw,2.8rem); font-weight:800; margin-bottom:12px; line-height:1.3; }
+    .hero .subtitle { font-size:18px; color:rgba(255,255,255,.8); max-width:720px; margin:0 auto 40px; }
+    .hero .meta { font-size:13px; color:rgba(255,255,255,.5); margin-bottom:32px; }
+    .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:16px; max-width:800px; margin:0 auto; }
+    .stat { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); border-radius:12px; padding:20px 16px; backdrop-filter:blur(8px); }
+    .stat .num { font-size:28px; font-weight:800; color:#34d399; }
+    .stat .label { font-size:13px; color:rgba(255,255,255,.7); margin-top:4px; }
+    .page { max-width:900px; margin:0 auto; padding:40px 24px; }
+    .toc { margin-bottom:48px; }
+    .toc h3 { font-size:14px; text-transform:uppercase; letter-spacing:1.5px; color:var(--text-secondary); margin-bottom:16px; }
+    .toc-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; }
+    .toc-grid a { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--text); font-size:14px; font-weight:500; transition:all .2s; }
+    .toc-grid a:hover { border-color:var(--emerald); background:#ecfdf5; }
+    .toc-grid .num { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:8px; background:linear-gradient(135deg,#059669,#10b981); color:#fff; font-size:12px; font-weight:700; flex-shrink:0; }
+    .section { margin-bottom:56px; }
+    .section h2 { font-size:clamp(1.3rem,3vw,1.7rem); font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:10px; }
+    .lead { color:var(--text-secondary); font-size:15px; margin-bottom:24px; line-height:1.6; }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:24px; margin-bottom:16px; }
+    .card h4 { font-size:16px; font-weight:600; margin-bottom:8px; }
+    .card p, .card li { font-size:14px; color:var(--text-secondary); line-height:1.7; }
+    .card ul, .card ol { padding-left:20px; }
+    .card li { margin-bottom:4px; }
+    p { font-size:15px; color:var(--text-secondary); line-height:1.8; margin-bottom:16px; }
+    p code { background:#f1f5f9; padding:2px 6px; border-radius:4px; font-family:var(--mono); font-size:13px; color:#059669; }
+    .chart { margin:24px 0; }
+    .chart-row { display:flex; align-items:center; margin-bottom:10px; gap:12px; }
+    .chart-label { width:150px; font-size:13px; font-weight:500; text-align:right; flex-shrink:0; }
+    .chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:32px; overflow:hidden; }
+    .chart-bar { height:100%; border-radius:8px; display:flex; align-items:center; justify-content:flex-end; padding-right:10px; font-size:12px; font-weight:600; color:#fff; transition:width .6s ease; }
+    .chart-bar.green { background:linear-gradient(90deg,#059669,#10b981); }
+    .chart-bar.teal { background:linear-gradient(90deg,#14b8a6,#2dd4bf); }
+    .chart-bar.blue { background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+    .chart-bar.purple { background:linear-gradient(90deg,#6366f1,#a78bfa); }
+    .chart-bar.amber { background:linear-gradient(90deg,#f59e0b,#fbbf24); }
+    .chart-bar.red { background:linear-gradient(90deg,#ef4444,#f87171); }
+    .flow { display:flex; align-items:center; justify-content:center; gap:12px; margin:24px 0; flex-wrap:wrap; }
+    .flow-step { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 20px; font-size:14px; font-weight:600; text-align:center; min-width:120px; }
+    .flow-step.green { background:linear-gradient(135deg,#059669,#10b981); color:#fff; border:none; }
+    .flow-step.teal { background:linear-gradient(135deg,#14b8a6,#2dd4bf); color:#fff; border:none; }
+    .flow-step.blue { background:linear-gradient(135deg,#3b82f6,#60a5fa); color:#fff; border:none; }
+    .flow-step.purple { background:linear-gradient(135deg,#6366f1,#a78bfa); color:#fff; border:none; }
+    .flow-step.amber { background:linear-gradient(135deg,#f59e0b,#fbbf24); color:#fff; border:none; }
+    .flow-arrow { font-size:20px; color:var(--text-secondary); }
+    .compare-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:24px 0; }
+    .compare-card { border-radius:var(--radius); padding:24px; }
+    .compare-card.old { background:#fef2f2; border:2px solid #fecaca; }
+    .compare-card.new { background:#ecfdf5; border:2px solid #a7f3d0; }
+    .compare-card h4 { font-size:15px; font-weight:700; margin-bottom:8px; }
+    .compare-card p { font-size:13px; color:var(--text-secondary); }
+    .timeline { position:relative; padding-left:32px; margin:24px 0; }
+    .timeline::before { content:''; position:absolute; left:7px; top:8px; bottom:8px; width:3px; background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:24px; }
+    .tl-dot { position:absolute; left:-29px; top:4px; width:14px; height:14px; border-radius:50%; border:3px solid #059669; background:#fff; }
+    .tl-item:nth-child(2) .tl-dot { border-color:#14b8a6; }
+    .tl-item:nth-child(3) .tl-dot { border-color:#3b82f6; }
+    .tl-item:nth-child(4) .tl-dot { border-color:#6366f1; }
+    .tl-item:nth-child(5) .tl-dot { border-color:#f59e0b; }
+    .tl-phase { font-weight:700; font-size:15px; color:var(--text); }
+    .tl-desc { font-size:13px; color:var(--text-secondary); margin-top:4px; }
+    .code-block { background:#1e293b; border-radius:var(--radius); padding:20px; margin:16px 0; overflow-x:auto; }
+    .code-block pre { color:#e2e8f0; font-family:var(--mono); font-size:13px; line-height:1.6; white-space:pre-wrap; word-break:break-all; }
+    .block-q { background:linear-gradient(135deg,#ecfdf5,#d1fae5); border-left:4px solid #059669; border-radius:0 var(--radius) var(--radius) 0; padding:20px 24px; margin:24px 0; }
+    .block-q p { font-size:15px; font-style:italic; color:#064e3b; line-height:1.7; }
+    .badge { display:inline-block; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600; }
+    .badge-green { background:#ecfdf5; color:#059669; }
+    .badge-teal { background:#f0fdfa; color:#14b8a6; }
+    .badge-blue { background:#eff6ff; color:#3b82f6; }
+    .badge-purple { background:#eef2ff; color:#6366f1; }
+    .badge-amber { background:#fffbeb; color:#d97706; }
+    .footer { background:#0f172a; color:#94a3b8; padding:40px 32px; text-align:center; font-size:14px; }
+    .footer a { color:#34d399; text-decoration:none; }
+    .footer a:hover { text-decoration:underline; }
+    .footer .links { margin-top:12px; display:flex; justify-content:center; gap:24px; flex-wrap:wrap; }
+    @media(max-width:768px) {
+      .compare-grid { grid-template-columns:1fr; }
+      .chart-label { width:100px; font-size:12px; }
+      .flow { flex-direction:column; gap:8px; }
+      .flow-arrow { transform:rotate(90deg); }
+      .toc-grid { grid-template-columns:1fr; }
+      .hero { padding:60px 20px 40px; }
+      .nav { padding:12px 16px; }
+      .stats { grid-template-columns:1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+
+  <header class="hero">
+    <div class="meta">🧠 RAG & Knowledge · LangChain Accounts · 2024-03-13</div>
+    <h1>Multi Needle in a Haystack</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">9</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~6min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">2</div><div class="label">代码示例</div></div>
+      <div class="stat"><div class="num">32</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>Multi Needle in a Haystack</a>
+      <a href="#s2"><span class="num">2</span>Key Links</a>
+      <a href="#s3"><span class="num">3</span>Overview</a>
+      <a href="#s4"><span class="num">4</span>Usage</a>
+      <a href="#s5"><span class="num">5</span>GPT-4 Retrieval Results</a>
+      <a href="#s6"><span class="num">6</span>GPT-4 Retrieval &amp;amp; Reasonin</a>
+      <a href="#s7"><span class="num">7</span>Conclusion</a>
+      <a href="#s8"><span class="num">8</span>Related content</a>
+      <a href="#s9"><span class="num">9</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+
+    <section class="section" id="s1">
+      <h2>🔍 Multi Needle in a Haystack</h2>
+      <p class="lead">Ankush GolaMarch 13, 20246min
+
+Go back to blogShare
+
+[</p>
+      <p>Ankush GolaMarch 13, 20246min[</p>
+<p>Go back to blog](/blog)Share[</p>
+      
+    </section>
+
+    <section class="section" id="s2">
+      <h2>⚡ Key Links</h2>
+      <p class="lead">- Video
+- Code</p>
+      <div class="card"><ul>
+  <li>Video</li>
+  <li>Code</li>
+</ul></div>
+      
+    </section>
+
+    <section class="section" id="s3">
+      <h2>🏗️ Overview</h2>
+      <p class="lead">Interest in long context LLMs is surging as context windows expand to 1M tokens.</p>
+      <p>Interest in long context LLMs is surging as context windows expand to 1M tokens. One of the most popular and cited benchmarks for long context LLM retrieval is Greg Kamradt&#x27;s Needle in A Haystack: a fact (needle) is injected into a (haystack) of context (e.g., Paul Graham essays) and the LLM is asked a question related to this fact. This explores retrieval across context length and document placement.</p>
+<p>But, this isn&#x27;t fully reflective of many retrieval augmented generation (RAG) applications; RAG is often focused on retrieving multiple facts (from an index) and then reasoning over them. We present a new benchmark that tests exactly this. In our <code>Multi-Needle + Reasoning</code> benchmark we show two new results:</p>
+<div class="card"><ul>
+  <li>Performance degrades as you ask LLMs to retrieve more facts</li>
+  <li>Performance degrades when the LLM has to reason about retrieved facts</li>
+</ul></div>
+<p>See below plot for a summary of the results: as the number of needles increases, retrieval decreases; and reasoning over those needles is worse than just retrieval.</p>
+<p>We also show (similar to previous benchmarks) that performance decreases as more and more context is passed in. However, we additionally investigate not just overall performance but why performance drops when retrieving multiple needles. Looking at the heatmap of results below, we can see that when retrieving multiple needles GPT-4 consistently retrieves needles towards the end while ignoring needles at the beginning, similar to the single needle studies.</p>
+<p>Below we&#x27;ll walk through benchmark usage and discuss results on GPT-4.</p>
+      <div class="chart"><div class="chart-row">
+    <div class="chart-label">Method A</div>
+    <div class="chart-bar-wrap"><div class="chart-bar green" style="width:95%">95%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method B</div>
+    <div class="chart-bar-wrap"><div class="chart-bar teal" style="width:80%">80%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method C</div>
+    <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:65%">65%</div></div>
+  </div></div>
+    </section>
+
+    <section class="section" id="s4">
+      <h2>📊 Usage</h2>
+      <p class="lead">To perform a &lt;code&gt;Multi-Needle + Reasoning&lt;/code&gt; evaluation, a user only needs three things: (1) A &lt;code&gt;question&lt;/code&gt; that requires multiple needles to answer, (2) an &lt;code&gt;answer&lt;/code&gt; deriv...</p>
+      <p>To perform a <code>Multi-Needle + Reasoning</code> evaluation, a user only needs three things: (1) A <code>question</code> that requires multiple needles to answer, (2) an <code>answer</code> derived from the needles, and (3) <code>list of needles</code> to be inserted into the context.</p>
+<p>We extended Greg Kamradt&#x27;s <code>LLMTest_NeedleInAHaystack</code> repo to support multi-needle evaluation and LangSmith as an valuator. Using LangSmith for evaluation, we create a LangSmith eval set with items (1) <code>question</code> and (2) <code>answer</code> above.</p>
+<p>As an example, lets use this case study where the needle was a combination of pizza ingredients. We create a new LangSmith eval set (here) named <code>multi-needle-eval-pizza-3</code> with our <code>question</code> and <code>answer</code>:</p>
+<p>`question:
+What are the secret ingredients needed to build the perfect pizza?</p>
+<div class="code-block"><pre>answer:
+The secret ingredients needed to build the perfect pizza are figs, prosciutto, and goat cheese.</pre></div>
+<p>Question, Answer pairs for LangSmith <code>multi-needle-eval-pizza-3</code> eval set</p>
+<p>Once we&#x27;ve created a dataset, we with few flags:</p>
+<div class="card"><ul>
+  <li><code>document_depth_percent_min</code> - the depth of the first needle. The remaining needles are inserted at roughly equally spaced intervals after the first.</li>
+  <li><code>multi_needle</code> -  flag to run multi-needle evaluation</li>
+  <li><code>needles</code> - the full list of needles to inject into the context</li>
+  <li><code>evaluator</code> - choose <code>langsmith</code></li>
+  <li><code>eval_set</code> - choose the eval set we created <code>multi-needle-eval-pizza-3</code></li>
+  <li><code>context_lengths_num_intervals</code> - number of context lengths to test</li>
+  <li><code>context_lengths_min</code> (and max) - context length bounds to test</li>
+</ul></div>
+<p>We can run this to execute the evaluation:</p>
+<p><code>python main.py --evaluator langsmith --context_lengths_num_intervals 6 --document_depth_percent_min 5 --document_depth_percent_intervals 1 --provider openai --model_name &quot;gpt-4-0125-preview&quot; --multi_needle True --eval_set multi-needle-eval-pizza-3 --needles &#x27;[ &quot; Figs are one of the secret ingredients needed to build the perfect pizza. &quot;, &quot; Prosciutto is one of the secret ingredients needed to build the perfect pizza. &quot;,  &quot; Goat cheese is one of the secret ingredients needed to build the perfect pizza. &quot;]&#x27;  --context_lengths_min 1000 --context_lengths_max 120000   </code></p>
+<p>Command to run multi-needle evaluation using LangSmith</p>
+<p>This will kick off a workflow below. It will insert the needles into the haystack, prompt the LLM to generate a response to the <code>question</code> using the context with the inserted needles, and evaluate whether the generation correctly retrieved the needles using the ground truth <code>answer</code> and the logged needles that were inserted.</p>
+<p>Workflow for Multi-Needle + Reasoning evaluation</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s5">
+      <h2>🔗 GPT-4 Retrieval Results</h2>
+      <p class="lead">To test multi-needle retrieval for GPT-4, we built three LangSmith eval sets:
+
+- &lt;code&gt;multi-needle-eval-pizza-1&lt;/code&gt; here - Insert a single needle
+- &lt;code&gt;multi-needle-eval-pizza-3&lt;/code&gt; here -...</p>
+      <p>To test multi-needle retrieval for GPT-4, we built three LangSmith eval sets:</p>
+<div class="card"><ul>
+  <li><code>multi-needle-eval-pizza-1</code> here - Insert a single needle</li>
+  <li><code>multi-needle-eval-pizza-3</code> here - Insert three needles</li>
+  <li><code>multi-needle-eval-pizza-10</code> here - Insert ten needles</li>
+</ul></div>
+<p>We evaluate the ability of GPT4 (128k token context length) to retrieve 1, 3, or 10 needles in a single turn for small (1000 token) and large (120,000 token) context lengths. All commands run are here. All resulting generations with public links to LangSmith traces are here. Here is a summary figure of our results:</p>
+<p>There are clear observations:</p>
+<div class="card"><ul>
+  <li>Performance degrades at the number of needles increases from 1 to 10</li>
+  <li>Performance degrades as the context increases from 1000 to 120,000 tokens</li>
+</ul></div>
+<p>To explore and validate these results, we can drill into LangSmith traces: here is one LangSmith trace where we inserted 10 needles. Here is the <code>GPT-4</code> generation:</p>
+<p><code>The secret ingredients needed to build the perfect pizza include espresso-soaked dates, gorgonzola dolce, candied walnuts, and pear slices.</code></p>
+<p>GPT-4 generation for replicate 1 for 10 needles, 24,800 token context</p>
+<p>Only four of the <code>secret ingredients</code> are in the generation. Based on the trace, we verify that all 10 needles are in the context and we log the inserted needle order:</p>
+<div class="code-block"><pre>* Figs
+* Prosciutto
+* Smoked applewood bacon
+* Lemon
+* Goat cheese
+* Truffle honey
+* Pear slices
+* Espresso-soaked dates
+* Gorgonzola dolce
+* Candied walnuts</pre></div>
+<p>Order of the 10 needles placed in the context</p>
+<p>From this we can confirm that the four <code>secret ingredients</code> in the generation are the last four needles placed in our context. This provokes an interesting point about where retrieval fails. Greg&#x27;s single needle analysis showed GPT-4 retrieval failure when the needle is place towards the start of the document.</p>
+<p>Because we log the placement of each needle, we can explore this too: the below heatmap shows 10 needle retrieval with respect to context length. Each column is a single experiment when we ask GPT-4 to retrieve 10 needles in the context.</p>
+<p>As the context length grows, we also see retrieval failure towards the start of the document. The effect appears to start earlier in the multi-needle case (around 25k tokens) than the single needle case (which started around 73k tokens for GPT-4).</p>
+      <div class="chart"><div class="chart-row">
+    <div class="chart-label">GPT-4</div>
+    <div class="chart-bar-wrap"><div class="chart-bar green" style="width:95%">95%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">four</div>
+    <div class="chart-bar-wrap"><div class="chart-bar teal" style="width:80%">80%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">secret ingredients</div>
+    <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:65%">65%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">last four</div>
+    <div class="chart-bar-wrap"><div class="chart-bar purple" style="width:50%">50%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">where</div>
+    <div class="chart-bar-wrap"><div class="chart-bar amber" style="width:35%">35%</div></div>
+  </div></div>
+    </section>
+
+    <section class="section" id="s6">
+      <h2>💡 GPT-4 Retrieval &amp;amp; Reasoning</h2>
+      <p class="lead">RAG is often focused on retrieving multiple facts (from an indexed corpus of documents) and then reasoning over them.</p>
+      <p>RAG is often focused on retrieving multiple facts (from an indexed corpus of documents) and then reasoning over them. To test this, we build 3 datasets that build on the above by asking for the first letter of all secret ingredients. This requires retrieval of ingredients and reasoning about them to answer the question.</p>
+<div class="card"><ul>
+  <li><code>multi-needle-eval-pizza-reasoning-1</code> - here</li>
+  <li><code>multi-needle-eval-pizza-reasoning-3</code> - here</li>
+  <li><code>multi-needle-eval-pizza-reasoning-10</code>- here</li>
+</ul></div>
+<p>Note that this is an extremely simple form of reasoning. For future benchmarks, we want to include different levels of reasoning.</p>
+<p>We compared the fraction of correct answers for 3 replicates between retrieval and retrieval + reasoning. All data with traces is here. Retrieval and reasoning both degrade as the context length increases, reasoning lags retrieval. This suggests that retrieval may set an upper bound on reasoning performance, as expected.</p>
+      <div class="chart"><div class="chart-row">
+    <div class="chart-label">Method A</div>
+    <div class="chart-bar-wrap"><div class="chart-bar green" style="width:95%">95%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method B</div>
+    <div class="chart-bar-wrap"><div class="chart-bar teal" style="width:80%">80%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method C</div>
+    <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:65%">65%</div></div>
+  </div></div>
+    </section>
+
+    <section class="section" id="s7">
+      <h2>🛠️ Conclusion</h2>
+      <p class="lead">The emergence of long context LLMs is extremely promising.</p>
+      <p>The emergence of long context LLMs is extremely promising. In order to use them with or in place of external retrieval systems, it is critical to understand their limitations. The <code>Multi-Needle + Reasoning</code> benchmark can characterize the performance of long context retrieval relative to using a traditional RAG approach.</p>
+<p>We can draw a few general insights, but further testing is needed:</p>
+<div class="card"><ul>
+  <li><code>No retrieval guarantees</code> -  Multiple facts are not guaranteed to be retrieved, especially as the number of needles and context size increases.</li>
+  <li><code>Different patterns of retrieval failure </code> -   GPT-4 fails to retrieve needles towards the start of documents as context length increases.</li>
+  <li><code>Prompting matters</code> - Following insights mentioned here and here, specific prompt formulations may be needed to improve recall with certain LLMs.</li>
+  <li><code>Retrieval vs reasoning</code> - Performance degrades when the LLM is asked to reason about the retrieved facts.</li>
+</ul></div>
+      <div class="chart"><div class="chart-row">
+    <div class="chart-label">Method A</div>
+    <div class="chart-bar-wrap"><div class="chart-bar green" style="width:95%">95%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method B</div>
+    <div class="chart-bar-wrap"><div class="chart-bar teal" style="width:80%">80%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method C</div>
+    <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:65%">65%</div></div>
+  </div></div>
+    </section>
+
+    <section class="section" id="s8">
+      <h2>📈 Related content</h2>
+      <p class="lead">Tutorials &amp;amp; How-Tos
+
+#### How we built LangChain’s GTM Agent
+
+The LangChain TeamMarch 9, 202611min[](/blog/how-we-built-langchains-gtm-agent)Deep AgentsAgent ArchitectureTutorials &amp;amp; How-Tos...</p>
+      <p>Tutorials &amp; How-Tos</p>
+<p>#### How we built LangChain’s GTM Agent</p>
+<p>The LangChain TeamMarch 9, 202611min[](/blog/how-we-built-langchains-gtm-agent)Deep AgentsAgent ArchitectureTutorials &amp; How-Tos</p>
+<p>#### Evaluating Deep Agents: Our Learnings</p>
+<p>The LangChain TeamDecember 3, 20259min[](/blog/evaluating-deep-agents-our-learnings)Company AnnouncementsTutorials &amp; How-Tos</p>
+<p>#### Why We Rebuilt LangChain’s Chatbot and What We Learned</p>
+<p>The LangChain TeamNovember 5, 202513min[](/blog/rebuilding-chat-langchain)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s9">
+      <h2>🎯 See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+  </div>
+
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/multi-needle-in-a-haystack" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

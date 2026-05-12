@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：JSON agents with Ollama &amp;amp; LangChain</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--green:#10b981;--emerald:#059669;--teal:#14b8a6;--blue:#3b82f6;--purple:#6366f1;--amber:#f59e0b;--red:#ef4444;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+    .nav{position:sticky;top:0;z-index:100;background:rgba(15,23,42,.85);backdrop-filter:blur(12px);padding:14px 32px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.08)}
+    .nav a{color:#f1f5f9;text-decoration:none;font-weight:500;font-size:14px}
+    .nav .brand{font-weight:700;font-size:16px;color:#10b981}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%);color:#fff;padding:80px 32px 60px;text-align:center}
+    .hero h1{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;margin-bottom:12px;line-height:1.3}
+    .hero .subtitle{font-size:18px;color:rgba(255,255,255,.8);max-width:720px;margin:0 auto 40px}
+    .hero .meta{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:32px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;max-width:800px;margin:0 auto}
+    .stat{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:20px 16px;backdrop-filter:blur(8px)}
+    .stat .num{font-size:28px;font-weight:800;color:#34d399}
+    .stat .label{font-size:13px;color:rgba(255,255,255,.7);margin-top:4px}
+    .page{max-width:900px;margin:0 auto;padding:40px 24px}
+    .toc{margin-bottom:48px}
+    .toc h3{font-size:14px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);margin-bottom:16px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .toc-grid a{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;transition:all .2s}
+    .toc-grid a:hover{border-color:var(--emerald);background:#ecfdf5}
+    .toc-grid .num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-size:12px;font-weight:700;flex-shrink:0}
+    .section{margin-bottom:56px}
+    .section h2{font-size:clamp(1.3rem,3vw,1.7rem);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+    .lead{color:var(--text-secondary);font-size:15px;margin-bottom:24px;line-height:1.6}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}
+    .card h4{font-size:16px;font-weight:600;margin-bottom:8px}
+    .card p,.card li{font-size:14px;color:var(--text-secondary);line-height:1.7}
+    .card ul,.card ol{padding-left:20px}
+    .card li{margin-bottom:4px}
+    p{font-size:15px;color:var(--text-secondary);line-height:1.8;margin-bottom:16px}
+    p code{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:13px;color:#059669}
+    .chart{margin:24px 0}
+    .chart-row{display:flex;align-items:center;margin-bottom:10px;gap:12px}
+    .chart-label{width:150px;font-size:13px;font-weight:500;text-align:right;flex-shrink:0}
+    .chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}
+    .chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;justify-content:flex-end;padding-right:10px;font-size:12px;font-weight:600;color:#fff;transition:width .6s ease}
+    .chart-bar.green{background:linear-gradient(90deg,#059669,#10b981)}
+    .chart-bar.teal{background:linear-gradient(90deg,#14b8a6,#2dd4bf)}
+    .chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+    .chart-bar.purple{background:linear-gradient(90deg,#6366f1,#a78bfa)}
+    .chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}
+    .flow{display:flex;align-items:center;justify-content:center;gap:12px;margin:24px 0;flex-wrap:wrap}
+    .flow-step{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;min-width:120px}
+    .flow-step.green{background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none}
+    .flow-step.teal{background:linear-gradient(135deg,#14b8a6,#2dd4bf);color:#fff;border:none}
+    .flow-step.blue{background:linear-gradient(135deg,#3b82f6,#60a5fa);color:#fff;border:none}
+    .flow-step.purple{background:linear-gradient(135deg,#6366f1,#a78bfa);color:#fff;border:none}
+    .flow-step.amber{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#fff;border:none}
+    .flow-arrow{font-size:20px;color:var(--text-secondary)}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}
+    .compare-card{border-radius:var(--radius);padding:24px}
+    .compare-card.old{background:#fef2f2;border:2px solid #fecaca}
+    .compare-card.new{background:#ecfdf5;border:2px solid #a7f3d0}
+    .compare-card h4{font-size:15px;font-weight:700;margin-bottom:8px}
+    .compare-card p{font-size:13px;color:var(--text-secondary)}
+    .timeline{position:relative;padding-left:32px;margin:24px 0}
+    .timeline::before{content:'';position:absolute;left:7px;top:8px;bottom:8px;width:3px;background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6);border-radius:2px}
+    .tl-item{position:relative;margin-bottom:24px}
+    .tl-dot{position:absolute;left:-29px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid #059669;background:#fff}
+    .tl-item:nth-child(2) .tl-dot{border-color:#14b8a6}
+    .tl-item:nth-child(3) .tl-dot{border-color:#3b82f6}
+    .tl-phase{font-weight:700;font-size:15px;color:var(--text)}
+    .tl-desc{font-size:13px;color:var(--text-secondary);margin-top:4px}
+    .code-block{background:#1e293b;border-radius:var(--radius);padding:20px;margin:16px 0;overflow-x:auto}
+    .code-block pre{color:#e2e8f0;font-family:var(--mono);font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-all}
+    .block-q{background:linear-gradient(135deg,#ecfdf5,#d1fae5);border-left:4px solid #059669;border-radius:0 var(--radius) var(--radius) 0;padding:20px 24px;margin:24px 0}
+    .block-q p{font-size:15px;font-style:italic;color:#064e3b;line-height:1.7}
+    .footer{background:#0f172a;color:#94a3b8;padding:40px 32px;text-align:center;font-size:14px}
+    .footer a{color:#34d399;text-decoration:none}
+    .footer a:hover{text-decoration:underline}
+    .footer .links{margin-top:12px;display:flex;justify-content:center;gap:24px;flex-wrap:wrap}
+    @media(max-width:768px){.compare-grid{grid-template-columns:1fr}.chart-label{width:100px;font-size:12px}.flow{flex-direction:column;gap:8px}.flow-arrow{transform:rotate(90deg)}.toc-grid{grid-template-columns:1fr}.hero{padding:60px 20px 40px}.nav{padding:12px 16px}.stats{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+  <header class="hero">
+    <div class="meta">🔧 Tools & Integrations · LangChain Accounts · 2024-02-20</div>
+    <h1>JSON agents with Ollama &amp;amp; LangChain</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">8</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~9min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">14</div><div class="label">代码示例</div></div>
+      <div class="stat"><div class="num">12</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>JSON agents with Ollama &amp;amp; </a>
+      <a href="#s2"><span class="num">2</span>Learn to implement an open-sou</a>
+      <a href="#s3"><span class="num">3</span>Tools in the semantic layer</a>
+      <a href="#s4"><span class="num">4</span>JSON-based prompt for an LLM a</a>
+      <a href="#s5"><span class="num">5</span>Defining tool inputs in system</a>
+      <a href="#s6"><span class="num">6</span>Conclusion</a>
+      <a href="#s7"><span class="num">7</span>Related content</a>
+      <a href="#s8"><span class="num">8</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+    <section class="section" id="s1">
+      <h2>🔍 JSON agents with Ollama &amp;amp; LangChain</h2>
+      <p class="lead">The LangChain TeamFebruary 20, 20247min
+
+Go back to blogShare</p>
+      <p>The LangChain TeamFebruary 20, 20247min[</p>
+<p>Go back to blog](/blog)Share[</p>
+      
+    </section>
+    <section class="section" id="s2">
+      <h2>⚡ Learn to implement an open-source Mixtral agent that interacts with a graph database Neo4j through a semantic layer</h2>
+      <p class="lead">Editor&amp;#x27;s note: This post is written by Tomaz Bratanic from Neo4j
+
+By now, we all have probably recognized that we can significantly enhance the capabilities of LLMs by providing them with additio</p>
+      <p>Editor&#x27;s note: This post is written by Tomaz Bratanic from Neo4j</p>
+<p>By now, we all have probably recognized that we can significantly enhance the capabilities of LLMs by providing them with additional tools. For example, even ChatGPT can use Bing Search and Python interpreter out of the box in the paid version. OpenAI is a step ahead and provides fine-tuned LLM models for tool usage, where you can pass the available tools along with the prompt to the API endpoint. The LLM then decides if it can directly provide a response or if it should use any of the available tools first. Note that the tools don’t have to be only for retrieving additional information; they can be anything, even allowing LLMs to book a dinner reservation. I have previously implemented a project allowing an LLM to interact with a graph database through a set of predefined tools, which I called a semantic layer.</p>
+<p>An agentic LLM interacting with a graph database. Image by author.</p>
+<p>In essence, these tools augment a LLM like GPT-4 by providing dynamic, real-time access to information, personalization through memory, and a sophisticated understanding of relationships through the knowledge graph. Together, they enable the LLM to offer more accurate recommendations, understand user preferences over time, and access a broader range of up-to-date information, resulting in a more interactive and adaptive user experience. As mentioned, besides the ability to retrieve additional information at query time, they also give the LLM an option to influence their environment by, for example, booking a meeting in the calendar.</p>
+<p>While OpenAI has spoiled us with its fine-tuned models for tool usage, the reality is that most other LLMs aren’t at the level of OpenAI when it comes to function calling and tool usage. I have tried most of the models available in Ollama, and most struggle with consistently generating predefined structured output that could be used to power an agent. On the other hand, there are some models that are fine-tuned for function-calling. However, those models have a custom prompt engineering schema for function-calling they follow, which is not well documented, or they can’t be used for anything other than function-calling.</p>
+<p>Ultimately, I decided to follow the existing LangChain implementation of a JSON-based agent using the Mixtral 8x7b LLM. I used the Mixtral 8x7b as a movie agent to interact with Neo4j, a native graph database, through a semantic layer. The code is available as a Langchain template and as a Jupyter notebook. If you are interested in how the tools are implemented, you can look at my previous blog post. Here, we will discuss how to implement a JSON-based LLM agent.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s3">
+      <h2>🏗️ Tools in the semantic layer</h2>
+      <p class="lead">The examples in LangChain documentation (JSON agent, HuggingFace example) use tools with a single string input.</p>
+      <p>The examples in LangChain documentation (JSON agent, HuggingFace example) use tools with a single string input. Since the tools in the semantic layer use slightly more complex inputs, I had to dig a little deeper. Here is an example input for a recommender tool.</p>
+<div class="code-block"><pre>all_genres = [
+    &amp;quot;Action&amp;quot;,
+    &amp;quot;Adventure&amp;quot;,
+    &amp;quot;Animation&amp;quot;,
+    &amp;quot;Children&amp;quot;,
+    &amp;quot;Comedy&amp;quot;,
+    &amp;quot;Crime&amp;quot;,
+    &amp;quot;Documentary&amp;quot;,
+    &amp;quot;Drama&amp;quot;,
+    &amp;quot;Fantasy&amp;quot;,
+    &amp;quot;Film-Noir&amp;quot;,
+    &amp;quot;Horror&amp;quot;,
+    &amp;quot;IMAX&amp;quot;,
+    &amp;quot;Musical&amp;quot;,
+    &amp;quot;Mystery&amp;quot;,
+    &amp;quot;Romance&amp;quot;,
+    &amp;quot;Sci-Fi&amp;quot;,
+    &amp;quot;Thriller&amp;quot;,
+    &amp;quot;War&amp;quot;,
+    &amp;quot;Western&amp;quot;,
+]</pre></div>
+<div class="code-block"><pre>class RecommenderInput(BaseModel):
+    movie: Optional[str] = Field(description=&amp;quot;movie used for recommendation&amp;quot;)
+    genre: Optional[str] = Field(
+        description=(
+            &amp;quot;genre used for recommendation. Available options are:&amp;quot; f&amp;quot;{all_genres}&amp;quot;
+        )
+    )</pre></div>
+<p>The recommender tools has two optional inputs, movie and genre. Additionally, we use an enumeration of available values for the genre parameter. While the inputs are not highly complex, they are still more advanced than a single string input, so the implementation has to be slightly different.</p>
+      
+    </section>
+    <section class="section" id="s4">
+      <h2>📊 JSON-based prompt for an LLM agent</h2>
+      <p class="lead">In my implementation, I took heavy inspiration from the existing &lt;code&gt;hwchase17/react-json&lt;/code&gt; prompt available in LangChain hub.</p>
+      <p>In my implementation, I took heavy inspiration from the existing <code>hwchase17/react-json</code> prompt available in LangChain hub. The prompt uses the following system message.</p>
+<p>`Answer the following questions as best you can. You have access to the following tools:</p>
+<div class="code-block"><pre>The way you use the tools is by specifying a json blob.
+Specifically, this json should have a `action` key (with the name of the tool to use) and a `action_input` key (with the input to the tool going here).</pre></div>
+<p>The only values that should be in the &quot;action&quot; field are: {tool_names}</p>
+<p>The $JSON_BLOB should only contain a SINGLE action, do NOT return a list of multiple actions. Here is an example of a valid $JSON_BLOB:</p>
+<div class="code-block"><pre>{{
+  &amp;quot;action&amp;quot;: $TOOL_NAME,
+  &amp;quot;action_input&amp;quot;: $INPUT
+}}</pre></div>
+<p>ALWAYS use the following format:</p>
+<div class="code-block"><pre>Question: the input question you must answer
+Thought: you should always think about what to do
+Action:
+```
+$JSON_BLOB
+```
+Observation: the result of the action
+... (this Thought/Action/Observation can repeat N times)
+Thought: I now know the final answer
+Final Answer: the final answer to the original input question</pre></div>
+<div class="code-block"><pre>Begin! Reminder to always use the exact characters `Final Answer` when responding.</pre></div>
+<p>The prompt starts by defining the available tools, which we will get to a bit later. The most important part of the prompt is instructing the LLM on what the output should look like. When the LLM needs to call a function, it should use the following JSON structure:</p>
+<p><code>{{
+  &quot;action&quot;: $TOOL_NAME,
+  &quot;action_input&quot;: $INPUT
+}}
+</code></p>
+<p>That’s why it is called a JSON-based agent: we instruct the LLM to produce a JSON when it wants to use any available tools. However, that is only a part of the output definition. The full output should have the following structure:</p>
+<div class="code-block"><pre>Thought: you should always think about what to do
+Action:
+```
+$JSON_BLOB
+```
+Observation: the result of the action
+... (this Thought/Action/Observation can repeat N times)
+Final Answer: the final answer to the original input question</pre></div>
+<p>The LLM should always expain what is it doing in the thought part of the output. When it wants to use any of the available tools, it should provide the action input as a JSON blob. The observation part is reserved for tool outputs, and when the agent decides it can return an answer to the user, it should use the final answer key. Here is an example from the movie agent using this structure.</p>
+<p>In this example, we asked the agent to recommend a good comedy. Since one of the available tools of the agent is a recommender tool, it decided to utilize the recommender tool by providing the JSON syntax to define its input. Luckily, LangChain has a built-in output parser of the JSON agent, so we don’t have to worry about implementing it. Next, the LLM gets a response from the tool and uses it as an observation in the prompt. Since the tool provided all the required information, the LLM decided that it had enough information to construct a final answer, which could be returned to the user.</p>
+<p>I noticed that it’s hard to prompt engineer Mixtral in a way so that it only uses the JSON syntax when it needs to use a tool. In my experiments, when it didn’t want to use any tools, it sometimes used the following JSON action input.</p>
+<p><code>{{
+  &quot;action&quot;: Null,
+  &quot;action_input&quot;: &quot;&quot;
+}}
+</code></p>
+<p>The output parsing function in LangChain doesn’t ignore the action if it is null or similar, but returns an error that the null tool is not defined. I tried to prompt engineer a solution for this problem, but couldn’t do it in a consistent manner. Therefore, I decided to add a dummy smalltalk tool that the agent can call when the user wants to smalltalk.</p>
+<div class="code-block"><pre>response = (
+    &amp;quot;Create a final answer that says if they &amp;quot;
+    &amp;quot;have any questions about movies or actors&amp;quot;
+)</pre></div>
+<p>class SmalltalkInput(BaseModel):
+    query: Optional[str] = Field(description=&quot;user query&quot;)</p>
+<p>class SmalltalkTool(BaseTool):
+    name = &quot;Smalltalk&quot;
+    description = &quot;useful for when user greets you or wants to smalltalk&quot;
+    args_schema: Type[BaseModel] = SmalltalkInput</p>
+<div class="code-block"><pre>def _run(
+        self,
+        query: Optional[str] = None,
+        run_manager: Optional[CallbackManagerForToolRun] = None,
+    ) -&amp;gt; str:
+        &amp;quot;&amp;quot;&amp;quot;Use the tool.&amp;quot;&amp;quot;&amp;quot;
+        return response</pre></div>
+<p>This way, the agent can decide to use a dummy Smalltalk tool when the user greets it, and we no longer have problems with parsing null or missing tool names.</p>
+<p>This workaround works quite well, so I decided to keep it. As mentioned, most models aren’t trained to produce action inputs or text if no action is required, so we have to work with what is currently available. However, sometimes the model successfully doesn’t call any tools on the first iteration as well, it depends. But giving it an escape option like the smalltalk tool seems to prevent exceptions.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s5">
+      <h2>🔗 Defining tool inputs in system prompt</h2>
+      <p class="lead">As mentioned, I had to figure out how to define slightly more complex tool inputs so that the LLM could correctly interpret them.</p>
+      <p>As mentioned, I had to figure out how to define slightly more complex tool inputs so that the LLM could correctly interpret them. Funnily enough, after implementing a custom function, I found an existing LangChain function that transforms the custom Pydantic tool input definition into a JSON object that the Mixtral recognizes.</p>
+<p>`from langchain.tools.render import render_text_description_and_args</p>
+<p>tools = [RecommenderTool(), InformationTool(), Smalltalk()]</p>
+<p>tool_input = render_text_description_and_args(tools)
+print(tool_input)
+`</p>
+<p>Produces the following string description:</p>
+<div class="code-block"><pre>&amp;quot;Recommender&amp;quot;:&amp;quot;useful for when you need to recommend a movie&amp;quot;,
+&amp;quot;args&amp;quot;:{
+   {
+      &amp;quot;movie&amp;quot;:{
+         {
+            &amp;quot;title&amp;quot;:&amp;quot;Movie&amp;quot;,
+            &amp;quot;description&amp;quot;:&amp;quot;movie used for recommendation&amp;quot;,
+            &amp;quot;type&amp;quot;:&amp;quot;string&amp;quot;
+         }
+      },
+      &amp;quot;genre&amp;quot;:{
+         {
+            &amp;quot;title&amp;quot;:&amp;quot;Genre&amp;quot;,
+            &amp;quot;description&amp;quot;:&amp;quot;genre used for recommendation. Available options are:[&amp;#x27;Action&amp;#x27;, &amp;#x27;Adventure&amp;#x27;, &amp;#x27;Animation&amp;#x27;, &amp;#x27;Children&amp;#x27;, &amp;#x27;Comedy&amp;#x27;, &amp;#x27;Crime&amp;#x27;, &amp;#x27;Documentary&amp;#x27;, &amp;#x27;Drama&amp;#x27;, &amp;#x27;Fantasy&amp;#x27;, &amp;#x27;Film-Noir&amp;#x27;, &amp;#x27;Horror&amp;#x27;, &amp;#x27;IMAX&amp;#x27;, &amp;#x27;Musical&amp;#x27;, &amp;#x27;Mystery&amp;#x27;, &amp;#x27;Romance&amp;#x27;, &amp;#x27;Sci-Fi&amp;#x27;, &amp;#x27;Thriller&amp;#x27;, &amp;#x27;War&amp;#x27;, &amp;#x27;Western&amp;#x27;]&amp;quot;,
+            &amp;quot;type&amp;quot;:&amp;quot;string&amp;quot;
+         }
+      }
+   }
+},
+&amp;quot;Information&amp;quot;:&amp;quot;useful for when you need to answer questions about various actors or movies&amp;quot;,
+&amp;quot;args&amp;quot;:{
+   {
+      &amp;quot;entity&amp;quot;:{
+         {
+            &amp;quot;title&amp;quot;:&amp;quot;Entity&amp;quot;,
+            &amp;quot;description&amp;quot;:&amp;quot;movie or a person mentioned in the question&amp;quot;,
+            &amp;quot;type&amp;quot;:&amp;quot;string&amp;quot;
+         }
+      },
+      &amp;quot;entity_type&amp;quot;:{
+         {
+            &amp;quot;title&amp;quot;:&amp;quot;Entity Type&amp;quot;,
+            &amp;quot;description&amp;quot;:&amp;quot;type of the entity. Available options are &amp;#x27;movie&amp;#x27; or &amp;#x27;person&amp;#x27;&amp;quot;,
+            &amp;quot;type&amp;quot;:&amp;quot;string&amp;quot;
+         }
+      }
+   }
+},
+&amp;quot;Smalltalk&amp;quot;:&amp;quot;useful for when user greets you or wants to smalltalk&amp;quot;,
+&amp;quot;args&amp;quot;:{
+   {
+      &amp;quot;query&amp;quot;:{
+         {
+            &amp;quot;title&amp;quot;:&amp;quot;Query&amp;quot;,
+            &amp;quot;description&amp;quot;:&amp;quot;user query&amp;quot;,
+            &amp;quot;type&amp;quot;:&amp;quot;string&amp;quot;
+         }
+      }
+   }
+}</pre></div>
+<p>We can simply copy this tool description in the system prompt and Mixtral will be able to use the defined tools, which is quite cool.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s6">
+      <h2>💡 Conclusion</h2>
+      <p class="lead">Most of the work to implement the JSON-based agent was done by Harrison Chase and the LangChain team, for which I am grateful.</p>
+      <p>Most of the work to implement the JSON-based agent was done by Harrison Chase and the LangChain team, for which I am grateful. All I had to do was find the puzzle pieces and put them together. As mentioned, don’t expect the same level of agent performance as with GPT-4. However, I think the more powerful OSS LLMs like Mixtral could be used as agents today (with a bit more exception handling than GPT-4). I am looking forward to more open source LLMs being fine-tuned as agents.</p>
+<p>The code is available as a Langchain template and as a Jupyter notebook.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s7">
+      <h2>🛠️ Related content</h2>
+      <p class="lead">.</p>
+      <p>.png)PartnerDeep Agents</p>
+<p>#### Building a company due diligence agent with Deep Agents, LangSmith and Parallel</p>
+<p>Matt HarrisNick MartitschSrimanth TangedipalliKaran SinghMay 8, 20269min[](/blog/building-a-company-due-diligence-agent-with-deep-agents-langsmith-and-parallel).png)Agent ArchitecturePartner</p>
+<p>#### Agentic Engineering: How Swarms of AI Agents Are Redefining Software Engineering</p>
+<p>Renuka KumarPrashanth RamagopalApril 17, 202611min[](/blog/agentic-engineering-redefining-software-engineering).png)LangChainPartner</p>
+<p>#### A Developer’s First 10 Minutes: Secure LangChain Agents with Cisco AI Defense</p>
+<p>Siddhant DashApril 16, 20264min[](/blog/secure-agents-cisco-ai-defense)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s8">
+      <h2>📈 See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+<p>](/contact-sales)</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+  </div>
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/json-based-agents-with-ollama-and-langchain" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

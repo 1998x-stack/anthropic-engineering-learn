@@ -1,0 +1,343 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deep Dive: Iterating Towards LLM Reliability with Evaluation Driven Development</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafbfc;
+      --surface: #fff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --green: #059669;
+      --emerald: #10b981;
+      --teal: #14b8a6;
+      --blue: #3b82f6;
+      --purple: #6366f1;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --orange: #ea580c;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans SC', 'Inter', system-ui, sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: var(--sans); background: var(--bg); color: var(--text); line-height:1.7; }
+    .nav { position:sticky; top:0; z-index:100; background:rgba(15,23,42,.88); backdrop-filter:blur(14px); padding:14px 32px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,.08); }
+    .nav a { color:#f1f5f9; text-decoration:none; font-weight:500; font-size:14px; }
+    .nav .brand { font-weight:700; font-size:16px; color:#34d399; }
+    .hero { background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%); color:#fff; padding:80px 32px 60px; text-align:center; }
+    .hero h1 { font-size:clamp(1.8rem,4vw,2.6rem); font-weight:800; margin-bottom:12px; line-height:1.3; }
+    .hero .subtitle { font-size:17px; color:rgba(255,255,255,.82); max-width:720px; margin:0 auto 12px; }
+    .hero .meta { font-size:13px; color:rgba(255,255,255,.5); margin-bottom:32px; }
+    .hero .badge-cat { display:inline-block; padding:4px 14px; border-radius:20px; font-size:12px; font-weight:600; background:rgba(52,211,153,.18); color:#6ee7b7; border:1px solid rgba(52,211,153,.3); margin-bottom:16px; }
+    .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; max-width:780px; margin:0 auto; }
+    .stat { background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.11); border-radius:12px; padding:18px 14px; backdrop-filter:blur(8px); }
+    .stat .num { font-size:26px; font-weight:800; color:#34d399; font-family:var(--mono); }
+    .stat .label { font-size:12px; color:rgba(255,255,255,.65); margin-top:4px; }
+    .page { max-width:900px; margin:0 auto; padding:40px 24px; }
+    .toc { margin-bottom:48px; }
+    .toc h3 { font-size:13px; text-transform:uppercase; letter-spacing:1.5px; color:var(--text-secondary); margin-bottom:16px; }
+    .toc-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:10px; }
+    .toc-grid a { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--text); font-size:14px; font-weight:500; transition:all .2s; }
+    .toc-grid a:hover { border-color:var(--green); background:#ecfdf5; }
+    .toc-grid .num { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:8px; background:linear-gradient(135deg,#059669,#14b8a6); color:#fff; font-size:12px; font-weight:700; flex-shrink:0; }
+    .section { margin-bottom:56px; }
+    .section h2 { font-size:clamp(1.3rem,3vw,1.6rem); font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    .lead { color:var(--text-secondary); font-size:15px; margin-bottom:20px; line-height:1.7; }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:22px; margin-bottom:14px; }
+    .card h4 { font-size:15px; font-weight:600; margin-bottom:8px; }
+    .card p { font-size:14px; color:var(--text-secondary); line-height:1.7; }
+    .chart { margin:24px 0; }
+    .chart-row { display:flex; align-items:center; margin-bottom:10px; gap:12px; }
+    .chart-label { width:160px; font-size:13px; font-weight:500; text-align:right; flex-shrink:0; }
+    .chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:30px; overflow:hidden; }
+    .chart-bar { height:100%; border-radius:8px; display:flex; align-items:center; justify-content:flex-end; padding-right:10px; font-size:12px; font-weight:600; color:#fff; transition:width .6s ease; }
+    .chart-bar.green { background:linear-gradient(90deg,#059669,#34d399); }
+    .chart-bar.teal { background:linear-gradient(90deg,#14b8a6,#2dd4bf); }
+    .chart-bar.blue { background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+    .chart-bar.purple { background:linear-gradient(90deg,#6366f1,#a78bfa); }
+    .chart-bar.amber { background:linear-gradient(90deg,#f59e0b,#fbbf24); }
+    .chart-bar.orange { background:linear-gradient(90deg,#ea580c,#fb923c); }
+    .chart-bar.red { background:linear-gradient(90deg,#ef4444,#f87171); }
+    .timeline { position:relative; padding-left:32px; margin:24px 0; }
+    .timeline::before { content:''; position:absolute; left:8px; top:0; bottom:0; width:3px; background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6,#6366f1); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:20px; }
+    .tl-dot { position:absolute; left:-28px; top:4px; width:14px; height:14px; border-radius:50%; border:3px solid #059669; background:#fff; }
+    .tl-item:nth-child(2) .tl-dot { border-color:#14b8a6; }
+    .tl-item:nth-child(3) .tl-dot { border-color:#3b82f6; }
+    .tl-item:nth-child(4) .tl-dot { border-color:#6366f1; }
+    .tl-item:nth-child(5) .tl-dot { border-color:#f59e0b; }
+    .tl-item:nth-child(6) .tl-dot { border-color:#ea580c; }
+    .tl-item:nth-child(7) .tl-dot { border-color:#ef4444; }
+    .tl-phase { font-weight:700; font-size:15px; margin-bottom:4px; }
+    .tl-desc { font-size:13px; color:var(--text-secondary); line-height:1.6; }
+    .compare-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:24px 0; }
+    .compare-card { border-radius:var(--radius); padding:22px; }
+    .compare-card.old { background:#fef2f2; border:2px solid #fecaca; }
+    .compare-card.new { background:#ecfdf5; border:2px solid #a7f3d0; }
+    .compare-card h4 { font-size:15px; font-weight:700; margin-bottom:8px; }
+    .compare-card ul { list-style:none; padding:0; }
+    .compare-card ul li { font-size:13px; padding:4px 0; color:var(--text-secondary); }
+    .flow { display:flex; align-items:center; justify-content:center; gap:12px; margin:24px 0; flex-wrap:wrap; }
+    .flow-step { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px 18px; font-size:13px; font-weight:600; text-align:center; min-width:100px; }
+    .flow-step.green { background:linear-gradient(135deg,#059669,#10b981); color:#fff; border:none; }
+    .flow-step.blue { background:linear-gradient(135deg,#3b82f6,#60a5fa); color:#fff; border:none; }
+    .flow-step.purple { background:linear-gradient(135deg,#6366f1,#a78bfa); color:#fff; border:none; }
+    .flow-step.teal { background:linear-gradient(135deg,#14b8a6,#2dd4bf); color:#fff; border:none; }
+    .flow-step.orange { background:linear-gradient(135deg,#ea580c,#f59e0b); color:#fff; border:none; }
+    .flow-arrow { font-size:20px; color:var(--text-secondary); }
+    .block-q { background:linear-gradient(135deg,#ecfdf5,#d1fae5); border-left:4px solid #059669; border-radius:0 var(--radius) var(--radius) 0; padding:18px 22px; margin:20px 0; }
+    .block-q p { font-size:14px; font-style:italic; color:#064e3b; line-height:1.7; }
+    .badge { display:inline-block; padding:3px 10px; border-radius:6px; font-size:12px; font-weight:600; }
+    .badge-green { background:#ecfdf5; color:#059669; }
+    .badge-teal { background:#f0fdfa; color:#14b8a6; }
+    .badge-blue { background:#eff6ff; color:#3b82f6; }
+    .badge-purple { background:#eef2ff; color:#6366f1; }
+    .footer { text-align:center; padding:48px 24px; border-top:1px solid var(--border); margin-top:40px; }
+    .footer a { color:var(--green); text-decoration:none; font-weight:500; }
+    .footer a:hover { text-decoration:underline; }
+    .footer .foot-links { display:flex; justify-content:center; gap:24px; flex-wrap:wrap; margin-bottom:12px; }
+    .footer .copy { font-size:12px; color:var(--text-secondary); }
+    @media(max-width:768px) {
+      .hero { padding:48px 18px 36px; }
+      .hero h1 { font-size:1.5rem; }
+      .stats { grid-template-columns:1fr 1fr; gap:10px; }
+      .page { padding:28px 16px; }
+      .toc-grid { grid-template-columns:1fr; }
+      .compare-grid { grid-template-columns:1fr; }
+      .flow { flex-direction:column; gap:8px; }
+      .flow-arrow { transform:rotate(90deg); }
+      .chart-label { width:100px; font-size:11px; }
+      .nav { padding:12px 16px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain Blog Hub</a>
+    <a href="../langchain/">&#x2190; Back to Hub</a>
+  </nav>
+
+  <header class="hero">
+    <div class="badge-cat">LangSmith / Observability &amp; Evals</div>
+    <h1>Iterating Towards LLM Reliability with Evaluation Driven Development</h1>
+    <p class="subtitle">LangChain Accounts &middot; 2024-03-11</p>
+    <p class="meta">Source: https://www.langchain.com/blog/iterating-towards-llm-reliability-with-evaluation-driven-development</p>
+    <div class="stats">
+        <div class="stat">
+          <div class="num">7</div>
+          <div class="label">Core Sections</div>
+        </div>
+        <div class="stat">
+          <div class="num">6 min</div>
+          <div class="label">Reading Time</div>
+        </div>
+        <div class="stat">
+          <div class="num">20</div>
+          <div class="label">Key Points</div>
+        </div>
+        <div class="stat">
+          <div class="num">15</div>
+          <div class="label">External Links</div>
+        </div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc">
+      <h3>&#x1F4D1; Table of Contents</h3>
+      <div class="toc-grid">
+        <a href="#what-is-dosu"><span class="num">1</span>What is Dosu?</a>
+        <a href="#early-days"><span class="num">2</span>Early Days</a>
+        <a href="#evaluation-driven-development"><span class="num">3</span>Evaluation Driven Development</a>
+        <a href="#keeping-the-quality-bar-high-at-scale"><span class="num">4</span>Keeping the Quality Bar High at Scale</a>
+        <a href="#implementing-langsmith-via-the-sdk"><span class="num">5</span>Implementing LangSmith via the SDK</a>
+        <a href="#finding-failures"><span class="num">6</span>Finding Failures</a>
+        <a href="#automating-evaluation-dataset-collection"><span class="num">7</span>Automating Evaluation Dataset Collection</a>
+      </div>
+    </nav>
+
+    <section class="section" id="what-is-dosu">
+      <h2>&#x1F538; What is Dosu?</h2>
+      <p class="lead">If you’ve spent any time on the LangChain GitHub repository, you may have already met Dosu, an AI teammate that helps develop, maintain, and support s...</p>
+        <div class="card"><p>Dosu was born out of my time as an open source software maintainer, a rewarding, but notoriously time-consuming role. As my OSS project grew in popularity, I found myself spending far more time playing support instead of developing new features.</p></div>
+        <div class="card"><p>For maintainers, this responsibility frequently causes burnout and has driven some to declare issue bankruptcy, a process that involves simply closing all open issues and PRs. The OSS community also suffers from this situation, as people often wait days, weeks, or even months for a maintainer to respond to their issues.</p></div>
+        <div class="card"><p>This phenomenon isn’t exclusive to open source. Within the industry, up to 85% of developers’ time is spent on non-coding tasks, like answering ad-hoc questions, triaging issues, and processing overhead.</p></div>
+        <div class="card"><p>Dosu takes these tasks off developers’ plates, so they can do what they love: stay in flow, code, and ship great features. At the same time, Dosu is a resource to the OSS community, giving community members immediate feedback whenever they run into an unforeseen issue or have novel questions that only code can answer.</p></div>
+      <div class="flow">
+                <div class="flow-step green">Concept</div>
+        <div class="flow-arrow">&#x2192;</div>
+        <div class="flow-step">Analysis</div>
+        <div class="flow-arrow">&#x2192;</div>
+        <div class="flow-step blue">Application</div>
+      </div>
+    </section>
+
+    <section class="section" id="early-days">
+      <h2>&#x1F538; Early Days</h2>
+      <p class="lead">Dosu launched in late June, 2023. Back then, our volume was low enough for us to inspect every single response. Each day, armed with just grep and pri...</p>
+        <div class="card"><p>The work was painstaking, but it was important for designing and developing Dosu's architecture. It helped our team deeply understand how people were trying to use Dosu, which types of requests it excelled at, and ones where it fell short.</p></div>
+        <div class="card"><p>Once we knew what we needed to improve, the question was how to improve it. Unlike traditional code updates, changing LLM logic is not straightforward. It’s difficult to know how a small change might affect performance as a whole. Many times we saw that a slight tweak to a prompt led to better results in one domain but caused regression in another.</p></div>
+        <div class="card"><p>We needed a way to measure the impact of our changes. For every change, we wanted to make sure that we were:</p></div>
+        <div class="card"><p>It was during these early days that we turned to evaluation driven development to benchmark our progress.</p></div>
+        <div class="card">
+          <ul style="list-style:disc;padding-left:20px;color:var(--text-secondary);font-size:14px;line-height:1.8;">
+            <li>Maintaining performance in areas where we were doing well</li>
+            <li>Improving performance in areas where we were struggling</li>
+          </ul>
+        </div>
+
+    </section>
+
+    <section class="section" id="evaluation-driven-development">
+      <h2>&#x2699; Evaluation Driven Development</h2>
+      <p class="lead">Evaluation driven development (EDD), like test driven development, gives us end goal to develop against. The evaluations — or “evals” — are our baseli...</p>
+        <div class="card"><p>With EDD, we have a well-defined process for improving Dosu:</p></div>
+        <div class="card"><p>This development workflow worked well for us when Dosu started, but as our usage grew, it became difficult to keep up with Dosu’s activity.</p></div>
+        <div class="card">
+          <ul style="list-style:disc;padding-left:20px;color:var(--text-secondary);font-size:14px;line-height:1.8;">
+            <li>Create a new behavior with a handful of initial evals</li>
+            <li>Launch the new behavior to users</li>
+            <li>Monitor results in production and identify failure modes</li>
+            <li>Add examples for each failure mode to our offline evals</li>
+            <li>Iterate on the updated evals to improve performance</li>
+            <li>Relaunch &amp; repeat</li>
+          </ul>
+        </div>
+      <div class="compare-grid">
+        <div class="compare-card old">
+          <h4>&#x26A0; Challenges / Before</h4>
+          <ul>
+                        <li>Evaluation driven development (EDD), like test driven development, gives us end goal to develop agai...</li>
+            <li>This development workflow worked well for us when Dosu started, but as our usage grew, it became dif...</li>
+          </ul>
+        </div>
+        <div class="compare-card new">
+          <h4>&#x2705; Solutions / After</h4>
+          <ul>
+                        <li>With EDD, we have a well-defined process for improving Dosu:</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="keeping-the-quality-bar-high-at-scale">
+      <h2>&#x1F538; Keeping the Quality Bar High at Scale</h2>
+      <p class="lead">Today, Dosu is installed on thousands of repositories and generates responses at all hours of the day. We’ve built dozens of submodules to intelligent...</p>
+        <div class="card"><p>While the growth of Dosu was exciting, it came with challenges. Dosu’s increased activity made it nearly impossible to monitor responses and identify failure modes in production, which is critical to our EDD workflow.</p></div>
+        <div class="card"><p>We decided it was time to upgrade our LLM monitoring stack. We looked for a tool that could not only help us monitor Dosu’s activity, but that was flexible enough to fit into our existing workflow. Some of our criteria included:</p></div>
+        <div class="card"><p>We explored the LLM monitoring and evaluation landscape, trying to find a product that satisfied our requirements. After a call with the LangChain team, one of our early partners, we were pleased to hear that LangSmith seemed to check all the boxes.</p></div>
+        <div class="card">
+          <ul style="list-style:disc;padding-left:20px;color:var(--text-secondary);font-size:14px;line-height:1.8;">
+            <li>Prompts must live in Git — In the ethos of EDD, we treat prompts as code. Any changes to a prompt must be treated with the same standards as code changes.</li>
+            <li>Code-level tracing — There is more to Dosu than a series of LLM requests. We wanted to track metadata between LLM requests within a single trace.</li>
+            <li>Easy to export data — We had existing evaluation datasets and tooling that we wanted keep.</li>
+            <li>Customizable and extensible - The LLM space is rapidly evolving. There is no standard way of building LLM apps. We wanted to have control over what metadata is tracked and the ability tailor the tool </li>
+          </ul>
+        </div>
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">What is Dosu?</div>
+          <div class="tl-desc">If you’ve spent any time on the LangChain GitHub repository, you may have alread...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Early Days</div>
+          <div class="tl-desc">Dosu launched in late June, 2023. Back then, our volume was low enough for us to...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Evaluation Driven Development</div>
+          <div class="tl-desc">Evaluation driven development (EDD), like test driven development, gives us end ...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Keeping the Quality Bar High at Scale</div>
+          <div class="tl-desc">Today, Dosu is installed on thousands of repositories and generates responses at...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Implementing LangSmith via the SDK</div>
+          <div class="tl-desc">What got us most excited about LangSmith wasn’t its sleek UI or extensive featur...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Finding Failures</div>
+          <div class="tl-desc">Dosu receives a myriad of requests from users—everything from simple questions a...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Automating Evaluation Dataset Collection</div>
+          <div class="tl-desc">The future of evaluation driven development at Dosu is bright. Our team is custo...</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="implementing-langsmith-via-the-sdk">
+      <h2>&#x2699; Implementing LangSmith via the SDK</h2>
+      <p class="lead">What got us most excited about LangSmith wasn’t its sleek UI or extensive feature set, but actually its SDK. The LangSmith SDK gave us the fine-grain ...</p>
+        <div class="card"><p>To try out LangSmith, we just had to add a @traceable decorator to a few of our LLM-related functions. It only took us minutes to instrument, and immediately upon pushing these changes to production we saw traces flooding into the LangSmith UI.</p></div>
+        <div class="card"><p>An unexpectedly awesome feature of the @traceable decorator is it can send the function and LLM call traces to LangSmith. This allows us to see the raw function inputs, rendered prompt templates, and LLM output all in a single trace in the LangSmith UI.</p></div>
+        <div class="card"><p>Out-of-the-box, LangSmith gave us visibility into all of Dosu’s activity. The next step was to leverage LangSmith to identify failure modes and integrate it into our EDD workflow.</p></div>
+
+    </section>
+
+    <section class="section" id="finding-failures">
+      <h2>&#x1F539; Finding Failures</h2>
+      <p class="lead">Dosu receives a myriad of requests from users—everything from simple questions about a codebase, to error traces from upgrading to a new library versi...</p>
+        <div class="card"><p>When trying to identify failure modes, or requests that Dosu doesn’t handle well, we have a variety of signals to look for like:</p></div>
+        <div class="card"><p>LangSmith's advanced search functionality makes it easy to identify anomalous behaviors. We can perform searches using a range of criteria, including: explicit user feedback, recent error incidents, response time delays, or negative sentiment. LangSmith also allows us to attach additional metadata to each trace to further extend its search capabilities.</p></div>
+        <div class="card"><p>One of our team’s favorite failures happened when Dosu was asked to label a pull request. Rather than labeling the pull request, Dosu decided it should tell the user about the concert it was excited to go to the concert that night. Jury is still out on whether Dosu is a Swiftie.</p></div>
+        <div class="card"><p>Once we find a failure mode, the EDD workflow is the same as before.</p></div>
+        <div class="card">
+          <ul style="list-style:disc;padding-left:20px;color:var(--text-secondary);font-size:14px;line-height:1.8;">
+            <li>Explicit Feedback: The classic thumbs up/down feedback popularized by ChatGPT.</li>
+            <li>User Sentiment: When users interact with Dosu on GitHub issues, their responses usually show whether or not Dosu was helpful</li>
+            <li>Internal Errors: LLMs can fail for a number of reasons. Was the input or output too large? Did the generated response not match the desired schema?</li>
+            <li>Response Time: At Dosu, we prioritize quality over speed; however, understanding why a response is slow matters. Some requests require a fast response, while others require a slower, but more precise </li>
+            <li>We search LangSmith for additional examples</li>
+            <li>Add them to our eval datasets</li>
+          </ul>
+        </div>
+
+    </section>
+
+    <section class="section" id="automating-evaluation-dataset-collection">
+      <h2>&#x1F4CA; Automating Evaluation Dataset Collection</h2>
+      <p class="lead">The future of evaluation driven development at Dosu is bright. Our team is customizing LangSmith even further to allow us to automatically build evalu...</p>
+        <div class="card"><p>There is a fun flywheel effect in Dosu’s collaboration with LangChain. LangSmith helps us iterate faster to improve Dosu’s performance. Improvements to Dosu directly translates to reducing the maintenance and support burden on the LangChain team, allowing them to spend more time shipping features for LangSmith, which in turn speeds up the development of Dosu. And so the process continues!</p></div>
+        <div class="card"><p>PS: Dosu’s hiring! Reach out at jobs@dosu.dev</p></div>
+      <div class="compare-grid">
+        <div class="compare-card old">
+          <h4>&#x26A0; Challenges / Before</h4>
+          <ul>
+                        <li>The future of evaluation driven development at Dosu is bright. Our team is customizing LangSmith eve...</li>
+            <li>PS: Dosu’s hiring! Reach out at jobs@dosu.dev</li>
+          </ul>
+        </div>
+        <div class="compare-card new">
+          <h4>&#x2705; Solutions / After</h4>
+          <ul>
+                        <li>There is a fun flywheel effect in Dosu’s collaboration with LangChain. LangSmith helps us iterate fa...</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <footer class="footer">
+    <div class="foot-links">
+      <a href="../langchain/">&#x1F3E0; LangChain Hub</a>
+      <a href="https://www.langchain.com/blog/iterating-towards-llm-reliability-with-evaluation-driven-development" target="_blank">&#x1F517; Original Article</a>
+    </div>
+    <p class="copy">Auto-generated deep-dive page &middot; Content from LangChain Blog</p>
+  </footer>
+</body>
+</html>

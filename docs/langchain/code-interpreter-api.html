@@ -1,0 +1,308 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Code Interpreter API</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafbfc;
+      --surface: #fff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --green: #10b981;
+      --emerald: #059669;
+      --teal: #14b8a6;
+      --blue: #3b82f6;
+      --purple: #6366f1;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans SC', 'Inter', system-ui, sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: var(--sans); background: var(--bg); color: var(--text); line-height:1.7; }
+    .nav { position:sticky; top:0; z-index:100; background:rgba(15,23,42,.85); backdrop-filter:blur(12px); padding:14px 32px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,.08); }
+    .nav a { color:#f1f5f9; text-decoration:none; font-weight:500; font-size:14px; }
+    .nav .brand { font-weight:700; font-size:16px; color:#10b981; }
+    .hero { background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%); color:#fff; padding:80px 32px 60px; text-align:center; }
+    .hero h1 { font-size:clamp(1.8rem,4vw,2.8rem); font-weight:800; margin-bottom:12px; line-height:1.3; }
+    .hero .subtitle { font-size:18px; color:rgba(255,255,255,.8); max-width:720px; margin:0 auto 40px; }
+    .hero .meta { font-size:13px; color:rgba(255,255,255,.5); margin-bottom:32px; }
+    .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:16px; max-width:800px; margin:0 auto; }
+    .stat { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); border-radius:12px; padding:20px 16px; backdrop-filter:blur(8px); }
+    .stat .num { font-size:28px; font-weight:800; color:#34d399; }
+    .stat .label { font-size:13px; color:rgba(255,255,255,.7); margin-top:4px; }
+    .page { max-width:900px; margin:0 auto; padding:40px 24px; }
+    .toc { margin-bottom:48px; }
+    .toc h3 { font-size:14px; text-transform:uppercase; letter-spacing:1.5px; color:var(--text-secondary); margin-bottom:16px; }
+    .toc-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; }
+    .toc-grid a { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--text); font-size:14px; font-weight:500; transition:all .2s; }
+    .toc-grid a:hover { border-color:var(--emerald); background:#ecfdf5; }
+    .toc-grid .num { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:8px; background:linear-gradient(135deg,#059669,#10b981); color:#fff; font-size:12px; font-weight:700; flex-shrink:0; }
+    .section { margin-bottom:56px; }
+    .section h2 { font-size:clamp(1.3rem,3vw,1.7rem); font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:10px; }
+    .lead { color:var(--text-secondary); font-size:15px; margin-bottom:24px; line-height:1.6; }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:24px; margin-bottom:16px; }
+    .card h4 { font-size:16px; font-weight:600; margin-bottom:8px; }
+    .card p, .card li { font-size:14px; color:var(--text-secondary); line-height:1.7; }
+    .card ul, .card ol { padding-left:20px; }
+    .card li { margin-bottom:4px; }
+    p { font-size:15px; color:var(--text-secondary); line-height:1.8; margin-bottom:16px; }
+    p code { background:#f1f5f9; padding:2px 6px; border-radius:4px; font-family:var(--mono); font-size:13px; color:#059669; }
+    .chart { margin:24px 0; }
+    .chart-row { display:flex; align-items:center; margin-bottom:10px; gap:12px; }
+    .chart-label { width:150px; font-size:13px; font-weight:500; text-align:right; flex-shrink:0; }
+    .chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:32px; overflow:hidden; }
+    .chart-bar { height:100%; border-radius:8px; display:flex; align-items:center; justify-content:flex-end; padding-right:10px; font-size:12px; font-weight:600; color:#fff; transition:width .6s ease; }
+    .chart-bar.green { background:linear-gradient(90deg,#059669,#10b981); }
+    .chart-bar.teal { background:linear-gradient(90deg,#14b8a6,#2dd4bf); }
+    .chart-bar.blue { background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+    .chart-bar.purple { background:linear-gradient(90deg,#6366f1,#a78bfa); }
+    .chart-bar.amber { background:linear-gradient(90deg,#f59e0b,#fbbf24); }
+    .chart-bar.red { background:linear-gradient(90deg,#ef4444,#f87171); }
+    .flow { display:flex; align-items:center; justify-content:center; gap:12px; margin:24px 0; flex-wrap:wrap; }
+    .flow-step { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 20px; font-size:14px; font-weight:600; text-align:center; min-width:120px; }
+    .flow-step.green { background:linear-gradient(135deg,#059669,#10b981); color:#fff; border:none; }
+    .flow-step.teal { background:linear-gradient(135deg,#14b8a6,#2dd4bf); color:#fff; border:none; }
+    .flow-step.blue { background:linear-gradient(135deg,#3b82f6,#60a5fa); color:#fff; border:none; }
+    .flow-step.purple { background:linear-gradient(135deg,#6366f1,#a78bfa); color:#fff; border:none; }
+    .flow-step.amber { background:linear-gradient(135deg,#f59e0b,#fbbf24); color:#fff; border:none; }
+    .flow-arrow { font-size:20px; color:var(--text-secondary); }
+    .compare-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:24px 0; }
+    .compare-card { border-radius:var(--radius); padding:24px; }
+    .compare-card.old { background:#fef2f2; border:2px solid #fecaca; }
+    .compare-card.new { background:#ecfdf5; border:2px solid #a7f3d0; }
+    .compare-card h4 { font-size:15px; font-weight:700; margin-bottom:8px; }
+    .compare-card p { font-size:13px; color:var(--text-secondary); }
+    .timeline { position:relative; padding-left:32px; margin:24px 0; }
+    .timeline::before { content:''; position:absolute; left:7px; top:8px; bottom:8px; width:3px; background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:24px; }
+    .tl-dot { position:absolute; left:-29px; top:4px; width:14px; height:14px; border-radius:50%; border:3px solid #059669; background:#fff; }
+    .tl-item:nth-child(2) .tl-dot { border-color:#14b8a6; }
+    .tl-item:nth-child(3) .tl-dot { border-color:#3b82f6; }
+    .tl-item:nth-child(4) .tl-dot { border-color:#6366f1; }
+    .tl-item:nth-child(5) .tl-dot { border-color:#f59e0b; }
+    .tl-phase { font-weight:700; font-size:15px; color:var(--text); }
+    .tl-desc { font-size:13px; color:var(--text-secondary); margin-top:4px; }
+    .code-block { background:#1e293b; border-radius:var(--radius); padding:20px; margin:16px 0; overflow-x:auto; }
+    .code-block pre { color:#e2e8f0; font-family:var(--mono); font-size:13px; line-height:1.6; white-space:pre-wrap; word-break:break-all; }
+    .block-q { background:linear-gradient(135deg,#ecfdf5,#d1fae5); border-left:4px solid #059669; border-radius:0 var(--radius) var(--radius) 0; padding:20px 24px; margin:24px 0; }
+    .block-q p { font-size:15px; font-style:italic; color:#064e3b; line-height:1.7; }
+    .badge { display:inline-block; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600; }
+    .badge-green { background:#ecfdf5; color:#059669; }
+    .badge-teal { background:#f0fdfa; color:#14b8a6; }
+    .badge-blue { background:#eff6ff; color:#3b82f6; }
+    .badge-purple { background:#eef2ff; color:#6366f1; }
+    .badge-amber { background:#fffbeb; color:#d97706; }
+    .footer { background:#0f172a; color:#94a3b8; padding:40px 32px; text-align:center; font-size:14px; }
+    .footer a { color:#34d399; text-decoration:none; }
+    .footer a:hover { text-decoration:underline; }
+    .footer .links { margin-top:12px; display:flex; justify-content:center; gap:24px; flex-wrap:wrap; }
+    @media(max-width:768px) {
+      .compare-grid { grid-template-columns:1fr; }
+      .chart-label { width:100px; font-size:12px; }
+      .flow { flex-direction:column; gap:8px; }
+      .flow-arrow { transform:rotate(90deg); }
+      .toc-grid { grid-template-columns:1fr; }
+      .hero { padding:60px 20px 40px; }
+      .nav { padding:12px 16px; }
+      .stats { grid-template-columns:1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+
+  <header class="hero">
+    <div class="meta">🔧 Tools & Integrations · LangChain Accounts · 2023-07-16</div>
+    <h1>Code Interpreter API</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">11</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~5min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">12</div><div class="label">技术要点</div></div>
+      <div class="stat"><div class="num">6</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>Code Interpreter API</a>
+      <a href="#s2"><span class="num">2</span>Motivation</a>
+      <a href="#s3"><span class="num">3</span>**Unique Features and Benefits</a>
+      <a href="#s4"><span class="num">4</span>**Technical Details**</a>
+      <a href="#s5"><span class="num">5</span>Examples</a>
+      <a href="#s6"><span class="num">6</span>Roadmap</a>
+      <a href="#s7"><span class="num">7</span>**How to Use It**</a>
+      <a href="#s8"><span class="num">8</span>**Contribute**</a>
+      <a href="#s9"><span class="num">9</span>Do Experiments</a>
+      <a href="#s10"><span class="num">10</span>Related content</a>
+      <a href="#s11"><span class="num">11</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+
+    <section class="section" id="s1">
+      <h2>🔍 Code Interpreter API</h2>
+      <p class="lead">The LangChain TeamJuly 16, 20235min
+
+Go back to blogShare
+
+Editor&amp;#x27;s Note: This is another installation of our guest blog posts highlighting interesting and novel use cases.</p>
+      <p>The LangChain TeamJuly 16, 20235min[</p>
+<p>Go back to blog](/blog)Share[</p>
+<p>](#)Editor&#x27;s Note: This is another installation of our guest blog posts highlighting interesting and novel use cases. This blog is written by Shroominic who built an open source implementation of the ChatGPT Code Interpreter.</p>
+<div class="card"><ul>
+  <li>GitHub Repo</li>
+</ul></div>
+<p>In the world of open-source software, there are always exciting developments. Today, I am thrilled to announce a new project that I have been working on - Code Interpreter API. It&#x27;s an implementation of the ChatGPT Code Interpreter using LangChain Agents. Keep in mind this is an unofficial implementation and I am not affiliated with OpenAI.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s2">
+      <h2>⚡ Motivation</h2>
+      <p class="lead">As an indie developer, I am constantly searching for new features to add to my projects.</p>
+      <p>As an indie developer, I am constantly searching for new features to add to my projects. While working on a Discord bot, I attempted to incorporate the code interpreter as a feature. I never tried it at that point but got hyped by seeing people using it on YouTube. It started as an experiment, but with some tinkering, it evolved into a functional and progressively improving feature. I noticed a significant interest in this area and identified a gap in the market - there was no API for this and especially not open source.</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s3">
+      <h2>🏗️ **Unique Features and Benefits**</h2>
+      <p class="lead">The biggest advantage over the already existing Code Interpreter from OpenAI is that this open-source version has internet access.</p>
+      <p>The biggest advantage over the already existing Code Interpreter from OpenAI is that this open-source version has internet access. For example, this is useful when asking “Plot the Bitcoin chart of 2023” the agent uses yahoo finance to download live data about the current situation and then shows it as an image plot to the user. Another advantage is that you can use your hardware. For example, if you want to do something that includes running stable diffusion you need to have a dedicated GPU that can run the model. This is not the case in the cloud environment you have from OpenAI. Other features include chat memory so you can ask follow-up questions and automatic Python package installation (when missing) so the agent tries again.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s4">
+      <h2>📊 **Technical Details**</h2>
+      <p class="lead">The core of this project is a LangChain Agent, specifically the new OpenAIFunctionsAgent which gives the advantage of calling functions/tools to better handle the user needs.</p>
+      <p>The core of this project is a LangChain Agent, specifically the new OpenAIFunctionsAgent which gives the advantage of calling functions/tools to better handle the user needs. For the code interpreter, we need to give it access to a Python interpreter so it can execute Python code. This interpreter is represented as a tool so the Agent can call the tool and use Python to fulfill what the user wants.</p>
+<p>For example, if the user asks to plot a sin wave and show it as an image, the agent writes Python code and inputs it to the Python interpreter which runs the code, outputs the image and then this image can be displayed to the user. Additionally, the Agent can comment on the result and explain what happened or give more details about the output.</p>
+<p>It is not straightforward to give LangChain Agents access to a Code Execution Environment. There is already Python REPL but this does not allow for FileIO and it also forgets variables after every run. So I had to write my solution for this: CodeBoxAPI.</p>
+<p>When starting a Code Interpreter Session it creates a small Jupyter kernel on your device similar to how Jupyter notebooks work. A CodeBox is the underlying Python execution env where the agent can run code and receive its outputs. A small personal computer the agent has access to and which it can use to serve the user its request.</p>
+      <div class="chart"><div class="chart-row">
+    <div class="chart-label">Method A</div>
+    <div class="chart-bar-wrap"><div class="chart-bar green" style="width:95%">95%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method B</div>
+    <div class="chart-bar-wrap"><div class="chart-bar teal" style="width:80%">80%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method C</div>
+    <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:65%">65%</div></div>
+  </div></div>
+    </section>
+
+    <section class="section" id="s5">
+      <h2>🔗 Examples</h2>
+      <p class="lead">AI: Here is the normalized plot showing the relative performance of the tech giants (Apple, Google, Microsoft, Amazon) in 2023.</p>
+      <p>AI: Here is the normalized plot showing the relative performance of the tech giants (Apple, Google, Microsoft, Amazon) in 2023. The plot is normalized so that the starting point of each stock is 100, which allows for easy comparison of the percentage changes in each stock&#x27;s price over the period.</p>
+<p>Prompt: ”Select representative ETFs for different sectors (Technology, Healthcare, Consumer Discretionary, etc.). Plot their performance during the last two economic cycles. Analyze how different sectors behave in different stages of an economic cycle.”</p>
+<p>AI: The plot above shows the performance of the selected ETFs representing the Technology, Healthcare, and Consumer Discretionary sectors during the last two economic cycles (the dot-com bubble from 2000-2002 and the financial crisis from 2007-2009).</p>
+<p>As we can see, all sectors were negatively affected during these periods, with significant drops in value. However, the extent and timing of these drops vary between sectors.</p>
+<p>For a more detailed analysis, we could look at the performance of these sectors during different stages of the economic cycles (e.g., pre-recession, during the recession, and post-recession). However, this would require a more complex analysis and might be beyond the scope of this discussion.</p>
+<p>Please note that this analysis is quite simplified and doesn&#x27;t take into account many factors that could influence the performance of these sectors during different economic cycles. For a more accurate and detailed analysis, you might want to consider consulting with a financial advisor or conducting a more in-depth research.</p>
+      <div class="chart"><div class="chart-row">
+    <div class="chart-label">Another Example</div>
+    <div class="chart-bar-wrap"><div class="chart-bar green" style="width:95%">95%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Response</div>
+    <div class="chart-bar-wrap"><div class="chart-bar teal" style="width:80%">80%</div></div>
+  </div></div>
+    </section>
+
+    <section class="section" id="s6">
+      <h2>💡 Roadmap</h2>
+      <p class="lead">The next step is to make CodeBox production-ready, enabling developers to create public apps as it allows for easy scaling.</p>
+      <p>The next step is to make CodeBox production-ready, enabling developers to create public apps as it allows for easy scaling. Currently, each user requires a small sandboxed execution environment, making it challenging to deploy to production with this API. Plans also include making it available using other LLMs) like ClaudeV2 or Open Orca. In time, users may be able to run this API 100% locally and offline on their home PC.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s7">
+      <h2>🛠️ **How to Use It**</h2>
+      <p class="lead">The installation is straightforward: get your OpenAI API Key here and install the package using pip.</p>
+      <p>The installation is straightforward: get your OpenAI API Key here and install the package using pip. You can use the API in your Python code: start a session, generate a response based on user input - stop your session. You can find detailed instructions on the project&#x27;s GitHub README.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s8">
+      <h2>📈 **Contribute**</h2>
+      <p class="lead">If you&amp;#x27;re interested in contributing to the Code Interpreter API, there are several opportunities.</p>
+      <p>If you&#x27;re interested in contributing to the Code Interpreter API, there are several opportunities. Have a look into the Issues I put some tagged as ToDo. But you can also work on your ideas and just push a PR. Thanks!</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s9">
+      <h2>🎯 Do Experiments</h2>
+      <p class="lead">If you have not checked out the repository I highly recommend to do so and just try out your prompts! Try out a lot of different stuff to get an idea of what is possible and what is not.</p>
+      <p>If you have not checked out the repository I highly recommend to do so and just try out your prompts! Try out a lot of different stuff to get an idea of what is possible and what is not. If you encounter any bugs please publish them as GitHub Issues and I will try to fix them.</p>
+<p>This is my first blog post ever so thanks for reading this and I hope you had fun! If you want to get updated feel free to check out my Twitter @shroominic.</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s10">
+      <h2>🔬 Related content</h2>
+      <p class="lead">Observability &amp;amp; EvalsLangSmith
+
+#### Reusable Evaluators and Evaluator Templates in LangSmith
+
+Catherine QiaoJacob TalbotApril 16, 20264min[](/blog/reusable-langsmith-evaluator-templates)LangSm...</p>
+      <p>Observability &amp; EvalsLangSmith</p>
+<p>#### Reusable Evaluators and Evaluator Templates in LangSmith</p>
+<p>Catherine QiaoJacob TalbotApril 16, 20264min[](/blog/reusable-langsmith-evaluator-templates)LangSmithObservability &amp; Evals</p>
+<p>#### Human judgment in the agent improvement loop</p>
+<p>Rahul VermaApril 9, 202611min[](/blog/human-judgment-in-the-agent-improvement-loop)Observability &amp; Evals</p>
+<p>#### Better Harness: A Recipe for Harness Hill-Climbing with Evals</p>
+<p>Vivek TrivedyApril 8, 20268min[](/blog/better-harness-a-recipe-for-harness-hill-climbing-with-evals)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="chart"><div class="chart-row">
+    <div class="chart-label">Method A</div>
+    <div class="chart-bar-wrap"><div class="chart-bar green" style="width:95%">95%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method B</div>
+    <div class="chart-bar-wrap"><div class="chart-bar teal" style="width:80%">80%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method C</div>
+    <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:65%">65%</div></div>
+  </div></div>
+    </section>
+
+    <section class="section" id="s11">
+      <h2>📝 See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+  </div>
+
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/code-interpreter-api" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

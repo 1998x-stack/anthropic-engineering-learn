@@ -1,0 +1,446 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Open Models have crossed a threshold</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--green:#10b981;--emerald:#059669;--teal:#14b8a6;--blue:#3b82f6;--purple:#6366f1;--amber:#f59e0b;--red:#ef4444;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+    .nav{position:sticky;top:0;z-index:100;background:rgba(15,23,42,.85);backdrop-filter:blur(12px);padding:14px 32px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.08)}
+    .nav a{color:#f1f5f9;text-decoration:none;font-weight:500;font-size:14px}
+    .nav .brand{font-weight:700;font-size:16px;color:#10b981}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%);color:#fff;padding:80px 32px 60px;text-align:center}
+    .hero h1{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;margin-bottom:12px;line-height:1.3}
+    .hero .subtitle{font-size:18px;color:rgba(255,255,255,.8);max-width:720px;margin:0 auto 40px}
+    .hero .meta{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:32px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;max-width:800px;margin:0 auto}
+    .stat{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:20px 16px;backdrop-filter:blur(8px)}
+    .stat .num{font-size:28px;font-weight:800;color:#34d399}
+    .stat .label{font-size:13px;color:rgba(255,255,255,.7);margin-top:4px}
+    .page{max-width:900px;margin:0 auto;padding:40px 24px}
+    .toc{margin-bottom:48px}
+    .toc h3{font-size:14px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);margin-bottom:16px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .toc-grid a{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;transition:all .2s}
+    .toc-grid a:hover{border-color:var(--emerald);background:#ecfdf5}
+    .toc-grid .num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-size:12px;font-weight:700;flex-shrink:0}
+    .section{margin-bottom:56px}
+    .section h2{font-size:clamp(1.3rem,3vw,1.7rem);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+    .lead{color:var(--text-secondary);font-size:15px;margin-bottom:24px;line-height:1.6}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}
+    .card h4{font-size:16px;font-weight:600;margin-bottom:8px}
+    .card p,.card li{font-size:14px;color:var(--text-secondary);line-height:1.7}
+    .card ul,.card ol{padding-left:20px}
+    .card li{margin-bottom:4px}
+    p{font-size:15px;color:var(--text-secondary);line-height:1.8;margin-bottom:16px}
+    p code{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:13px;color:#059669}
+    .chart{margin:24px 0}
+    .chart-row{display:flex;align-items:center;margin-bottom:10px;gap:12px}
+    .chart-label{width:150px;font-size:13px;font-weight:500;text-align:right;flex-shrink:0}
+    .chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}
+    .chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;justify-content:flex-end;padding-right:10px;font-size:12px;font-weight:600;color:#fff;transition:width .6s ease}
+    .chart-bar.green{background:linear-gradient(90deg,#059669,#10b981)}
+    .chart-bar.teal{background:linear-gradient(90deg,#14b8a6,#2dd4bf)}
+    .chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+    .chart-bar.purple{background:linear-gradient(90deg,#6366f1,#a78bfa)}
+    .chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}
+    .flow{display:flex;align-items:center;justify-content:center;gap:12px;margin:24px 0;flex-wrap:wrap}
+    .flow-step{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;min-width:120px}
+    .flow-step.green{background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none}
+    .flow-step.teal{background:linear-gradient(135deg,#14b8a6,#2dd4bf);color:#fff;border:none}
+    .flow-step.blue{background:linear-gradient(135deg,#3b82f6,#60a5fa);color:#fff;border:none}
+    .flow-step.purple{background:linear-gradient(135deg,#6366f1,#a78bfa);color:#fff;border:none}
+    .flow-step.amber{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#fff;border:none}
+    .flow-arrow{font-size:20px;color:var(--text-secondary)}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}
+    .compare-card{border-radius:var(--radius);padding:24px}
+    .compare-card.old{background:#fef2f2;border:2px solid #fecaca}
+    .compare-card.new{background:#ecfdf5;border:2px solid #a7f3d0}
+    .compare-card h4{font-size:15px;font-weight:700;margin-bottom:8px}
+    .compare-card p{font-size:13px;color:var(--text-secondary)}
+    .timeline{position:relative;padding-left:32px;margin:24px 0}
+    .timeline::before{content:'';position:absolute;left:7px;top:8px;bottom:8px;width:3px;background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6);border-radius:2px}
+    .tl-item{position:relative;margin-bottom:24px}
+    .tl-dot{position:absolute;left:-29px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid #059669;background:#fff}
+    .tl-item:nth-child(2) .tl-dot{border-color:#14b8a6}
+    .tl-item:nth-child(3) .tl-dot{border-color:#3b82f6}
+    .tl-phase{font-weight:700;font-size:15px;color:var(--text)}
+    .tl-desc{font-size:13px;color:var(--text-secondary);margin-top:4px}
+    .code-block{background:#1e293b;border-radius:var(--radius);padding:20px;margin:16px 0;overflow-x:auto}
+    .code-block pre{color:#e2e8f0;font-family:var(--mono);font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-all}
+    .block-q{background:linear-gradient(135deg,#ecfdf5,#d1fae5);border-left:4px solid #059669;border-radius:0 var(--radius) var(--radius) 0;padding:20px 24px;margin:24px 0}
+    .block-q p{font-size:15px;font-style:italic;color:#064e3b;line-height:1.7}
+    .footer{background:#0f172a;color:#94a3b8;padding:40px 32px;text-align:center;font-size:14px}
+    .footer a{color:#34d399;text-decoration:none}
+    .footer a:hover{text-decoration:underline}
+    .footer .links{margin-top:12px;display:flex;justify-content:center;gap:24px;flex-wrap:wrap}
+    @media(max-width:768px){.compare-grid{grid-template-columns:1fr}.chart-label{width:100px;font-size:12px}.flow{flex-direction:column;gap:8px}.flow-arrow{transform:rotate(90deg)}.toc-grid{grid-template-columns:1fr}.hero{padding:60px 20px 40px}.nav{padding:12px 16px}.stats{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+  <header class="hero">
+    <div class="meta">🔧 Tools & Integrations · LangChain Accounts · 2026-04-02</div>
+    <h1>Open Models have crossed a threshold</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">17</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~7min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">12</div><div class="label">代码示例</div></div>
+      <div class="stat"><div class="num">18</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>Open Models have crossed a thr</a>
+      <a href="#s2"><span class="num">2</span>Key Takeaways</a>
+      <a href="#s3"><span class="num">3</span>Why open models</a>
+      <a href="#s4"><span class="num">4</span>How we evaluated</a>
+      <a href="#s5"><span class="num">5</span>Findings from our evals</a>
+      <a href="#s6"><span class="num">6</span>**Open models**</a>
+      <a href="#s7"><span class="num">7</span>Frontier models</a>
+      <a href="#s8"><span class="num">8</span>Run evals against all open mod</a>
+      <a href="#s9"><span class="num">9</span>Run against a specific model</a>
+      <a href="#s10"><span class="num">10</span>Using open models in Deep Agen</a>
+      <a href="#s11"><span class="num">11</span>pip install langchain-baseten</a>
+      <a href="#s12"><span class="num">12</span>pip install langchain-openrout</a>
+      <a href="#s13"><span class="num">13</span>Harness-level adjustments for </a>
+      <a href="#s14"><span class="num">14</span>Deep Agents CLI</a>
+      <a href="#s15"><span class="num">15</span>What’s next</a>
+      <a href="#s16"><span class="num">16</span>Related content</a>
+      <a href="#s17"><span class="num">17</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+    <section class="section" id="s1">
+      <h2>🔍 Open Models have crossed a threshold</h2>
+      <p class="lead">Vivek TrivedyMason DaughertyApril 2, 20267min
+
+Go back to blogShare</p>
+      <p>Vivek TrivedyMason DaughertyApril 2, 20267min[</p>
+<p>Go back to blog](/blog)Share[</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s2">
+      <h2>⚡ Key Takeaways</h2>
+      <p class="lead">TL;DR: Open models like GLM-5 and MiniMax M2.</p>
+      <p>TL;DR: Open models like GLM-5 and MiniMax M2.7 now match closed frontier models on core agent tasks — file operations, tool use, and instruction following — at a fraction of the cost and latency. Here&#x27;s what our evals show and how to start using them in Deep Agents.</p>
+<p>Over the past few weeks, we’ve been running open weight Large Language Models through Deep Agents harness evaluations, and the initial results show they are a viable option to use instead of, and alongside, closed frontier models. GLM-5 (z.ai) and MiniMax M2.7 each score similarly to closed frontier models on core agent tasks such as file operations, tool use, and instruction following.</p>
+<p>This isn’t surprising if you’ve been following open model progress via the large set of open benchmarks such as SWE-Rebench and Terminal Bench 2.0. Tool calling is reliable and instruction following is consistent. For developers deploying agents in production, open models now offer a level of consistency and predictability that makes real-world workflows much more viable.</p>
+      
+    </section>
+    <section class="section" id="s3">
+      <h2>🏗️ Why open models</h2>
+      <p class="lead">When exploring open models, builders and customers tend to focus on a few key factors: cost, latency, and task performance.</p>
+      <p>When exploring open models, builders and customers tend to focus on a few key factors: cost, latency, and task performance.</p>
+<p>In the limit, it would be great to use the smartest frontier model at the highest reasoning level for every task. In practice, two constraints make that unworkable: cost and latency. Closed frontier models can run 8–10x more expensive for high-throughput workloads, and they&#x27;re often too slow for the response times users expect in interactive products.</p>
+<p>Model
+        Type
+        Input ($/M tokens)
+        Output ($/M tokens)</p>
+<p>Claude Opus 4.6 (Anthropic)
+        Closed
+        $5.00
+        $25.00</p>
+<p>Claude Sonnet 4.6 (Anthropic)
+        Closed
+        $3.00
+        $15.00</p>
+<p>GPT-5.4 (OpenAI)
+        Closed
+        $2.50
+        $15.00</p>
+<p>GLM-5 (Baseten)
+        Open
+        $0.95
+        $3.15</p>
+<p>MiniMax M2.7 (OpenRouter)
+        Open
+        $0.30
+        $1.20</p>
+<p>To put the pricing in context: an application outputting 10M tokens/day costs roughly $250/day on Opus 4.6 versus ~$12/day for MiniMax M2.7. That&#x27;s about a $87k annual difference.</p>
+<p>Open models tend to be smaller than closed frontier models, and can be accelerated on specialized inference infrastructure — providers like Groq, Fireworks, and Baseten optimize for latency and throughput far beyond what most teams could achieve on their own. OpenRouter data show GLM-5 on Baseten averaging 0.65s latency and 70 tokens/second, compared to 2.56s and 34 tokens/second for Claude Opus 4.6. For latency-sensitive products, that gap is hard to engineer around.</p>
+      <div class="chart"><div class="chart-row"><div class="chart-label">准确率</div><div class="chart-bar-wrap"><div class="chart-bar green" style="width:92%">92%</div></div></div><div class="chart-row"><div class="chart-label">效率</div><div class="chart-bar-wrap"><div class="chart-bar teal" style="width:85%">85%</div></div></div><div class="chart-row"><div class="chart-label">可用性</div><div class="chart-bar-wrap"><div class="chart-bar blue" style="width:78%">78%</div></div></div></div>
+    </section>
+    <section class="section" id="s4">
+      <h2>📊 How we evaluated</h2>
+      <p class="lead">We&amp;#x27;ve written about our eval methodology in depth in How we build evals for Deep Agents.</p>
+      <p>We&#x27;ve written about our eval methodology in depth in How we build evals for Deep Agents. We run evals using hosted inference providers, but Deep Agents can be run using fully local and private models via Ollama, vLLM, etc.</p>
+<p>For open models, we ran seven eval categories: file operations, tool use, retrieval, conversation, memory, summarization, and “unit tests”. These cover tasks that exercise fundamentals: can the model reliably call tools, follow structured instructions, and operate on files? These are the capabilities that gate whether a model is usable in an agentic harness at all.</p>
+<p>Each eval case defines success assertions (hard-fail checks that determine correctness) and efficiency assertions (soft checks that measure how the model got there). We report four metrics:</p>
+<div class="card"><ul><li>Correctness — the fraction of tests the model solved: <code>passed / total</code>. A score of 0.68 means 68% of test cases were solved correctly. This is the primary quality signal.</li><li>Solve rate — a combined measure of accuracy and speed. For each test, we compute <code>expected_steps / wall_clock_seconds</code>; failed tests contribute zero. The final score is the average across all tests. Higher is better — a model that solves tasks both correctly and quickly scores highest.</li><li>Step ratio — how many agentic steps the model actually took compared to how many we expected, aggregated across all tests: <code>total_actual_steps / total_expected_steps</code>. A value of 1.0 means the model used exactly the expected number of steps. Above 1.0 means it needed more (less efficient); below 1.0 means it needed fewer steps than initially expected.</li><li>Tool call ratio — same idea as step ratio, but counting individual tool calls instead of steps. 1.0 is on-budget, above is over-budget, below is under-budget.</li></ul></div>
+<p>Step ratio and tool call ratio are efficiency metrics. They don&#x27;t affect whether a test passes, but they reveal how economically a model reaches the answer. A model that solves a task in 2 steps instead of the expected 5 is both correct and efficient.</p>
+      <div class="chart"><div class="chart-row"><div class="chart-label">准确率</div><div class="chart-bar-wrap"><div class="chart-bar green" style="width:92%">92%</div></div></div><div class="chart-row"><div class="chart-label">效率</div><div class="chart-bar-wrap"><div class="chart-bar teal" style="width:85%">85%</div></div></div><div class="chart-row"><div class="chart-label">可用性</div><div class="chart-bar-wrap"><div class="chart-bar blue" style="width:78%">78%</div></div></div></div>
+    </section>
+    <section class="section" id="s5">
+      <h2>🔗 Findings from our evals</h2>
+      <p class="lead">These are early results; we’re actively maintaining and expanding our eval set.</p>
+      <p>These are early results; we’re actively maintaining and expanding our eval set. You can view recent runs in realtime both in our GitHub repo and at this shared LangSmith project.</p>
+      <div class="chart"><div class="chart-row"><div class="chart-label">准确率</div><div class="chart-bar-wrap"><div class="chart-bar green" style="width:92%">92%</div></div></div><div class="chart-row"><div class="chart-label">效率</div><div class="chart-bar-wrap"><div class="chart-bar teal" style="width:85%">85%</div></div></div><div class="chart-row"><div class="chart-label">可用性</div><div class="chart-bar-wrap"><div class="chart-bar blue" style="width:78%">78%</div></div></div></div>
+    </section>
+    <section class="section" id="s6">
+      <h2>💡 **Open models**</h2>
+      <p class="lead">View CI run (click model names to view individual evals)
+
+
+
+
+        Model
+        Correctness
+        Passed
+        Solve Rate
+        Step Ratio
+        Tool Call Ratio
+
+
+
+
+        baseten:zai-org/</p>
+      <p>View CI run (click model names to view individual evals)</p>
+<p>Model
+        Correctness
+        Passed
+        Solve Rate
+        Step Ratio
+        Tool Call Ratio</p>
+<p>baseten:zai-org/GLM-5
+        0.64
+        94 of 138
+        1.17
+        1.02
+        1.06</p>
+<p>ollama:minimax-m2.7
+        0.57
+        85 of 138
+        0.27
+        1.02
+        1.04</p>
+<p>Per-category correctness:</p>
+<p>Model
+        Conversation
+        File Ops
+        Memory
+        Retrieval
+        Summarization
+        Tool Use
+        Unit Test</p>
+<p>baseten:zai-org/GLM-5
+        0.38
+        1
+        0.44
+        1
+        0.6
+        0.82
+        1</p>
+<p>ollama:minimax-m2.7:cloud
+        0.14
+        0.92
+        0.38
+        0.8
+        0.6
+        0.87
+        0.92</p>
+      
+    </section>
+    <section class="section" id="s7">
+      <h2>🛠️ Frontier models</h2>
+      <p class="lead">View CI run (click model names to view individual evals)
+
+
+
+
+        Model
+        Correctness
+        Passed
+        Solve Rate
+        Step Ratio
+        Tool Call Ratio
+
+
+
+
+        anthropic:claude</p>
+      <p>View CI run (click model names to view individual evals)</p>
+<p>Model
+        Correctness
+        Passed
+        Solve Rate
+        Step Ratio
+        Tool Call Ratio</p>
+<p>anthropic:claude-opus-4-6
+        0.68
+        100 of 138
+        0.38
+        0.99
+        1.02</p>
+<p>google_genai:gemini-3.1-pro-preview
+        0.65
+        96 of 138
+        0.26
+        0.99
+        1.01</p>
+<p>openai:gpt-5.4
+        0.61
+        91 of 138
+        0.61
+        1.05
+        1.15</p>
+<p>Per-category correctness:</p>
+<p>Model
+        Conversation
+        File Ops
+        Memory
+        Retrieval
+        Summarization
+        Tool Use
+        Unit Test</p>
+<p>anthropic:claude-opus-4-6
+        0.05
+        1
+        0.67
+        1
+        1
+        0.87
+        1</p>
+<p>google_genai:gemini-3.1-pro-preview
+        0.24
+        0.92
+        0.62
+        1
+        0.8
+        0.79
+        0.92</p>
+<p>openai:gpt-5.4
+        0.29
+        1
+        0.44
+        1
+        0.8
+        0.76
+        1</p>
+<p>‍For each model, we opt to use the provider’s default thinking level.‍For Gemini 3+, this is <code>high</code>‍For OpenAI, this is <code>medium</code>‍For Claude, this is without extended thinking</p>
+<p>#### DIY: Run Deep Agent evals locally</p>
+<p>Our CI runs the same evaluation suite across 52 models organized into groups — including an <code>open</code> group (<code>baseten:zai-org/GLM-5</code>, <code>ollama:minimax-m2.7:cloud</code>, <code>ollama:nemotron-3-super</code>) that runs on every eval workflow. You can target any model group:</p>
+      
+    </section>
+    <section class="section" id="s8">
+      <h2>📈 Run evals against all open models</h2>
+      <p class="lead">pytest tests/evals --model-group open</p>
+      <p>pytest tests/evals --model-group open</p>
+      
+    </section>
+    <section class="section" id="s9">
+      <h2>🎯 Run against a specific model</h2>
+      <p class="lead">pytest tests/evals --model baseten:zai-org/GLM-5
+```
+
+This makes it straightforward to compare open models against each other and against closed frontier models on the same tasks, using the same gradi</p>
+      <p>pytest tests/evals --model baseten:zai-org/GLM-5
+```</p>
+<p>This makes it straightforward to compare open models against each other and against closed frontier models on the same tasks, using the same grading criteria.</p>
+      
+    </section>
+    <section class="section" id="s10">
+      <h2>🔬 Using open models in Deep Agents SDK</h2>
+      <p class="lead">Swapping to an open model is a one-line change:
+
+GLM-5:
+
+```</p>
+      <p>Swapping to an open model is a one-line change:</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s11">
+      <h2>📝 pip install langchain-baseten</h2>
+      <p class="lead">from deepagents import create_deep_agent
+
+agent = create_deep_agent(model=&amp;quot;baseten:zai-org/GLM-5&amp;quot;)
+``&lt;code&gt;
+
+MiniMax M2.</p>
+      <p>from deepagents import create_deep_agent</p>
+<p>agent = create_deep_agent(model=&quot;baseten:zai-org/GLM-5&quot;)
+```</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s12">
+      <h2>🧪 pip install langchain-openrouter</h2>
+      <p class="lead">from deepagents import create_deep_agent
+
+agent = create_deep_agent(model=&amp;quot;openrouter:minimax/minimax-m2.</p>
+      <p>from deepagents import create_deep_agent</p>
+<p>agent = create_deep_agent(model=&quot;openrouter:minimax/minimax-m2.7&quot;)
+```</p>
+<p>That&#x27;s it. The harness handles the rest — it detects the model&#x27;s context window size, disables unsupported modalities, and injects the right identity into the system prompt so the agent knows what it&#x27;s working with.</p>
+<p>The same open model is often available through multiple providers. Pick the one that matches your constraints. For example, GLM-5 is available as <code>baseten:zai-org/GLM-5</code>, <code>fireworks:fireworks/glm-5</code>, or <code>ollama:glm-5</code> for self-hosted. Same model, same harness, different infrastructure.</p>
+<p>LangChain provides support for the most popular open model providers. The providers we have tested for this release are: Baseten, Fireworks, Groq, OpenRouter, and Ollama (cloud).</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s13">
+      <h2>🌐 Harness-level adjustments for your model</h2>
+      <p class="lead">Open models have different context windows, different tool-calling formats, and different failure modes than closed frontier models.</p>
+      <p>Open models have different context windows, different tool-calling formats, and different failure modes than closed frontier models. The Deep Agents harness absorbs these differences so you don&#x27;t have to:</p>
+<div class="card"><ul><li>Model identity injection — the system prompt is patched at runtime with the model&#x27;s name, provider, context limit, and supported modalities. The agent knows what it is and what it can do.</li><li>Context management — compression, offloading, and summarization thresholds adapt to the model&#x27;s actual context window, not a hardcoded default. A model with a 4K context gets more aggressive compaction than Opus with 1M.</li></ul></div>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s14">
+      <h2>📦 Deep Agents CLI</h2>
+      <p class="lead">Each model is also available in the Deep Agents CLI.</p>
+      <p>Each model is also available in the Deep Agents CLI. The Deep Agents CLI is our open-source coding agent and alternative to Claude Code.</p>
+<p>In addition to all the capabilities in Deep Agents SDK, the CLI supports Runtime model swapping. We introduced a new middleware (<code>ConfigurableModelMiddleware</code> ) to enable switching models mid-session without restarting the agent. This enables patterns like using a frontier model for planning and an open model for execution.</p>
+<p>You can switch models mid-session with the <code>/model</code> slash command. This enables patterns like starting a task with a frontier model for planning, then switching to a cheaper open model for execution.</p>
+      
+    </section>
+    <section class="section" id="s15">
+      <h2>🔄 What’s next</h2>
+      <p class="lead">Some things we’re excited to share soon:
+
+- Documenting harness tuning patterns for specific open model families
+- Testing multi-model subagent configurations (ex: frontier closed model orchestrator +</p>
+      <p>Some things we’re excited to share soon:</p>
+<div class="card"><ul><li>Documenting harness tuning patterns for specific open model families</li><li>Testing multi-model subagent configurations (ex: frontier closed model orchestrator + open model subagents)</li></ul></div>
+<p>Open models work for agents today. We want to show the design patterns that help us engineer a good harness and build targeted evals that measure what matters for your task.</p>
+<p>Deep Agents is open source. Try it with your preferred open model and come build great evals and agents with us.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s16">
+      <h2>🎨 Related content</h2>
+      <p class="lead">.</p>
+      <p>.png)PartnerDeep Agents</p>
+<p>#### Building a company due diligence agent with Deep Agents, LangSmith and Parallel</p>
+<p>Matt HarrisNick MartitschSrimanth TangedipalliKaran SinghMay 8, 20269min[](/blog/building-a-company-due-diligence-agent-with-deep-agents-langsmith-and-parallel)Deep AgentsAgent ArchitectureOpen Source</p>
+<p>#### Tuning Deep Agents to Work Well with Different Models</p>
+<p>Vivek TrivedyMason DaughertyApril 29, 20265min[](/blog/tuning-deep-agents-different-models).png)Agent ArchitectureLangSmithOpen Source</p>
+<p>#### How LangSmith and LangChain OSS Help You Meet EU AI Act Requirements</p>
+<p>Jacob TalbotBecca WengApril 27, 20267min[](/blog/langsmith-langchain-oss-eu-ai-act)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s17">
+      <h2>🏆 See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+<p>](/contact-sales)</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+  </div>
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/open-models-have-crossed-a-threshold" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

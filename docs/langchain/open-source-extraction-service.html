@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Open Source Extraction Service</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--green:#10b981;--emerald:#059669;--teal:#14b8a6;--blue:#3b82f6;--purple:#6366f1;--amber:#f59e0b;--red:#ef4444;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+    .nav{position:sticky;top:0;z-index:100;background:rgba(15,23,42,.85);backdrop-filter:blur(12px);padding:14px 32px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.08)}
+    .nav a{color:#f1f5f9;text-decoration:none;font-weight:500;font-size:14px}
+    .nav .brand{font-weight:700;font-size:16px;color:#10b981}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%);color:#fff;padding:80px 32px 60px;text-align:center}
+    .hero h1{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;margin-bottom:12px;line-height:1.3}
+    .hero .subtitle{font-size:18px;color:rgba(255,255,255,.8);max-width:720px;margin:0 auto 40px}
+    .hero .meta{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:32px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;max-width:800px;margin:0 auto}
+    .stat{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:20px 16px;backdrop-filter:blur(8px)}
+    .stat .num{font-size:28px;font-weight:800;color:#34d399}
+    .stat .label{font-size:13px;color:rgba(255,255,255,.7);margin-top:4px}
+    .page{max-width:900px;margin:0 auto;padding:40px 24px}
+    .toc{margin-bottom:48px}
+    .toc h3{font-size:14px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);margin-bottom:16px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .toc-grid a{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;transition:all .2s}
+    .toc-grid a:hover{border-color:var(--emerald);background:#ecfdf5}
+    .toc-grid .num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-size:12px;font-weight:700;flex-shrink:0}
+    .section{margin-bottom:56px}
+    .section h2{font-size:clamp(1.3rem,3vw,1.7rem);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+    .lead{color:var(--text-secondary);font-size:15px;margin-bottom:24px;line-height:1.6}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}
+    .card h4{font-size:16px;font-weight:600;margin-bottom:8px}
+    .card p,.card li{font-size:14px;color:var(--text-secondary);line-height:1.7}
+    .card ul,.card ol{padding-left:20px}
+    .card li{margin-bottom:4px}
+    p{font-size:15px;color:var(--text-secondary);line-height:1.8;margin-bottom:16px}
+    p code{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:13px;color:#059669}
+    .chart{margin:24px 0}
+    .chart-row{display:flex;align-items:center;margin-bottom:10px;gap:12px}
+    .chart-label{width:150px;font-size:13px;font-weight:500;text-align:right;flex-shrink:0}
+    .chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}
+    .chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;justify-content:flex-end;padding-right:10px;font-size:12px;font-weight:600;color:#fff;transition:width .6s ease}
+    .chart-bar.green{background:linear-gradient(90deg,#059669,#10b981)}
+    .chart-bar.teal{background:linear-gradient(90deg,#14b8a6,#2dd4bf)}
+    .chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+    .chart-bar.purple{background:linear-gradient(90deg,#6366f1,#a78bfa)}
+    .chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}
+    .flow{display:flex;align-items:center;justify-content:center;gap:12px;margin:24px 0;flex-wrap:wrap}
+    .flow-step{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;min-width:120px}
+    .flow-step.green{background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none}
+    .flow-step.teal{background:linear-gradient(135deg,#14b8a6,#2dd4bf);color:#fff;border:none}
+    .flow-step.blue{background:linear-gradient(135deg,#3b82f6,#60a5fa);color:#fff;border:none}
+    .flow-step.purple{background:linear-gradient(135deg,#6366f1,#a78bfa);color:#fff;border:none}
+    .flow-step.amber{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#fff;border:none}
+    .flow-arrow{font-size:20px;color:var(--text-secondary)}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}
+    .compare-card{border-radius:var(--radius);padding:24px}
+    .compare-card.old{background:#fef2f2;border:2px solid #fecaca}
+    .compare-card.new{background:#ecfdf5;border:2px solid #a7f3d0}
+    .compare-card h4{font-size:15px;font-weight:700;margin-bottom:8px}
+    .compare-card p{font-size:13px;color:var(--text-secondary)}
+    .timeline{position:relative;padding-left:32px;margin:24px 0}
+    .timeline::before{content:'';position:absolute;left:7px;top:8px;bottom:8px;width:3px;background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6);border-radius:2px}
+    .tl-item{position:relative;margin-bottom:24px}
+    .tl-dot{position:absolute;left:-29px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid #059669;background:#fff}
+    .tl-item:nth-child(2) .tl-dot{border-color:#14b8a6}
+    .tl-item:nth-child(3) .tl-dot{border-color:#3b82f6}
+    .tl-phase{font-weight:700;font-size:15px;color:var(--text)}
+    .tl-desc{font-size:13px;color:var(--text-secondary);margin-top:4px}
+    .code-block{background:#1e293b;border-radius:var(--radius);padding:20px;margin:16px 0;overflow-x:auto}
+    .code-block pre{color:#e2e8f0;font-family:var(--mono);font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-all}
+    .block-q{background:linear-gradient(135deg,#ecfdf5,#d1fae5);border-left:4px solid #059669;border-radius:0 var(--radius) var(--radius) 0;padding:20px 24px;margin:24px 0}
+    .block-q p{font-size:15px;font-style:italic;color:#064e3b;line-height:1.7}
+    .footer{background:#0f172a;color:#94a3b8;padding:40px 32px;text-align:center;font-size:14px}
+    .footer a{color:#34d399;text-decoration:none}
+    .footer a:hover{text-decoration:underline}
+    .footer .links{margin-top:12px;display:flex;justify-content:center;gap:24px;flex-wrap:wrap}
+    @media(max-width:768px){.compare-grid{grid-template-columns:1fr}.chart-label{width:100px;font-size:12px}.flow{flex-direction:column;gap:8px}.flow-arrow{transform:rotate(90deg)}.toc-grid{grid-template-columns:1fr}.hero{padding:60px 20px 40px}.nav{padding:12px 16px}.stats{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+  <header class="hero">
+    <div class="meta">🔧 Tools & Integrations · LangChain Accounts · 2024-03-26</div>
+    <h1>Open Source Extraction Service</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">8</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~7min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">13</div><div class="label">代码示例</div></div>
+      <div class="stat"><div class="num">17</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>Open Source Extraction Service</a>
+      <a href="#s2"><span class="num">2</span>Why now?</a>
+      <a href="#s3"><span class="num">3</span>Features</a>
+      <a href="#s4"><span class="num">4</span>Walkthrough</a>
+      <a href="#s5"><span class="num">5</span>Get PDF bytes</a>
+      <a href="#s6"><span class="num">6</span>LangServe client</a>
+      <a href="#s7"><span class="num">7</span>Related content</a>
+      <a href="#s8"><span class="num">8</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+    <section class="section" id="s1">
+      <h2>🔍 Open Source Extraction Service</h2>
+      <p class="lead">The LangChain TeamMarch 26, 20247min
+
+Go back to blogShare
+
+
+
+
+
+Earlier this month we announced our most recent OSS use-case accelerant: a service for extracting structured data from unstructured sour</p>
+      <p>The LangChain TeamMarch 26, 20247min[</p>
+<p>Go back to blog](/blog)Share[</p>
+<p>](#)Earlier this month we announced our most recent OSS use-case accelerant: a service for extracting structured data from unstructured sources, such as text and PDF documents. Today we are exposing a hosted version of the service with a simple front end. The application is free to use, but is not intended for production workloads or sensitive data. The intent is to showcase what is possible in this category in 2024, and to help developers get a running start with their own applications.</p>
+<div class="card"><ul><li>YouTube Walkthrough: https://youtu.be/-FMUt3OARy0</li><li>Hosted Extraction Service:  https://extract.langchain.com/</li><li>GitHub Repo: https://github.com/langchain-ai/langchain-extract</li></ul></div>
+      
+    </section>
+    <section class="section" id="s2">
+      <h2>⚡ Why now?</h2>
+      <p class="lead">Structured data extraction has emerged as a valuable use case of large language models, which can reason through the ambiguities of unstructured text to coerce information into a desired schema.</p>
+      <p>Structured data extraction has emerged as a valuable use case of large language models, which can reason through the ambiguities of unstructured text to coerce information into a desired schema. Model providers are increasingly supporting long context windows and function calling capabilities, both key features to data extraction. And we have recently improved LangChain’s support for data extraction, allowing developers to easily work with a variety of file types, schema formats, models, few-shot examples, and extraction methods (e.g., tool calling, JSON mode, or parsing). Hosting a reference application allows users to experiment with the latest tools for their own use-cases, and connect what they see to the underlying OSS implementation.</p>
+      
+    </section>
+    <section class="section" id="s3">
+      <h2>🏗️ Features</h2>
+      <p class="lead">- Support for PDF, HTML, and text;
+- Defining and persisting extractors with their own schema and custom instructions;
+- Adding few-shot examples for in-context learning;
+- Sharing extractors among us</p>
+      <div class="card"><ul><li>Support for PDF, HTML, and text;</li><li>Defining and persisting extractors with their own schema and custom instructions;</li><li>Adding few-shot examples for in-context learning;</li><li>Sharing extractors among users;</li><li>Swapping LLM models;</li><li>A LangServe endpoint for the core extraction logic, allowing it to be plugged into your own Langchain workflows;</li><li>A frontend that lets you define extraction schemas in natural language, share with other users, and test them on text or files (no support of few shot examples yet).</li></ul></div>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s4">
+      <h2>📊 Walkthrough</h2>
+      <p class="lead">Let’s walk through an example, extracting financial data from a public company earnings call.</p>
+      <p>Let’s walk through an example, extracting financial data from a public company earnings call. Here we use the prepared remarks from Uber’s Q4 2023 earnings call, which Uber investor relations makes available online.</p>
+<p>Most public companies host earnings calls, providing their management opportunities to discuss past financial results and future plans. Natural language transcripts of these calls may contain useful information, but often this information must first be extracted from the document and arranged into a structured form so that it can be analyzed or compared across time periods and other companies.</p>
+<p>Let’s first grab the PDF:</p>
+<p>`import requests</p>
+<p>pdf_url = &quot;https://s23.q4cdn.com/407969754/files/doc_earnings/2023/q4/transcript/Uber-Q4-23-Prepared-Remarks.pdf&quot;</p>
+      
+    </section>
+    <section class="section" id="s5">
+      <h2>🔗 Get PDF bytes</h2>
+      <p class="lead">pdf_response = requests.</p>
+      <div class="code-block"><pre>pdf_response = requests.get(pdf_url)
+assert(pdf_response.status_code == 200)
+pdf_bytes = pdf_response.content</pre></div>
+<p>Next, we will generate a unique identifier for ourselves. Our application does not manage users or include legitimate authentication. Access to extractors, few-shot examples, and other artifacts is controlled via this ID. Consider it secret, and don’t lose it!</p>
+<p>`from uuid import uuid4</p>
+<p>user_id = str(uuid4())
+headers = {&quot;x-key&quot;: user_id}`</p>
+<p>We next specify the schema of what we intend to extract. Here we specify a record of financial data. We allow the LLM to infer various attributes, such as the time period for the record. Here we use Pydantic for readability, but ultimately the service relies on JSON schema.</p>
+<p>`from pydantic import BaseModel, Field</p>
+<div class="code-block"><pre>class FinancialData(BaseModel):
+    name: str = Field(..., description=&amp;quot;Name of the financial figure, such as revenue.&amp;quot;)
+    value: float = Field(..., description=&amp;quot;Nominal earnings in local currency.&amp;quot;)
+    scale: str = Field(..., description=&amp;quot;Scale of figure, such as MM, B, or percent.&amp;quot;)
+    period_start: str = Field(..., description=&amp;quot;The start of the time period in ISO format.&amp;quot;)
+    period_duration: int = Field(..., description=&amp;quot;Duration of period, in months&amp;quot;)
+    evidence: str = Field(..., description=&amp;quot;Verbatim sentence of text where figure was found.&amp;quot;)</pre></div>
+<p>Note that we include an evidence attribute, which provides context for the predictions and supports downstream verification of the results.</p>
+<p>Once we&#x27;ve defined our schema, we create an extractor by posting it to the application:</p>
+<p>`url = &quot;https://extract-server-f34kggfazq-uc.a.run.app&quot;</p>
+<p>data = {
+    &quot;user_id&quot;: user_id,
+    &quot;description&quot;: &quot;Financial revenues and other figures.&quot;,
+    &quot;schema&quot;: FinancialData.schema(),
+    &quot;instruction&quot;: (
+        &quot;Extract standard financial figures, specifically earnings and &quot;
+        &quot;revenue figures. Only extract historical facts, not estimates or guidance.&quot;
+    )
+}</p>
+<div class="code-block"><pre>response = requests.post(f&amp;quot;{url}/extractors&amp;quot;, json=data, headers=headers)
+extractor = response.json()</pre></div>
+<p>We’ve posted the extractor, which we can now access using its unique ID. We can now try the extractor on our PDF:</p>
+<div class="code-block"><pre>result = requests.post(
+    f&amp;quot;{url}/extract&amp;quot;,
+    data={&amp;quot;extractor_id&amp;quot;: extractor[&amp;quot;uuid&amp;quot;], &amp;quot;model_name&amp;quot;: &amp;quot;gpt-3.5-turbo&amp;quot;},
+    files={&amp;quot;file&amp;quot;: pdf_bytes},
+    headers=headers,
+)</pre></div>
+<p>And we get back:</p>
+<div class="code-block"><pre>{&amp;#x27;data&amp;#x27;: [{&amp;#x27;name&amp;#x27;: &amp;#x27;Adjusted EBITDA&amp;#x27;,
+   &amp;#x27;scale&amp;#x27;: &amp;#x27;million&amp;#x27;,
+   &amp;#x27;value&amp;#x27;: 1300,
+   &amp;#x27;evidence&amp;#x27;: &amp;#x27;These strong top-line trends, combined with continued rigor on costs, translated to $1.3 billion in Adjusted EBITDA and $652 million in GAAP operating income.&amp;#x27;,
+   &amp;#x27;period_start&amp;#x27;: &amp;#x27;2023-10-01&amp;#x27;,
+   &amp;#x27;period_duration&amp;#x27;: 3},
+  {&amp;#x27;name&amp;#x27;: &amp;#x27;GAAP operating income&amp;#x27;,
+   &amp;#x27;scale&amp;#x27;: &amp;#x27;million&amp;#x27;,
+   &amp;#x27;value&amp;#x27;: 652,
+   &amp;#x27;evidence&amp;#x27;: &amp;#x27;These strong top-line trends, combined with continued rigor on costs, translated to $1.3 billion in Adjusted EBITDA and $652 million in GAAP operating income.&amp;#x27;,
+   &amp;#x27;period_start&amp;#x27;: &amp;#x27;2023-10-01&amp;#x27;,
+   &amp;#x27;period_duration&amp;#x27;: 3},
+  {&amp;#x27;name&amp;#x27;: &amp;#x27;Revenue&amp;#x27;,
+   &amp;#x27;scale&amp;#x27;: &amp;#x27;billion&amp;#x27;,
+   &amp;#x27;value&amp;#x27;: 9.9,
+   &amp;#x27;evidence&amp;#x27;: &amp;#x27;We grew our revenue by 13% YoY on a constant-currency basis to $9.9 billion.&amp;#x27;,
+   &amp;#x27;period_start&amp;#x27;: &amp;#x27;2023-10-01&amp;#x27;,
+   &amp;#x27;period_duration&amp;#x27;: 3},
+  {&amp;#x27;name&amp;#x27;: &amp;#x27;Adjusted EBITDA&amp;#x27;,
+   &amp;#x27;scale&amp;#x27;: &amp;#x27;$&amp;#x27;,
+   &amp;#x27;value&amp;#x27;: 1.26,
+   &amp;#x27;evidence&amp;#x27;: &amp;#x27;We expect Adjusted EBITDA of $1.26 billion to $1.34 billion.&amp;#x27;,
+   &amp;#x27;period_start&amp;#x27;: &amp;#x27;2023-01-01&amp;#x27;,
+   &amp;#x27;period_duration&amp;#x27;: 12},
+  {&amp;#x27;name&amp;#x27;: &amp;#x27;Adjusted EBITDA&amp;#x27;,
+   &amp;#x27;scale&amp;#x27;: &amp;#x27;$&amp;#x27;,
+   &amp;#x27;value&amp;#x27;: 1.34,
+   &amp;#x27;evidence&amp;#x27;: &amp;#x27;We expect Adjusted EBITDA of $1.26 billion to $1.34 billion.&amp;#x27;,
+   &amp;#x27;period_start&amp;#x27;: &amp;#x27;2023-01-01&amp;#x27;,
+   &amp;#x27;period_duration&amp;#x27;: 12}]}</pre></div>
+<p>Note that the formatting of the result has deviated in some ways from the descriptions in the schema– for example, we output “million” and “billion” instead of “MM” or “B” as instructed. Different models will struggle with this to varying degrees. Before reaching for a larger model, a judicious choice of few-shot examples can often be an efficient way to clarify our intent. Let’s add one to our extractor:</p>
+<div class="code-block"><pre>examples = [
+    {
+        &amp;quot;text&amp;quot;: &amp;quot;In 2022, Revenue was $1 million and EBIT was $2M.&amp;quot;,
+        &amp;quot;output&amp;quot;: [
+            FinancialData(
+                name=&amp;quot;revenue&amp;quot;,
+                value=1,
+                scale=&amp;quot;MM&amp;quot;,
+                period_start=&amp;quot;2022-01-01&amp;quot;,
+                period_duration=12,
+                evidence=&amp;quot;In 2022, Revenue was $1 million and EBIT was $2M.&amp;quot;,
+            ).dict(),
+            FinancialData(
+                name=&amp;quot;ebit&amp;quot;,
+                value=2,
+                scale=&amp;quot;MM&amp;quot;,
+                period_start=&amp;quot;2022-01-01&amp;quot;,
+                period_duration=12,
+                evidence=&amp;quot;In 2022, Revenue was $1 million and EBIT was $2M.&amp;quot;,
+            ).dict()
+        ],
+    },
+]</pre></div>
+<div class="code-block"><pre>responses = []
+for example in examples:
+    create_request = {
+        &amp;quot;extractor_id&amp;quot;: extractor[&amp;quot;uuid&amp;quot;],
+        &amp;quot;content&amp;quot;: example[&amp;quot;text&amp;quot;],
+        &amp;quot;output&amp;quot;: example[&amp;#x27;output&amp;#x27;],
+    }
+    response = requests.post(f&amp;quot;{url}/examples&amp;quot;, json=create_request, headers=headers)
+    responses.append(response)</pre></div>
+<p>Here we add a single example that contains two records, with updated casing for the “name” field and formatting of the “scale” field. Re-running the extraction on the document, we recover the intended formatting:</p>
+<div class="code-block"><pre>result = requests.post(
+    f&amp;quot;{url}/extract&amp;quot;,
+    data={&amp;quot;extractor_id&amp;quot;: extractor[&amp;quot;uuid&amp;quot;], &amp;quot;model_name&amp;quot;: &amp;quot;gpt-3.5-turbo&amp;quot;},
+    files={&amp;quot;file&amp;quot;: pdf_bytes},
+    headers=headers,
+)</pre></div>
+<div class="code-block"><pre>{&amp;#x27;data&amp;#x27;: [{&amp;#x27;name&amp;#x27;: &amp;#x27;adjusted ebitda&amp;#x27;,
+   &amp;#x27;scale&amp;#x27;: &amp;#x27;MM&amp;#x27;,
+   &amp;#x27;value&amp;#x27;: 1300.0,
+   &amp;#x27;evidence&amp;#x27;: &amp;#x27;These strong top-line trends, combined with continued rigor on costs, translated to $1.3 billion in Adjusted EBITDA and $652 million in GAAP operating income.&amp;#x27;,
+   &amp;#x27;period_start&amp;#x27;: &amp;#x27;2023-10-01&amp;#x27;,
+   &amp;#x27;period_duration&amp;#x27;: 3},
+  {&amp;#x27;name&amp;#x27;: &amp;#x27;gaap operating income&amp;#x27;,
+   &amp;#x27;scale&amp;#x27;: &amp;#x27;MM&amp;#x27;,
+   &amp;#x27;value&amp;#x27;: 652.0,
+   &amp;#x27;evidence&amp;#x27;: &amp;#x27;These strong top-line trends, combined with continued rigor on costs, translated to $1.3 billion in Adjusted EBITDA and $652 million in GAAP operating income.&amp;#x27;,
+   &amp;#x27;period_start&amp;#x27;: &amp;#x27;2023-10-01&amp;#x27;,
+   &amp;#x27;period_duration&amp;#x27;: 3},
+  {&amp;#x27;name&amp;#x27;: &amp;#x27;gross bookings&amp;#x27;,
+   &amp;#x27;scale&amp;#x27;: &amp;#x27;B&amp;#x27;,
+   &amp;#x27;value&amp;#x27;: 37.6,
+   &amp;#x27;evidence&amp;#x27;: &amp;#x27;Gross Bookings growth accelerated to 21% YoY on a constant-currency basis (23% excluding Freight), as we generated Gross Bookings of $37.6 billion.&amp;#x27;,
+   &amp;#x27;period_start&amp;#x27;: &amp;#x27;2023-10-01&amp;#x27;,
+   &amp;#x27;period_duration&amp;#x27;: 3},
+  {&amp;#x27;name&amp;#x27;: &amp;#x27;revenue&amp;#x27;,
+   &amp;#x27;scale&amp;#x27;: &amp;#x27;B&amp;#x27;,
+   &amp;#x27;value&amp;#x27;: 9.9,
+   &amp;#x27;evidence&amp;#x27;: &amp;#x27;We grew our revenue by 13% YoY on a constant-currency basis to $9.9 billion.&amp;#x27;,
+   &amp;#x27;period_start&amp;#x27;: &amp;#x27;2023-10-01&amp;#x27;,
+   &amp;#x27;period_duration&amp;#x27;: 3},
+  {&amp;#x27;name&amp;#x27;: &amp;#x27;adjusted ebitda&amp;#x27;,
+   &amp;#x27;scale&amp;#x27;: &amp;#x27;B&amp;#x27;,
+   &amp;#x27;value&amp;#x27;: 1.3,
+   &amp;#x27;evidence&amp;#x27;: &amp;#x27;We expect Adjusted EBITDA of $1.26 billion to $1.34 billion.&amp;#x27;,
+   &amp;#x27;period_start&amp;#x27;: &amp;#x27;2023-01-01&amp;#x27;,
+   &amp;#x27;period_duration&amp;#x27;: 12}],
+ &amp;#x27;content_too_long&amp;#x27;: False}</pre></div>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s6">
+      <h2>💡 LangServe client</h2>
+      <p class="lead">A final note: because we’ve hosted the core extraction logic with LangServe, we can access it via the RemoteRunnable interface and plug it into larger chains and agent workflows.</p>
+      <p>A final note: because we’ve hosted the core extraction logic with LangServe, we can access it via the RemoteRunnable interface and plug it into larger chains and agent workflows.</p>
+<p>The runnable can be invoked in the usual way:</p>
+<p>`from langserve import RemoteRunnable</p>
+<div class="code-block"><pre>runnable = RemoteRunnable(f&amp;quot;{url}/extract_text/&amp;quot;)
+response = runnable.invoke(
+    {
+        &amp;quot;text&amp;quot;: &amp;quot;Our 2023 revenue was $100.&amp;quot;,
+        &amp;quot;schema&amp;quot;: FinancialData.schema(),
+    }
+)
+print(response)</pre></div>
+<div class="code-block"><pre>{&amp;#x27;data&amp;#x27;: [{&amp;#x27;name&amp;#x27;: &amp;#x27;revenue&amp;#x27;,
+   &amp;#x27;value&amp;#x27;: 100,
+   &amp;#x27;scale&amp;#x27;: &amp;#x27;$&amp;#x27;,
+   &amp;#x27;period_start&amp;#x27;: &amp;#x27;2023-01-01&amp;#x27;,
+   &amp;#x27;period_duration&amp;#x27;: 12,
+   &amp;#x27;evidence&amp;#x27;: &amp;#x27;Our 2023 revenue was $100.&amp;#x27;}]}</pre></div>
+<p>Or below, we incorporate it into a retrieval scenario. Here, instead of extracting directly on the input, we index some documents and treat the input as a search query. Searching for “rev”, below, will retrieve a document containing revenue and restrict the extraction to it:</p>
+<p>`from operator import itemgetter</p>
+<p>from langchain_community.vectorstores import FAISS
+from langchain_core.runnables import RunnablePassthrough
+from langchain_openai import OpenAIEmbeddings</p>
+<p>doc_contents = [&quot;Our 2023 revenue was $100&quot;, &quot;Our Q1 profit was $10 in 2023.&quot;]
+vectorstore = FAISS.from_texts(doc_contents, embedding=OpenAIEmbeddings())
+retriever = vectorstore.as_retriever()</p>
+<div class="code-block"><pre>larger_runnable = (
+    {
+        &amp;quot;text&amp;quot;: itemgetter(&amp;quot;text&amp;quot;) | retriever | (lambda docs: docs[0].page_content),  # fetch content of top doc,
+        &amp;quot;schema&amp;quot;: itemgetter(&amp;quot;schema&amp;quot;),
+    }
+    | runnable
+)
+larger_runnable.invoke({&amp;quot;text&amp;quot;: &amp;quot;rev&amp;quot;, &amp;quot;schema&amp;quot;: FinancialData.schema()})</pre></div>
+<div class="code-block"><pre>{&amp;#x27;data&amp;#x27;: [{&amp;#x27;name&amp;#x27;: &amp;#x27;revenue&amp;#x27;,
+   &amp;#x27;value&amp;#x27;: 100,
+   &amp;#x27;scale&amp;#x27;: &amp;#x27;$&amp;#x27;,
+   &amp;#x27;period_start&amp;#x27;: &amp;#x27;2023-01-01&amp;#x27;,
+   &amp;#x27;period_duration&amp;#x27;: 12,
+   &amp;#x27;evidence&amp;#x27;: &amp;#x27;Our 2023 revenue was $100&amp;#x27;}]}</pre></div>
+<p>We are excited to see what extraction workflows you build, and welcome both feedback on and contributions to LangChain’s extraction capabilities!</p>
+      
+    </section>
+    <section class="section" id="s7">
+      <h2>🛠️ Related content</h2>
+      <p class="lead">Deep AgentsAgent ArchitectureOpen Source
+
+#### Tuning Deep Agents to Work Well with Different Models
+
+Vivek TrivedyMason DaughertyApril 29, 20265min[](/blog/tuning-deep-agents-different-models).</p>
+      <p>Deep AgentsAgent ArchitectureOpen Source</p>
+<p>#### Tuning Deep Agents to Work Well with Different Models</p>
+<p>Vivek TrivedyMason DaughertyApril 29, 20265min[](/blog/tuning-deep-agents-different-models).png)Agent ArchitectureLangSmithOpen Source</p>
+<p>#### How LangSmith and LangChain OSS Help You Meet EU AI Act Requirements</p>
+<p>Jacob TalbotBecca WengApril 27, 20267min[](/blog/langsmith-langchain-oss-eu-ai-act).png)Agent ArchitecturePartner</p>
+<p>#### Agentic Engineering: How Swarms of AI Agents Are Redefining Software Engineering</p>
+<p>Renuka KumarPrashanth RamagopalApril 17, 202611min[](/blog/agentic-engineering-redefining-software-engineering)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s8">
+      <h2>📈 See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+<p>](/contact-sales)</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+  </div>
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/open-source-extraction-service" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

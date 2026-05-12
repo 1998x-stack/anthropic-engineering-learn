@@ -1,0 +1,84 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>深度解析：Running Subagents in the Background</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--green:#10b981;--teal:#14b8a6;--blue:#3b82f6;--amber:#f59e0b;--pink:#ec4899;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',sans-serif}*{margin:0;padding:0;box-sizing:border-box}body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}.nav{position:sticky;top:0;background:rgba(15,23,42,.92);backdrop-filter:blur(12px);padding:16px 32px;display:flex;justify-content:space-between;align-items:center;z-index:100;border-bottom:1px solid rgba(5,150,105,.3)}.nav-brand{color:#fff;font-weight:700;font-size:18px;text-decoration:none}.nav-back{color:rgba(255,255,255,.7);text-decoration:none;font-size:14px}.nav-back:hover{color:#fff}.hero{background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%);padding:80px 32px;text-align:center;color:#fff}.hero h1{font-size:clamp(24px,4vw,42px);font-weight:800;margin-bottom:16px;line-height:1.2}.hero .subtitle{font-size:16px;color:rgba(255,255,255,.8);max-width:720px;margin:0 auto 40px;line-height:1.6}.hero-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(140px,1fr));gap:16px;max-width:800px;margin:0 auto}.stat-card{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:var(--radius);padding:18px;backdrop-filter:blur(8px)}.stat-card .num{font-size:22px;font-weight:800;color:#6ee7b7}.stat-card .label{font-size:12px;color:rgba(255,255,255,.7);margin-top:4px}.page{max-width:900px;margin:0 auto;padding:32px 24px}.toc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:48px}.toc h3{font-size:16px;margin-bottom:16px;color:#059669}.toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px}.toc-grid a{display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--text);font-size:14px;padding:8px 12px;border-radius:8px;transition:background .2s}.toc-grid a:hover{background:rgba(5,150,105,.08)}.toc-grid .num{background:linear-gradient(135deg,#059669,#047857);color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}.section{margin-bottom:56px}.section h2{font-size:22px;font-weight:700;margin-bottom:8px}.lead{color:var(--text-secondary);font-size:15px;margin-bottom:20px;border-left:3px solid #059669;padding-left:16px}.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}.card h4{font-size:16px;font-weight:600;margin-bottom:8px}.card p{font-size:14px;color:var(--text-secondary);line-height:1.7}.chart{margin:20px 0}.chart-row{display:flex;align-items:center;gap:12px;margin-bottom:10px}.chart-label{width:140px;font-size:13px;text-align:right;flex-shrink:0}.chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;overflow:hidden;height:28px}.chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;padding:0 10px;font-size:12px;font-weight:600;color:#fff;white-space:nowrap;overflow:hidden}.chart-bar.green{background:linear-gradient(90deg,#10b981,#059669)}.chart-bar.teal{background:linear-gradient(90deg,#14b8a6,#0d9488)}.chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#2563eb)}.chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#d97706)}.chart-bar.pink{background:linear-gradient(90deg,#ec4899,#db2777)}.block-q{background:linear-gradient(135deg,rgba(5,150,105,.06),rgba(20,184,166,.06));border-left:4px solid #059669;border-radius:0 var(--radius) var(--radius) 0;padding:20px 24px;margin:20px 0;font-size:15px;font-style:italic;color:var(--text-secondary)}.footer{background:#0f172a;color:rgba(255,255,255,.6);padding:40px 32px;text-align:center;font-size:14px}.footer a{color:#10b981;text-decoration:none}.footer a:hover{text-decoration:underline}
+@media(max-width:768px){.hero{padding:48px 20px}.toc-grid{grid-template-columns:1fr}.chart-label{width:100px;font-size:12px}.hero-stats{grid-template-columns:1fr 1fr}}
+</style>
+</head>
+<body>
+<nav class="nav"><a href="../" class="nav-brand">LangChain 技术博客</a><a href="../" class="nav-back">&larr; Back to Hub</a></nav>
+<header class="hero">
+  <span style="display:inline-block;background:rgba(16,185,129,.2);color:#a7f3d0;padding:4px 12px;border-radius:20px;font-size:12px;margin-bottom:16px">Curated</span>
+  <h1>Running Subagents in the Background</h1>
+  <p class="subtitle">Curated &middot; LangChain Team &middot; LangChain Blog</p>
+  <div class="hero-stats"><div class="stat-card"><div class="num">2</div><div class="label">核心章节</div></div>
+<div class="stat-card"><div class="num">6</div><div class="label">子话题</div></div>
+<div class="stat-card"><div class="num">2</div><div class="label">代码示例</div></div>
+<div class="stat-card"><div class="num">3</div><div class="label">关键要点</div></div>
+</div>
+</header>
+<div class="page">
+  <nav class="toc"><h3>📑 目录导航</h3><div class="toc-grid"><a href="#s1"><span class="num">1</span>🔮 Where Traditional Subagents Break Down</a>
+<a href="#s2"><span class="num">2</span>💡 Enter: Async Subagents</a>
+</div></nav>
+  <section class="section" id="s1"><h2>🔮 Where Traditional Subagents Break Down</h2><p class="lead">A subagent is an agent that a supervisor agent delegates scoped work to. This pattern works. But as we've given agents l</p><div class="card"><p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">A subagent is an agent that a supervisor agent delegates scoped work to. This pattern works. But as we've given agents longer and more complex tasks, inline subagents have started to break down.</p>
+<h3 style="font-size:18px;font-weight:600;margin:28px 0 12px;color:var(--text)">Problem 1: Deadlock While Subagents Are Working</h3>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">Because of the way that tool calling works inside of an agent, the supervisor can't reason about anything else until the tool call has been answered with the subagent response. If a subagent takes an hour, you have to wait an hour before you can interact with the agent again.</p>
+<h3 style="font-size:18px;font-weight:600;margin:28px 0 12px;color:var(--text)">Problem 2: New Information Is Hard to Coordinate</h3>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">With inline subagents:</p>
+<ul style="margin:12px 0;padding-left:20px">
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7">User can't talk to the supervisor while it's blocked</li>
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7">Subagents can't run concurrently — no cross-pollination of results</li>
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7">Subagent turns are all-or-nothing — no mid-task updates</li>
+</ul></div></section>
+<section class="section" id="s2"><h2>💡 Enter: Async Subagents</h2><p class="lead">A simple way to think about async subagents: subagents that run in the background instead of sequentially. The superviso</p><div class="card"><p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">A simple way to think about async subagents: subagents that run in the background instead of sequentially. The supervisor launches a task, gets a task ID back immediately, and continues working. It's "fire-and-steer" rather than "fire-and-forget."</p>
+<h3 style="font-size:18px;font-weight:600;margin:28px 0 12px;color:var(--text)">How They Work — Task Management Tools</h3>
+<div style="overflow-x:auto;margin:16px 0"><table style="width:100%;border-collapse:collapse;font-size:14px"><tr><th style="background:linear-gradient(135deg,#065f46,#047857);color:#fff;padding:12px 16px;text-align:left;font-weight:600">Tool</th><th style="background:linear-gradient(135deg,#065f46,#047857);color:#fff;padding:12px 16px;text-align:left;font-weight:600">Purpose</th></tr><tr><td style="padding:12px 16px;border-bottom:1px solid var(--border)"><code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:0.9em;color:#059669">start_async_task</code></td><td style="padding:12px 16px;border-bottom:1px solid var(--border)">Launch a task on a remote agent. Returns a task ID immediately</td></tr><tr><td style="padding:12px 16px;border-bottom:1px solid var(--border)"><code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:0.9em;color:#059669">check_async_task</code></td><td style="padding:12px 16px;border-bottom:1px solid var(--border)">Poll a task's status and retrieve its result when complete</td></tr><tr><td style="padding:12px 16px;border-bottom:1px solid var(--border)"><code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:0.9em;color:#059669">update_async_task</code></td><td style="padding:12px 16px;border-bottom:1px solid var(--border)">Send follow-up instructions to a running task</td></tr><tr><td style="padding:12px 16px;border-bottom:1px solid var(--border)"><code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:0.9em;color:#059669">cancel_async_task</code></td><td style="padding:12px 16px;border-bottom:1px solid var(--border)">Cancel a running task</td></tr><tr><td style="padding:12px 16px;border-bottom:1px solid var(--border)"><code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:0.9em;color:#059669">list_async_tasks</code></td><td style="padding:12px 16px;border-bottom:1px solid var(--border)">List all tracked tasks with their current statuses</td></tr></table></div>
+<h3 style="font-size:18px;font-weight:600;margin:28px 0 12px;color:var(--text)">Built on Agent Protocol</h3>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">Async subagents are built on <a href="https://github.com/langchain-ai/agent-protocol" target="_blank" style="color:#059669;text-decoration:underline">Agent Protocol</a>, a framework-agnostic API specification for managing remote agents. It defines standard endpoints for creating threads, launching runs, polling status, sending updates, and managing long-term memory.</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">Deployment flexibility: run on LangSmith deployments for a managed experience, or host yourself on your own infrastructure.</p>
+<h3 style="font-size:18px;font-weight:600;margin:28px 0 12px;color:var(--text)">Usage Example (TypeScript)</h3>
+<pre style="background:#1e293b;color:#e2e8f0;padding:16px;border-radius:10px;overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.6;margin:16px 0">// agents.ts
+import { createAgent } from "langchain";
+import { createDeepAgent } from "deepagents";
+
+export const researcher = createAgent({
+  model: "anthropic:claude-sonnet-4-6",
+  instructions: "Perform deep research on the given topic.",
+  tools: [searchWeb, readUrl],
+});
+
+export const agent = createDeepAgent({
+  model: "anthropic:claude-opus-4-6",
+  subagents: [{
+    name: "researcher",
+    description: "Performs deep research on a topic.",
+    graphId: "researcher",
+  }],
+});</pre>
+<h3 style="font-size:18px;font-weight:600;margin:28px 0 12px;color:var(--text)">Self-hosted</h3>
+<pre style="background:#1e293b;color:#e2e8f0;padding:16px;border-radius:10px;overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.6;margin:16px 0">export const agent = createDeepAgent({
+  model: "anthropic:claude-opus-4-6",
+  subagents: [{
+    name: "researcher",
+    description: "Performs deep research on a topic.",
+    graphId: "researcher",
+    url: "http://localhost:2024", // points to your self-hosted server
+  }],
+});</pre>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">The self-hosted server implements Agent Protocol endpoints and can run anywhere — Docker container, VM, or Kubernetes cluster.</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0"><strong>Learn more:</strong> <a href="https://docs.langchain.com/oss/javascript/deepagents/async-subagents" target="_blank" style="color:#059669;text-decoration:underline">Async Subagents Documentation</a></p></div></section>
+
+</div>
+<footer class="footer">
+  <p><a href="../">&larr; 返回 Hub</a> &middot; 原文：<a href="https://docs.langchain.com/oss/javascript/deepagents/async-subagents" target="_blank">langchain.com</a></p>
+  <p style="margin-top:8px">LangChain Blog Deep-Dive &middot; LangChain Team &middot; </p>
+</footer>
+</body>
+</html>

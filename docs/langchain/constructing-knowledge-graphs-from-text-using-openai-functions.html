@@ -1,0 +1,520 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Constructing knowledge graphs from text using OpenAI functions: Leveraging knowledge graphs to power LangChain Applications</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafbfc;
+      --surface: #fff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --green: #10b981;
+      --emerald: #059669;
+      --teal: #14b8a6;
+      --blue: #3b82f6;
+      --purple: #6366f1;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans SC', 'Inter', system-ui, sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: var(--sans); background: var(--bg); color: var(--text); line-height:1.7; }
+    .nav { position:sticky; top:0; z-index:100; background:rgba(15,23,42,.85); backdrop-filter:blur(12px); padding:14px 32px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,.08); }
+    .nav a { color:#f1f5f9; text-decoration:none; font-weight:500; font-size:14px; }
+    .nav .brand { font-weight:700; font-size:16px; color:#10b981; }
+    .hero { background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%); color:#fff; padding:80px 32px 60px; text-align:center; }
+    .hero h1 { font-size:clamp(1.8rem,4vw,2.8rem); font-weight:800; margin-bottom:12px; line-height:1.3; }
+    .hero .subtitle { font-size:18px; color:rgba(255,255,255,.8); max-width:720px; margin:0 auto 40px; }
+    .hero .meta { font-size:13px; color:rgba(255,255,255,.5); margin-bottom:32px; }
+    .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:16px; max-width:800px; margin:0 auto; }
+    .stat { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); border-radius:12px; padding:20px 16px; backdrop-filter:blur(8px); }
+    .stat .num { font-size:28px; font-weight:800; color:#34d399; }
+    .stat .label { font-size:13px; color:rgba(255,255,255,.7); margin-top:4px; }
+    .page { max-width:900px; margin:0 auto; padding:40px 24px; }
+    .toc { margin-bottom:48px; }
+    .toc h3 { font-size:14px; text-transform:uppercase; letter-spacing:1.5px; color:var(--text-secondary); margin-bottom:16px; }
+    .toc-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; }
+    .toc-grid a { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--text); font-size:14px; font-weight:500; transition:all .2s; }
+    .toc-grid a:hover { border-color:var(--emerald); background:#ecfdf5; }
+    .toc-grid .num { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:8px; background:linear-gradient(135deg,#059669,#10b981); color:#fff; font-size:12px; font-weight:700; flex-shrink:0; }
+    .section { margin-bottom:56px; }
+    .section h2 { font-size:clamp(1.3rem,3vw,1.7rem); font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:10px; }
+    .lead { color:var(--text-secondary); font-size:15px; margin-bottom:24px; line-height:1.6; }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:24px; margin-bottom:16px; }
+    .card h4 { font-size:16px; font-weight:600; margin-bottom:8px; }
+    .card p, .card li { font-size:14px; color:var(--text-secondary); line-height:1.7; }
+    .card ul, .card ol { padding-left:20px; }
+    .card li { margin-bottom:4px; }
+    p { font-size:15px; color:var(--text-secondary); line-height:1.8; margin-bottom:16px; }
+    p code { background:#f1f5f9; padding:2px 6px; border-radius:4px; font-family:var(--mono); font-size:13px; color:#059669; }
+    .chart { margin:24px 0; }
+    .chart-row { display:flex; align-items:center; margin-bottom:10px; gap:12px; }
+    .chart-label { width:150px; font-size:13px; font-weight:500; text-align:right; flex-shrink:0; }
+    .chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:32px; overflow:hidden; }
+    .chart-bar { height:100%; border-radius:8px; display:flex; align-items:center; justify-content:flex-end; padding-right:10px; font-size:12px; font-weight:600; color:#fff; transition:width .6s ease; }
+    .chart-bar.green { background:linear-gradient(90deg,#059669,#10b981); }
+    .chart-bar.teal { background:linear-gradient(90deg,#14b8a6,#2dd4bf); }
+    .chart-bar.blue { background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+    .chart-bar.purple { background:linear-gradient(90deg,#6366f1,#a78bfa); }
+    .chart-bar.amber { background:linear-gradient(90deg,#f59e0b,#fbbf24); }
+    .chart-bar.red { background:linear-gradient(90deg,#ef4444,#f87171); }
+    .flow { display:flex; align-items:center; justify-content:center; gap:12px; margin:24px 0; flex-wrap:wrap; }
+    .flow-step { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 20px; font-size:14px; font-weight:600; text-align:center; min-width:120px; }
+    .flow-step.green { background:linear-gradient(135deg,#059669,#10b981); color:#fff; border:none; }
+    .flow-step.teal { background:linear-gradient(135deg,#14b8a6,#2dd4bf); color:#fff; border:none; }
+    .flow-step.blue { background:linear-gradient(135deg,#3b82f6,#60a5fa); color:#fff; border:none; }
+    .flow-step.purple { background:linear-gradient(135deg,#6366f1,#a78bfa); color:#fff; border:none; }
+    .flow-step.amber { background:linear-gradient(135deg,#f59e0b,#fbbf24); color:#fff; border:none; }
+    .flow-arrow { font-size:20px; color:var(--text-secondary); }
+    .compare-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:24px 0; }
+    .compare-card { border-radius:var(--radius); padding:24px; }
+    .compare-card.old { background:#fef2f2; border:2px solid #fecaca; }
+    .compare-card.new { background:#ecfdf5; border:2px solid #a7f3d0; }
+    .compare-card h4 { font-size:15px; font-weight:700; margin-bottom:8px; }
+    .compare-card p { font-size:13px; color:var(--text-secondary); }
+    .timeline { position:relative; padding-left:32px; margin:24px 0; }
+    .timeline::before { content:''; position:absolute; left:7px; top:8px; bottom:8px; width:3px; background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:24px; }
+    .tl-dot { position:absolute; left:-29px; top:4px; width:14px; height:14px; border-radius:50%; border:3px solid #059669; background:#fff; }
+    .tl-item:nth-child(2) .tl-dot { border-color:#14b8a6; }
+    .tl-item:nth-child(3) .tl-dot { border-color:#3b82f6; }
+    .tl-item:nth-child(4) .tl-dot { border-color:#6366f1; }
+    .tl-item:nth-child(5) .tl-dot { border-color:#f59e0b; }
+    .tl-phase { font-weight:700; font-size:15px; color:var(--text); }
+    .tl-desc { font-size:13px; color:var(--text-secondary); margin-top:4px; }
+    .code-block { background:#1e293b; border-radius:var(--radius); padding:20px; margin:16px 0; overflow-x:auto; }
+    .code-block pre { color:#e2e8f0; font-family:var(--mono); font-size:13px; line-height:1.6; white-space:pre-wrap; word-break:break-all; }
+    .block-q { background:linear-gradient(135deg,#ecfdf5,#d1fae5); border-left:4px solid #059669; border-radius:0 var(--radius) var(--radius) 0; padding:20px 24px; margin:24px 0; }
+    .block-q p { font-size:15px; font-style:italic; color:#064e3b; line-height:1.7; }
+    .badge { display:inline-block; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600; }
+    .badge-green { background:#ecfdf5; color:#059669; }
+    .badge-teal { background:#f0fdfa; color:#14b8a6; }
+    .badge-blue { background:#eff6ff; color:#3b82f6; }
+    .badge-purple { background:#eef2ff; color:#6366f1; }
+    .badge-amber { background:#fffbeb; color:#d97706; }
+    .footer { background:#0f172a; color:#94a3b8; padding:40px 32px; text-align:center; font-size:14px; }
+    .footer a { color:#34d399; text-decoration:none; }
+    .footer a:hover { text-decoration:underline; }
+    .footer .links { margin-top:12px; display:flex; justify-content:center; gap:24px; flex-wrap:wrap; }
+    @media(max-width:768px) {
+      .compare-grid { grid-template-columns:1fr; }
+      .chart-label { width:100px; font-size:12px; }
+      .flow { flex-direction:column; gap:8px; }
+      .flow-arrow { transform:rotate(90deg); }
+      .toc-grid { grid-template-columns:1fr; }
+      .hero { padding:60px 20px 40px; }
+      .nav { padding:12px 16px; }
+      .stats { grid-template-columns:1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+
+  <header class="hero">
+    <div class="meta">🧠 RAG & Knowledge · LangChain Accounts · 2023-10-19</div>
+    <h1>Constructing knowledge graphs from text using OpenAI functions: Leveraging knowledge graphs to power LangChain Applications</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">21</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~12min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">8</div><div class="label">代码示例</div></div>
+      <div class="stat"><div class="num">19</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>Constructing knowledge graphs </a>
+      <a href="#s2"><span class="num">2</span>Neo4j Environment setup</a>
+      <a href="#s3"><span class="num">3</span>Information extraction pipelin</a>
+      <a href="#s4"><span class="num">4</span>Extracting structured informat</a>
+      <a href="#s5"><span class="num">5</span>1. Overview</a>
+      <a href="#s6"><span class="num">6</span>2. Labeling Nodes</a>
+      <a href="#s7"><span class="num">7</span>3. Handling Numerical Data and</a>
+      <a href="#s8"><span class="num">8</span>4. Coreference Resolution</a>
+      <a href="#s9"><span class="num">9</span>5. Strict Compliance</a>
+      <a href="#s10"><span class="num">10</span>Extract graph data using OpenA</a>
+      <a href="#s11"><span class="num">11</span>Construct a graph document</a>
+      <a href="#s12"><span class="num">12</span>Store information into a graph</a>
+      <a href="#s13"><span class="num">13</span>Evaluation</a>
+      <a href="#s14"><span class="num">14</span>Read the wikipedia article</a>
+      <a href="#s15"><span class="num">15</span>Define chunking strategy</a>
+      <a href="#s16"><span class="num">16</span>Only take the first the raw_do</a>
+      <a href="#s17"><span class="num">17</span>Entity disambiguation</a>
+      <a href="#s18"><span class="num">18</span>Rag Application</a>
+      <a href="#s19"><span class="num">19</span>Summary</a>
+      <a href="#s20"><span class="num">20</span>Related content</a>
+      <a href="#s21"><span class="num">21</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+
+    <section class="section" id="s1">
+      <h2>🔍 Constructing knowledge graphs from text using OpenAI functions: Leveraging knowledge graphs to power LangChain Applications</h2>
+      <p class="lead">The LangChain TeamOctober 19, 202310min
+
+Go back to blogShare
+
+Editor&amp;#x27;s Note: This post was written by Tomaz Bratanic from the Neo4j team.</p>
+      <p>The LangChain TeamOctober 19, 202310min[</p>
+<p>Go back to blog](/blog)Share[</p>
+<p>](#)Editor&#x27;s Note: This post was written by Tomaz Bratanic from the Neo4j team.</p>
+<p>Extracting structured information from unstructured data like text has been around for some time and is nothing new. However, LLMs brought a significant shift to the field of information extraction. If before you needed a team of machine learning experts to curate datasets and train custom models, you only need access to an LLM nowadays. The barrier to entry has dropped significantly, making what was just a couple of years ago reserved for domain experts more accessible to even non-technical people.</p>
+<p>The goal of information extraction pipeline is to extract structured information from unstructured text. Image by the author.</p>
+<p>The image depicts the transformation of unstructured text into structured information. This process, labeled as the information extraction pipeline, results in a graph representation of information. The nodes represent key entities, while the connecting lines denote the relationships between these entities. Knowledge graphs are useful for multi-hop question-answering, real-time analytics, or when you want to combine structured and unstructured data in a single database.</p>
+<p>While extracting structured information from text has been made more accessible due to LLMs, it is by no means a solved problem. In this blog post, we will use OpenAI functions in combination with LangChain to construct a knowledge graph from a sample Wikipedia page. Along the way, we will discuss best practices as well as some limitations of current LLMs.</p>
+<p>tldr; The code is available on GitHub.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s2">
+      <h2>⚡ Neo4j Environment setup</h2>
+      <p class="lead">You need to setup a Neo4j to follow along with the examples in this blog post.</p>
+      <p>You need to setup a Neo4j to follow along with the examples in this blog post. The easiest way is to start a free instance on Neo4j Aura, which offers cloud instances of Neo4j database. Alternatively, you can also setup a local instance of the Neo4j database by downloading the Neo4j Desktop application and creating a local database instance.</p>
+<p>The following code will instantiate a LangChain wrapper to connect to Neo4j Database.</p>
+<p>`from langchain.graphs import Neo4jGraph</p>
+<div class="code-block"><pre>url = &amp;quot;neo4j+s://databases.neo4j.io&amp;quot;
+username =&amp;quot;neo4j&amp;quot;
+password = &amp;quot;&amp;quot;
+graph = Neo4jGraph(
+    url=url,
+    username=username,
+    password=password
+)</pre></div>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s3">
+      <h2>🏗️ Information extraction pipeline</h2>
+      <p class="lead">A typical information extraction pipeline contains the following steps.</p>
+      <p>A typical information extraction pipeline contains the following steps.</p>
+<p>Multiple steps of information extraction pipeline. Image by author.</p>
+<p>In the first step, we run the input text through a coreference resolution model. The coreference resolution is the task of finding all expressions that refer to a specific entity. Simply put, it links all the pronouns to the referred entity. In the named entity recognition part of the pipeline, we try to extract all the mentioned entities. The above example contains three entities: Tomaz, Blog, and Diagram. The next step is the entity disambiguation step, an essential but often overlooked part of an information extraction pipeline. Entity disambiguation is the process of accurately identifying and distinguishing between entities with similar names or references to ensure the correct entity is recognized in a given context. In the last step, the model tried to identify various relationships between entities. For example, it could locate the LIKES relationship between Tomaz and Blog entities.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s4">
+      <h2>📊 Extracting structured information with OpenAI functions</h2>
+      <p class="lead">OpenAI functions are a great fit to extract structured information from natural language.</p>
+      <p>OpenAI functions are a great fit to extract structured information from natural language. The idea behind OpenAI functions is to have an LLM output a predefined JSON object with populated values. The predefined JSON object can be used as input to other functions in so-called RAG applications, or it can be used to extract predefined structured information from text.</p>
+<p>In LangChain, you can pass a Pydantic class as description of the desired JSON object of the OpenAI functions feature. Therefore, we will start by defining the desired structure of information we want to extract from text. LangChain already has definitions of nodes and relationship as Pydantic classes that we can reuse.</p>
+<div class="code-block"><pre>class Node(Serializable):
+    &amp;quot;&amp;quot;&amp;quot;Represents a node in a graph with associated properties.</pre></div>
+<p>Attributes:
+        id (Union[str, int]): A unique identifier for the node.
+        type (str): The type or label of the node, default is &quot;Node&quot;.
+        properties (dict): Additional properties and metadata associated with the node.
+    &quot;&quot;&quot;</p>
+<p>id: Union[str, int]
+    type: str = &quot;Node&quot;
+    properties: dict = Field(default_factory=dict)</p>
+<p>class Relationship(Serializable):
+    &quot;&quot;&quot;Represents a directed relationship between two nodes in a graph.</p>
+<p>Attributes:
+        source (Node): The source node of the relationship.
+        target (Node): The target node of the relationship.
+        type (str): The type of the relationship.
+        properties (dict): Additional properties associated with the relationship.
+    &quot;&quot;&quot;</p>
+<div class="code-block"><pre>source: Node
+    target: Node
+    type: str
+    properties: dict = Field(default_factory=dict)</pre></div>
+<p>Unfortunately, it turns out that OpenAI functions don’t currently support a dictionary object as a value. Therefore, we have to overwrite the properties definition to adhere to the limitations of the functions’ endpoint.</p>
+<div class="code-block"><pre>from langchain.graphs.graph_document import (
+    Node as BaseNode,
+    Relationship as BaseRelationship
+)
+from typing import List, Dict, Any, Optional
+from langchain.pydantic_v1 import Field, BaseModel</pre></div>
+<p>class Property(BaseModel):
+  &quot;&quot;&quot;A single property consisting of key and value&quot;&quot;&quot;
+  key: str = Field(..., description=&quot;key&quot;)
+  value: str = Field(..., description=&quot;value&quot;)</p>
+<p>class Node(BaseNode):
+    properties: Optional[List[Property]] = Field(
+        None, description=&quot;List of node properties&quot;)</p>
+<div class="code-block"><pre>class Relationship(BaseRelationship):
+    properties: Optional[List[Property]] = Field(
+        None, description=&amp;quot;List of relationship properties&amp;quot;
+    )</pre></div>
+<p>Here, we have overwritten the properties value to be a list of Property classes instead of a dictionary to overcome the limitations of the API. Because you can only pass a single object to the API, we can to combine the nodes and relationships in a single class called KnowledgeGraph.</p>
+<div class="code-block"><pre>class KnowledgeGraph(BaseModel):
+    &amp;quot;&amp;quot;&amp;quot;Generate a knowledge graph with entities and relationships.&amp;quot;&amp;quot;&amp;quot;
+    nodes: List[Node] = Field(
+        ..., description=&amp;quot;List of nodes in the knowledge graph&amp;quot;)
+    rels: List[Relationship] = Field(
+        ..., description=&amp;quot;List of relationships in the knowledge graph&amp;quot;
+    )</pre></div>
+<p>The only thing left is to do a bit of prompt engineering and we are good to go. How I usually go about prompt engineering is the following:</p>
+<div class="card"><ul>
+  <li>Iterate over prompt and improve results using natural language</li>
+  <li>If something doesn’t work as intended, ask ChatGPT to make it clearer for an LLM to understand the task</li>
+  <li>Finally, when the prompt has all the instructions needed, ask ChatGPT to summarize the instructions in a markdown format, saving on tokens and perhaps having more clear instructions</li>
+</ul></div>
+<p>I specifically chose the markdown format as I have seen somewhere that OpenAI models respond better to markdown syntax in prompts, and it seems to be at least plausible from my experience.</p>
+<p>Iterating over prompt engineering, I came up with the following system prompt for an information extraction pipeline.</p>
+<p>`llm = ChatOpenAI(model=&quot;gpt-3.5-turbo-16k&quot;, temperature=0)</p>
+<p>def get_extraction_chain(
+    allowed_nodes: Optional[List[str]] = None,
+    allowed_rels: Optional[List[str]] = None
+    ):
+    prompt = ChatPromptTemplate.from_messages(
+    [(
+      &quot;system&quot;,
+      f&quot;&quot;&quot;# Knowledge Graph Instructions for GPT-4</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s5">
+      <h2>🔗 1. Overview</h2>
+      <p class="lead">You are a top-tier algorithm designed for extracting information in structured formats to build a knowledge graph.</p>
+      <p>You are a top-tier algorithm designed for extracting information in structured formats to build a knowledge graph.
+- Nodes represent entities and concepts. They&#x27;re akin to Wikipedia nodes.
+- The aim is to achieve simplicity and clarity in the knowledge graph, making it accessible for a vast audience.</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s6">
+      <h2>💡 2. Labeling Nodes</h2>
+      <p class="lead">- Consistency: Ensure you use basic or elementary types for node labels.</p>
+      <div class="card"><ul>
+  <li>Consistency: Ensure you use basic or elementary types for node labels.</li>
+  <li>Node IDs: Never utilize integers as node IDs. Node IDs should be names or human-readable identifiers found in the text.</li>
+</ul></div>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s7">
+      <h2>🛠️ 3. Handling Numerical Data and Dates</h2>
+      <p class="lead">- Numerical data, like age or other related information, should be incorporated as attributes or properties of the respective nodes.</p>
+      <div class="card"><ul>
+  <li>Numerical data, like age or other related information, should be incorporated as attributes or properties of the respective nodes.</li>
+  <li>No Separate Nodes for Dates/Numbers: Do not create separate nodes for dates or numerical values. Always attach them as attributes or properties of nodes.</li>
+  <li>Property Format: Properties must be in a key-value format.</li>
+  <li>Quotation Marks: Never use escaped single or double quotes within property values.</li>
+  <li>Naming Convention: Use camelCase for property keys, e.g., <code>birthDate</code>.</li>
+</ul></div>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s8">
+      <h2>📈 4. Coreference Resolution</h2>
+      <p class="lead">- Maintain Entity Consistency: When extracting entities, it&amp;#x27;s vital to ensure consistency.</p>
+      <div class="card"><ul>
+  <li>Maintain Entity Consistency: When extracting entities, it&#x27;s vital to ensure consistency.</li>
+</ul></div>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s9">
+      <h2>🎯 5. Strict Compliance</h2>
+      <p class="lead">Adhere to the rules strictly.</p>
+      <div class="code-block"><pre>Adhere to the rules strictly. Non-compliance will result in termination.&amp;quot;&amp;quot;&amp;quot;),
+        (&amp;quot;human&amp;quot;, &amp;quot;Use the given format to extract information from the following input: {input}&amp;quot;),
+        (&amp;quot;human&amp;quot;, &amp;quot;Tip: Make sure to answer in the correct format&amp;quot;),
+    ])
+    return create_structured_output_chain(KnowledgeGraph, llm, prompt, verbose=False)</pre></div>
+<p>You can see that we are using the 16k version of the GPT-3.5 model. The main reason is that the OpenAI function output is a structured JSON object, and structured JSON syntax adds a lot of token overhead to the result. Essentially, you are paying for the convenience of structured output in increased token space.</p>
+<p>Besides the general instructions, I have also added the option to limit which node or relationship types should be extracted from text. You’ll see through examples why this might come in handy.</p>
+<p>We have the Neo4j connection and LLM prompt ready, which means we can define the information extraction pipeline as a single function.</p>
+<div class="code-block"><pre>def extract_and_store_graph(
+    document: Document,
+    nodes:Optional[List[str]] = None,
+    rels:Optional[List[str]]=None) -&amp;gt; None:</pre></div>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s10">
+      <h2>🔬 Extract graph data using OpenAI functions</h2>
+      <p class="lead">extract_chain = get_extraction_chain(nodes, rels)
+    data = extract_chain.</p>
+      <p>extract_chain = get_extraction_chain(nodes, rels)
+    data = extract_chain.run(document.page_content)</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s11">
+      <h2>📝 Construct a graph document</h2>
+      <p class="lead">graph_document = GraphDocument(
+      nodes = [map_to_base_node(node) for node in data.</p>
+      <p>graph_document = GraphDocument(
+      nodes = [map_to_base_node(node) for node in data.nodes],
+      relationships = [map_to_base_relationship(rel) for rel in data.rels],
+      source = document
+    )</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s12">
+      <h2>🧪 Store information into a graph</h2>
+      <p class="lead">graph.</p>
+      <p>graph.add_graph_documents([graph_document])`</p>
+<p>The function takes in a LangChain document as well as optional nodes and relationship parameters, which are used to limit the types of objects we want the LLM to identify and extract. A month or so ago, we added the <code>add_graph_documents</code> method the Neo4j graph object, which we can utilize here to seamlessly import the graph.</p>
+      
+    </section>
+
+    <section class="section" id="s13">
+      <h2>🌐 Evaluation</h2>
+      <p class="lead">We will extract information from the Walt Disney Wikipedia page and construct a knowledge graph to test the pipeline.</p>
+      <p>We will extract information from the Walt Disney Wikipedia page and construct a knowledge graph to test the pipeline. Here, we will utilize the Wikipedia loader and text chunking modules provided by LangChain.</p>
+<div class="code-block"><pre>from langchain.document_loaders import WikipediaLoader
+from langchain.text_splitter import TokenTextSplitter</pre></div>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s14">
+      <h2>📦 Read the wikipedia article</h2>
+      <p class="lead">raw_documents = WikipediaLoader(query=&amp;quot;Walt Disney&amp;quot;).</p>
+      <p>raw_documents = WikipediaLoader(query=&quot;Walt Disney&quot;).load()</p>
+      
+    </section>
+
+    <section class="section" id="s15">
+      <h2>🔄 Define chunking strategy</h2>
+      <p class="lead">text_splitter = TokenTextSplitter(chunk_size=2048, chunk_overlap=24)</p>
+      <p>text_splitter = TokenTextSplitter(chunk_size=2048, chunk_overlap=24)</p>
+      
+    </section>
+
+    <section class="section" id="s16">
+      <h2>🎨 Only take the first the raw_documents</h2>
+      <p class="lead">documents = text_splitter.</p>
+      <p>documents = text_splitter.split_documents(raw_documents[:3])`</p>
+<p>You might have noticed that we use a relatively large <code>chunk_size</code> value. The reason is that we want to provide as much context as possible around a single sentence in order for the coreference resolution part to work as best as possible. Remember, the coreference step will only work if the entity and its reference appear in the same chunk; otherwise, the LLM doesn’t have enough information to link the two.</p>
+<p>Now we can go ahead and run the documents through the information extraction pipeline.</p>
+<p>`from tqdm import tqdm</p>
+<div class="code-block"><pre>for i, d in tqdm(enumerate(documents), total=len(documents)):
+    extract_and_store_graph(d)</pre></div>
+<p>The process takes around 5 minutes, which is relatively slow. Therefore, you would probably want parallel API calls in production to deal with this problem and achieve some sort of scalability.</p>
+<p>Let’s first look at the types of nodes and relationships the LLM identified.</p>
+<p>Since the graph schema is not provided, the LLM decides on the fly what types of node labels and relationship types it will use. For example, we can observe that there are Company and Organization node labels. Those two things are probably semantically similar or identical, so we would want to have only a single node label representing the two. This problem is more obvious with relationship types. For example, we have CO-FOUNDER and COFOUNDEROF relationships as well as DEVELOPER and DEVELOPEDBY.</p>
+<p>For any more serious project, you should define the node labels and relationship types the LLM should extract. Luckily, we have added the option to limit the types in the prompt by passing additional parameters.</p>
+<div class="code-block"><pre># Specify which node labels should be extracted by the LLM
+allowed_nodes = [&amp;quot;Person&amp;quot;, &amp;quot;Company&amp;quot;, &amp;quot;Location&amp;quot;, &amp;quot;Event&amp;quot;, &amp;quot;Movie&amp;quot;, &amp;quot;Service&amp;quot;, &amp;quot;Award&amp;quot;]</pre></div>
+<div class="code-block"><pre>for i, d in tqdm(enumerate(documents), total=len(documents)):
+    extract_and_store_graph(d, allowed_nodes)</pre></div>
+<p>In this example, I have only limited the node labels, but you can easily limit the relationship types by passing another parameter to the <code>extract_and_store_graph</code> function.</p>
+<p>The visualization of the extracted subgraph has the following structure.</p>
+<p>The graph turned out better than expected (after five iterations :) ). I couldn’t catch the whole graph nicely in the visualization, but you can explore it on your own in Neo4j Browser other tools.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s17">
+      <h2>🏆 Entity disambiguation</h2>
+      <p class="lead">One thing I should mention is that we partly skipped entity disambiguation part.</p>
+      <p>One thing I should mention is that we partly skipped entity disambiguation part. We used a large chunk size and added a specific instruction for coreference resolution and entity disambiguation in the system prompt. However, since each chunk is processed separately, there is no way to ensure consistency of entities between different text chunks. For example, you could end up with two nodes representing the same person.</p>
+<p>Multiple nodes representing the same entity.</p>
+<p>In this example, Walt Disney and Walter Elias Disney refer to the same real-world person. The entity disambiguation problem is nothing new and there has been various solution proposed to solve it:</p>
+<div class="card"><ul>
+  <li>Using entity linking or entity disambiguation NLP models</li>
+  <li>Doing a second pass through an LLM and asking it to perform entity disambiguation</li>
+  <li>Graph-based approaches</li>
+</ul></div>
+<p>Which solution you should use depends on your domain and use case. However, have in mind that entity disambiguation step should not be overlooked as it can have a significant impact on the accuracy and effectiveness of your RAG applications.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s18">
+      <h2>🔑 Rag Application</h2>
+      <p class="lead">The last thing we will do is show you how you can browse information in a knowledge graph by constructing Cypher statements.</p>
+      <p>The last thing we will do is show you how you can browse information in a knowledge graph by constructing Cypher statements. Cypher is a structured query language used to work with graph databases, similar to how SQL is used for relational databases. LangChain has a GraphCypherQAChain that reads the schema of the graph and constructs appropriate Cypher statements based on the user input.</p>
+<div class="code-block"><pre># Query the knowledge graph in a RAG application
+from langchain.chains import GraphCypherQAChain</pre></div>
+<p>graph.refresh_schema()</p>
+<div class="code-block"><pre>cypher_chain = GraphCypherQAChain.from_llm(
+    graph=graph,
+    cypher_llm=ChatOpenAI(temperature=0, model=&amp;quot;gpt-4&amp;quot;),
+    qa_llm=ChatOpenAI(temperature=0, model=&amp;quot;gpt-3.5-turbo&amp;quot;),
+    validate_cypher=True, # Validate relationship directions
+    verbose=True
+)
+cypher_chain.run(&amp;quot;When was Walter Elias Disney born?&amp;quot;)</pre></div>
+<p>Result is the following</p>
+      <div class="chart"><div class="chart-row">
+    <div class="chart-label">Method A</div>
+    <div class="chart-bar-wrap"><div class="chart-bar green" style="width:95%">95%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method B</div>
+    <div class="chart-bar-wrap"><div class="chart-bar teal" style="width:80%">80%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method C</div>
+    <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:65%">65%</div></div>
+  </div></div>
+    </section>
+
+    <section class="section" id="s19">
+      <h2>📋 Summary</h2>
+      <p class="lead">Knowledge graphs are a great fit when you need a combination of structured and structured data to power your RAG applications.</p>
+      <p>Knowledge graphs are a great fit when you need a combination of structured and structured data to power your RAG applications. In this blog post, you have learned how to construct a knowledge graph in Neo4j on an arbitrary text using OpenAI functions. OpenAI functions provide the convenience of neatly structured outputs, making them an ideal fit for extracting structured information. To have a great experience constructing graphs with LLMs, make sure to define the graph schema as detailed as possible and make sure you add an entity disambiguation step after the extraction.</p>
+<p>If you are eager to learn more about building AI applications with graphs, join us at the NODES, online, 24h conference organized by Neo4j on October 26th, 2023.</p>
+<p>The code is available on GitHub.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s20">
+      <h2>🚀 Related content</h2>
+      <p class="lead">.</p>
+      <p>.png)PartnerDeep Agents</p>
+<p>#### Building a company due diligence agent with Deep Agents, LangSmith and Parallel</p>
+<p>Matt HarrisNick MartitschSrimanth TangedipalliKaran SinghMay 8, 20269min[](/blog/building-a-company-due-diligence-agent-with-deep-agents-langsmith-and-parallel).png)Agent ArchitecturePartner</p>
+<p>#### Agentic Engineering: How Swarms of AI Agents Are Redefining Software Engineering</p>
+<p>Renuka KumarPrashanth RamagopalApril 17, 202611min[](/blog/agentic-engineering-redefining-software-engineering).png)LangChainPartner</p>
+<p>#### A Developer’s First 10 Minutes: Secure LangChain Agents with Cisco AI Defense</p>
+<p>Siddhant DashApril 16, 20264min[](/blog/secure-agents-cisco-ai-defense)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s21">
+      <h2>🔍 See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+  </div>
+
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/constructing-knowledge-graphs-from-text-using-openai-functions" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

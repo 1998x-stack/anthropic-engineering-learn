@@ -1,0 +1,388 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Yeager.ai x LangChain: Exploring GenWorlds a Framework for Coordinating AI Agents</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--green:#10b981;--emerald:#059669;--teal:#14b8a6;--blue:#3b82f6;--purple:#6366f1;--amber:#f59e0b;--red:#ef4444;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+    .nav{position:sticky;top:0;z-index:100;background:rgba(15,23,42,.85);backdrop-filter:blur(12px);padding:14px 32px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.08)}
+    .nav a{color:#f1f5f9;text-decoration:none;font-weight:500;font-size:14px}
+    .nav .brand{font-weight:700;font-size:16px;color:#10b981}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%);color:#fff;padding:80px 32px 60px;text-align:center}
+    .hero h1{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;margin-bottom:12px;line-height:1.3}
+    .hero .subtitle{font-size:18px;color:rgba(255,255,255,.8);max-width:720px;margin:0 auto 40px}
+    .hero .meta{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:32px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;max-width:800px;margin:0 auto}
+    .stat{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:20px 16px;backdrop-filter:blur(8px)}
+    .stat .num{font-size:28px;font-weight:800;color:#34d399}
+    .stat .label{font-size:13px;color:rgba(255,255,255,.7);margin-top:4px}
+    .page{max-width:900px;margin:0 auto;padding:40px 24px}
+    .toc{margin-bottom:48px}
+    .toc h3{font-size:14px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);margin-bottom:16px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .toc-grid a{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;transition:all .2s}
+    .toc-grid a:hover{border-color:var(--emerald);background:#ecfdf5}
+    .toc-grid .num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-size:12px;font-weight:700;flex-shrink:0}
+    .section{margin-bottom:56px}
+    .section h2{font-size:clamp(1.3rem,3vw,1.7rem);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+    .lead{color:var(--text-secondary);font-size:15px;margin-bottom:24px;line-height:1.6}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}
+    .card h4{font-size:16px;font-weight:600;margin-bottom:8px}
+    .card p,.card li{font-size:14px;color:var(--text-secondary);line-height:1.7}
+    .card ul,.card ol{padding-left:20px}
+    .card li{margin-bottom:4px}
+    p{font-size:15px;color:var(--text-secondary);line-height:1.8;margin-bottom:16px}
+    p code{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:13px;color:#059669}
+    .chart{margin:24px 0}
+    .chart-row{display:flex;align-items:center;margin-bottom:10px;gap:12px}
+    .chart-label{width:150px;font-size:13px;font-weight:500;text-align:right;flex-shrink:0}
+    .chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}
+    .chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;justify-content:flex-end;padding-right:10px;font-size:12px;font-weight:600;color:#fff;transition:width .6s ease}
+    .chart-bar.green{background:linear-gradient(90deg,#059669,#10b981)}
+    .chart-bar.teal{background:linear-gradient(90deg,#14b8a6,#2dd4bf)}
+    .chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+    .chart-bar.purple{background:linear-gradient(90deg,#6366f1,#a78bfa)}
+    .chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}
+    .flow{display:flex;align-items:center;justify-content:center;gap:12px;margin:24px 0;flex-wrap:wrap}
+    .flow-step{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;min-width:120px}
+    .flow-step.green{background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none}
+    .flow-step.teal{background:linear-gradient(135deg,#14b8a6,#2dd4bf);color:#fff;border:none}
+    .flow-step.blue{background:linear-gradient(135deg,#3b82f6,#60a5fa);color:#fff;border:none}
+    .flow-step.purple{background:linear-gradient(135deg,#6366f1,#a78bfa);color:#fff;border:none}
+    .flow-step.amber{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#fff;border:none}
+    .flow-arrow{font-size:20px;color:var(--text-secondary)}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}
+    .compare-card{border-radius:var(--radius);padding:24px}
+    .compare-card.old{background:#fef2f2;border:2px solid #fecaca}
+    .compare-card.new{background:#ecfdf5;border:2px solid #a7f3d0}
+    .compare-card h4{font-size:15px;font-weight:700;margin-bottom:8px}
+    .compare-card p{font-size:13px;color:var(--text-secondary)}
+    .timeline{position:relative;padding-left:32px;margin:24px 0}
+    .timeline::before{content:'';position:absolute;left:7px;top:8px;bottom:8px;width:3px;background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6);border-radius:2px}
+    .tl-item{position:relative;margin-bottom:24px}
+    .tl-dot{position:absolute;left:-29px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid #059669;background:#fff}
+    .tl-item:nth-child(2) .tl-dot{border-color:#14b8a6}
+    .tl-item:nth-child(3) .tl-dot{border-color:#3b82f6}
+    .tl-phase{font-weight:700;font-size:15px;color:var(--text)}
+    .tl-desc{font-size:13px;color:var(--text-secondary);margin-top:4px}
+    .code-block{background:#1e293b;border-radius:var(--radius);padding:20px;margin:16px 0;overflow-x:auto}
+    .code-block pre{color:#e2e8f0;font-family:var(--mono);font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-all}
+    .block-q{background:linear-gradient(135deg,#ecfdf5,#d1fae5);border-left:4px solid #059669;border-radius:0 var(--radius) var(--radius) 0;padding:20px 24px;margin:24px 0}
+    .block-q p{font-size:15px;font-style:italic;color:#064e3b;line-height:1.7}
+    .footer{background:#0f172a;color:#94a3b8;padding:40px 32px;text-align:center;font-size:14px}
+    .footer a{color:#34d399;text-decoration:none}
+    .footer a:hover{text-decoration:underline}
+    .footer .links{margin-top:12px;display:flex;justify-content:center;gap:24px;flex-wrap:wrap}
+    @media(max-width:768px){.compare-grid{grid-template-columns:1fr}.chart-label{width:100px;font-size:12px}.flow{flex-direction:column;gap:8px}.flow-arrow{transform:rotate(90deg)}.toc-grid{grid-template-columns:1fr}.hero{padding:60px 20px 40px}.nav{padding:12px 16px}.stats{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+  <header class="hero">
+    <div class="meta">📚 Tutorials & Guides · LangChain Accounts · 2023-08-04</div>
+    <h1>Yeager.ai x LangChain: Exploring GenWorlds a Framework for Coordinating AI Agents</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">19</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~13min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">8</div><div class="label">代码示例</div></div>
+      <div class="stat"><div class="num">45</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>Yeager.ai x LangChain: Explori</a>
+      <a href="#s2"><span class="num">2</span>Developers Can Easily Monetize</a>
+      <a href="#s3"><span class="num">3</span>The Power of Modularity</a>
+      <a href="#s4"><span class="num">4</span>World</a>
+      <a href="#s5"><span class="num">5</span>World Definition YAML</a>
+      <a href="#s6"><span class="num">6</span>Simulation Socket</a>
+      <a href="#s7"><span class="num">7</span>Agents</a>
+      <a href="#s8"><span class="num">8</span>The Agent’s Mental Model</a>
+      <a href="#s9"><span class="num">9</span>The Thinking Process</a>
+      <a href="#s10"><span class="num">10</span>Components of an Agent</a>
+      <a href="#s11"><span class="num">11</span>Memories: Current and Pregener</a>
+      <a href="#s12"><span class="num">12</span>Objects</a>
+      <a href="#s13"><span class="num">13</span>Agent Coordination</a>
+      <a href="#s14"><span class="num">14</span>Use Case Highlight - RoundTabl</a>
+      <a href="#s15"><span class="num">15</span>The GenAI Ecosystem - Our Nort</a>
+      <a href="#s16"><span class="num">16</span>Learn More About 🧬🌍GenWorlds</a>
+      <a href="#s17"><span class="num">17</span>About Yeager</a>
+      <a href="#s18"><span class="num">18</span>Related content</a>
+      <a href="#s19"><span class="num">19</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+    <section class="section" id="s1">
+      <h2>🔍 Yeager.ai x LangChain: Exploring GenWorlds a Framework for Coordinating AI Agents</h2>
+      <p class="lead">The LangChain TeamAugust 4, 202311min
+
+Go back to blogShare
+
+
+
+
+
+Editor&amp;#x27;s Note: This is another edition of our series of guest posts highlighting the powerful applications of LangChain.</p>
+      <p>The LangChain TeamAugust 4, 202311min[</p>
+<p>Go back to blog](/blog)Share[</p>
+<p>](#)Editor&#x27;s Note: This is another edition of our series of guest posts highlighting the powerful applications of LangChain. We have been working with the Yeager.ai team for several months now, and they have built some really impressive applications of LangChain agents. We&#x27;re excited to highlight this guest blog on their GenWorlds framework for multi-agent systems.  We are especially excited to see their plan for making it seamless for the LangChain/GenWorlds community to monetize their projects.</p>
+<p>🧬🌍GenWorlds is an open-source development framework for multi-agent systems. Core to the framework are dedicated environments or &quot;Worlds&quot; with specialized AI Agents and shared Objects. In these Worlds, Agents use shared Objects to coordinate to execute complex tasks and achieve common goals.</p>
+<p>Our research has shown that Agents perform better with narrow focus, so Agent coordination is essential for GenAI systems to perform complex operations.</p>
+      
+    </section>
+    <section class="section" id="s2">
+      <h2>⚡ Developers Can Easily Monetize</h2>
+      <p class="lead">Yeager.</p>
+      <p>Yeager.ai is building a robust ecosystem for GenAI applications. The framework is designed with composability and interoperability in mind. In addition to the framework, GenWorlds will offer a platform for hosting GenAI applications with minimal maintenance and a marketplace where developers can easily monetize their builds.</p>
+      
+    </section>
+    <section class="section" id="s3">
+      <h2>🏗️ The Power of Modularity</h2>
+      <p class="lead">Modularity is a cornerstone of the GenWorlds framework.</p>
+      <p>Modularity is a cornerstone of the GenWorlds framework. In software engineering, breaking things down into smaller self-contained components can improve reusability and reliability of systems. The same is true for systems using LLMs - the more specific and narrow each call to the language model, the higher the reliability of the output. The GenWorlds framework applies this principle at multiple levels:</p>
+<div class="card"><ul><li>Instead of a single agent trying to do everything, GenWorlds allows you to create multiple agents, each with a much narrower mission, that can work together towards a common goal</li><li>Furthermore, each Agent&#x27;s thought process is broken down into multiple Brains appropriate for the task at hand. Each brain needs only a fraction of the total context of the Agent and can therefore perform better</li><li>Developers can configure each Brain to use advanced techniques such as &#x27;chain-of-thought&#x27;, &#x27;self-evaluation&#x27;, and &#x27;tree-of-thought&#x27;. The framework is built with the flexibility to accommodate any new technique that comes out.</li></ul></div>
+<p>The end result is focused and highly reliable Agents that fully harness the power of the underlying language models to achieve complex goals.</p>
+<p>With this context set, now let’s dive into the 🧬🌍 GenWorlds framework.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s4">
+      <h2>📊 World</h2>
+      <p class="lead">The &amp;#x27;Worlds&amp;#x27; is the setting for all the action.</p>
+      <p>The &#x27;Worlds&#x27; is the setting for all the action. It keeps track of all the Agents, Objects, and World properties such as Agent inventories. The World ensures every Agent is informed about the World state, entities nearby, and the events that are available to them to interact with the World.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s5">
+      <h2>🔗 World Definition YAML</h2>
+      <p class="lead">For convenience, the RoundTable example (a multi-agent podcast simulation, more on this below) comes with a loader which reads a world configuration from a YAML file.</p>
+      <p>For convenience, the RoundTable example (a multi-agent podcast simulation, more on this below) comes with a loader which reads a world configuration from a YAML file. This allows everyone to quickly create and modify various worlds. Here is an example:</p>
+<div class="code-block"><pre>world_definition:
+  base_args:
+    websocket_url: ws://localhost:7456/ws
+  world:
+    id: world
+    class: genworlds.worlds.world_2d.world_2d.World2D
+    name: All-In Podcast
+    description: The four &amp;quot;besties&amp;quot; discuss any topic you want.
+    locations:
+    - roundtable
+    objects:
+    - id: mic1
+      ...
+    agents:
+    - id: jason_calacanis
+...</pre></div>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s6">
+      <h2>💡 Simulation Socket</h2>
+      <p class="lead">The “Simulation Socket” is a websocket server which serves as the communication backbone.</p>
+      <p>The “Simulation Socket” is a websocket server which serves as the communication backbone. It enables parallel operation of the World, Agents, and Objects, and allows them to communicate by sending events. This architecture supports connecting frontends or other services to the World, running Agents on external servers, and much more.</p>
+      
+    </section>
+    <section class="section" id="s7">
+      <h2>🛠️ Agents</h2>
+      <p class="lead">Agents in GenWorlds are autonomous entities built on top of LangChain that perceive their surroundings and make decisions to achieve specific goals as set by the user.</p>
+      <p>Agents in GenWorlds are autonomous entities built on top of LangChain that perceive their surroundings and make decisions to achieve specific goals as set by the user. The Agents interact with their environment by sending events through the Simulation Socket server. They dynamically learn about the World and the Objects around them, figuring out how to utilize these Objects to achieve their goals.</p>
+<p>There can be many different types of Agents, as long as each one of them understands the event protocol used to communicate with the World.</p>
+      
+    </section>
+    <section class="section" id="s8">
+      <h2>📈 The Agent’s Mental Model</h2>
+      <p class="lead">Agents follow a specific mental model at each step of their interaction with the World:
+
+- Review World state: The Agent assesses the environment to understand the context before planning any actions.</p>
+      <p>Agents follow a specific mental model at each step of their interaction with the World:</p>
+<div class="card"><ul><li>Review World state: The Agent assesses the environment to understand the context before planning any actions.</li><li>Review new events: The Agent evaluates any new occurrences in the World. These could be actions taken by other Agents or changes in the World state due to Object interactions.</li><li>Remember: Using its stored memories and awareness of previous state changes, the Agent recalls past experiences and data that might affect its current decision-making process.</li><li>Create a plan: The Agent creates and updates action plans based on World state changes. An Agent can execute multiple actions in one step, improving overall efficiency.</li><li>Execution:  Agent implements its plan, influencing the World state and potentially triggering responses from other Agents.</li></ul></div>
+<p>This interactive process fosters the emergence of complex, autonomous behavior, making each Agent an active participant in the World.</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s9">
+      <h2>🎯 The Thinking Process</h2>
+      <p class="lead">The think() method in the code is the central function where an Agent’s thinking process is carried out.</p>
+      <p>The think() method in the code is the central function where an Agent’s thinking process is carried out. The function first acquires the initial state of the World and potential actions to be performed. It then enters a loop, where it processes events and evaluates entities in the Agent&#x27;s proximity to inform its decision-making.</p>
+<p>Depending on the current state and goals of the Agent, the think() function may choose to wait, respond to user input, or interact with entities. If the Agent selects an action, it executes it and updates its memory accordingly. The think() function continually updates the Agent&#x27;s state in the World and repeats the process until it decides to exit.  See diagram below showing the Agent Loop in RoundTable, our podcast simulation application:</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s10">
+      <h2>🔬 Components of an Agent</h2>
+      <p class="lead">Brains: A Brain is a system that controls one step of an Agent&amp;#x27;s thinking process.</p>
+      <p>Brains: A Brain is a system that controls one step of an Agent&#x27;s thinking process. It manages the process of thought generation, evaluation, and selection. The Brain defines the functions necessary for these processes and uses a Large Language Model to generate and evaluate thoughts. All Brains take full advantage of OpenAI Functions to allow easy specification of the desired output format.</p>
+<p>Most Agents have the following Brain types:</p>
+<p>Navigation Brain: The Navigation Brain is designed for selecting the next action of the agent which helps it achieve its goals. It generates a plan for the Agent&#x27;s next steps in the World. The inputs to this class include the Agent&#x27;s information (name, role, background, personality), goals, constraints, evaluation principles, and the number of thoughts to generate.  It generates a set of possible plans, each consisting of an action to take, whether the action is valid, any violated constraints, and an updated plan. The NavigationBrain then evaluates these plans and selects the one that best meets the evaluation principles and constraints.</p>
+<p>Sometimes you want to constrain the sequence of actions and force the Agent to follow a certain action with another one - this can be done using the Action-Brain map.</p>
+<p>Here you can see the constructor of a NavigationBrain:</p>
+<div class="code-block"><pre>NavigationBrain(
+    openai_api_key=openai_api_key,
+    name=name,
+    role=role,
+    background=background,
+    personality=personality,
+    topic_of_conversation=topic_of_conversation,
+    constraints=constraints,
+    evaluation_principles=evaluation_principles,
+    n_of_thoughts=3,
+),</pre></div>
+<p>The n_of_thoughts=3 parameter specifies that the Brain will generate 3 possible next actions and pick the best one according to its evaluation_principles.</p>
+<p>Execution Brains: Execution Brains enable the execution of diverse tasks by Agents. These Brains accept Agent details, task attributes, constraints, and evaluation parameters. These brains can be configured to generate their output in a single call, or generate multiple potential outputs and select the best one using self-evaluation techniques.</p>
+<p>The power of Execution Brains lies in their customizability. Developers can create Brains adapted for various tasks such as participating in a podcast, writing an essay, analyzing data, or scraping social media feeds. This flexibility allows the creation of uniquely skilled Agents capable of performing a wide array of tasks in their simulated environments.</p>
+<p>The following is a constructor of an example execution brain - the PodcastBrain:</p>
+<div class="code-block"><pre>PodcastBrain(
+    openai_api_key=openai_api_key,
+    name=name,
+    role=role,
+    background=background,
+    personality=personality,
+    communication_style=communication_style,
+    topic_of_conversation=topic_of_conversation,
+    constraints=constraints,
+    evaluation_principles=evaluation_principles,
+    n_of_thoughts=1,
+),</pre></div>
+<p>Here, the n_of_thoughts is set to 1, meaning the Podcast Brain will generate only one output message and skip the evaluation step.</p>
+<p>Event Filler Brain: The Event Filler Brain is used for generating the JSON parameters required for an action the Agent executes in a World. The inputs are similar to the Navigation Brain but also include the command the Agent has decided to execute, as well as the outputs of any previous brains in the execution flow.
+You can see it takes fewer parameters than the other Brains, because it doesn&#x27;t need as much context to complete its task.</p>
+<div class="code-block"><pre>EventFillerBrain(
+    openai_api_key=openai_api_key,
+    name=name,
+    role=role,
+    background=background,
+    topic_of_conversation=topic_of_conversation,
+    constraints=constraints,
+    evaluation_principles=evaluation_principles,
+    n_of_thoughts=1,
+),</pre></div>
+<p>Different types of Brains can be created to handle different tasks, scenarios, or problems. An Agent can have multiple Brains each focused on a specific goal with its context tailored to that goal.  For instance, a podcaster Agent would have a “Content Brain” which would be its only Brain that possesses information about the Agent’s communication-style.</p>
+<p>Using multiple Brains helps narrow the Agent’s focus and thus significantly enhances the quality and reliability of an Agent&#x27;s output.  Additionally, each Brain can use a different LLM, which allows you to further optimize the system.  For instance certain actions or decisions require more powerful LLMs (e.g. GPT-4) while other steps can be done with more simple, faster, and cheaper LLMs (e.g. GPT-3.5).</p>
+<p>Action-Brain Map: The Action-Brain Map of an Agent defines a deterministic path through the various Brains. It&#x27;s the system that decides which Brain to use based on the Agent&#x27;s next action. The output of each brain is passed on to the consecutive brain in the execution brain path of that action. From our Podcaster Agent example above, it will engage the Content Brain when the Agent is about to speak, and pass the output to the Event Filler Brain to generate a valid World event with the generated response.</p>
+<p>You can furthermore specify a deterministic follow-up for each action if you don&#x27;t want the agent to choose freely - for example, after speaking into the microphone, the Agent must pass it to someone else. This allows you to constrain the Agent to create more predictable execution paths and increase reliability.</p>
+<p>Here&#x27;s what that looks like in code:</p>
+<div class="code-block"><pre>action_brain_map = {
+    &amp;quot;Microphone:agent_speaks_into_microphone&amp;quot;: {&amp;quot;brains&amp;quot;:[
+        &amp;quot;podcast_brain&amp;quot;,
+        &amp;quot;event_filler_brain&amp;quot;,
+    ], &amp;quot;next_actions&amp;quot;: [&amp;quot;World:agent_gives_object_to_agent_event&amp;quot;]},
+    &amp;quot;World:agent_gives_object_to_agent_event&amp;quot;:        {&amp;quot;brains&amp;quot;:[&amp;quot;event_filler_brain&amp;quot;], &amp;quot;next_actions&amp;quot;: []},
+    &amp;quot;default&amp;quot;: {&amp;quot;brains&amp;quot;:[&amp;quot;event_filler_brain&amp;quot;], &amp;quot;next_actions&amp;quot;: []},
+}</pre></div>
+<p>Agent Inventory: The specific Objects that an Agent currently holds. This state is maintained by the world, and allows Agents to pass items such as Tokens from one to another, and keep Objects with them as they move to different locations in the World.</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s11">
+      <h2>📝 Memories: Current and Pregenerated</h2>
+      <p class="lead">Agents in GenWorlds have two types of memories, current and pregenerated memories:
+
+- Current Memories:  Agents remember [number] of the most recent events, [number] of the most relevant events, and a</p>
+      <p>Agents in GenWorlds have two types of memories, current and pregenerated memories:</p>
+<div class="card"><ul><li>Current Memories:  Agents remember [number] of the most recent events, [number] of the most relevant events, and a running summary of the whole history.  The number of recent and relevant memories is configurable by the user.</li><li>Pregenerated Memories: Generated from external content (e.g. youtube videos, books, etc.) and stored in vector dbs.   Pre-generated memories are injected in Agents’ prompts based on their relevance to the Agent&#x27;s current goals, allowing for more focused and reliable interactions.  These memories allow Agents to learn without fine-tuning the underlying model.</li></ul></div>
+<p>Below is how you can easily configure custom pregenerated memories in a World definition YAML file, which are stored in a Qdrant vector database:</p>
+<p>To use the memories, you need to set the following values in the world_definition.yaml file</p>
+<div class="code-block"><pre>world_definition:
+  world:
+    path_to_to_external_memory: ./databases/summaries_qdrant</pre></div>
+<div class="card"><ul><li>For each Agent you need to specify the collection name*</li></ul></div>
+<p><code>agents:
+-  id: maria
+   personality_db_collection_name: maria</code></p>
+      
+    </section>
+    <section class="section" id="s12">
+      <h2>🧪 Objects</h2>
+      <p class="lead">Objects play a crucial role in facilitating interaction between Agents.</p>
+      <p>Objects play a crucial role in facilitating interaction between Agents. Every Object defines a unique set of events, enabling Agents to accomplish specific tasks and work together in a dynamic environment. Objects can be in an Agent&#x27;s vicinity or can be part of their inventory, expanding the scope of possible interactions.</p>
+<p>Agents are designed to adapt dynamically, learning about nearby Objects, understanding the event definitions, and determining the best way to interact with them to achieve their goals.  Objects are the main way to give Agents new capabilities and organize them in a structure to achieve a collective broader goal.</p>
+      
+    </section>
+    <section class="section" id="s13">
+      <h2>🌐 Agent Coordination</h2>
+      <p class="lead">Since Agents are aware of the events in the World including those of the other Agents, Agents naturally react to each other.</p>
+      <p>Since Agents are aware of the events in the World including those of the other Agents, Agents naturally react to each other.  In order to facilitate structure and organized behavior between the Agents we use shared Objects.  See three examples below:</p>
+<p>“Token Bearer”: Agents use a Token in their inventory to communicate and to signal to the other Agents whose turn it is to perform an action. For example, in RoundTable (our podcast simulation app), Agents use a microphone as a token to speak to each other. Agents can only speak if they have the mic in their inventory. This ensures the Agents listen to each other and prevents them from interrupting each other, thus creating a dynamic discussion.</p>
+<p>This is how it looks in the code</p>
+<div class="code-block"><pre>world_definition:
+  world:
+    path_to_to_external_memory: ./databases/summaries_qdrant</pre></div>
+<p>Pipeline: Each Agent is assigned a role in the pipeline and completes their role when it’s their turn. It’s like a factory line. For example, most sales processes go something like this:</p>
+<p>Research &gt; obtain contact info &gt; create/send a compelling outreach message &gt; follow up &gt; schedule/conduct a call &gt; review call notes &gt; send/negotiate legal docs &gt; follow-ups/calls &gt; and on and on until the deal is won/lost.</p>
+<p>To facilitate this sort of an operation, you would create a set of Objects such as boxes, where each agent can put their work output, and the next Agent in the pipeline can look to see when a new item has been passed to them, pick it up, process it according to the step of the pipeline they&#x27;re in, and put in in the next box.</p>
+<p>Pipeline is best for sequential tasks like in the sales example.</p>
+<p>Project Management: A project manager (human or Agent) uses a Blackboard, an Object for assigning roles to each Agent and keeping track of progress. The Project Manager and the Agents interact via the Blackboard, sharing files, updating assignments, tracking progress, etc.</p>
+<p>Tools: Agents can use Tools to execute specific functions such as calling external APIs, running complex calculations, or triggering unique events in the World.</p>
+<p>The framework provides the flexibility for anyone to create their own Objects and coordination methods.</p>
+      
+    </section>
+    <section class="section" id="s14">
+      <h2>📦 Use Case Highlight - RoundTable</h2>
+      <p class="lead">In order to showcase the coordination capabilities of Agents in GenWorlds, we built RoundTable, a podcast simulation.</p>
+      <p>In order to showcase the coordination capabilities of Agents in GenWorlds, we built RoundTable, a podcast simulation. Users can summon the brightest minds for a group discussion on any topic. It&#x27;s not another ChatGPT wrapper; it’s a team of AI Agents acting independently with specific personalities, memories, and expertise.</p>
+<p>RoundTable uses Objects, Agent inventories, and pre-generated memories to create dynamic discussions between Agents who sound like the people they are emulating. See a demo here:</p>
+<p>You can also try it for free on Replit</p>
+<div class="card"><ul><li>Go to Replit</li><li>Fork the Replit (it’s completely free)</li><li>Select which use case you want to use</li></ul></div>
+      
+    </section>
+    <section class="section" id="s15">
+      <h2>🔄 The GenAI Ecosystem - Our Northstar</h2>
+      <p class="lead">We designed the GenWorlds framework with modularity, flexibility, and composability.</p>
+      <p>We designed the GenWorlds framework with modularity, flexibility, and composability.  We envision GenAI developers using this modularity to plug and play or build each element of the framework (Worlds, Agents, Objects, Memories, Brains, etc.) to create their own useful applications.</p>
+<p>We are not stopping there.  We are giving our developer community a platform and the tools for easy access to monetizing their applications in a Gen-AI marketplace.</p>
+      
+    </section>
+    <section class="section" id="s16">
+      <h2>🎨 Learn More About 🧬🌍GenWorlds</h2>
+      <p class="lead">Demo: https://youtu.</p>
+      <p>Demo: https://youtu.be/INsNTN4S680</p>
+<p>GitHub: https://github.com/yeagerai/genworlds</p>
+<p>Docs: https://genworlds.com/docs/intro</p>
+<p>Discord: https://discord.gg/wKds24jdAX</p>
+<p>Blog: https://medium.com/yeagerai</p>
+<p>Replit: https://replit.com/@yeagerai/GenWorlds</p>
+      
+    </section>
+    <section class="section" id="s17">
+      <h2>🏆 About Yeager</h2>
+      <p class="lead">At Yeager.</p>
+      <p>At Yeager.ai, we are on a mission to enhance the quality of life through the power of Generative AI. Our goal is to eliminate the burdensome aspects of work by making GenAI reliable and easily accessible. By doing so, we foster a conducive environment for learning, innovation, and decision-making, propelling technological advancement.</p>
+      
+    </section>
+    <section class="section" id="s18">
+      <h2>🔑 Related content</h2>
+      <p class="lead">.</p>
+      <p>.png)PartnerDeep Agents</p>
+<p>#### Building a company due diligence agent with Deep Agents, LangSmith and Parallel</p>
+<p>Matt HarrisNick MartitschSrimanth TangedipalliKaran SinghMay 8, 20269min[](/blog/building-a-company-due-diligence-agent-with-deep-agents-langsmith-and-parallel)Deep AgentsAgent ArchitectureOpen Source</p>
+<p>#### Tuning Deep Agents to Work Well with Different Models</p>
+<p>Vivek TrivedyMason DaughertyApril 29, 20265min[](/blog/tuning-deep-agents-different-models).png)Agent ArchitectureLangSmithOpen Source</p>
+<p>#### How LangSmith and LangChain OSS Help You Meet EU AI Act Requirements</p>
+<p>Jacob TalbotBecca WengApril 27, 20267min[](/blog/langsmith-langchain-oss-eu-ai-act)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s19">
+      <h2>📋 See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+<p>](/contact-sales)</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+  </div>
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/exploring-genworlds" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

@@ -1,0 +1,381 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Autonomous Agents &amp;amp; Agent Simulations</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafbfc;
+      --surface: #fff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --green: #10b981;
+      --emerald: #059669;
+      --teal: #14b8a6;
+      --blue: #3b82f6;
+      --purple: #6366f1;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans SC', 'Inter', system-ui, sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: var(--sans); background: var(--bg); color: var(--text); line-height:1.7; }
+    .nav { position:sticky; top:0; z-index:100; background:rgba(15,23,42,.85); backdrop-filter:blur(12px); padding:14px 32px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,.08); }
+    .nav a { color:#f1f5f9; text-decoration:none; font-weight:500; font-size:14px; }
+    .nav .brand { font-weight:700; font-size:16px; color:#10b981; }
+    .hero { background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%); color:#fff; padding:80px 32px 60px; text-align:center; }
+    .hero h1 { font-size:clamp(1.8rem,4vw,2.8rem); font-weight:800; margin-bottom:12px; line-height:1.3; }
+    .hero .subtitle { font-size:18px; color:rgba(255,255,255,.8); max-width:720px; margin:0 auto 40px; }
+    .hero .meta { font-size:13px; color:rgba(255,255,255,.5); margin-bottom:32px; }
+    .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(160px,1fr)); gap:16px; max-width:800px; margin:0 auto; }
+    .stat { background:rgba(255,255,255,.08); border:1px solid rgba(255,255,255,.12); border-radius:12px; padding:20px 16px; backdrop-filter:blur(8px); }
+    .stat .num { font-size:28px; font-weight:800; color:#34d399; }
+    .stat .label { font-size:13px; color:rgba(255,255,255,.7); margin-top:4px; }
+    .page { max-width:900px; margin:0 auto; padding:40px 24px; }
+    .toc { margin-bottom:48px; }
+    .toc h3 { font-size:14px; text-transform:uppercase; letter-spacing:1.5px; color:var(--text-secondary); margin-bottom:16px; }
+    .toc-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(220px,1fr)); gap:10px; }
+    .toc-grid a { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--text); font-size:14px; font-weight:500; transition:all .2s; }
+    .toc-grid a:hover { border-color:var(--emerald); background:#ecfdf5; }
+    .toc-grid .num { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:8px; background:linear-gradient(135deg,#059669,#10b981); color:#fff; font-size:12px; font-weight:700; flex-shrink:0; }
+    .section { margin-bottom:56px; }
+    .section h2 { font-size:clamp(1.3rem,3vw,1.7rem); font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:10px; }
+    .lead { color:var(--text-secondary); font-size:15px; margin-bottom:24px; line-height:1.6; }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:24px; margin-bottom:16px; }
+    .card h4 { font-size:16px; font-weight:600; margin-bottom:8px; }
+    .card p, .card li { font-size:14px; color:var(--text-secondary); line-height:1.7; }
+    .card ul, .card ol { padding-left:20px; }
+    .card li { margin-bottom:4px; }
+    p { font-size:15px; color:var(--text-secondary); line-height:1.8; margin-bottom:16px; }
+    p code { background:#f1f5f9; padding:2px 6px; border-radius:4px; font-family:var(--mono); font-size:13px; color:#059669; }
+    .chart { margin:24px 0; }
+    .chart-row { display:flex; align-items:center; margin-bottom:10px; gap:12px; }
+    .chart-label { width:150px; font-size:13px; font-weight:500; text-align:right; flex-shrink:0; }
+    .chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:32px; overflow:hidden; }
+    .chart-bar { height:100%; border-radius:8px; display:flex; align-items:center; justify-content:flex-end; padding-right:10px; font-size:12px; font-weight:600; color:#fff; transition:width .6s ease; }
+    .chart-bar.green { background:linear-gradient(90deg,#059669,#10b981); }
+    .chart-bar.teal { background:linear-gradient(90deg,#14b8a6,#2dd4bf); }
+    .chart-bar.blue { background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+    .chart-bar.purple { background:linear-gradient(90deg,#6366f1,#a78bfa); }
+    .chart-bar.amber { background:linear-gradient(90deg,#f59e0b,#fbbf24); }
+    .chart-bar.red { background:linear-gradient(90deg,#ef4444,#f87171); }
+    .flow { display:flex; align-items:center; justify-content:center; gap:12px; margin:24px 0; flex-wrap:wrap; }
+    .flow-step { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:14px 20px; font-size:14px; font-weight:600; text-align:center; min-width:120px; }
+    .flow-step.green { background:linear-gradient(135deg,#059669,#10b981); color:#fff; border:none; }
+    .flow-step.teal { background:linear-gradient(135deg,#14b8a6,#2dd4bf); color:#fff; border:none; }
+    .flow-step.blue { background:linear-gradient(135deg,#3b82f6,#60a5fa); color:#fff; border:none; }
+    .flow-step.purple { background:linear-gradient(135deg,#6366f1,#a78bfa); color:#fff; border:none; }
+    .flow-step.amber { background:linear-gradient(135deg,#f59e0b,#fbbf24); color:#fff; border:none; }
+    .flow-arrow { font-size:20px; color:var(--text-secondary); }
+    .compare-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:24px 0; }
+    .compare-card { border-radius:var(--radius); padding:24px; }
+    .compare-card.old { background:#fef2f2; border:2px solid #fecaca; }
+    .compare-card.new { background:#ecfdf5; border:2px solid #a7f3d0; }
+    .compare-card h4 { font-size:15px; font-weight:700; margin-bottom:8px; }
+    .compare-card p { font-size:13px; color:var(--text-secondary); }
+    .timeline { position:relative; padding-left:32px; margin:24px 0; }
+    .timeline::before { content:''; position:absolute; left:7px; top:8px; bottom:8px; width:3px; background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:24px; }
+    .tl-dot { position:absolute; left:-29px; top:4px; width:14px; height:14px; border-radius:50%; border:3px solid #059669; background:#fff; }
+    .tl-item:nth-child(2) .tl-dot { border-color:#14b8a6; }
+    .tl-item:nth-child(3) .tl-dot { border-color:#3b82f6; }
+    .tl-item:nth-child(4) .tl-dot { border-color:#6366f1; }
+    .tl-item:nth-child(5) .tl-dot { border-color:#f59e0b; }
+    .tl-phase { font-weight:700; font-size:15px; color:var(--text); }
+    .tl-desc { font-size:13px; color:var(--text-secondary); margin-top:4px; }
+    .code-block { background:#1e293b; border-radius:var(--radius); padding:20px; margin:16px 0; overflow-x:auto; }
+    .code-block pre { color:#e2e8f0; font-family:var(--mono); font-size:13px; line-height:1.6; white-space:pre-wrap; word-break:break-all; }
+    .block-q { background:linear-gradient(135deg,#ecfdf5,#d1fae5); border-left:4px solid #059669; border-radius:0 var(--radius) var(--radius) 0; padding:20px 24px; margin:24px 0; }
+    .block-q p { font-size:15px; font-style:italic; color:#064e3b; line-height:1.7; }
+    .badge { display:inline-block; padding:4px 12px; border-radius:20px; font-size:12px; font-weight:600; }
+    .badge-green { background:#ecfdf5; color:#059669; }
+    .badge-teal { background:#f0fdfa; color:#14b8a6; }
+    .badge-blue { background:#eff6ff; color:#3b82f6; }
+    .badge-purple { background:#eef2ff; color:#6366f1; }
+    .badge-amber { background:#fffbeb; color:#d97706; }
+    .footer { background:#0f172a; color:#94a3b8; padding:40px 32px; text-align:center; font-size:14px; }
+    .footer a { color:#34d399; text-decoration:none; }
+    .footer a:hover { text-decoration:underline; }
+    .footer .links { margin-top:12px; display:flex; justify-content:center; gap:24px; flex-wrap:wrap; }
+    @media(max-width:768px) {
+      .compare-grid { grid-template-columns:1fr; }
+      .chart-label { width:100px; font-size:12px; }
+      .flow { flex-direction:column; gap:8px; }
+      .flow-arrow { transform:rotate(90deg); }
+      .toc-grid { grid-template-columns:1fr; }
+      .hero { padding:60px 20px 40px; }
+      .nav { padding:12px 16px; }
+      .stats { grid-template-columns:1fr 1fr; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+
+  <header class="hero">
+    <div class="meta">🔧 Tools & Integrations · LangChain Accounts · 2023-04-19</div>
+    <h1>Autonomous Agents &amp;amp; Agent Simulations</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">9</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~9min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">14</div><div class="label">技术要点</div></div>
+      <div class="stat"><div class="num">32</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>Autonomous Agents &amp;amp; Agent </a>
+      <a href="#s2"><span class="num">2</span>Background</a>
+      <a href="#s3"><span class="num">3</span>AutoGPT</a>
+      <a href="#s4"><span class="num">4</span>BabyAGI</a>
+      <a href="#s5"><span class="num">5</span>Camel</a>
+      <a href="#s6"><span class="num">6</span>Generative Agents</a>
+      <a href="#s7"><span class="num">7</span>Conclusion</a>
+      <a href="#s8"><span class="num">8</span>Related content</a>
+      <a href="#s9"><span class="num">9</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+
+    <section class="section" id="s1">
+      <h2>🔍 Autonomous Agents &amp;amp; Agent Simulations</h2>
+      <p class="lead">The LangChain TeamApril 18, 20237min
+
+Go back to blogShare
+
+Over the past two weeks, there has been a massive increase in using LLMs in an agentic manner.</p>
+      <p>The LangChain TeamApril 18, 20237min[</p>
+<p>Go back to blog](/blog)Share[</p>
+<p>](#)Over the past two weeks, there has been a massive increase in using LLMs in an agentic manner. Specifically, projects like AutoGPT, BabyAGI, CAMEL, and Generative Agents have popped up. The LangChain community has now implemented some parts of all of those projects in the LangChain framework. While researching and implementing these projects, we’ve tried to best understand what the differences between them are and what the novel features of each are. This blog is an explanation of what we’ve learned.</p>
+<p>Note: this is a fairly technical blog. It assumes some familiarity with LangChain and these related projects. If you are not familiar with these projects, it may be helpful to read a more introductory piece (like this fantastic one by Sophia Yang).</p>
+<div class="card"><ul>
+  <li>The “autonomous agents” projects (BabyAGI, AutoGPT) are largely novel in their long-term objectives, which necessitate new types of planning techniques and a different use of memory.</li>
+  <li>The “agent simulation” projects (CAMEL, Generative Agents) are largely novel for their simulation environments and long-term memory that reflects and adapts based on events.</li>
+</ul></div>
+<p>We also discuss what parts of each project we’ve replicated in the LangChain framework, and why we chose those parts. Implementing these in the LangChain framework has the benefits of:</p>
+<div class="card"><ul>
+  <li>Allowing easy switching between LLM providers</li>
+  <li>Allowing easy switching of VectorStore providers (or, alternative retrieval methods)</li>
+  <li>Allowing connectivity to LangChain’s collection of tools</li>
+  <li>Allowing connectivity to the LangChain ecosystem in general</li>
+</ul></div>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s2">
+      <h2>⚡ Background</h2>
+      <p class="lead">First, let’s start with some background context.</p>
+      <p>First, let’s start with some background context. What are “agents” and why are they important? For this discussion, we will use LangChain nomenclature, although it’s worth noting that this field is so new there’s no super standard terminology.</p>
+<p>Agents generally refer to the idea of using a language model as a reasoning engine and connecting it to two key components: tools and memory.</p>
+<p>Tools help connect the LLM to other sources of data or computation. Examples of tools include search engines, APIs, and other datastores. Tools are useful because LLMs only have knowledge of what they were trained on. This knowledge can quickly get out-of-date. In order to overcome this limitations, tools can fetch up-to-date data and insert it as context into the prompt. Tools can also be used to take actions (e.g. run code, modify files, etc), and the outcome of that action can then be observed by the LLM and factored into their decision on what to do next.</p>
+<p>Memory helps the agent remember previous interactions. These interactions can either be with other entities (humans or other agents) or with tools. These memories can either be short term (e.g. a list of the previous 5 tool usages) or long term (tool usages from the past that seem most similar to the current situation).</p>
+<p>Within LangChain, we refer to an “Agent” as the LLM that decides what actions to take; “Tools” as the actions an Agent can take; “Memory” the act of pulling in previous events, and an AgentExecutor as the logic for running an Agent in a while-loop until some stopping criteria is met.</p>
+<p>The stereotypical LangChain Agent is based on the Reasoning and Acting (ReAct) framework proposed by Yao et all in November of 2022. This approach is characterized by the following algorithm:</p>
+<div class="card"><ul>
+  <li>User gives an agent a task</li>
+  <li>Thought: The agent “thinks” about what to do</li>
+  <li>Action/Action Input: The agent decides what action to take (aka what tool to use) and what the input to that tool should be</li>
+  <li>Observation: The output of the tool</li>
+  <li>Repeat steps 2-4 until the Agent “thinks” it is done</li>
+</ul></div>
+<p>When discussing other implementations and frameworks we will compare them to this algorithm.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s3">
+      <h2>🏗️ AutoGPT</h2>
+      <p class="lead">Links:
+
+- Original Repo
+- LangChain Implementation
+
+What is novel about this project?
+
+The main differences between the AutoGPT project and traditional LangChain agents can be attributed to differe...</p>
+      <div class="card"><ul>
+  <li>Original Repo</li>
+  <li>LangChain Implementation</li>
+</ul></div>
+<p>What is novel about this project?</p>
+<p>The main differences between the AutoGPT project and traditional LangChain agents can be attributed to different objectives. In AutoGPT, the goals are often more open ended and long running. This means that AutoGPT has a different AgentExecutor and different way of doing memory (both of which are more optimized for long running tasks). Previously, memory of agents in LangChain had two forms:</p>
+<div class="card"><ul>
+  <li>Memory of agent steps: this was done by keeping a list of intermediate agent steps relevant for that task, and passing the full list to the LLM calls</li>
+  <li>Memory of system: this remembered the final inputs and outputs (but forgot the intermediate agent steps)</li>
+</ul></div>
+<p>Because AutoGPT is more long running, passing the full list of agent steps to the LLM call is no longer feasible. Instead, AutoGPT added a retrieval-based memory over the intermediate agent steps. Under the hood, this retrieval-based memory is doing doing semantic search over embeddings, using a VectorStore. Note that LangChain has this type of retrieval-based memory, but it was previously applied to user-agent interactions, not agent-tool interations.</p>
+<p>How did we incorporate this into LangChain?</p>
+<p>We added a version of this to <code>langchain.experimental</code> - a place where we are putting more experimental and newer code while we figure out the proper abstractions. Specifically, we’ve implemented the prompt templating logic used, as well as <code>while</code> loop used to run the agent. We’ve made it compatible with LangChain LLM wrappers, LangChain VectorStores, and LangChain tools.</p>
+<p>We’ve also created this notebook showing how to use it.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s4">
+      <h2>📊 BabyAGI</h2>
+      <p class="lead">Links:
+
+- Original Repo
+- LangChain Implementation
+- LangChain Implementation with Tools
+
+What is novel about this project?
+
+The BabyAGI project differs from traditional LangChain Agents in the fol...</p>
+      <div class="card"><ul>
+  <li>Original Repo</li>
+  <li>LangChain Implementation</li>
+  <li>LangChain Implementation with Tools</li>
+</ul></div>
+<p>What is novel about this project?</p>
+<p>The BabyAGI project differs from traditional LangChain Agents in the following regards:</p>
+<div class="card"><ul>
+  <li>Similar to AutoGPT, it applies retrieval-based memory to intermediate agent-tool steps.</li>
+  <li>It has separate planning and execution steps, where it plans a sequence of actions all at once (rather than just the next one)</li>
+</ul></div>
+<p>Similar to AutoGPT, BabyAGI is designed for more long running tasks, which lead to both of these differences.</p>
+<p>Let’s expand on the second point, since that is one of the more important and substantial differences. In the traditional LangChain Agent framework (and the AutoGPT framework), the agent thinks one step ahead at a time. For a given state of the world it think about what its next immediate action should be, and then does that action.</p>
+<p>BabyAGI differs in that it explicitly plans out a sequence of actions. It then executes on the first one, and then uses the result of that to do another planning step and update it’s task list. Our intuition is that this enables it to execute better on more complex and involved tasks, by using the planning steps essentially as a state tracking system.. We’ve observed (anecdotally) that for tasks that require many steps, the traditional LangChain Agent can sometimes forget its original objective after a few steps, so planning all the steps ahead of time could be beneficial.</p>
+<p>How did we incorporate this into LangChain?</p>
+<p>Similar to AutoGPT, we added this to <code>langchain.experimental</code>. Specifically, we’ve implemented the prompt templating logic used, as well as <code>while</code> loop used to run the agent. We’ve made it compatible with LangChain LLM wrappers, LangChain vectorstores, and LangChain tools.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s5">
+      <h2>🔗 Camel</h2>
+      <p class="lead">Links:
+
+- Original Paper
+- Original Repo
+- LangChain Implementation
+
+What is novel about this project?
+
+The main novelty in this project comes from taking two agents, each with their own personalit...</p>
+      <div class="card"><ul>
+  <li>Original Paper</li>
+  <li>Original Repo</li>
+  <li>LangChain Implementation</li>
+</ul></div>
+<p>What is novel about this project?</p>
+<p>The main novelty in this project comes from taking two agents, each with their own personality, and having them chat with each other. In this sense there are two novel components: the idea of having two agents interact with each other in a collaborative manner, and the specific simulation environment.</p>
+<p>The idea of two agents interacting is not entirely new. Given the modular nature of LangChain, we have long been proponents of having agents use other agents as tools. However, what is novel about this type of interaction is that the two agents are poised as equals - in previous LangChain implementations there has always been one agent which calls the other as a tool, in a &quot;stacking&quot; approach. This idea of putting both agents on equal footing, rather than having one use the other as a tool strikes a chord of being particularly interesting to see evolving behavior emerge.</p>
+<p>Note that these agents can have different tools available to them and could be specialized around that. For example, you could have one agent that is armed with tools needed for coding, another with tools needed for interacting with linear, etc. So it is still possible to achieve a &quot;stacking&quot; effect (where you have different agents responsible for different things).</p>
+<p>The second novel component was the particular simulation environment. This is a two sided conversation, and is not terribly complex but still the first implementation of this in a research setting we have seen.</p>
+<p>How did we incorporate this into LangChain?</p>
+<p>We added a notebook, largely reflecting the simulation environment (having two agents chatting with each other). We may look into making this simulation environment more available off-the-shelf in the future.</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s6">
+      <h2>💡 Generative Agents</h2>
+      <p class="lead">Links:
+
+- Original Paper
+- Retriever Implementation
+- LangChain Memory Implementation
+
+What is novel about this project?
+
+There are two novel (and fairly complex) aspects to this project.</p>
+      <div class="card"><ul>
+  <li>Original Paper</li>
+  <li>Retriever Implementation</li>
+  <li>LangChain Memory Implementation</li>
+</ul></div>
+<p>What is novel about this project?</p>
+<p>There are two novel (and fairly complex) aspects to this project. The first is the simulation environment, which consists of 25 different agents. This seems fairly specific, and very complex, so we did not dive into this too much. The other aspect that is novel is the long-term memory they created for these agents.</p>
+<p>We did a deep dive on this earlier this week. The agents’ memory is made up of:</p>
+<div class="card"><ul>
+  <li>Importance reflection steps, to give each observation an importance score. This score can be used in retrieval down the line to fetch particularly important memories and ignore basic ones</li>
+  <li>Reflection steps, to “pause” and think about what generalizations the agent has learned. These reflections can then be retrieved alongside normal memories. This reflection step can serve to condense information and observe patterns in recent memories</li>
+  <li>A retriever that combines recency, relevancy to the situation, and importance. This can allow for surfacing of memories that similar to the situation at hand, happened a short while ago, and particularly important. All of these seem to be attributes that naturally reflect how we as human “retrieve” memories</li>
+</ul></div>
+<p>All of these memory components are fairly novel, and extremely exciting to us.</p>
+<p>How did we incorporate this into LangChain?</p>
+<p>The retriever logic seemed generalizable so we added it as a <code>TimeWeightedVectorStoreRetriever</code>.</p>
+<p>We added a notebook showing off how to use the reflection steps + the new retriever to replicate part of the setup the paper described.</p>
+<p>The simulation environment seemed complex and not super generalizable so we did not do any thing there.</p>
+      <div class="flow"><div class="flow-step green">输入处理</div><div class="flow-arrow">→</div><div class="flow-step teal">核心逻辑</div><div class="flow-arrow">→</div><div class="flow-step blue">模型推理</div><div class="flow-arrow">→</div><div class="flow-step purple">结果输出</div></div>
+    </section>
+
+    <section class="section" id="s7">
+      <h2>🛠️ Conclusion</h2>
+      <p class="lead">All of these projects rightfully garnered a lot of attention.</p>
+      <p>All of these projects rightfully garnered a lot of attention. We view them as two separate categories:</p>
+<div class="card"><ul>
+  <li>Autonomous Agents, which have improved planning abilities</li>
+  <li>Agent Simulations, which have novel simulation environments and complex, evolving memory</li>
+</ul></div>
+<p>We’re excited to have started implementing parts of these projects in the LangChain ecosystem, and look forward to seeing how the community uses these, adds to these, and combines these 🙂</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+
+    <section class="section" id="s8">
+      <h2>📈 Related content</h2>
+      <p class="lead">Observability &amp;amp; EvalsLangSmith
+
+#### Reusable Evaluators and Evaluator Templates in LangSmith
+
+Catherine QiaoJacob TalbotApril 16, 20264min[](/blog/reusable-langsmith-evaluator-templates)LangSm...</p>
+      <p>Observability &amp; EvalsLangSmith</p>
+<p>#### Reusable Evaluators and Evaluator Templates in LangSmith</p>
+<p>Catherine QiaoJacob TalbotApril 16, 20264min[](/blog/reusable-langsmith-evaluator-templates)LangSmithObservability &amp; Evals</p>
+<p>#### Human judgment in the agent improvement loop</p>
+<p>Rahul VermaApril 9, 202611min[](/blog/human-judgment-in-the-agent-improvement-loop)Observability &amp; Evals</p>
+<p>#### Better Harness: A Recipe for Harness Hill-Climbing with Evals</p>
+<p>Vivek TrivedyApril 8, 20268min[](/blog/better-harness-a-recipe-for-harness-hill-climbing-with-evals)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="chart"><div class="chart-row">
+    <div class="chart-label">Method A</div>
+    <div class="chart-bar-wrap"><div class="chart-bar green" style="width:95%">95%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method B</div>
+    <div class="chart-bar-wrap"><div class="chart-bar teal" style="width:80%">80%</div></div>
+  </div><div class="chart-row">
+    <div class="chart-label">Method C</div>
+    <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:65%">65%</div></div>
+  </div></div>
+    </section>
+
+    <section class="section" id="s9">
+      <h2>🎯 See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+      <div class="compare-grid">
+  <div class="compare-card old"><h4>❌ 传统方式</h4><p>需要更多手动配置和管理，灵活性有限</p></div>
+  <div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div>
+</div>
+    </section>
+  </div>
+
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/agents-round" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

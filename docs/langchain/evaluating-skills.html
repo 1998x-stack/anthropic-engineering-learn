@@ -1,0 +1,357 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deep Dive: Evaluating Skills</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafbfc;
+      --surface: #fff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --green: #059669;
+      --emerald: #10b981;
+      --teal: #14b8a6;
+      --blue: #3b82f6;
+      --purple: #6366f1;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --orange: #ea580c;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans SC', 'Inter', system-ui, sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: var(--sans); background: var(--bg); color: var(--text); line-height:1.7; }
+    .nav { position:sticky; top:0; z-index:100; background:rgba(15,23,42,.88); backdrop-filter:blur(14px); padding:14px 32px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,.08); }
+    .nav a { color:#f1f5f9; text-decoration:none; font-weight:500; font-size:14px; }
+    .nav .brand { font-weight:700; font-size:16px; color:#34d399; }
+    .hero { background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%); color:#fff; padding:80px 32px 60px; text-align:center; }
+    .hero h1 { font-size:clamp(1.8rem,4vw,2.6rem); font-weight:800; margin-bottom:12px; line-height:1.3; }
+    .hero .subtitle { font-size:17px; color:rgba(255,255,255,.82); max-width:720px; margin:0 auto 12px; }
+    .hero .meta { font-size:13px; color:rgba(255,255,255,.5); margin-bottom:32px; }
+    .hero .badge-cat { display:inline-block; padding:4px 14px; border-radius:20px; font-size:12px; font-weight:600; background:rgba(52,211,153,.18); color:#6ee7b7; border:1px solid rgba(52,211,153,.3); margin-bottom:16px; }
+    .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; max-width:780px; margin:0 auto; }
+    .stat { background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.11); border-radius:12px; padding:18px 14px; backdrop-filter:blur(8px); }
+    .stat .num { font-size:26px; font-weight:800; color:#34d399; font-family:var(--mono); }
+    .stat .label { font-size:12px; color:rgba(255,255,255,.65); margin-top:4px; }
+    .page { max-width:900px; margin:0 auto; padding:40px 24px; }
+    .toc { margin-bottom:48px; }
+    .toc h3 { font-size:13px; text-transform:uppercase; letter-spacing:1.5px; color:var(--text-secondary); margin-bottom:16px; }
+    .toc-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:10px; }
+    .toc-grid a { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--text); font-size:14px; font-weight:500; transition:all .2s; }
+    .toc-grid a:hover { border-color:var(--green); background:#ecfdf5; }
+    .toc-grid .num { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:8px; background:linear-gradient(135deg,#059669,#14b8a6); color:#fff; font-size:12px; font-weight:700; flex-shrink:0; }
+    .section { margin-bottom:56px; }
+    .section h2 { font-size:clamp(1.3rem,3vw,1.6rem); font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    .lead { color:var(--text-secondary); font-size:15px; margin-bottom:20px; line-height:1.7; }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:22px; margin-bottom:14px; }
+    .card h4 { font-size:15px; font-weight:600; margin-bottom:8px; }
+    .card p { font-size:14px; color:var(--text-secondary); line-height:1.7; }
+    .chart { margin:24px 0; }
+    .chart-row { display:flex; align-items:center; margin-bottom:10px; gap:12px; }
+    .chart-label { width:160px; font-size:13px; font-weight:500; text-align:right; flex-shrink:0; }
+    .chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:30px; overflow:hidden; }
+    .chart-bar { height:100%; border-radius:8px; display:flex; align-items:center; justify-content:flex-end; padding-right:10px; font-size:12px; font-weight:600; color:#fff; transition:width .6s ease; }
+    .chart-bar.green { background:linear-gradient(90deg,#059669,#34d399); }
+    .chart-bar.teal { background:linear-gradient(90deg,#14b8a6,#2dd4bf); }
+    .chart-bar.blue { background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+    .chart-bar.purple { background:linear-gradient(90deg,#6366f1,#a78bfa); }
+    .chart-bar.amber { background:linear-gradient(90deg,#f59e0b,#fbbf24); }
+    .chart-bar.orange { background:linear-gradient(90deg,#ea580c,#fb923c); }
+    .chart-bar.red { background:linear-gradient(90deg,#ef4444,#f87171); }
+    .timeline { position:relative; padding-left:32px; margin:24px 0; }
+    .timeline::before { content:''; position:absolute; left:8px; top:0; bottom:0; width:3px; background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6,#6366f1); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:20px; }
+    .tl-dot { position:absolute; left:-28px; top:4px; width:14px; height:14px; border-radius:50%; border:3px solid #059669; background:#fff; }
+    .tl-item:nth-child(2) .tl-dot { border-color:#14b8a6; }
+    .tl-item:nth-child(3) .tl-dot { border-color:#3b82f6; }
+    .tl-item:nth-child(4) .tl-dot { border-color:#6366f1; }
+    .tl-item:nth-child(5) .tl-dot { border-color:#f59e0b; }
+    .tl-item:nth-child(6) .tl-dot { border-color:#ea580c; }
+    .tl-item:nth-child(7) .tl-dot { border-color:#ef4444; }
+    .tl-phase { font-weight:700; font-size:15px; margin-bottom:4px; }
+    .tl-desc { font-size:13px; color:var(--text-secondary); line-height:1.6; }
+    .compare-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:24px 0; }
+    .compare-card { border-radius:var(--radius); padding:22px; }
+    .compare-card.old { background:#fef2f2; border:2px solid #fecaca; }
+    .compare-card.new { background:#ecfdf5; border:2px solid #a7f3d0; }
+    .compare-card h4 { font-size:15px; font-weight:700; margin-bottom:8px; }
+    .compare-card ul { list-style:none; padding:0; }
+    .compare-card ul li { font-size:13px; padding:4px 0; color:var(--text-secondary); }
+    .flow { display:flex; align-items:center; justify-content:center; gap:12px; margin:24px 0; flex-wrap:wrap; }
+    .flow-step { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px 18px; font-size:13px; font-weight:600; text-align:center; min-width:100px; }
+    .flow-step.green { background:linear-gradient(135deg,#059669,#10b981); color:#fff; border:none; }
+    .flow-step.blue { background:linear-gradient(135deg,#3b82f6,#60a5fa); color:#fff; border:none; }
+    .flow-step.purple { background:linear-gradient(135deg,#6366f1,#a78bfa); color:#fff; border:none; }
+    .flow-step.teal { background:linear-gradient(135deg,#14b8a6,#2dd4bf); color:#fff; border:none; }
+    .flow-step.orange { background:linear-gradient(135deg,#ea580c,#f59e0b); color:#fff; border:none; }
+    .flow-arrow { font-size:20px; color:var(--text-secondary); }
+    .block-q { background:linear-gradient(135deg,#ecfdf5,#d1fae5); border-left:4px solid #059669; border-radius:0 var(--radius) var(--radius) 0; padding:18px 22px; margin:20px 0; }
+    .block-q p { font-size:14px; font-style:italic; color:#064e3b; line-height:1.7; }
+    .badge { display:inline-block; padding:3px 10px; border-radius:6px; font-size:12px; font-weight:600; }
+    .badge-green { background:#ecfdf5; color:#059669; }
+    .badge-teal { background:#f0fdfa; color:#14b8a6; }
+    .badge-blue { background:#eff6ff; color:#3b82f6; }
+    .badge-purple { background:#eef2ff; color:#6366f1; }
+    .footer { text-align:center; padding:48px 24px; border-top:1px solid var(--border); margin-top:40px; }
+    .footer a { color:var(--green); text-decoration:none; font-weight:500; }
+    .footer a:hover { text-decoration:underline; }
+    .footer .foot-links { display:flex; justify-content:center; gap:24px; flex-wrap:wrap; margin-bottom:12px; }
+    .footer .copy { font-size:12px; color:var(--text-secondary); }
+    @media(max-width:768px) {
+      .hero { padding:48px 18px 36px; }
+      .hero h1 { font-size:1.5rem; }
+      .stats { grid-template-columns:1fr 1fr; gap:10px; }
+      .page { padding:28px 16px; }
+      .toc-grid { grid-template-columns:1fr; }
+      .compare-grid { grid-template-columns:1fr; }
+      .flow { flex-direction:column; gap:8px; }
+      .flow-arrow { transform:rotate(90deg); }
+      .chart-label { width:100px; font-size:11px; }
+      .nav { padding:12px 16px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain Blog Hub</a>
+    <a href="../langchain/">&#x2190; Back to Hub</a>
+  </nav>
+
+  <header class="hero">
+    <div class="badge-cat">LangSmith / Observability &amp; Evals</div>
+    <h1>Evaluating Skills</h1>
+    <p class="subtitle">LangChain Accounts &middot; 2026-03-05</p>
+    <p class="meta">Source: https://www.langchain.com/blog/evaluating-skills</p>
+    <div class="stats">
+        <div class="stat">
+          <div class="num">7</div>
+          <div class="label">Core Sections</div>
+        </div>
+        <div class="stat">
+          <div class="num">7 min</div>
+          <div class="label">Reading Time</div>
+        </div>
+        <div class="stat">
+          <div class="num">29</div>
+          <div class="label">Key Points</div>
+        </div>
+        <div class="stat">
+          <div class="num">16</div>
+          <div class="label">External Links</div>
+        </div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc">
+      <h3>&#x1F4D1; Table of Contents</h3>
+      <div class="toc-grid">
+        <a href="#what-are-skills"><span class="num">1</span>What are Skills?</a>
+        <a href="#the-basic-evaluation-pipeline"><span class="num">2</span>The Basic Evaluation Pipeline</a>
+        <a href="#step-1-set-up-a-clean-testing-environmen"><span class="num">3</span>Step 1: Set Up a Clean Testing Environment</a>
+        <a href="#step-2-define-the-tasks"><span class="num">4</span>Step 2: Define the Tasks</a>
+        <a href="#step-3-define-the-skills"><span class="num">5</span>Step 3: Define the Skills</a>
+        <a href="#step-4-run-and-compare-performance"><span class="num">6</span>Step 4: Run and Compare Performance</a>
+        <a href="#conclusion"><span class="num">7</span>Conclusion</a>
+      </div>
+    </nav>
+
+    <section class="section" id="what-are-skills">
+      <h2>&#x1F4CE; What are Skills?</h2>
+      <p class="lead">Skills are curated instructions, scripts, and resources that improve agent performance in specialized domains. Importantly, skills are dynamically loa...</p>
+        <div class="card"><p>In practice, skills can be thought of as prompts that are dynamically loaded when the agent needs them. Like any prompt, they can impact agent behavior in unexpected ways. Consequently, skills need to be tested, just like you would your LLM prompts. Which skills improve coding agent performance? Which content changes resulted in the most improvement?</p></div>
+      <div class="flow">
+                <div class="flow-step green">Concept</div>
+        <div class="flow-arrow">&#x2192;</div>
+        <div class="flow-step">Analysis</div>
+        <div class="flow-arrow">&#x2192;</div>
+        <div class="flow-step blue">Application</div>
+      </div>
+    </section>
+
+    <section class="section" id="the-basic-evaluation-pipeline">
+      <h2>&#x1F4CA; The Basic Evaluation Pipeline</h2>
+      <p class="lead">Our basic approach for testing skills:...</p>
+        <div class="card">
+          <ul style="list-style:disc;padding-left:20px;color:var(--text-secondary);font-size:14px;line-height:1.8;">
+            <li>Define tasks you want Claude Code to successfully complete</li>
+            <li>Define skills that help with the tasks</li>
+            <li>Run Claude Code on the tasks without skills</li>
+            <li>Run Claude Code on the tasks with skills</li>
+            <li>Compare performance and iterate on your skill</li>
+          </ul>
+        </div>
+
+    </section>
+
+    <section class="section" id="step-1-set-up-a-clean-testing-environmen">
+      <h2>&#x1F4CA; Step 1: Set Up a Clean Testing Environment</h2>
+      <p class="lead">Skills are commonly used with coding agents like Claude Code, or harnesses like Deep Agents. When you’re testing a skill, you’re really testing if the...</p>
+        <div class="card"><p>Coding agents and harnesses have a large action space they can operate over. They are also sensitive to starting conditions: Claude Code will often explore your directory before it starts working, and what it finds will shape its approach. This means when testing skills, it’s critical to prepare a consistent and clean environment for the agent using your skills. It ensures you maximize the reproducibility of your tests.</p></div>
+        <div class="card"><p>In our testing, we used a lightweight Docker scaffold to run Claude Code in. Other alternatives include Harbor or your choice of sandbox.</p></div>
+        <div class="card"><p>def run_claude_in_docker(
+    test_dir: Path, prompt: str, timeout: int = 300, model: str = None
+) -&gt; subprocess.CompletedProcess:
+    &quot;&quot;&quot;Run Claude CLI in Docker. Returns CompletedProcess.&quot;&quot;&quot;
+    if not check_docker_available():
+        raise RuntimeError(&quot;Docker not available&quot;)
+    cmd = [&quot;run-claude&quot;, str(test_dir), prompt, &quot;--timeout&quot;, str(timeout)]
+    if model:
+        cmd.extend([&quot;--model&quot;, model])
+    try:
+        r</p></div>
+      <div class="compare-grid">
+        <div class="compare-card old">
+          <h4>&#x26A0; Challenges / Before</h4>
+          <ul>
+                        <li>Skills are commonly used with coding agents like Claude Code, or harnesses like Deep Agents. When yo...</li>
+            <li>In our testing, we used a lightweight Docker scaffold to run Claude Code in. Other alternatives incl...</li>
+          </ul>
+        </div>
+        <div class="compare-card new">
+          <h4>&#x2705; Solutions / After</h4>
+          <ul>
+                        <li>Coding agents and harnesses have a large action space they can operate over. They are also sensitive...</li>
+            <li>def run_claude_in_docker(
+    test_dir: Path, prompt: str, timeout: int = 300, model: str = None
+) -...</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="step-2-define-the-tasks">
+      <h2>&#x1F536; Step 2: Define the Tasks</h2>
+      <p class="lead">While it’s tempting to rely on vibes to feel whether your coding agent improves with skills, performance can and will vary over different tasks. Clear...</p>
+        <div class="card"><p>Create Constrained Tasks</p></div>
+        <div class="card"><p>Pair Tasks with Clear Metrics</p></div>
+        <div class="card"><p>- Clear metrics are critical to quantifying whether your skill improves the coding agent. Some metrics we tracked were:
+Was the skill invoked? And vice versa, was the skill not invoked when it wasn’t relevant?
+- Did the agent accomplish the task? One task might involve several different steps, and tracking the number of completed steps helped separate ‘total failure’ from ‘almost worked’.
+- How many turns did Claude Code take to complete the task? Even if Claude Code could complete the task with</p></div>
+        <div class="card"><p>Don’t Overindex on Difficulty</p></div>
+        <div class="card">
+          <ul style="list-style:disc;padding-left:20px;color:var(--text-secondary);font-size:14px;line-height:1.8;">
+            <li>Open-ended output is difficult to grade, especially with coding agents. If we asked Claude Code to create a LangChain agent to do research, it could take a variety of approaches. Grading the quality o</li>
+            <li>One strategy we found helpful was to have Claude Code fix buggy code. This constrained its design space, and made it easier to validate correctness: if the resulting agent still produced buggy behavio</li>
+            <li>Clear metrics are critical to quantifying whether your skill improves the coding agent. Some metrics we tracked were:</li>
+            <li>Did the agent accomplish the task? One task might involve several different steps, and tracking the number of completed steps helped separate ‘total failure’ from ‘almost worked’.</li>
+            <li>How many turns did Claude Code take to complete the task? Even if Claude Code could complete the task without skills, including skills might improve efficiency.</li>
+            <li>How long did Claude Code take in real time to complete the task? Not every turn is equal when it comes to measuring efficiency.</li>
+          </ul>
+        </div>
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">What are Skills?</div>
+          <div class="tl-desc">Skills are curated instructions, scripts, and resources that improve agent perfo...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">The Basic Evaluation Pipeline</div>
+          <div class="tl-desc">Our basic approach for testing skills:...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Step 1: Set Up a Clean Testing Environme</div>
+          <div class="tl-desc">Skills are commonly used with coding agents like Claude Code, or harnesses like ...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Step 2: Define the Tasks</div>
+          <div class="tl-desc">While it’s tempting to rely on vibes to feel whether your coding agent improves ...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Step 3: Define the Skills</div>
+          <div class="tl-desc">In creating and iterating on skills, the primary considerations are what content...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Step 4: Run and Compare Performance</div>
+          <div class="tl-desc">To test our skills, we ran Claude Code on our tasks, with different combinations...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Conclusion</div>
+          <div class="tl-desc">Skills are a useful way to enhance the capabilities of coding agents, including ...</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="step-3-define-the-skills">
+      <h2>&#x1F536; Step 3: Define the Skills</h2>
+      <p class="lead">In creating and iterating on skills, the primary considerations are what content to include, and where to put that content. Skills often come with AGE...</p>
+        <div class="card"><p>Helpful guidelines we followed were:</p></div>
+        <div class="card"><p>Leverage AGENTS.md and CLAUDE.md</p></div>
+        <div class="card"><p>Balance Content Across Skills</p></div>
+        <div class="card">
+          <ul style="list-style:disc;padding-left:20px;color:var(--text-secondary);font-size:14px;line-height:1.8;">
+            <li>Should content be in AGENTS.md (pre-loaded) or in a skill?</li>
+            <li>Should content be in one large skill or split across multiple smaller skills?</li>
+            <li>Can content be removed without impacting performance deltas?</li>
+            <li>We use XML tags to delineate different sections of a skill’s content. This not only adds structure for the agent, it provides a convenient way to substitute or remove sections to A/B test skills.</li>
+            <li>We generally found that for larger skills (300-500 lines), small formatting or wording changes had limited impact. For example, positive (“do this”) vs. negative (“don’t do this”) guidance, and markdo</li>
+            <li>When iterating, we generally make changes to one or more sections for testing, rather than optimizing at a more granular level.</li>
+          </ul>
+        </div>
+
+    </section>
+
+    <section class="section" id="step-4-run-and-compare-performance">
+      <h2>&#x1F4CA; Step 4: Run and Compare Performance</h2>
+      <p class="lead">To test our skills, we ran Claude Code on our tasks, with different combinations of skills. Some test cases included:...</p>
+        <div class="card"><p>We compared the completion rate of tasks under each scenario using LangSmith’s pytest integration. Including the skills was almost always beneficial, and different splits of content performed better on different tasks. Overall, Claude Code with skills completed tasks 82% of the time, but performance dropped to 9% without skills. However, more than just comparing task completion rate, we needed to understand why Claude failed so we could iterate on the skill.</p></div>
+        <div class="card"><p>It was non-trivial to understand what Claude Code was doing within Docker, and why — we needed observability into Claude Code’s trajectory. In our tests, we integrated with LangSmith to capture every action Claude Code took. We could understand what files it read, which scripts it created, and which skills it did (or did not) invoke.</p></div>
+        <div class="card"><p>Critically, we had Claude Code use its own tracing skill to inspect the traces and summarize what happened. This made iterating on skill content much faster. Claude Code would send traces to LangSmith, pull down those traces, and summarize issues for a human to inspect. The human could then propose fixes, rerun tests, and see how performance changed in LangSmith’s experiment portal.</p></div>
+        <div class="card"><p>When setting up your own skill evaluation pipeline, having good observability and good evaluation is critical — particularly because agents like Claude Code are so powerful.</p></div>
+        <div class="card">
+          <ul style="list-style:disc;padding-left:20px;color:var(--text-secondary);font-size:14px;line-height:1.8;">
+            <li>Control case where we ran Claude Code with no skills</li>
+            <li>Running Claude Code with all skills on the task</li>
+            <li>Running Claude Code with skills consolidated into a few large skills</li>
+            <li>Running Claude Code with skills split across smaller skills</li>
+          </ul>
+        </div>
+
+    </section>
+
+    <section class="section" id="conclusion">
+      <h2>&#x2705; Conclusion</h2>
+      <p class="lead">Skills are a useful way to enhance the capabilities of coding agents, including Claude Code, Codex, or Deep Agents CLI. Just like other components inv...</p>
+        <div class="card"><p>To see all of this in action - see our benchmarking repo here.</p></div>
+        <div class="card"><p>We hope these learnings provide good evaluation heuristics when you build your own skills. For those of you getting started with evaluating skills, check out LangSmith’s evaluation platform!</p></div>
+      <div class="compare-grid">
+        <div class="compare-card old">
+          <h4>&#x26A0; Challenges / Before</h4>
+          <ul>
+                        <li>Skills are a useful way to enhance the capabilities of coding agents, including Claude Code, Codex, ...</li>
+            <li>We hope these learnings provide good evaluation heuristics when you build your own skills. For those...</li>
+          </ul>
+        </div>
+        <div class="compare-card new">
+          <h4>&#x2705; Solutions / After</h4>
+          <ul>
+                        <li>To see all of this in action - see our benchmarking repo here.</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <footer class="footer">
+    <div class="foot-links">
+      <a href="../langchain/">&#x1F3E0; LangChain Hub</a>
+      <a href="https://www.langchain.com/blog/evaluating-skills" target="_blank">&#x1F517; Original Article</a>
+    </div>
+    <p class="copy">Auto-generated deep-dive page &middot; Content from LangChain Blog</p>
+  </footer>
+</body>
+</html>

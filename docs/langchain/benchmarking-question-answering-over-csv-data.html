@@ -1,0 +1,345 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Deep Dive: Benchmarking Question/Answering Over CSV Data</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root {
+      --bg: #fafbfc;
+      --surface: #fff;
+      --text: #0f172a;
+      --text-secondary: #64748b;
+      --border: #e2e8f0;
+      --radius: 14px;
+      --green: #059669;
+      --emerald: #10b981;
+      --teal: #14b8a6;
+      --blue: #3b82f6;
+      --purple: #6366f1;
+      --amber: #f59e0b;
+      --red: #ef4444;
+      --orange: #ea580c;
+      --mono: 'JetBrains Mono', monospace;
+      --sans: 'Noto Sans SC', 'Inter', system-ui, sans-serif;
+    }
+    * { margin:0; padding:0; box-sizing:border-box; }
+    body { font-family: var(--sans); background: var(--bg); color: var(--text); line-height:1.7; }
+    .nav { position:sticky; top:0; z-index:100; background:rgba(15,23,42,.88); backdrop-filter:blur(14px); padding:14px 32px; display:flex; justify-content:space-between; align-items:center; border-bottom:1px solid rgba(255,255,255,.08); }
+    .nav a { color:#f1f5f9; text-decoration:none; font-weight:500; font-size:14px; }
+    .nav .brand { font-weight:700; font-size:16px; color:#34d399; }
+    .hero { background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%); color:#fff; padding:80px 32px 60px; text-align:center; }
+    .hero h1 { font-size:clamp(1.8rem,4vw,2.6rem); font-weight:800; margin-bottom:12px; line-height:1.3; }
+    .hero .subtitle { font-size:17px; color:rgba(255,255,255,.82); max-width:720px; margin:0 auto 12px; }
+    .hero .meta { font-size:13px; color:rgba(255,255,255,.5); margin-bottom:32px; }
+    .hero .badge-cat { display:inline-block; padding:4px 14px; border-radius:20px; font-size:12px; font-weight:600; background:rgba(52,211,153,.18); color:#6ee7b7; border:1px solid rgba(52,211,153,.3); margin-bottom:16px; }
+    .stats { display:grid; grid-template-columns:repeat(auto-fit,minmax(150px,1fr)); gap:14px; max-width:780px; margin:0 auto; }
+    .stat { background:rgba(255,255,255,.07); border:1px solid rgba(255,255,255,.11); border-radius:12px; padding:18px 14px; backdrop-filter:blur(8px); }
+    .stat .num { font-size:26px; font-weight:800; color:#34d399; font-family:var(--mono); }
+    .stat .label { font-size:12px; color:rgba(255,255,255,.65); margin-top:4px; }
+    .page { max-width:900px; margin:0 auto; padding:40px 24px; }
+    .toc { margin-bottom:48px; }
+    .toc h3 { font-size:13px; text-transform:uppercase; letter-spacing:1.5px; color:var(--text-secondary); margin-bottom:16px; }
+    .toc-grid { display:grid; grid-template-columns:repeat(auto-fit,minmax(240px,1fr)); gap:10px; }
+    .toc-grid a { display:flex; align-items:center; gap:10px; padding:12px 16px; background:var(--surface); border:1px solid var(--border); border-radius:10px; text-decoration:none; color:var(--text); font-size:14px; font-weight:500; transition:all .2s; }
+    .toc-grid a:hover { border-color:var(--green); background:#ecfdf5; }
+    .toc-grid .num { display:inline-flex; align-items:center; justify-content:center; width:26px; height:26px; border-radius:8px; background:linear-gradient(135deg,#059669,#14b8a6); color:#fff; font-size:12px; font-weight:700; flex-shrink:0; }
+    .section { margin-bottom:56px; }
+    .section h2 { font-size:clamp(1.3rem,3vw,1.6rem); font-weight:700; margin-bottom:8px; display:flex; align-items:center; gap:10px; flex-wrap:wrap; }
+    .lead { color:var(--text-secondary); font-size:15px; margin-bottom:20px; line-height:1.7; }
+    .card { background:var(--surface); border:1px solid var(--border); border-radius:var(--radius); padding:22px; margin-bottom:14px; }
+    .card h4 { font-size:15px; font-weight:600; margin-bottom:8px; }
+    .card p { font-size:14px; color:var(--text-secondary); line-height:1.7; }
+    .chart { margin:24px 0; }
+    .chart-row { display:flex; align-items:center; margin-bottom:10px; gap:12px; }
+    .chart-label { width:160px; font-size:13px; font-weight:500; text-align:right; flex-shrink:0; }
+    .chart-bar-wrap { flex:1; background:#f1f5f9; border-radius:8px; height:30px; overflow:hidden; }
+    .chart-bar { height:100%; border-radius:8px; display:flex; align-items:center; justify-content:flex-end; padding-right:10px; font-size:12px; font-weight:600; color:#fff; transition:width .6s ease; }
+    .chart-bar.green { background:linear-gradient(90deg,#059669,#34d399); }
+    .chart-bar.teal { background:linear-gradient(90deg,#14b8a6,#2dd4bf); }
+    .chart-bar.blue { background:linear-gradient(90deg,#3b82f6,#60a5fa); }
+    .chart-bar.purple { background:linear-gradient(90deg,#6366f1,#a78bfa); }
+    .chart-bar.amber { background:linear-gradient(90deg,#f59e0b,#fbbf24); }
+    .chart-bar.orange { background:linear-gradient(90deg,#ea580c,#fb923c); }
+    .chart-bar.red { background:linear-gradient(90deg,#ef4444,#f87171); }
+    .timeline { position:relative; padding-left:32px; margin:24px 0; }
+    .timeline::before { content:''; position:absolute; left:8px; top:0; bottom:0; width:3px; background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6,#6366f1); border-radius:2px; }
+    .tl-item { position:relative; margin-bottom:20px; }
+    .tl-dot { position:absolute; left:-28px; top:4px; width:14px; height:14px; border-radius:50%; border:3px solid #059669; background:#fff; }
+    .tl-item:nth-child(2) .tl-dot { border-color:#14b8a6; }
+    .tl-item:nth-child(3) .tl-dot { border-color:#3b82f6; }
+    .tl-item:nth-child(4) .tl-dot { border-color:#6366f1; }
+    .tl-item:nth-child(5) .tl-dot { border-color:#f59e0b; }
+    .tl-item:nth-child(6) .tl-dot { border-color:#ea580c; }
+    .tl-item:nth-child(7) .tl-dot { border-color:#ef4444; }
+    .tl-phase { font-weight:700; font-size:15px; margin-bottom:4px; }
+    .tl-desc { font-size:13px; color:var(--text-secondary); line-height:1.6; }
+    .compare-grid { display:grid; grid-template-columns:1fr 1fr; gap:16px; margin:24px 0; }
+    .compare-card { border-radius:var(--radius); padding:22px; }
+    .compare-card.old { background:#fef2f2; border:2px solid #fecaca; }
+    .compare-card.new { background:#ecfdf5; border:2px solid #a7f3d0; }
+    .compare-card h4 { font-size:15px; font-weight:700; margin-bottom:8px; }
+    .compare-card ul { list-style:none; padding:0; }
+    .compare-card ul li { font-size:13px; padding:4px 0; color:var(--text-secondary); }
+    .flow { display:flex; align-items:center; justify-content:center; gap:12px; margin:24px 0; flex-wrap:wrap; }
+    .flow-step { background:var(--surface); border:1px solid var(--border); border-radius:12px; padding:12px 18px; font-size:13px; font-weight:600; text-align:center; min-width:100px; }
+    .flow-step.green { background:linear-gradient(135deg,#059669,#10b981); color:#fff; border:none; }
+    .flow-step.blue { background:linear-gradient(135deg,#3b82f6,#60a5fa); color:#fff; border:none; }
+    .flow-step.purple { background:linear-gradient(135deg,#6366f1,#a78bfa); color:#fff; border:none; }
+    .flow-step.teal { background:linear-gradient(135deg,#14b8a6,#2dd4bf); color:#fff; border:none; }
+    .flow-step.orange { background:linear-gradient(135deg,#ea580c,#f59e0b); color:#fff; border:none; }
+    .flow-arrow { font-size:20px; color:var(--text-secondary); }
+    .block-q { background:linear-gradient(135deg,#ecfdf5,#d1fae5); border-left:4px solid #059669; border-radius:0 var(--radius) var(--radius) 0; padding:18px 22px; margin:20px 0; }
+    .block-q p { font-size:14px; font-style:italic; color:#064e3b; line-height:1.7; }
+    .badge { display:inline-block; padding:3px 10px; border-radius:6px; font-size:12px; font-weight:600; }
+    .badge-green { background:#ecfdf5; color:#059669; }
+    .badge-teal { background:#f0fdfa; color:#14b8a6; }
+    .badge-blue { background:#eff6ff; color:#3b82f6; }
+    .badge-purple { background:#eef2ff; color:#6366f1; }
+    .footer { text-align:center; padding:48px 24px; border-top:1px solid var(--border); margin-top:40px; }
+    .footer a { color:var(--green); text-decoration:none; font-weight:500; }
+    .footer a:hover { text-decoration:underline; }
+    .footer .foot-links { display:flex; justify-content:center; gap:24px; flex-wrap:wrap; margin-bottom:12px; }
+    .footer .copy { font-size:12px; color:var(--text-secondary); }
+    @media(max-width:768px) {
+      .hero { padding:48px 18px 36px; }
+      .hero h1 { font-size:1.5rem; }
+      .stats { grid-template-columns:1fr 1fr; gap:10px; }
+      .page { padding:28px 16px; }
+      .toc-grid { grid-template-columns:1fr; }
+      .compare-grid { grid-template-columns:1fr; }
+      .flow { flex-direction:column; gap:8px; }
+      .flow-arrow { transform:rotate(90deg); }
+      .chart-label { width:100px; font-size:11px; }
+      .nav { padding:12px 16px; }
+    }
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain Blog Hub</a>
+    <a href="../langchain/">&#x2190; Back to Hub</a>
+  </nav>
+
+  <header class="hero">
+    <div class="badge-cat">LangSmith / Observability &amp; Evals</div>
+    <h1>Benchmarking Question/Answering Over CSV Data</h1>
+    <p class="subtitle">LangChain Accounts &middot; 2023-08-15</p>
+    <p class="meta">Source: https://www.langchain.com/blog/benchmarking-question-answering-over-csv-data</p>
+    <div class="stats">
+        <div class="stat">
+          <div class="num">7</div>
+          <div class="label">Core Sections</div>
+        </div>
+        <div class="stat">
+          <div class="num">13 min</div>
+          <div class="label">Reading Time</div>
+        </div>
+        <div class="stat">
+          <div class="num">21</div>
+          <div class="label">Key Points</div>
+        </div>
+        <div class="stat">
+          <div class="num">19</div>
+          <div class="label">External Links</div>
+        </div>
+    </div>
+  </header>
+
+  <div class="page">
+    <nav class="toc">
+      <h3>&#x1F4D1; Table of Contents</h3>
+      <div class="toc-grid">
+        <a href="#background-motivation"><span class="num">1</span>Background Motivation</a>
+        <a href="#initial-application"><span class="num">2</span>Initial Application</a>
+        <a href="#initial-solution"><span class="num">3</span>Initial Solution</a>
+        <a href="#debugging-with-langsmith"><span class="num">4</span>Debugging with LangSmith</a>
+        <a href="#evaluation-setup"><span class="num">5</span>Evaluation Setup</a>
+        <a href="#improved-solution"><span class="num">6</span>Improved Solution</a>
+        <a href="#conclusion"><span class="num">7</span>Conclusion</a>
+      </div>
+    </nav>
+
+    <section class="section" id="background-motivation">
+      <h2>&#x1F4D6; Background Motivation</h2>
+      <p class="lead">There's a pretty standard recipe for question over text data at this point. On the other hand, one area where we've heard consistent asks for improvem...</p>
+        <div class="card"><p>A few weeks ago we decided to focus on this for a bit but quickly ran into an issue–we didn't really know what types of questions people expected to be able ask CSV data, and we didn't have any good way to evaluate this applications.</p></div>
+        <div class="card"><p>Evaluation of LLM applications is often hard because of a lack of data and a lack of metrics.</p></div>
+        <div class="card"><p>In traditional machine learning you usually start with a dataset of inputs and outputs, and you use this to train and then evaluate your model. However, because LLMs are fantastic zero shot learners, it is now possible to use a prompt to quickly build an application based on just an idea, and no data. While this is incredibly powerful in terms of enabling developers to build new applications quickly, it leads to difficulty in evaluating because you lack that data. This is why we've built LangSmi</p></div>
+        <div class="card"><p>Likewise, there's often not great metrics for evaluating LLM applications. The outputs are often natural language, and traditional NLP metrics like BLEU and ROUGE aren't great. But what is good at understanding natural language? LLMs! We're pretty bullish on LLM assisted evaluation and have invested in building a bunch of evaluators that use LLMs to do the evaluation.</p></div>
+        <div class="card">
+          <ul style="list-style:disc;padding-left:20px;color:var(--text-secondary);font-size:14px;line-height:1.8;">
+            <li>Used LangSmith to flag interesting datapoints and used that to construct a dataset of examples</li>
+            <li>Used LLMs to evaluate correctness</li>
+          </ul>
+        </div>
+      <div class="flow">
+                <div class="flow-step green">Concept</div>
+        <div class="flow-arrow">&#x2192;</div>
+        <div class="flow-step">Analysis</div>
+        <div class="flow-arrow">&#x2192;</div>
+        <div class="flow-step blue">Application</div>
+      </div>
+    </section>
+
+    <section class="section" id="initial-application">
+      <h2>&#x1F539; Initial Application</h2>
+      <p class="lead">First, we set about creating a dataset of questions and ground truth answers. Part of the issue here was didn't even know what type of questions peopl...</p>
+        <div class="card"><p>Before you launch an app it can be tough to guess how users may interact with it. Rather than guessing, one strategy is launch quickly and early and gather real data.</p></div>
+        <div class="card"><p>In order to do this we decided to spin up a quick demo application and put that out in the wild. We would then log actual user questions along with any feedback about the answers that they gave us. To gather feedback we added a simple &quot;thumps up&quot;/&quot;thumbs down&quot; button to the application. We would use LangSmith to monitor all the interactions and feedback, and then we would manually review the interactions and create a dataset consisting of any interesting ones. This is done ea</p></div>
+        <div class="card"><p>There's also the question of what type of data we wanted to gather. We considered two approaches: (1) let users upload their own CSV and ask questions of that, (2) fix the CSV and gather questions over that. We opted for (2) for a few reasons. First - it would make it simpler for people to play around with, likely leading to more responses. Second - it would probably make it easier to evaluate. Third - we specifically wanted to be logging and looking at user questions, and we didn't want to do t</p></div>
+        <div class="card"><p>For our example application we chose the classic Titanic dataset - a record of all passengers on the Titanic and whether the survived, often used for example data science projects. We created this simple application in Streamlit, put it out in the world, and asked people to give feedback. You can view the hosted app here, and the source code here.</p></div>
+
+    </section>
+
+    <section class="section" id="initial-solution">
+      <h2>&#x1F4CC; Initial Solution</h2>
+      <p class="lead">The Titanic dataset has a mix of columns in it. Some of them are numeric (age, number of siblings, fare), some of them are categorical (station embark...</p>
+        <div class="card"><p>While a person's name isn't super text heavy, it is still text heavy enough to cause some issues. For example if a question is asked about &quot;John Smith&quot;, there a bunch of variants of how that name could be represented: Mr. John Smith (title), Smith, John (order), Jon Smith (typo), John Jacob Smith (middle name), etc. This can make it tricky to filter rows exactly by name, or even do lookups. Therefore, from the start we knew we had to include some more fuzzy based functionality. However</p></div>
+        <div class="card"><p>Tabular data that contains text can be particularly tough to deal with, as retrieval is likely needed in some form, but pure retrieval probably isn't enough.</p></div>
+        <div class="card"><p>For the natural language bit, we wanted to use a traditional retrieval system. We weren't going to get too fancy, so we just wanted to use a simple vectorstore and look up results based on cosine similarity with the input question.</p></div>
+        <div class="card"><p>In order to do this we needed to load a CSV into a vectorstore. We did this using the logic of our CSVLoader. What this does under the hood is:</p></div>
+        <div class="card">
+          <ul style="list-style:disc;padding-left:20px;color:var(--text-secondary);font-size:14px;line-height:1.8;">
+            <li>Load each row as its own document</li>
+            <li>Represent the text of each document as a list of Column: value pairs, each on their own line.</li>
+          </ul>
+        </div>
+      <div class="compare-grid">
+        <div class="compare-card old">
+          <h4>&#x26A0; Challenges / Before</h4>
+          <ul>
+                        <li>The Titanic dataset has a mix of columns in it. Some of them are numeric (age, number of siblings, f...</li>
+            <li>Tabular data that contains text can be particularly tough to deal with, as retrieval is likely neede...</li>
+            <li>In order to do this we needed to load a CSV into a vectorstore. We did this using the logic of our C...</li>
+          </ul>
+        </div>
+        <div class="compare-card new">
+          <h4>&#x2705; Solutions / After</h4>
+          <ul>
+                        <li>While a person's name isn't super text heavy, it is still text heavy enough to cause some issues. Fo...</li>
+            <li>For the natural language bit, we wanted to use a traditional retrieval system. We weren't going to g...</li>
+            <li>Digging into point (2) a bit more, there's a few ways you could represent a row of CSV as a document...</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="debugging-with-langsmith">
+      <h2>&#x1F50D; Debugging with LangSmith</h2>
+      <p class="lead">People started asking questions and the feedback starting rolling in. Only about 1/3 of feedback was positive. What was going wrong? There was two mai...</p>
+        <div class="card"><p>A lot of the functions we wrote for kork would return a dataframe. This dataframe was then inserted into a prompt and passed to the language model. There was then a question of how that dataframe was formatted as a string to be passed to the language model.</p></div>
+        <div class="card"><p>This was important for answering questions like Who was in cabin C128. The returned dataframe would have hopefully filtered to the correct row and be returning all relevant information. Before we launched the app, we tested questions like this and it was working fine. However, after we launched the app and started to look at the responses we noticed it was failing terribly at a large number of these types of questions.</p></div>
+        <div class="card"><p>We used LangSmith to inspect the traces to try to get a sense of what was going on. We could see that the correct query was being generated... but when that dataframe was passed into the prompt the formatting was being messed up. We expected it look something like:</p></div>
+        <div class="card"><p>But instead it was looking something like:</p></div>
+      <div class="timeline">
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Background Motivation</div>
+          <div class="tl-desc">There's a pretty standard recipe for question over text data at this point. On t...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Initial Application</div>
+          <div class="tl-desc">First, we set about creating a dataset of questions and ground truth answers. Pa...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Initial Solution</div>
+          <div class="tl-desc">The Titanic dataset has a mix of columns in it. Some of them are numeric (age, n...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Debugging with LangSmith</div>
+          <div class="tl-desc">People started asking questions and the feedback starting rolling in. Only about...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Evaluation Setup</div>
+          <div class="tl-desc">So we've now constructed our dataset of real world examples. We've also done som...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Improved Solution</div>
+          <div class="tl-desc">Finally, we arrive at the exciting part of the blog. Did we manage to improve ou...</div>
+        </div>
+        <div class="tl-item">
+          <div class="tl-dot"></div>
+          <div class="tl-phase">Conclusion</div>
+          <div class="tl-desc">We're pretty satisfied with the final solution we arrived at - and most of the f...</div>
+        </div>
+      </div>
+    </section>
+
+    <section class="section" id="evaluation-setup">
+      <h2>&#x1F4CA; Evaluation Setup</h2>
+      <p class="lead">So we've now constructed our dataset of real world examples. We've also done some manual debugging and identified some areas of errors and have some i...</p>
+        <div class="card"><p>For an example of why this is non-trivial, let's consider the question Who is in cabin C128. The correct answer in the CSV is Williams-Lambert, Mr. Fletcher Fellows. But there are a LOT of ways a language model could respond that should be considered &quot;correct&quot;:</p></div>
+        <div class="card"><p>In order to properly evaluate these natural language answers... we turned to a language model. We decided to use our standard qa evaluator, which takes as input:</p></div>
+        <div class="card"><p>From there, it formats a prompt template with those values and passes that to a language model to get back a response.</p></div>
+        <div class="card"><p>Even still, this is NOT perfect. For example, one of the questions we evaluated on was male to female ratio?. It's pretty unclear what the answer to that question should be. We had labelled the answer as There were 577 males and 314 females, for a ratio of 1.84. In one test run, the language model responded The ratio of males to females in the dataframe is approximately 0.65 to 0.35. This means that there are about 65% males and 35% females. Our LLM evaluator marked that answer as INCORRECT, eve</p></div>
+        <div class="card">
+          <ul style="list-style:disc;padding-left:20px;color:var(--text-secondary);font-size:14px;line-height:1.8;">
+            <li>Mr. Fletcher Fellows Williams-Lambert</li>
+            <li>The person in cabin C128 was Mr. Fletcher Fellows Williams-Lambert.</li>
+            <li>Fletcher Williams-Lambert</li>
+            <li>Mr. Williams-Lambert was in that cabin</li>
+            <li>The input</li>
+            <li>The ground truth answer</li>
+          </ul>
+        </div>
+
+    </section>
+
+    <section class="section" id="improved-solution">
+      <h2>&#x1F537; Improved Solution</h2>
+      <p class="lead">Finally, we arrive at the exciting part of the blog. Did we manage to improve our solution? And how did we do so?...</p>
+        <div class="card"><p>Our final solution is:</p></div>
+        <div class="card"><p>This provides several benefits. First, by giving it access to a Python REPL we give it the ability to do all sorts of queries and analysis. However, as we'll see in some of the comparisons below, the Python REPL can have issues when dealing with text data - in this case the Name column. That is where the retriever can come in handy.</p></div>
+        <div class="card"><p>Our final solution is an agent with two tools: a Python REPL and a retriever. This allows it to answer questions about the unstructured text, but also perform more traditional data analysis operations.</p></div>
+        <div class="card"><p>Note that we do include some instructions in the prompt specific to the Titanic dataset. Specifically, we tell it that it should try to use the retriever for the Name column and the Python REPL for most other things. We did this because with generic wording it was having some trouble reasoning about when to use it. This does mean that comparing to generic solutions (as we do below) is a bit unfair. As a follow up, we would love to see a more generic prompt presented that does not include dataset</p></div>
+        <div class="card">
+          <ul style="list-style:disc;padding-left:20px;color:var(--text-secondary);font-size:14px;line-height:1.8;">
+            <li>An agent powered by OpenAIFunctions (OpenAIFunctionsAgent)</li>
+            <li>Two tools: a Python REPL and a retriever</li>
+            <li>A custom prompt with custom instructions on how to think about when to use the Python REPL vs the retriever</li>
+          </ul>
+        </div>
+
+    </section>
+
+    <section class="section" id="conclusion">
+      <h2>&#x2705; Conclusion</h2>
+      <p class="lead">We're pretty satisfied with the final solution we arrived at - and most of the feedback had been positive as well. We're also pretty happy with the da...</p>
+        <div class="card"><p>At the same time, we recognize that there is always room for improvements - on both fronts. The dataset can be improved/added to, the evaluators can likely be improved, and we're especially excited to see more solutions to this problem of question-answering over CSV data!</p></div>
+        <div class="card"><p>We've open-sourced everything - the app we used to gather feedback, the dataset, the eval script - at this repo.</p></div>
+      <div class="compare-grid">
+        <div class="compare-card old">
+          <h4>&#x26A0; Challenges / Before</h4>
+          <ul>
+                        <li>We're pretty satisfied with the final solution we arrived at - and most of the feedback had been pos...</li>
+            <li>We've open-sourced everything - the app we used to gather feedback, the dataset, the eval script - a...</li>
+          </ul>
+        </div>
+        <div class="compare-card new">
+          <h4>&#x2705; Solutions / After</h4>
+          <ul>
+                        <li>At the same time, we recognize that there is always room for improvements - on both fronts. The data...</li>
+          </ul>
+        </div>
+      </div>
+    </section>
+
+  </div>
+
+  <footer class="footer">
+    <div class="foot-links">
+      <a href="../langchain/">&#x1F3E0; LangChain Hub</a>
+      <a href="https://www.langchain.com/blog/benchmarking-question-answering-over-csv-data" target="_blank">&#x1F517; Original Article</a>
+    </div>
+    <p class="copy">Auto-generated deep-dive page &middot; Content from LangChain Blog</p>
+  </footer>
+</body>
+</html>

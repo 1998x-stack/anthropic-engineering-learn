@@ -1,0 +1,370 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>深度解析：Reflection Agents</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+  <style>
+    :root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--green:#10b981;--emerald:#059669;--teal:#14b8a6;--blue:#3b82f6;--purple:#6366f1;--amber:#f59e0b;--red:#ef4444;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',system-ui,sans-serif}
+    *{margin:0;padding:0;box-sizing:border-box}
+    body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+    .nav{position:sticky;top:0;z-index:100;background:rgba(15,23,42,.85);backdrop-filter:blur(12px);padding:14px 32px;display:flex;justify-content:space-between;align-items:center;border-bottom:1px solid rgba(255,255,255,.08)}
+    .nav a{color:#f1f5f9;text-decoration:none;font-weight:500;font-size:14px}
+    .nav .brand{font-weight:700;font-size:16px;color:#10b981}
+    .hero{background:linear-gradient(135deg,#0f172a 0%,#064e3b 50%,#059669 100%);color:#fff;padding:80px 32px 60px;text-align:center}
+    .hero h1{font-size:clamp(1.8rem,4vw,2.8rem);font-weight:800;margin-bottom:12px;line-height:1.3}
+    .hero .subtitle{font-size:18px;color:rgba(255,255,255,.8);max-width:720px;margin:0 auto 40px}
+    .hero .meta{font-size:13px;color:rgba(255,255,255,.5);margin-bottom:32px}
+    .stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(160px,1fr));gap:16px;max-width:800px;margin:0 auto}
+    .stat{background:rgba(255,255,255,.08);border:1px solid rgba(255,255,255,.12);border-radius:12px;padding:20px 16px;backdrop-filter:blur(8px)}
+    .stat .num{font-size:28px;font-weight:800;color:#34d399}
+    .stat .label{font-size:13px;color:rgba(255,255,255,.7);margin-top:4px}
+    .page{max-width:900px;margin:0 auto;padding:40px 24px}
+    .toc{margin-bottom:48px}
+    .toc h3{font-size:14px;text-transform:uppercase;letter-spacing:1.5px;color:var(--text-secondary);margin-bottom:16px}
+    .toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(220px,1fr));gap:10px}
+    .toc-grid a{display:flex;align-items:center;gap:10px;padding:12px 16px;background:var(--surface);border:1px solid var(--border);border-radius:10px;text-decoration:none;color:var(--text);font-size:14px;font-weight:500;transition:all .2s}
+    .toc-grid a:hover{border-color:var(--emerald);background:#ecfdf5}
+    .toc-grid .num{display:inline-flex;align-items:center;justify-content:center;width:26px;height:26px;border-radius:8px;background:linear-gradient(135deg,#059669,#10b981);color:#fff;font-size:12px;font-weight:700;flex-shrink:0}
+    .section{margin-bottom:56px}
+    .section h2{font-size:clamp(1.3rem,3vw,1.7rem);font-weight:700;margin-bottom:8px;display:flex;align-items:center;gap:10px}
+    .lead{color:var(--text-secondary);font-size:15px;margin-bottom:24px;line-height:1.6}
+    .card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}
+    .card h4{font-size:16px;font-weight:600;margin-bottom:8px}
+    .card p,.card li{font-size:14px;color:var(--text-secondary);line-height:1.7}
+    .card ul,.card ol{padding-left:20px}
+    .card li{margin-bottom:4px}
+    p{font-size:15px;color:var(--text-secondary);line-height:1.8;margin-bottom:16px}
+    p code{background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:13px;color:#059669}
+    .chart{margin:24px 0}
+    .chart-row{display:flex;align-items:center;margin-bottom:10px;gap:12px}
+    .chart-label{width:150px;font-size:13px;font-weight:500;text-align:right;flex-shrink:0}
+    .chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}
+    .chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;justify-content:flex-end;padding-right:10px;font-size:12px;font-weight:600;color:#fff;transition:width .6s ease}
+    .chart-bar.green{background:linear-gradient(90deg,#059669,#10b981)}
+    .chart-bar.teal{background:linear-gradient(90deg,#14b8a6,#2dd4bf)}
+    .chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+    .chart-bar.purple{background:linear-gradient(90deg,#6366f1,#a78bfa)}
+    .chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+    .chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}
+    .flow{display:flex;align-items:center;justify-content:center;gap:12px;margin:24px 0;flex-wrap:wrap}
+    .flow-step{background:var(--surface);border:1px solid var(--border);border-radius:12px;padding:14px 20px;font-size:14px;font-weight:600;text-align:center;min-width:120px}
+    .flow-step.green{background:linear-gradient(135deg,#059669,#10b981);color:#fff;border:none}
+    .flow-step.teal{background:linear-gradient(135deg,#14b8a6,#2dd4bf);color:#fff;border:none}
+    .flow-step.blue{background:linear-gradient(135deg,#3b82f6,#60a5fa);color:#fff;border:none}
+    .flow-step.purple{background:linear-gradient(135deg,#6366f1,#a78bfa);color:#fff;border:none}
+    .flow-step.amber{background:linear-gradient(135deg,#f59e0b,#fbbf24);color:#fff;border:none}
+    .flow-arrow{font-size:20px;color:var(--text-secondary)}
+    .compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:24px 0}
+    .compare-card{border-radius:var(--radius);padding:24px}
+    .compare-card.old{background:#fef2f2;border:2px solid #fecaca}
+    .compare-card.new{background:#ecfdf5;border:2px solid #a7f3d0}
+    .compare-card h4{font-size:15px;font-weight:700;margin-bottom:8px}
+    .compare-card p{font-size:13px;color:var(--text-secondary)}
+    .timeline{position:relative;padding-left:32px;margin:24px 0}
+    .timeline::before{content:'';position:absolute;left:7px;top:8px;bottom:8px;width:3px;background:linear-gradient(180deg,#059669,#14b8a6,#3b82f6);border-radius:2px}
+    .tl-item{position:relative;margin-bottom:24px}
+    .tl-dot{position:absolute;left:-29px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid #059669;background:#fff}
+    .tl-item:nth-child(2) .tl-dot{border-color:#14b8a6}
+    .tl-item:nth-child(3) .tl-dot{border-color:#3b82f6}
+    .tl-phase{font-weight:700;font-size:15px;color:var(--text)}
+    .tl-desc{font-size:13px;color:var(--text-secondary);margin-top:4px}
+    .code-block{background:#1e293b;border-radius:var(--radius);padding:20px;margin:16px 0;overflow-x:auto}
+    .code-block pre{color:#e2e8f0;font-family:var(--mono);font-size:13px;line-height:1.6;white-space:pre-wrap;word-break:break-all}
+    .block-q{background:linear-gradient(135deg,#ecfdf5,#d1fae5);border-left:4px solid #059669;border-radius:0 var(--radius) var(--radius) 0;padding:20px 24px;margin:24px 0}
+    .block-q p{font-size:15px;font-style:italic;color:#064e3b;line-height:1.7}
+    .footer{background:#0f172a;color:#94a3b8;padding:40px 32px;text-align:center;font-size:14px}
+    .footer a{color:#34d399;text-decoration:none}
+    .footer a:hover{text-decoration:underline}
+    .footer .links{margin-top:12px;display:flex;justify-content:center;gap:24px;flex-wrap:wrap}
+    @media(max-width:768px){.compare-grid{grid-template-columns:1fr}.chart-label{width:100px;font-size:12px}.flow{flex-direction:column;gap:8px}.flow-arrow{transform:rotate(90deg)}.toc-grid{grid-template-columns:1fr}.hero{padding:60px 20px 40px}.nav{padding:12px 16px}.stats{grid-template-columns:1fr 1fr}}
+  </style>
+</head>
+<body>
+  <nav class="nav">
+    <a class="brand" href="../">LangChain 知识库</a>
+    <a href="../">← 返回 Hub</a>
+  </nav>
+  <header class="hero">
+    <div class="meta">📚 Tutorials & Guides · LangChain Accounts · 2024-02-21</div>
+    <h1>Reflection Agents</h1>
+    <p class="subtitle">深度解析 LangChain 生态系统中的核心概念与实践方法</p>
+    <div class="stats">
+      <div class="stat"><div class="num">19</div><div class="label">章节数</div></div>
+      <div class="stat"><div class="num">~6min</div><div class="label">阅读时长</div></div>
+      <div class="stat"><div class="num">3</div><div class="label">代码示例</div></div>
+      <div class="stat"><div class="num">19</div><div class="label">参考链接</div></div>
+    </div>
+  </header>
+  <div class="page">
+    <nav class="toc">
+      <h3>目录导航</h3>
+      <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>Reflection Agents</a>
+      <a href="#s2"><span class="num">2</span>Key Links</a>
+      <a href="#s3"><span class="num">3</span>Basic Reflection</a>
+      <a href="#s4"><span class="num">4</span>Reflexion</a>
+      <a href="#s5"><span class="num">5</span>draft -&amp;gt; execute_tools</a>
+      <a href="#s6"><span class="num">6</span>execute_tools -&amp;gt; revise</a>
+      <a href="#s7"><span class="num">7</span>Define looping logic:</a>
+      <a href="#s8"><span class="num">8</span>in our case, we&amp;#x27;ll just s</a>
+      <a href="#s9"><span class="num">9</span>revise -&amp;gt; execute_tools OR </a>
+      <a href="#s10"><span class="num">10</span>Language Agent Tree Search</a>
+      <a href="#s11"><span class="num">11</span>Additional methods are defined</a>
+      <a href="#s12"><span class="num">12</span>The full tree</a>
+      <a href="#s13"><span class="num">13</span>The original input</a>
+      <a href="#s14"><span class="num">14</span>Either expand/rollout or finis</a>
+      <a href="#s15"><span class="num">15</span>Either continue to rollout or </a>
+      <a href="#s16"><span class="num">16</span>Video Tutorial</a>
+      <a href="#s17"><span class="num">17</span>Conclusion</a>
+      <a href="#s18"><span class="num">18</span>Related content</a>
+      <a href="#s19"><span class="num">19</span>See what your agent is really </a>
+      </div>
+    </nav>
+
+    <section class="section" id="s1">
+      <h2>🔍 Reflection Agents</h2>
+      <p class="lead">Ankush GolaFebruary 21, 20246min
+
+Go back to blogShare</p>
+      <p>Ankush GolaFebruary 21, 20246min[</p>
+<p>Go back to blog](/blog)Share[</p>
+      
+    </section>
+    <section class="section" id="s2">
+      <h2>⚡ Key Links</h2>
+      <p class="lead">- Simple Reflection: (Python)
+- Reflexion: (Python)
+- Language Agents Tree Search: (Python)
+- Youtube
+
+Reflection is a prompting strategy used to improve the quality and success rate of agents and sim</p>
+      <div class="card"><ul><li>Simple Reflection: (Python)</li><li>Reflexion: (Python)</li><li>Language Agents Tree Search: (Python)</li><li>Youtube</li></ul></div>
+<p>Reflection is a prompting strategy used to improve the quality and success rate of agents and similar AI systems. It involves prompting an LLM to reflect on and critique its past actions, sometimes incorporating additional external information such as tool observations.</p>
+<p>People like to talk about &quot;System 1&quot; and &quot;System 2&quot; thinking, where System 1 is reactive or instinctive and System 2 is more methodical and reflective. When applied correctly, reflection can help LLM systems break out of purely System 1 &quot;thinking&quot; patterns and closer to something exhibiting System 2-like behavior.</p>
+<p>Reflection takes time! All the approaches in this post trade off a bit of extra compute for a shot at better output quality. While this may not be appropriate for low-latency applications, it is worthwhile for knowledge intensive tasks where response quality is more important than speed.</p>
+<p>The three examples are outlined below:</p>
+      
+    </section>
+    <section class="section" id="s3">
+      <h2>🏗️ Basic Reflection</h2>
+      <p class="lead">Links: (Python, Youtube)
+
+This simple example composes two LLM calls: a generator and a reflector.</p>
+      <p>Links: (Python, Youtube)</p>
+<p>This simple example composes two LLM calls: a generator and a reflector. The generator tries to respond directly to the user&#x27;s requests. The reflector is prompted to role play as a teacher  and offer constructive criticism for the initial response.</p>
+<p>The loop proceeds a fixed number of times, and the final generated output is returned.</p>
+<p>Simple Reflection Loop</p>
+<p>We can define the loop in LangGraph below:</p>
+<p>`from langgraph.graph import MessageGraph</p>
+<p>builder = MessageGraph()
+builder.add_node(&quot;generate&quot;, generation_node)
+builder.add_node(&quot;reflect&quot;, reflection_node)
+builder.set_entry_point(&quot;generate&quot;)</p>
+<p>def should_continue(state: List[BaseMessage]):
+    if len(state) &gt; 6:
+        return END
+    return &quot;reflect&quot;</p>
+<div class="code-block"><pre>builder.add_conditional_edges(&amp;quot;generate&amp;quot;, should_continue)
+builder.add_edge(&amp;quot;reflect&amp;quot;, &amp;quot;generate&amp;quot;)
+graph = builder.compile()</pre></div>
+<p>The <code>MessageGraph</code> represents a stateful graph, where the &quot;state&quot; is simply a list of messages. Each time the generator or reflector node is called, it appends a message to the end of the state. The final result is returned from the generator node.</p>
+<p>This simple type of reflection can sometimes improve performance by giving the LLM multiple attempts at refining its output and by letting the reflection node adopt a different persona while critiquing the output.</p>
+<p>However, since the reflection step isn&#x27;t grounded in any external process, the final result may not be significantly better than the original. Let&#x27;s explore some other techniques that can ameliorate that.</p>
+      
+    </section>
+    <section class="section" id="s4">
+      <h2>📊 Reflexion</h2>
+      <p class="lead">Links: (Python, Youtube)
+
+Reflexion by Shinn, et.</p>
+      <p>Links: (Python, Youtube)</p>
+<p>Reflexion by Shinn, et. al., is an architecture designed to learn through verbal feedback and self-reflection. Within reflexion, the actor agent explicitly critiques each response and grounds its criticism in external data. It is forced to generate citations and explicitly enumerate superfluous and missing aspects of the generated response. This makes the content of the reflections more constructive and better steers the generator in responding to the feedback.</p>
+<p>In the linked example, we stop after a fixed number of steps, though you can also offload this decision to the reflection LLM call.</p>
+<p>An overview of the agent loop is shown below:</p>
+<p>Reflexion Actor Overview</p>
+<p>For each step, the responder is tasked with generating a response, along with additional actions in the form of search queries. Then the revisor is prompted to reflect on the current state. The logic can be defined in LangGraph as follows:</p>
+<p>`from langgraph.graph import END, MessageGraph</p>
+<p>MAX_ITERATIONS = 5
+builder = MessageGraph()
+builder.add_node(&quot;draft&quot;, first_responder.respond)
+builder.add_node(&quot;execute_tools&quot;, execute_tools)
+builder.add_node(&quot;revise&quot;, revisor.respond)</p>
+      
+    </section>
+    <section class="section" id="s5">
+      <h2>🔗 draft -&amp;gt; execute_tools</h2>
+      <p class="lead">builder.</p>
+      <p>builder.add_edge(&quot;draft&quot;, &quot;execute_tools&quot;)</p>
+      
+    </section>
+    <section class="section" id="s6">
+      <h2>💡 execute_tools -&amp;gt; revise</h2>
+      <p class="lead">builder.</p>
+      <p>builder.add_edge(&quot;execute_tools&quot;, &quot;revise&quot;)</p>
+      
+    </section>
+    <section class="section" id="s7">
+      <h2>🛠️ Define looping logic:</h2>
+      <p class="lead">def event_loop(state: List[BaseMessage]) -&amp;gt; str:</p>
+      <p>def event_loop(state: List[BaseMessage]) -&gt; str:</p>
+      
+    </section>
+    <section class="section" id="s8">
+      <h2>📈 in our case, we&amp;#x27;ll just stop after N plans</h2>
+      <p class="lead">num_iterations = _get_num_iterations(state)
+    if num_iterations &amp;gt; MAX_ITERATIONS:
+        retur</p>
+      <p>num_iterations = _get_num_iterations(state)
+    if num_iterations &gt; MAX_ITERATIONS:
+        return END
+    return &quot;execute_tools&quot;</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s9">
+      <h2>🎯 revise -&amp;gt; execute_tools OR end</h2>
+      <p class="lead">builder.</p>
+      <div class="code-block"><pre>builder.add_conditional_edges(&amp;quot;revise&amp;quot;, event_loop)
+builder.set_entry_point(&amp;quot;draft&amp;quot;)
+graph = builder.compile()</pre></div>
+<p>This agent can effectively use explicit reflections and  web-based citations to improve the quality of the final response. It only pursues one fixed trajectory, however, so if it makes a misstep, that error can impact subsequent decisions.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s10">
+      <h2>🔬 Language Agent Tree Search</h2>
+      <p class="lead">Links: (Python, Youtube)
+
+Language Agent Tree Search (LATS), by Zhou, et.</p>
+      <p>Links: (Python, Youtube)</p>
+<p>Language Agent Tree Search (LATS), by Zhou, et. al, is a general LLM agent search algorithm that combines reflection/evaluation and search (specifically Monte-Carlo trees search) to achieve better overall task performance compared to similar techniques like ReACT, Reflexion, or even Tree of Thoughts. It adopts a standard reinforcement learning (RL) task framing, replacing the RL agents, value functions, and optimizer all with calls to an LLM. This is meant to help the agent adapt and problem solve for complex tasks, avoiding getting stuck in repetitive loops.</p>
+<p>The search process is outlined in the diagram below:</p>
+<p>The search has four main steps:</p>
+<div class="card"><ul><li>Select: pick the best next actions based on the aggregate rewards from step (2) below. Either respond (if a solution is found or the max search depth is reached) or continue searching.</li><li>Expand and simulate: generate N (5 in our case) potential actions to take and execute them in parallel.</li><li>Reflect + evaluate: observe the outcomes of these actions and score the decisions based on reflection (and possibly external feedback)</li><li>Backpropagate: update the scores of the root trajectories based on the outcomes.</li></ul></div>
+<p>If the agent has a tight feedback loop (through high quality environment rewards or reliable reflection scores), the search is able to accurately distinguish between different action trajectories and pick the best path. The final trajectory can then be saved to external memory (or used for model fine-tuning) to improve the model in the future.</p>
+<p>The &quot;selection&quot; step picks the node with the highest upper confidence bound (UCT), which just balances the expected reward (the first term) with an incentive to explore new paths (the second term).</p>
+<p>\( UCT = \frac{\text{value}}{\text{visits}} + c \sqrt{\frac{\ln(\text{parent.visits})}{\text{visits}}}\)</p>
+<p>Check out the code to see how it&#x27;s implemented. In our LangGraph implementation, we put generation + reflection steps in a single node each, and check the tree state on each loop to see if the task is solved. The (abbreviated) graph definition looks something like below:</p>
+<p>`from langgraph.graph import END, StateGraph</p>
+<p>class Node:
+    def __init__(
+        self,
+        messages: List[BaseMessage],
+        reflection: Reflection,
+        parent: Optional[Node] = None,
+    ):
+        self.messages = messages
+        self.parent = parent
+        self.children = []
+        self.value = 0
+        self.visits = 0</p>
+      
+    </section>
+    <section class="section" id="s11">
+      <h2>📝 Additional methods are defined here. Check the code for more!</h2>
+      <p class="lead">class TreeState(TypedDict):</p>
+      <p>class TreeState(TypedDict):</p>
+      
+    </section>
+    <section class="section" id="s12">
+      <h2>🧪 The full tree</h2>
+      <p class="lead">root: Node</p>
+      
+      
+    </section>
+    <section class="section" id="s13">
+      <h2>🌐 The original input</h2>
+      <p class="lead">input: str
+
+def should_loop(state: TreeState):
+    &amp;quot;&amp;quot;&amp;quot;Determine whether to continue the tree search.</p>
+      <p>def should_loop(state: TreeState):
+    &quot;&quot;&quot;Determine whether to continue the tree search.&quot;&quot;&quot;
+    root = state[&quot;root&quot;]
+    if root.is_solved:
+        return END
+    if root.height &gt; 5:
+        return END
+    return &quot;expand&quot;</p>
+<p>builder = StateGraph(TreeState)
+builder.add_node(&quot;start&quot;, generate_initial_response)
+builder.add_node(&quot;expand&quot;, expand)
+builder.set_entry_point(&quot;start&quot;)</p>
+<p>builder.add_conditional_edges(
+    &quot;start&quot;,</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s14">
+      <h2>📦 Either expand/rollout or finish</h2>
+      <p class="lead">should_loop,
+)
+builder.</p>
+      <p>should_loop,
+)
+builder.add_conditional_edges(
+    &quot;expand&quot;,</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s15">
+      <h2>🔄 Either continue to rollout or finish</h2>
+      <p class="lead">should_loop,
+)
+
+graph = builder.</p>
+      <p>graph = builder.compile()`</p>
+<p>Once you&#x27;ve created the basic outline, it&#x27;s easy to expand to other tasks!  For instance, this technique would suit code generation tasks well, where you the agent can write explicit unit tests and score trajectories based on test quality.</p>
+<p>LATS unifies the reasoning, planning, and reflection  components of other agent architectures, such as Reflexion, Tree of Thoughts, and plan-and-execute agents. LATS also from the backpropagation of reflective and environment-based feedback for an improved search process. While it can be sensitive to the reward scores, the general algorithm can be flexibly applied to a variety of tasks.</p>
+<p>Comparison of LATS with other agent architectures</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s16">
+      <h2>🎨 Video Tutorial</h2>
+      <p class="lead"></p>
+      
+      
+    </section>
+    <section class="section" id="s17">
+      <h2>🏆 Conclusion</h2>
+      <p class="lead">Thanks for reading! All of these examples can be found in the LangGraph repository, and we will port these to LangGraphJS soon (maybe by the time you read this post).</p>
+      <p>Thanks for reading! All of these examples can be found in the LangGraph repository, and we will port these to LangGraphJS soon (maybe by the time you read this post).</p>
+<p>All of the techniques above leverage additional LLM inference to increase the likelihood of generating a higher quality output, or of responding correctly to a more complex reasoning task. While this takes extra time, it can be appropriate when output quality matters more than response time, and if you save the trajectories to memory (or as fine-tuning data), you can update the model to avoid repeat mistakes in the future.</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+    <section class="section" id="s18">
+      <h2>🔑 Related content</h2>
+      <p class="lead">Tutorials &amp;amp; How-Tos
+
+#### How we built LangChain’s GTM Agent
+
+The LangChain TeamMarch 9, 202611min[](/blog/how-we-built-langchains-gtm-agent)Deep AgentsAgent ArchitectureTutorials &amp;amp; How-Tos
+
+#</p>
+      <p>Tutorials &amp; How-Tos</p>
+<p>#### How we built LangChain’s GTM Agent</p>
+<p>The LangChain TeamMarch 9, 202611min[](/blog/how-we-built-langchains-gtm-agent)Deep AgentsAgent ArchitectureTutorials &amp; How-Tos</p>
+<p>#### Evaluating Deep Agents: Our Learnings</p>
+<p>The LangChain TeamDecember 3, 20259min[](/blog/evaluating-deep-agents-our-learnings)Company AnnouncementsTutorials &amp; How-Tos</p>
+<p>#### Why We Rebuilt LangChain’s Chatbot and What We Learned</p>
+<p>The LangChain TeamNovember 5, 202513min[](/blog/rebuilding-chat-langchain)Sign up for our newsletter to stay up to date</p>
+<p>Thank you! Your submission has been received!Oops! Something went wrong while submitting the form.</p>
+      <div class="flow"><div class="flow-step green">输入</div><div class="flow-arrow">→</div><div class="flow-step teal">处理</div><div class="flow-arrow">→</div><div class="flow-step blue">推理</div><div class="flow-arrow">→</div><div class="flow-step purple">输出</div></div>
+    </section>
+    <section class="section" id="s19">
+      <h2>📋 See what your agent is really doing</h2>
+      <p class="lead">LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+      <p>LangSmith, our agent engineering platform, helps developers debug every agent decision, eval changes, and deploy in one click.</p>
+<p>](https://smith.langchain.com/)[Get a demo</p>
+<p>](/contact-sales)</p>
+      <div class="compare-grid"><div class="compare-card old"><h4>❌ 传统方式</h4><p>手动配置，灵活性有限</p></div><div class="compare-card new"><h4>✅ 改进方案</h4><p>自动化处理，更好的集成和扩展性</p></div></div>
+    </section>
+  </div>
+  <footer class="footer">
+    <p>深度解析系列 · LangChain 技术博客精读</p>
+    <div class="links">
+      <a href="../">返回知识库 Hub</a>
+      <a href="https://www.langchain.com/blog/reflection-agents" target="_blank">阅读原文</a>
+    </div>
+  </footer>
+</body>
+</html>

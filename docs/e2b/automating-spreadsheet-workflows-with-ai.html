@@ -1,0 +1,296 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>深度解析：Manaflow - 用 AI 自动化电子表格工作流</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{
+--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;
+--border:#e2e8f0;--radius:14px;
+--pink:#db2777;--rose:#f43f5e;--fuchsia:#a855f7;
+--green:#10b981;--blue:#3b82f6;--amber:#f59e0b;--teal:#14b8a6;--red:#ef4444;
+--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',sans-serif;
+}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+.nav{position:sticky;top:0;z-index:100;backdrop-filter:blur(20px);background:rgba(15,23,42,.85);border-bottom:1px solid rgba(255,255,255,.08);padding:0 2rem;height:56px;display:flex;align-items:center;justify-content:space-between}
+.nav a{color:#f1f5f9;text-decoration:none;font-size:.9rem;font-weight:500}
+.nav-brand{font-weight:700;font-size:1.05rem;color:#db2777!important}
+.hero{background:linear-gradient(135deg,#0f172a 0%,#831843 50%,#db2777 100%);padding:5rem 2rem 4rem;color:#fff;text-align:center}
+.hero h1{font-size:2.6rem;font-weight:800;margin-bottom:1rem;line-height:1.2}
+.hero .subtitle{font-size:1.15rem;color:rgba(255,255,255,.8);max-width:700px;margin:0 auto 2.5rem}
+.hero-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;max-width:800px;margin:0 auto}
+.stat-card{background:rgba(255,255,255,.1);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:1.2rem}
+.stat-card .num{font-size:1.8rem;font-weight:800;color:#f9a8d4}
+.stat-card .label{font-size:.8rem;color:rgba(255,255,255,.7);margin-top:.25rem}
+.page{max-width:900px;margin:0 auto;padding:2rem}
+.toc{margin-bottom:3rem}
+.toc h2{font-size:1.1rem;font-weight:700;margin-bottom:1rem;color:var(--text-secondary)}
+.toc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem}
+.toc-grid a{display:block;padding:.75rem 1rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);text-decoration:none;color:var(--text);font-size:.85rem;font-weight:500;transition:all .2s}
+.toc-grid a:hover{border-color:var(--pink);color:var(--pink);transform:translateY(-2px);box-shadow:0 4px 12px rgba(219,39,119,.1)}
+.toc-grid a span{color:var(--pink);font-weight:700;font-family:var(--mono);margin-right:.5rem}
+.section{margin-bottom:3rem}
+.section h2{font-size:1.6rem;font-weight:700;margin-bottom:.5rem;padding-bottom:.75rem;border-bottom:2px solid var(--border)}
+.lead{color:var(--text-secondary);font-size:.95rem;margin-bottom:1.5rem}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;margin-bottom:1rem}
+.card h3{font-size:1.05rem;font-weight:600;margin-bottom:.5rem}
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1rem 0}
+.compare-card{background:var(--surface);border-radius:var(--radius);padding:1.25rem;border:2px solid var(--border)}
+.compare-card.old{border-color:#fca5a5;background:#fef2f2}
+.compare-card.new{border-color:#86efac;background:#f0fdf4}
+.compare-card h4{font-size:.95rem;font-weight:600;margin-bottom:.5rem}
+.chart{margin:1.5rem 0}
+.chart-row{display:flex;align-items:center;margin-bottom:.6rem}
+.chart-label{width:160px;font-size:.82rem;font-weight:500;flex-shrink:0}
+.chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:28px;overflow:hidden}
+.chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;padding:0 10px;font-size:.75rem;font-weight:600;color:#fff;transition:width .6s ease}
+.chart-bar.pink{background:linear-gradient(90deg,#db2777,#f43f5e)}
+.chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+.chart-bar.green{background:linear-gradient(90deg,#10b981,#34d399)}
+.chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+.chart-bar.teal{background:linear-gradient(90deg,#14b8a6,#2dd4bf)}
+.chart-bar.fuchsia{background:linear-gradient(90deg,#a855f7,#c084fc)}
+.timeline{position:relative;padding-left:2rem;margin:1.5rem 0}
+.timeline::before{content:'';position:absolute;left:7px;top:0;bottom:0;width:3px;background:linear-gradient(to bottom,#db2777,#a855f7,#3b82f6)}
+.tl-item{position:relative;margin-bottom:1.5rem;padding-left:1rem}
+.tl-dot{position:absolute;left:-2rem;top:4px;width:16px;height:16px;border-radius:50%;border:3px solid #db2777;background:#fff}
+.tl-item:nth-child(2) .tl-dot{border-color:#f43f5e}
+.tl-item:nth-child(3) .tl-dot{border-color:#a855f7}
+.tl-item:nth-child(4) .tl-dot{border-color:#3b82f6}
+.tl-item:nth-child(5) .tl-dot{border-color:#10b981}
+.tl-phase{font-weight:700;font-size:.95rem;margin-bottom:.25rem}
+.tl-desc{font-size:.88rem;color:var(--text-secondary)}
+.flow{display:flex;align-items:center;gap:.5rem;margin:1.5rem 0;flex-wrap:wrap}
+.flow-step{background:var(--surface);border:2px solid var(--border);border-radius:var(--radius);padding:.75rem 1.25rem;font-size:.85rem;font-weight:600}
+.flow-step.pink{background:#fdf2f8;border-color:#db2777;color:#db2777}
+.flow-arrow{color:var(--text-secondary);font-weight:700;font-size:1.2rem}
+.block-q{border-left:4px solid #db2777;background:#fdf2f8;padding:1.25rem 1.5rem;border-radius:0 var(--radius) var(--radius) 0;margin:1.5rem 0;font-style:italic;color:#831843}
+.badge{display:inline-block;padding:.2rem .65rem;border-radius:20px;font-size:.75rem;font-weight:600;margin-right:.35rem}
+.badge-pink{background:#fce7f3;color:#be185d}
+.badge-green{background:#d1fae5;color:#065f46}
+.badge-blue{background:#dbeafe;color:#1e40af}
+.badge-amber{background:#fef3c7;color:#92400e}
+.agent-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1rem 0}
+.footer{background:#0f172a;color:#94a3b8;padding:3rem 2rem;text-align:center;margin-top:4rem}
+.footer a{color:#db2777;text-decoration:none}
+.footer a:hover{text-decoration:underline}
+.footer p{margin:.5rem 0;font-size:.85rem}
+@media(max-width:768px){
+.hero h1{font-size:1.8rem}
+.hero-stats{grid-template-columns:repeat(2,1fr)}
+.toc-grid{grid-template-columns:1fr}
+.compare-grid,.agent-grid{grid-template-columns:1fr}
+.chart-label{width:120px;font-size:.75rem}
+.flow{flex-direction:column;gap:8px}
+.flow-arrow{transform:rotate(90deg)}
+}
+</style>
+</head>
+<body>
+<nav class="nav">
+  <a class="nav-brand" href="../">E2B Blog Hub</a>
+  <a href="../">← Back to Hub</a>
+</nav>
+
+<header class="hero">
+  <h1>Manaflow：用 AI 自动化电子表格工作流</h1>
+  <p class="subtitle">YC 创业公司 Manaflow 通过 Notion-like UI 和 E2B Sandbox，让非技术用户用自然语言驱动 AI Agent 自动化日常重复办公任务</p>
+  <div class="hero-stats">
+    <div class="stat-card"><div class="num">200+</div><div class="label">调研的企业管理者</div></div>
+    <div class="stat-card"><div class="num">SMB</div><div class="label">目标客户：中小企业</div></div>
+    <div class="stat-card"><div class="num">Cron</div><div class="label">支持定时任务调度</div></div>
+    <div class="stat-card"><div class="num">E2B</div><div class="label">云端代码执行引擎</div></div>
+  </div>
+</header>
+
+<div class="page">
+  <nav class="toc">
+    <h2>目录导航</h2>
+    <div class="toc-grid">
+      <a href="#s1"><span>01</span>产品背景</a>
+      <a href="#s2"><span>02</span>产品架构</a>
+      <a href="#s3"><span>03</span>技术栈选型</a>
+      <a href="#s4"><span>04</span>E2B 集成</a>
+      <a href="#s5"><span>05</span>未来愿景</a>
+      <a href="#s6"><span>06</span>核心洞察</a>
+    </div>
+  </nav>
+
+  <section class="section" id="s1">
+    <h2>📊 产品背景与痛点</h2>
+    <p class="lead">Manaflow 源于与 200+ 企业管理者的深度对话，发现中小企业深陷手动电子表格工作流之中。</p>
+    <div class="compare-grid">
+      <div class="compare-card old">
+        <h4>❌ 传统痛点</h4>
+        <p>手动、耗时、重复的电子表格操作；数据分析全靠人工；无法规模化扩展；人为错误频发</p>
+      </div>
+      <div class="compare-card new">
+        <h4>✅ Manaflow 方案</h4>
+        <p>自然语言编程 AI Agent；Notion-like UI 零代码操作；Cron 定时执行；人机协同 checkpoint 审核</p>
+      </div>
+    </div>
+    <div class="block-q">
+      <p>"全美有数百万白领工作者，每天打开电子表格，每列代表任务的一个步骤，每行代表任务的一个实例。"</p>
+    </div>
+  </section>
+
+  <section class="section" id="s2">
+    <h2>⚙️ 产品架构与工作原理</h2>
+    <p class="lead">Manasheet 作为核心界面，列代表工作流步骤，行代表任务实例，内部依赖图决定执行顺序。</p>
+    <div class="flow">
+      <div class="flow-step">自然语言定义任务</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step pink">Manasheet 依赖图</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">AI Agent 调用 Tools</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step pink">E2B Sandbox 执行</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">结果填充到表格</div>
+    </div>
+    <div class="card">
+      <h3>关键特性</h3>
+      <p><span class="badge badge-pink">自定义 Tools</span> <span class="badge badge-blue">Dependency Graph</span> <span class="badge badge-green">Human Checkpoint</span> <span class="badge badge-amber">Cron 调度</span></p>
+      <p style="margin-top:.75rem;font-size:.9rem;color:var(--text-secondary)">用户可以创建和调用自定义工具（Tools），AI Agent 通过 dependency graph 确定每列的执行顺序，并在关键步骤设置 checkpoint 供人工审核。</p>
+    </div>
+    <div class="agent-grid">
+      <div class="card">
+        <h3>集成能力</h3>
+        <p style="font-size:.88rem">Google 搜索、Stripe 发票处理、各类已认证平台 API，实现多样化业务操作的无缝自动化。</p>
+      </div>
+      <div class="card">
+        <h3>AI Agent 角色</h3>
+        <p style="font-size:.88rem">管理者可编程 AI Agent 自动填充数据到 cells 并执行 Manasheet，支持 Cron 定时或按钮触发。</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="s3">
+    <h2>🛠️ 技术栈选型</h2>
+    <p class="lead">TypeScript 全栈 + Postgres + PartyKit + E2B，统一用户交互与代码执行环境。</p>
+    <div class="chart">
+      <div class="chart-row">
+        <div class="chart-label">TypeScript / Next.js</div>
+        <div class="chart-bar-wrap"><div class="chart-bar pink" style="width:90%">前端 + 后端</div></div>
+      </div>
+      <div class="chart-row">
+        <div class="chart-label">Postgres</div>
+        <div class="chart-bar-wrap"><div class="chart-bar blue" style="width:75%">每个 Manasheet 一张表</div></div>
+      </div>
+      <div class="chart-row">
+        <div class="chart-label">PartyKit</div>
+        <div class="chart-bar-wrap"><div class="chart-bar teal" style="width:60%">Durable Objects</div></div>
+      </div>
+      <div class="chart-row">
+        <div class="chart-label">E2B Sandbox</div>
+        <div class="chart-bar-wrap"><div class="chart-bar fuchsia" style="width:85%">Code Interpreter 执行</div></div>
+      </div>
+    </div>
+    <div class="card">
+      <h3>架构设计决策</h3>
+      <p style="font-size:.9rem">每个 Manasheet 由 Postgres 表支撑，执行时生成 Durable Objects 在 E2B Sandbox 中运行代码。这种设计统一了用户端 code interpreter session 与每个 cell 的执行环境。</p>
+    </div>
+  </section>
+
+  <section class="section" id="s4">
+    <h2>🔒 E2B 集成与选型过程</h2>
+    <p class="lead">从浏览器端 Pyodide/StackBlitz 迁移到云端 E2B，解决依赖安装、CORS、计算密集等核心限制。</p>
+    <div class="block-q">
+      <p>"我们发现 E2B 的启动时间比我们尝试过的所有方案都要快得多。"</p>
+    </div>
+    <div class="timeline">
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-phase">初始方案：浏览器端执行</div>
+        <div class="tl-desc">使用 Pyodide（Python）和 StackBlitz（JS/TS）在用户浏览器中运行代码</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-phase">瓶颈出现</div>
+        <div class="tl-desc">用户需要安装依赖、执行计算密集任务、定时运行、解决 CORS 问题</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-phase">评估替代方案</div>
+        <div class="tl-desc">考察 Fly.io Machines、Modal、Google Cloud Run、自建 Jupyter 集群</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-phase">选择 E2B</div>
+        <div class="tl-desc">启动速度最快 + @e2b/code-interpreter 包易用性极高 = "No-brainer"</div>
+      </div>
+    </div>
+    <div class="compare-grid">
+      <div class="compare-card old">
+        <h4>其他方案的局限</h4>
+        <p>Fly.io / Modal / Cloud Run 启动慢；自建 Jupyter 运维成本高</p>
+      </div>
+      <div class="compare-card new">
+        <h4>E2B 的优势</h4>
+        <p>最快启动时间；code-interpreter SDK 即插即用；安全隔离的云端沙箱</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="s5">
+    <h2>🔮 未来愿景</h2>
+    <p class="lead">从内部工具自动化到 AI Agent 驱动的企业运营平台。</p>
+    <div class="timeline">
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-phase">短期：知识工作者赋能</div>
+        <div class="tl-desc">让非技术用户无需编码即可自动化自己的任务</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-phase">中期：运营管理革新</div>
+        <div class="tl-desc">运营管理者从协调人力转变为指挥 AI Agent</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-phase">长期：内部工具消亡</div>
+        <div class="tl-desc">AI Agent 取代传统内部工具，在统一平台上端到端自动化业务流程</div>
+      </div>
+      <div class="tl-item">
+        <div class="tl-dot"></div>
+        <div class="tl-phase">终极目标</div>
+        <div class="tl-desc">成为 Foundation Model 之上的基础设施层，让企业无缝集成最先进的 AI 模型</div>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="s6">
+    <h2>💡 核心洞察总结</h2>
+    <p class="lead">从 Manaflow 的案例中，我们可以提取出 AI Agent 自动化领域的关键启示。</p>
+    <div class="agent-grid">
+      <div class="card">
+        <h3>自然语言即编程</h3>
+        <p style="font-size:.88rem">非技术用户通过自然语言描述任务，消除编码门槛，实现"每个人都是自动化工程师"的愿景。</p>
+      </div>
+      <div class="card">
+        <h3>人机协同设计</h3>
+        <p style="font-size:.88rem">Checkpoint 机制保证人类在关键节点的干预权，平衡自动化效率与控制需求。</p>
+      </div>
+      <div class="card">
+        <h3>云端沙箱化执行</h3>
+        <p style="font-size:.88rem">E2B 提供安全隔离的代码执行环境，解决本地执行的安全风险和性能瓶颈。</p>
+      </div>
+      <div class="card">
+        <h3>SMB 市场机遇</h3>
+        <p style="font-size:.88rem">中小企业对自动化的需求巨大但技术能力不足，AI Agent 可以弥合这一鸿沟。</p>
+      </div>
+    </div>
+  </section>
+</div>
+
+<footer class="footer">
+  <p><a href="../">← 返回 E2B Blog Hub</a></p>
+  <p>原文：<a href="https://e2b.dev/blog/automating-spreadsheet-workflows-with-ai" target="_blank">Automating spreadsheet workflows with AI (Manaflow)</a></p>
+  <p style="margin-top:1rem;font-size:.8rem;color:#475569">基于 E2B Blog 原文深度解析 · 仅供学习参考</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,142 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>深度解析：本地运行 AI Agents 的局限性</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--pink:#db2777;--purple:#6366f1;--teal:#14b8a6;--amber:#f59e0b;--green:#10b981;--red:#ef4444;--blue:#3b82f6;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',sans-serif}
+*{margin:0;padding:0;box-sizing:border-box}body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+.nav{position:sticky;top:0;z-index:100;background:rgba(15,23,42,.92);backdrop-filter:blur(12px);padding:12px 24px;display:flex;justify-content:space-between;align-items:center}.nav a{color:#f1f5f9;text-decoration:none;font-weight:600;font-size:15px}.nav a:hover{color:var(--pink)}
+.hero{background:linear-gradient(135deg,#0f172a 0%,#831843 50%,#db2777 100%);color:#fff;padding:80px 24px 60px;text-align:center}.hero h1{font-size:clamp(1.8rem,4vw,2.6rem);font-weight:800;margin-bottom:16px;line-height:1.3}.hero .subtitle{font-size:1.1rem;opacity:.85;max-width:700px;margin:0 auto 32px}
+.hero-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;max-width:800px;margin:0 auto}.stat-card{background:rgba(255,255,255,.1);border-radius:12px;padding:20px 12px;backdrop-filter:blur(8px)}.stat-card .num{font-size:1.8rem;font-weight:800;color:#fbcfe8}.stat-card .label{font-size:.8rem;opacity:.75;margin-top:4px}
+.page{max-width:900px;margin:0 auto;padding:32px 24px}
+.toc{margin-bottom:40px}.toc h2{font-size:1.2rem;margin-bottom:16px;color:var(--text-secondary)}.toc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}.toc-grid a{display:block;padding:10px 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);text-decoration:none;font-size:.9rem;font-weight:500;transition:all .2s}.toc-grid a:hover{border-color:var(--pink);color:var(--pink)}
+.section{margin-bottom:48px}.section h2{font-size:1.5rem;font-weight:700;margin-bottom:8px}.lead{color:var(--text-secondary);margin-bottom:20px;font-size:.95rem}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}.card h3{font-size:1.1rem;font-weight:600;margin-bottom:8px}
+.fail-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:16px;margin:16px 0}
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}.compare-card{border-radius:var(--radius);padding:20px;border:2px solid}.compare-card.old{border-color:var(--red);background:#fef2f2}.compare-card.new{border-color:var(--green);background:#f0fdf4}.compare-card h4{font-size:1rem;font-weight:600;margin-bottom:8px}
+.chart{margin:20px 0}.chart-row{display:flex;align-items:center;margin-bottom:10px}.chart-label{width:160px;font-size:.85rem;font-weight:500;flex-shrink:0}.chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}.chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;padding:0 12px;font-size:.8rem;font-weight:600;color:#fff}.chart-bar.pink{background:linear-gradient(90deg,#db2777,#ec4899)}.chart-bar.purple{background:linear-gradient(90deg,#6366f1,#818cf8)}.chart-bar.teal{background:linear-gradient(90deg,#0d9488,#14b8a6)}.chart-bar.amber{background:linear-gradient(90deg,#d97706,#f59e0b)}.chart-bar.green{background:linear-gradient(90deg,#059669,#10b981)}.chart-bar.red{background:linear-gradient(90deg,#dc2626,#ef4444)}
+.flow{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:20px 0}.flow-step{background:var(--surface);border:2px solid var(--border);border-radius:var(--radius);padding:14px 20px;font-weight:600;font-size:.9rem;text-align:center}.flow-step.pink{border-color:var(--pink);background:#fdf2f8;color:#9d174d}.flow-step.purple{border-color:var(--purple);background:#eef2ff;color:#4338ca}.flow-step.teal{border-color:var(--teal);background:#f0fdfa;color:#0f766e}.flow-arrow{font-size:1.4rem;color:var(--text-secondary)}
+.block-q{border-left:4px solid var(--pink);background:#fdf2f8;padding:16px 20px;border-radius:0 var(--radius) var(--radius) 0;margin:16px 0;font-style:italic;color:#831843}
+.badge{display:inline-block;padding:3px 10px;border-radius:20px;font-size:.75rem;font-weight:600}.badge-pink{background:#fce7f3;color:#9d174d}.badge-red{background:#fee2e2;color:#991b1b}.badge-green{background:#d1fae5;color:#065f46}.badge-amber{background:#fef3c7;color:#92400e}
+.footer{background:#0f172a;color:#94a3b8;padding:40px 24px;text-align:center;font-size:.85rem}.footer a{color:var(--pink);text-decoration:none}.footer a:hover{text-decoration:underline}
+@media(max-width:768px){.hero-stats{grid-template-columns:repeat(2,1fr)}.compare-grid,.fail-grid{grid-template-columns:1fr}.chart-label{width:120px;font-size:.78rem}.flow{flex-direction:column;gap:8px}.flow-arrow{transform:rotate(90deg)}.toc-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<nav class="nav"><a href="../">E2B 技术博客</a><a href="../">← 返回 Hub</a></nav>
+
+<header class="hero">
+<h1>本地运行 AI Agents 的局限性</h1>
+<p class="subtitle">分析在本地环境运行 AI Agent 面临的安全、扩展性、用户体验和会话管理四大挑战</p>
+<div class="hero-stats">
+<div class="stat-card"><div class="num">4</div><div class="label">核心局限性</div></div>
+<div class="stat-card"><div class="num">Docker</div><div class="label">常见但不完美</div></div>
+<div class="stat-card"><div class="num">5.7K+</div><div class="label">E2B GitHub Stars</div></div>
+<div class="stat-card"><div class="num">Cloud</div><div class="label">推荐方案</div></div>
+</div>
+</header>
+
+<div class="page">
+<nav class="toc"><h2>目录导航</h2>
+<div class="toc-grid">
+<a href="#s1">1. 安全与隔离</a>
+<a href="#s2">2. 用户体验</a>
+<a href="#s3">3. 扩展性</a>
+<a href="#s4">4. 会话管理</a>
+<a href="#s5">5. E2B 解决方案</a>
+</div>
+</nav>
+
+<section class="section" id="s1">
+<h2>🔒 安全与隔离</h2>
+<p class="lead">让 AI 工具在用户计算机上自主运行不可信的 LLM 生成代码是高风险行为。</p>
+
+<div class="chart">
+<h3 style="margin-bottom:12px">各类隔离方案安全性评估</h3>
+<div class="chart-row"><div class="chart-label">直接本地执行</div><div class="chart-bar-wrap"><div class="chart-bar red" style="width:15%">极低</div></div></div>
+<div class="chart-row"><div class="chart-label">Docker 容器</div><div class="chart-bar-wrap"><div class="chart-bar amber" style="width:50%">中等（不完全隔离）</div></div></div>
+<div class="chart-row"><div class="chart-label">传统 VM</div><div class="chart-bar-wrap"><div class="chart-bar teal" style="width:80%">高（但资源开销大）</div></div></div>
+<div class="chart-row"><div class="chart-label">Firecracker microVM</div><div class="chart-bar-wrap"><div class="chart-bar green" style="width:95%">极高（轻量+安全）</div></div></div>
+</div>
+
+<div class="block-q">
+<p>"Docker 容器（根据官方文档）存在提供不完全隔离的风险，无论是独立使用还是与内核漏洞结合时。"</p>
+</div>
+</section>
+
+<section class="section" id="s2">
+<h2>👤 用户体验</h2>
+<p class="lead">AI Agent 的构建方式从开发者中心转向需要考虑终端用户的体验。</p>
+
+<div class="compare-grid">
+<div class="compare-card old">
+<h4>❌ 本地部署体验</h4>
+<p>非技术用户难以本地安装应用，更不用说通过终端控制。移动端体验缺失。</p>
+</div>
+<div class="compare-card new">
+<h4>✅ 浏览器应用体验</h4>
+<p>大多数有良好用户体验的 AI 助手都是浏览器应用，无需安装，跨平台可用。</p>
+</div>
+</div>
+</section>
+
+<section class="section" id="s3">
+<h2>📈 扩展性</h2>
+<p class="lead">服务数千用户时，每个 Agent 实例需要独立隔离环境，本地方案难以扩展。</p>
+
+<div class="flow">
+<div class="flow-step pink">用户 1</div>
+<div class="flow-step pink">用户 2</div>
+<div class="flow-step pink">用户 N</div>
+<div class="flow-arrow">→</div>
+<div class="flow-step purple">N 个容器/VM</div>
+<div class="flow-arrow">→</div>
+<div class="flow-step teal">资源管理挑战</div>
+</div>
+
+<div class="card">
+<p>一个 AI 平台如果服务成千上万的用户，每个用户开发自己的 AI 应用，就需要成千上万的隔离容器。本地方案在资源分配和管理上面临巨大挑战。</p>
+</div>
+</section>
+
+<section class="section" id="s4">
+<h2>⏱️ 会话管理</h2>
+<p class="lead">开发者需要确保用户可以在关闭应用后回到之前的工作状态，这要求长期运行的会话支持。</p>
+
+<div class="fail-grid">
+<div class="card">
+<h3><span class="badge badge-red">问题</span> 会话中断</h3>
+<p>本地容器在应用关闭后通常需要重新启动，用户上下文丢失</p>
+</div>
+<div class="card">
+<h3><span class="badge badge-green">方案</span> 持久化沙箱</h3>
+<p>E2B 的长期运行云环境让用户可以随时恢复工作状态</p>
+</div>
+</div>
+</section>
+
+<section class="section" id="s5">
+<h2>🌐 E2B 解决方案</h2>
+<p class="lead">E2B 提供专为 AI Agents 设计的安全云运行时，解决本地运行的所有局限性。</p>
+
+<div class="chart">
+<h3 style="margin-bottom:12px">E2B Sandbox 能力概览</h3>
+<div class="chart-row"><div class="chart-label">安全隔离</div><div class="chart-bar-wrap"><div class="chart-bar pink" style="width:95%">Firecracker microVM</div></div></div>
+<div class="chart-row"><div class="chart-label">LLM 兼容性</div><div class="chart-bar-wrap"><div class="chart-bar purple" style="width:100%">GPT / Claude / 开源 LLM</div></div></div>
+<div class="chart-row"><div class="chart-label">工具使用</div><div class="chart-bar-wrap"><div class="chart-bar teal" style="width:90%">如同本地使用</div></div></div>
+<div class="chart-row"><div class="chart-label">会话持久</div><div class="chart-bar-wrap"><div class="chart-bar amber" style="width:85%">长期运行支持</div></div></div>
+<div class="chart-row"><div class="chart-label">弹性扩展</div><div class="chart-bar-wrap"><div class="chart-bar green" style="width:90%">云端自动扩缩</div></div></div>
+</div>
+</section>
+</div>
+
+<footer class="footer">
+<p><a href="../">返回 Hub 首页</a> · 原文: <a href="https://e2b.dev/blog/limitations-of-running-ai-agents-locally" target="_blank">e2b.dev/blog/limitations-of-running-ai-agents-locally</a></p>
+<p style="margin-top:8px">E2B 技术博客深度解析系列</p>
+</footer>
+</body>
+</html>

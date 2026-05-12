@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>深度解析：E2B 不受 CVE-2026-31431 (Copy Fail) 影响</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--pink:#db2777;--purple:#6366f1;--teal:#14b8a6;--amber:#f59e0b;--green:#10b981;--red:#ef4444;--blue:#3b82f6;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',sans-serif}*{margin:0;padding:0;box-sizing:border-box}body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}.nav{position:sticky;top:0;z-index:100;background:rgba(15,23,42,.92);backdrop-filter:blur(12px);padding:12px 24px;display:flex;justify-content:space-between;align-items:center}.nav a{color:#f1f5f9;text-decoration:none;font-weight:600;font-size:15px}.nav a:hover{color:var(--pink)}.hero{background:linear-gradient(135deg,#0f172a 0%,#831843 50%,#db2777 100%);color:#fff;padding:80px 24px 60px;text-align:center}.hero h1{font-size:clamp(1.6rem,4vw,2.4rem);font-weight:800;margin-bottom:16px;line-height:1.3}.hero .subtitle{font-size:1.1rem;opacity:.85;max-width:700px;margin:0 auto 32px}.hero-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;max-width:800px;margin:0 auto}.stat-card{background:rgba(255,255,255,.1);border-radius:12px;padding:20px 12px;backdrop-filter:blur(8px)}.stat-card .num{font-size:1.5rem;font-weight:800;color:#fbcfe8}.stat-card .label{font-size:.8rem;opacity:.75;margin-top:4px}.page{max-width:900px;margin:0 auto;padding:32px 24px}.section{margin-bottom:48px}.section h2{font-size:1.5rem;font-weight:700;margin-bottom:8px}.lead{color:var(--text-secondary);margin-bottom:20px;font-size:.95rem}.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}.card h3{font-size:1.1rem;font-weight:600;margin-bottom:8px}.toc{margin-bottom:40px}.toc h2{font-size:1.2rem;margin-bottom:16px;color:var(--text-secondary)}.toc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}.toc-grid a{display:block;padding:10px 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);text-decoration:none;font-size:.9rem;font-weight:500;transition:all .2s}.toc-grid a:hover{border-color:var(--pink);color:var(--pink)}.code-block{background:#1e293b;color:#e2e8f0;padding:20px;border-radius:var(--radius);font-family:var(--mono);font-size:.85rem;overflow-x:auto;margin:16px 0;line-height:1.6}.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}.compare-card{border-radius:var(--radius);padding:20px;border:2px solid}.compare-card.old{border-color:var(--red);background:#fef2f2}.compare-card.new{border-color:var(--green);background:#f0fdf4}.compare-card h4{font-size:1rem;font-weight:600;margin-bottom:8px}.chart{margin:20px 0}.chart-row{display:flex;align-items:center;margin-bottom:10px}.chart-label{width:160px;font-size:.85rem;font-weight:500;flex-shrink:0}.chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}.chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;padding:0 12px;font-size:.8rem;font-weight:600;color:#fff}.chart-bar.pink{background:linear-gradient(90deg,#db2777,#ec4899)}.chart-bar.green{background:linear-gradient(90deg,#059669,#10b981)}.chart-bar.red{background:linear-gradient(90deg,#dc2626,#ef4444)}.chart-bar.amber{background:linear-gradient(90deg,#d97706,#f59e0b)}.block-q{border-left:4px solid var(--pink);background:#fdf2f8;padding:16px 20px;border-radius:0 var(--radius) var(--radius) 0;margin:16px 0;font-style:italic;color:#831843}.flow{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:20px 0}.flow-step{background:var(--surface);border:2px solid var(--border);border-radius:var(--radius);padding:14px 20px;font-weight:600;font-size:.9rem;text-align:center}.flow-step.pink{border-color:var(--pink);background:#fdf2f8;color:#9d174d}.flow-step.purple{border-color:var(--purple);background:#eef2ff;color:#4338ca}.flow-step.teal{border-color:var(--teal);background:#f0fdfa;color:#0f766e}.flow-arrow{font-size:1.4rem;color:var(--text-secondary)}.footer{background:#0f172a;color:#94a3b8;padding:40px 24px;text-align:center;font-size:.85rem}.footer a{color:var(--pink);text-decoration:none}.footer a:hover{text-decoration:underline}@media(max-width:768px){.hero-stats{grid-template-columns:repeat(2,1fr)}.compare-grid{grid-template-columns:1fr}.chart-label{width:120px;font-size:.78rem}.flow{flex-direction:column;gap:8px}.flow-arrow{transform:rotate(90deg)}.toc-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<nav class="nav"><a href="../">E2B 技术博客</a><a href="../">← 返回 Hub</a></nav>
+<header class="hero">
+<h1>E2B 不受 CVE-2026-31431 影响——设计使然</h1>
+<p class="subtitle">一个 732 字节的 PoC 脚本可确定性 root 2017 年以来所有 Linux 系统，但 E2B 的最小化内核从未编译受影响模块</p>
+<div class="hero-stats">
+<div class="stat-card"><div class="num">CVE</div><div class="label">2026-31431</div></div>
+<div class="stat-card"><div class="num">732B</div><div class="label">PoC 脚本大小</div></div>
+<div class="stat-card"><div class="num">4 字节</div><div class="label">确定性内核写入</div></div>
+<div class="stat-card"><div class="num">0</div><div class="label">E2B 受影响程度</div></div>
+</div>
+</header>
+<div class="page">
+<nav class="toc"><h2>目录导航</h2>
+<div class="toc-grid"><a href="#s1">1. 漏洞背景</a><a href="#s2">2. E2B 为何不受影响</a><a href="#s3">3. 容器方案需要问的三个问题</a><a href="#s4">4. 缓解措施</a></div>
+</nav>
+<section class="section" id="s1">
+<h2>🔍 漏洞背景</h2>
+<p class="lead">algif_aead 内核模块的 2017 年优化让 page cache 页面落入可写的 scatterlist，配合 splice() 实现确定性 4 字节内核写入。</p>
+<div class="flow">
+<div class="flow-step pink">AF_ALG socket</div>
+<div class="flow-arrow">→</div>
+<div class="flow-step purple">splice() + AEAD</div>
+<div class="flow-arrow">→</div>
+<div class="flow-step teal">4 字节 page cache 写入</div>
+<div class="flow-arrow">→</div>
+<div class="flow-step pink">修改 /usr/bin/su</div>
+<div class="flow-arrow">→</div>
+<div class="flow-step purple">Root!</div>
+</div>
+<div class="compare-grid">
+<div class="compare-card old"><h4>确定性攻击</h4><p>不依赖竞态条件或时序，100% 可复现。只需非特权用户即可执行。</p></div>
+<div class="compare-card new"><h4>隐蔽性极高</h4><p>腐蚀仅存在于内存中。磁盘取证显示原始文件——完全无痕迹。</p></div>
+</div>
+</section>
+<section class="section" id="s2">
+<h2>🛡️ E2B 为何不受影响</h2>
+<p class="lead">E2B 为 Agent 沙箱构建自定义最小化内核——从未启用受影响的 CONFIG_CRYPTO_USER 模块。</p>
+<div class="card">
+<h3>内核配置</h3>
+<div class="code-block"># CONFIG_CRYPTO_USER is not set
+# CONFIG_CRYPTO_USER_API_AEAD is not set</div>
+</div>
+<div class="block-q"><p>"更少的功能意味着更少的漏洞入口。安全和隔离在 99% 的日常中不会影响你。但那 1% 的影响超过其他 99% 的总和。这就是我们选择 VM 架构的原因。"</p></div>
+</section>
+<section class="section" id="s3">
+<h2>❓ 容器方案需要问的三个问题</h2>
+<p class="lead">如果你的沙箱提供商使用容器运行不可信代码，今天就问他们这些问题。</p>
+<div class="chart">
+<h3 style="margin-bottom:12px">沙箱方案安全对比</h3>
+<div class="chart-row"><div class="chart-label">容器 (未补丁)</div><div class="chart-bar-wrap"><div class="chart-bar red" style="width:15%">高风险</div></div></div>
+<div class="chart-row"><div class="chart-label">容器 (已补丁)</div><div class="chart-bar-wrap"><div class="chart-bar amber" style="width:50%">需加 seccomp</div></div></div>
+<div class="chart-row"><div class="chart-label">E2B (VM 架构)</div><div class="chart-bar-wrap"><div class="chart-bar green" style="width:100%">设计层面免疫</div></div></div>
+</div>
+</section>
+<section class="section" id="s4">
+<h2>🔧 缓解措施</h2>
+<p class="lead">如果你无法立即补丁，至少禁用 algif_aead 模块并阻止 AF_ALG socket 创建。</p>
+<div class="card">
+<h3>临时缓解</h3>
+<div class="code-block">echo "install algif_aead /bin/false" \
+  > /etc/modprobe.d/disable-algif.conf
+rmmod algif_aead 2>/dev/null || true</div>
+</div>
+<div class="card">
+<h3>永久修复</h3>
+<p>补丁到 mainline commit <code style="font-family:var(--mono);background:#f1f5f9;padding:2px 6px;border-radius:4px">a664bf3d603d</code>。Ubuntu 26.04 (Resolute) 及以后版本不受影响。容器平台应在补丁后仍然用 seccomp 阻止 AF_ALG socket 创建。</p>
+</div>
+</section>
+</div>
+<footer class="footer">
+<p><a href="../">返回 Hub 首页</a> · 原文: <a href="https://e2b.dev/blog/not-affected-by-copy-fail-heres-why" target="_blank">e2b.dev/blog/not-affected-by-copy-fail-heres-why</a></p>
+<p style="margin-top:8px">E2B 技术博客深度解析系列</p>
+</footer>
+</body>
+</html>

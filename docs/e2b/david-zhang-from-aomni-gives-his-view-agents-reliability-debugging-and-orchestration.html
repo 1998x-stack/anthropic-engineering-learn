@@ -1,0 +1,186 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>深度解析：Aomni 创始人 David Zhang 谈 Agent 可靠性与调试</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--pink:#db2777;--rose:#f43f5e;--fuchsia:#a855f7;--green:#10b981;--blue:#3b82f6;--amber:#f59e0b;--teal:#14b8a6;--red:#ef4444;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',sans-serif}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+.nav{position:sticky;top:0;z-index:100;backdrop-filter:blur(20px);background:rgba(15,23,42,.85);border-bottom:1px solid rgba(255,255,255,.08);padding:0 2rem;height:56px;display:flex;align-items:center;justify-content:space-between}
+.nav a{color:#f1f5f9;text-decoration:none;font-size:.9rem;font-weight:500}.nav-brand{font-weight:700;font-size:1.05rem;color:#db2777!important}
+.hero{background:linear-gradient(135deg,#0f172a 0%,#831843 50%,#db2777 100%);padding:5rem 2rem 4rem;color:#fff;text-align:center}
+.hero h1{font-size:2.4rem;font-weight:800;margin-bottom:1rem;line-height:1.2}
+.hero .subtitle{font-size:1.1rem;color:rgba(255,255,255,.8);max-width:700px;margin:0 auto 2.5rem}
+.hero-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;max-width:800px;margin:0 auto}
+.stat-card{background:rgba(255,255,255,.1);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:1.2rem}
+.stat-card .num{font-size:1.8rem;font-weight:800;color:#f9a8d4}.stat-card .label{font-size:.8rem;color:rgba(255,255,255,.7);margin-top:.25rem}
+.page{max-width:900px;margin:0 auto;padding:2rem}
+.toc{margin-bottom:3rem}.toc h2{font-size:1.1rem;font-weight:700;margin-bottom:1rem;color:var(--text-secondary)}
+.toc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem}
+.toc-grid a{display:block;padding:.75rem 1rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);text-decoration:none;color:var(--text);font-size:.85rem;font-weight:500;transition:all .2s}
+.toc-grid a:hover{border-color:var(--pink);color:var(--pink);transform:translateY(-2px)}
+.toc-grid a span{color:var(--pink);font-weight:700;font-family:var(--mono);margin-right:.5rem}
+.section{margin-bottom:3rem}.section h2{font-size:1.6rem;font-weight:700;margin-bottom:.5rem;padding-bottom:.75rem;border-bottom:2px solid var(--border)}
+.lead{color:var(--text-secondary);font-size:.95rem;margin-bottom:1.5rem}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;margin-bottom:1rem}.card h3{font-size:1.05rem;font-weight:600;margin-bottom:.5rem}
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1rem 0}
+.compare-card{background:var(--surface);border-radius:var(--radius);padding:1.25rem;border:2px solid var(--border)}
+.compare-card.old{border-color:#fca5a5;background:#fef2f2}.compare-card.new{border-color:#86efac;background:#f0fdf4}
+.compare-card h4{font-size:.95rem;font-weight:600;margin-bottom:.5rem}
+.chart{margin:1.5rem 0}.chart-row{display:flex;align-items:center;margin-bottom:.6rem}
+.chart-label{width:160px;font-size:.82rem;font-weight:500;flex-shrink:0}
+.chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:28px;overflow:hidden}
+.chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;padding:0 10px;font-size:.75rem;font-weight:600;color:#fff}
+.chart-bar.pink{background:linear-gradient(90deg,#db2777,#f43f5e)}.chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+.chart-bar.green{background:linear-gradient(90deg,#10b981,#34d399)}.chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+.chart-bar.red{background:linear-gradient(90deg,#ef4444,#f87171)}.chart-bar.teal{background:linear-gradient(90deg,#14b8a6,#2dd4bf)}
+.timeline{position:relative;padding-left:2rem;margin:1.5rem 0}
+.timeline::before{content:'';position:absolute;left:7px;top:0;bottom:0;width:3px;background:linear-gradient(to bottom,#db2777,#a855f7,#3b82f6)}
+.tl-item{position:relative;margin-bottom:1.5rem;padding-left:1rem}
+.tl-dot{position:absolute;left:-2rem;top:4px;width:16px;height:16px;border-radius:50%;border:3px solid #db2777;background:#fff}
+.tl-item:nth-child(2) .tl-dot{border-color:#f43f5e}.tl-item:nth-child(3) .tl-dot{border-color:#a855f7}.tl-item:nth-child(4) .tl-dot{border-color:#3b82f6}
+.tl-phase{font-weight:700;font-size:.95rem;margin-bottom:.25rem}.tl-desc{font-size:.88rem;color:var(--text-secondary)}
+.flow{display:flex;align-items:center;gap:.5rem;margin:1.5rem 0;flex-wrap:wrap}
+.flow-step{background:var(--surface);border:2px solid var(--border);border-radius:var(--radius);padding:.75rem 1.25rem;font-size:.85rem;font-weight:600}
+.flow-step.pink{background:#fdf2f8;border-color:#db2777;color:#db2777}.flow-arrow{color:var(--text-secondary);font-weight:700;font-size:1.2rem}
+.block-q{border-left:4px solid #db2777;background:#fdf2f8;padding:1.25rem 1.5rem;border-radius:0 var(--radius) var(--radius) 0;margin:1.5rem 0;font-style:italic;color:#831843}
+.badge{display:inline-block;padding:.2rem .65rem;border-radius:20px;font-size:.75rem;font-weight:600;margin-right:.35rem}
+.badge-pink{background:#fce7f3;color:#be185d}.badge-green{background:#d1fae5;color:#065f46}.badge-blue{background:#dbeafe;color:#1e40af}.badge-amber{background:#fef3c7;color:#92400e}.badge-red{background:#fee2e2;color:#991b1b}
+.agent-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1rem 0}
+.fail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin:1rem 0}
+.footer{background:#0f172a;color:#94a3b8;padding:3rem 2rem;text-align:center;margin-top:4rem}
+.footer a{color:#db2777;text-decoration:none}.footer a:hover{text-decoration:underline}.footer p{margin:.5rem 0;font-size:.85rem}
+@media(max-width:768px){.hero h1{font-size:1.8rem}.hero-stats{grid-template-columns:repeat(2,1fr)}.toc-grid{grid-template-columns:1fr}.compare-grid,.agent-grid,.fail-grid{grid-template-columns:1fr}.chart-label{width:120px;font-size:.75rem}.flow{flex-direction:column;gap:8px}.flow-arrow{transform:rotate(90deg)}}
+</style>
+</head>
+<body>
+<nav class="nav"><a class="nav-brand" href="../">E2B Blog Hub</a><a href="../">← Back to Hub</a></nav>
+
+<header class="hero">
+  <h1>David Zhang (Aomni)：Agent 可靠性、调试与编排</h1>
+  <p class="subtitle">Aomni 创始人分享商业智能 Agent 的可靠性之路 —— 通用性与可靠性的权衡，以及 time-travel debugging 的愿景</p>
+  <div class="hero-stats">
+    <div class="stat-card"><div class="num">15-20</div><div class="label">分钟/次研究任务</div></div>
+    <div class="stat-card"><div class="num">10+</div><div class="label">小时/周节省时间</div></div>
+    <div class="stat-card"><div class="num">99.9%</div><div class="label">企业级可靠性目标</div></div>
+    <div class="stat-card"><div class="num">3</div><div class="label">次/天免费使用</div></div>
+  </div>
+</header>
+
+<div class="page">
+  <nav class="toc"><h2>目录导航</h2>
+    <div class="toc-grid">
+      <a href="#s1"><span>01</span>Aomni 产品概述</a>
+      <a href="#s2"><span>02</span>可靠性权衡</a>
+      <a href="#s3"><span>03</span>调试与编排</a>
+      <a href="#s4"><span>04</span>用户沟通</a>
+      <a href="#s5"><span>05</span>核心洞察</a>
+    </div>
+  </nav>
+
+  <section class="section" id="s1">
+    <h2>🔍 Aomni：AI 商业情报 Agent</h2>
+    <p class="lead">Aomni 是少数专注于商业智能的 AI Agent，通过爬取网络和处理非结构化数据，完成销售研究和客户规划。</p>
+    <div class="flow">
+      <div class="flow-step">用户输入研究目标</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step pink">Agent 创建研究计划</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">逐步完成计划</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step pink">邮件发送结果</div>
+    </div>
+    <div class="card">
+      <h3>核心价值</h3>
+      <p style="font-size:.9rem">为销售代表节省每周 10+ 小时的客户调研和关系建设准备工作。重要的是，大多数 Aomni 用户并不在 AI 领域，完全不了解 Agent 技术。</p>
+    </div>
+  </section>
+
+  <section class="section" id="s2">
+    <h2>⚖️ 通用性 vs 可靠性</h2>
+    <p class="lead">David 指出 Agent 领域存在核心权衡：通用性越高，可靠性越低。企业客户需要 99.9% 的可靠性。</p>
+    <div class="chart">
+      <div class="chart-row"><div class="chart-label">通用 Agent (如 AutoGPT)</div><div class="chart-bar-wrap"><div class="chart-bar red" style="width:30%">可靠性 ~30%</div></div></div>
+      <div class="chart-row"><div class="chart-label">垂直化 Agent</div><div class="chart-bar-wrap"><div class="chart-bar amber" style="width:70%">可靠性 ~70%</div></div></div>
+      <div class="chart-row"><div class="chart-label">深度聚焦 Agent</div><div class="chart-bar-wrap"><div class="chart-bar green" style="width:90%">可靠性 ~90%</div></div></div>
+      <div class="chart-row"><div class="chart-label">企业级要求</div><div class="chart-bar-wrap"><div class="chart-bar pink" style="width:99%">99.9%</div></div></div>
+    </div>
+    <div class="block-q">
+      <p>"更通用的 Agent 项目会更不可靠。你当然可以让一个通用 Agent 帮你策划婚礼或写代码，但代价是大量 token 消耗和糟糕的可靠性。"</p>
+    </div>
+    <div class="compare-grid">
+      <div class="compare-card old">
+        <h4>通用 Agent 的问题</h4>
+        <p>Token 消耗巨大；可靠性低；调试困难；不适合企业场景</p>
+      </div>
+      <div class="compare-card new">
+        <h4>David 的策略</h4>
+        <p>限制 Agent 使用的工具数量；减少 Agent 需要做的决策数；聚焦特定 niche</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="s3">
+    <h2>🔧 Agent 调试与编排挑战</h2>
+    <p class="lead">David 强调不要用新框架"重新发明轮子"，而应该在现有技术之上构建 Agent 特定的能力。</p>
+    <div class="fail-grid">
+      <div class="card">
+        <h3>Inngest 用于编排</h3>
+        <p style="font-size:.85rem">用于 Agent 的编排和调试，但无法实现从特定步骤重试 Agent 的功能</p>
+      </div>
+      <div class="card">
+        <h3>Token 监控平台</h3>
+        <p style="font-size:.85rem">需要统一平台来监控 token 使用量和衡量 prompt 效果</p>
+      </div>
+      <div class="card">
+        <h3>Time-Travel Debugging</h3>
+        <p style="font-size:.85rem">从特定步骤恢复 Agent 执行 —— SW 工程中的常见概念，Agent 领域尚缺</p>
+      </div>
+    </div>
+    <div class="block-q">
+      <p>"Time-travel debugging（时间旅行调试）是软件工程中非常常见的概念。只是时间问题，就会有人在现有引擎之上加上 Agent 逻辑。"</p>
+    </div>
+    <div class="card">
+      <h3>Agent 运行可视化</h3>
+      <p style="font-size:.9rem">Aomni 的内部工具显示所有 Agent 运行记录（成功/失败），以及每次运行中 Agent 执行的每一步，包括失败原因。这种可视化对于诊断问题至关重要。</p>
+    </div>
+  </section>
+
+  <section class="section" id="s4">
+    <h2>💬 用户沟通策略</h2>
+    <p class="lead">Aomni 的 Agent 相对可靠，错误消息简单直接。关键是收集人类反馈和构建用例库。</p>
+    <div class="agent-grid">
+      <div class="card">
+        <h3>PostHog 集成</h3>
+        <p style="font-size:.88rem">正在集成 PostHog 进行产品分析，深入理解用户使用模式和问题点</p>
+      </div>
+      <div class="card">
+        <h3>用例仓库</h3>
+        <p style="font-size:.88rem">"创建一个包含良好示例的 Agent 用例仓库可能非常有用" —— Agent 生态的公共知识库</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="s5">
+    <h2>💡 核心洞察</h2>
+    <p class="lead">从 David Zhang 的视角总结 Agent 可靠性和调试的关键认知。</p>
+    <div class="agent-grid">
+      <div class="card"><h3>聚焦胜过通用</h3><p style="font-size:.88rem">未来 1-2 年内的新 Agent 将高度专注于特定垂直领域</p></div>
+      <div class="card"><h3>限制决策数量</h3><p style="font-size:.88rem">减少 Agent 的工具和决策点，每减少一步，可靠性显著提升</p></div>
+      <div class="card"><h3>不要重造轮子</h3><p style="font-size:.88rem">在 Inngest/Sentry 等成熟工具上构建，而非从零开始</p></div>
+      <div class="card"><h3>用户不关心技术</h3><p style="font-size:.88rem">大多数 Agent 终端用户不在 AI 领域，他们只看到"软件"该有的标准</p></div>
+    </div>
+  </section>
+</div>
+
+<footer class="footer">
+  <p><a href="../">← 返回 E2B Blog Hub</a></p>
+  <p>原文：<a href="https://e2b.dev/blog/david-zhang-from-aomni-gives-his-view-agents-reliability-debugging-and-orchestration" target="_blank">David Zhang from Aomni gives his view</a></p>
+  <p style="margin-top:1rem;font-size:.8rem;color:#475569">基于 E2B Blog 原文深度解析 · 仅供学习参考</p>
+</footer>
+</body>
+</html>

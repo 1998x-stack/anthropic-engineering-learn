@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>深度解析：Maige - 开源代码库 Copilot 与代码执行层</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}
+:root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--pink:#db2777;--rose:#f43f5e;--fuchsia:#a855f7;--green:#10b981;--blue:#3b82f6;--amber:#f59e0b;--teal:#14b8a6;--red:#ef4444;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',sans-serif}
+body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+.nav{position:sticky;top:0;z-index:100;backdrop-filter:blur(20px);background:rgba(15,23,42,.85);border-bottom:1px solid rgba(255,255,255,.08);padding:0 2rem;height:56px;display:flex;align-items:center;justify-content:space-between}
+.nav a{color:#f1f5f9;text-decoration:none;font-size:.9rem;font-weight:500}.nav-brand{font-weight:700;font-size:1.05rem;color:#db2777!important}
+.hero{background:linear-gradient(135deg,#0f172a 0%,#831843 50%,#db2777 100%);padding:5rem 2rem 4rem;color:#fff;text-align:center}
+.hero h1{font-size:2.5rem;font-weight:800;margin-bottom:1rem;line-height:1.2}
+.hero .subtitle{font-size:1.1rem;color:rgba(255,255,255,.8);max-width:700px;margin:0 auto 2.5rem}
+.hero-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;max-width:800px;margin:0 auto}
+.stat-card{background:rgba(255,255,255,.1);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:1.2rem}
+.stat-card .num{font-size:1.8rem;font-weight:800;color:#f9a8d4}.stat-card .label{font-size:.8rem;color:rgba(255,255,255,.7);margin-top:.25rem}
+.page{max-width:900px;margin:0 auto;padding:2rem}
+.toc{margin-bottom:3rem}.toc h2{font-size:1.1rem;font-weight:700;margin-bottom:1rem;color:var(--text-secondary)}
+.toc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem}
+.toc-grid a{display:block;padding:.75rem 1rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);text-decoration:none;color:var(--text);font-size:.85rem;font-weight:500;transition:all .2s}
+.toc-grid a:hover{border-color:var(--pink);color:var(--pink);transform:translateY(-2px)}
+.toc-grid a span{color:var(--pink);font-weight:700;font-family:var(--mono);margin-right:.5rem}
+.section{margin-bottom:3rem}.section h2{font-size:1.6rem;font-weight:700;margin-bottom:.5rem;padding-bottom:.75rem;border-bottom:2px solid var(--border)}
+.lead{color:var(--text-secondary);font-size:.95rem;margin-bottom:1.5rem}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;margin-bottom:1rem}
+.card h3{font-size:1.05rem;font-weight:600;margin-bottom:.5rem}
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1rem 0}
+.compare-card{background:var(--surface);border-radius:var(--radius);padding:1.25rem;border:2px solid var(--border)}
+.compare-card.old{border-color:#fca5a5;background:#fef2f2}.compare-card.new{border-color:#86efac;background:#f0fdf4}
+.compare-card h4{font-size:.95rem;font-weight:600;margin-bottom:.5rem}
+.chart{margin:1.5rem 0}.chart-row{display:flex;align-items:center;margin-bottom:.6rem}
+.chart-label{width:160px;font-size:.82rem;font-weight:500;flex-shrink:0}
+.chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:28px;overflow:hidden}
+.chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;padding:0 10px;font-size:.75rem;font-weight:600;color:#fff}
+.chart-bar.pink{background:linear-gradient(90deg,#db2777,#f43f5e)}.chart-bar.blue{background:linear-gradient(90deg,#3b82f6,#60a5fa)}
+.chart-bar.green{background:linear-gradient(90deg,#10b981,#34d399)}.chart-bar.amber{background:linear-gradient(90deg,#f59e0b,#fbbf24)}
+.chart-bar.teal{background:linear-gradient(90deg,#14b8a6,#2dd4bf)}.chart-bar.fuchsia{background:linear-gradient(90deg,#a855f7,#c084fc)}
+.timeline{position:relative;padding-left:2rem;margin:1.5rem 0}
+.timeline::before{content:'';position:absolute;left:7px;top:0;bottom:0;width:3px;background:linear-gradient(to bottom,#db2777,#a855f7,#3b82f6)}
+.tl-item{position:relative;margin-bottom:1.5rem;padding-left:1rem}
+.tl-dot{position:absolute;left:-2rem;top:4px;width:16px;height:16px;border-radius:50%;border:3px solid #db2777;background:#fff}
+.tl-item:nth-child(2) .tl-dot{border-color:#f43f5e}.tl-item:nth-child(3) .tl-dot{border-color:#a855f7}
+.tl-item:nth-child(4) .tl-dot{border-color:#3b82f6}.tl-item:nth-child(5) .tl-dot{border-color:#10b981}
+.tl-phase{font-weight:700;font-size:.95rem;margin-bottom:.25rem}
+.tl-desc{font-size:.88rem;color:var(--text-secondary)}
+.flow{display:flex;align-items:center;gap:.5rem;margin:1.5rem 0;flex-wrap:wrap}
+.flow-step{background:var(--surface);border:2px solid var(--border);border-radius:var(--radius);padding:.75rem 1.25rem;font-size:.85rem;font-weight:600}
+.flow-step.pink{background:#fdf2f8;border-color:#db2777;color:#db2777}
+.flow-arrow{color:var(--text-secondary);font-weight:700;font-size:1.2rem}
+.block-q{border-left:4px solid #db2777;background:#fdf2f8;padding:1.25rem 1.5rem;border-radius:0 var(--radius) var(--radius) 0;margin:1.5rem 0;font-style:italic;color:#831843}
+.badge{display:inline-block;padding:.2rem .65rem;border-radius:20px;font-size:.75rem;font-weight:600;margin-right:.35rem}
+.badge-pink{background:#fce7f3;color:#be185d}.badge-green{background:#d1fae5;color:#065f46}.badge-blue{background:#dbeafe;color:#1e40af}.badge-amber{background:#fef3c7;color:#92400e}
+.agent-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1rem 0}
+.fail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin:1rem 0}
+.footer{background:#0f172a;color:#94a3b8;padding:3rem 2rem;text-align:center;margin-top:4rem}
+.footer a{color:#db2777;text-decoration:none}.footer a:hover{text-decoration:underline}.footer p{margin:.5rem 0;font-size:.85rem}
+@media(max-width:768px){.hero h1{font-size:1.8rem}.hero-stats{grid-template-columns:repeat(2,1fr)}.toc-grid{grid-template-columns:1fr}.compare-grid,.agent-grid,.fail-grid{grid-template-columns:1fr}.chart-label{width:120px;font-size:.75rem}.flow{flex-direction:column;gap:8px}.flow-arrow{transform:rotate(90deg)}}
+</style>
+</head>
+<body>
+<nav class="nav"><a class="nav-brand" href="../">E2B Blog Hub</a><a href="../">← Back to Hub</a></nav>
+
+<header class="hero">
+  <h1>Maige：构建开源代码库 Copilot</h1>
+  <p class="subtitle">Rubric Labs 的 Ted Spare 分享如何用 E2B Sandbox 作为 AI Agent 的开发者工作空间，打造 GitHub 代码库的 AI 伴侣</p>
+  <div class="hero-stats">
+    <div class="stat-card"><div class="num">2000+</div><div class="label">GitHub 安装量</div></div>
+    <div class="stat-card"><div class="num">27K+</div><div class="label">Cal.com Star 数</div></div>
+    <div class="stat-card"><div class="num">OSS</div><div class="label">完全开源</div></div>
+    <div class="stat-card"><div class="num">E2B</div><div class="label">沙箱执行引擎</div></div>
+  </div>
+</header>
+
+<div class="page">
+  <nav class="toc"><h2>目录导航</h2>
+    <div class="toc-grid">
+      <a href="#s1"><span>01</span>Maige 简介</a>
+      <a href="#s2"><span>02</span>技术架构</a>
+      <a href="#s3"><span>03</span>E2B 沙箱层</a>
+      <a href="#s4"><span>04</span>开源策略</a>
+      <a href="#s5"><span>05</span>挑战与未来</a>
+      <a href="#s6"><span>06</span>核心洞察</a>
+    </div>
+  </nav>
+
+  <section class="section" id="s1">
+    <h2>🤖 GitHub 代码库 Copilot</h2>
+    <p class="lead">Maige 是面向开源维护者的 AI 伴侣，可以执行任何 GitHub API 操作 —— 从标签分类到代码审查。</p>
+    <div class="flow">
+      <div class="flow-step">GitHub 事件触发</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step pink">自然语言规则匹配</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">AI Agent 执行操作</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step pink">E2B 沙箱运行代码</div>
+    </div>
+    <div class="agent-grid">
+      <div class="card">
+        <h3>核心功能</h3>
+        <p style="font-size:.88rem"><span class="badge badge-pink">Issue 标签分类</span><span class="badge badge-blue">PR 审查</span><span class="badge badge-green">代码编写</span><span class="badge badge-amber">测试运行</span></p>
+        <p style="font-size:.85rem;margin-top:.5rem">在 Cal.com（27K+ Star）等大型仓库上实际运行</p>
+      </div>
+      <div class="card">
+        <h3>事件驱动架构</h3>
+        <p style="font-size:.88rem">极其精简的事件驱动设计。当 repo 添加、issue 打开或评论添加时，触发一系列自然语言可定制的操作。</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="s2">
+    <h2>🛠️ 技术栈深度解析</h2>
+    <p class="lead">TypeScript 全栈 + Serverless + 向量数据库 + 自托管友好的开源架构</p>
+    <div class="chart">
+      <div class="chart-row"><div class="chart-label">Next.js + Tailwind</div><div class="chart-bar-wrap"><div class="chart-bar pink" style="width:85%">前端框架</div></div></div>
+      <div class="chart-row"><div class="chart-label">Serverless + E2B</div><div class="chart-bar-wrap"><div class="chart-bar fuchsia" style="width:90%">代码执行引擎</div></div></div>
+      <div class="chart-row"><div class="chart-label">GPT-4 Turbo</div><div class="chart-bar-wrap"><div class="chart-bar blue" style="width:80%">LLM 推理</div></div></div>
+      <div class="chart-row"><div class="chart-label">Weaviate (Railway)</div><div class="chart-bar-wrap"><div class="chart-bar teal" style="width:70%">向量数据库</div></div></div>
+      <div class="chart-row"><div class="chart-label">Planetscale MySQL</div><div class="chart-bar-wrap"><div class="chart-bar green" style="width:65%">关系型数据库</div></div></div>
+    </div>
+    <div class="card">
+      <h3>技术选型理念</h3>
+      <p style="font-size:.9rem">核心关注点是 <strong>可移植性</strong> 和 <strong>自托管能力</strong>。开源让用户不必担心厂商锁定 —— 即使团队转向，用户依然可以使用基础设施。</p>
+    </div>
+  </section>
+
+  <section class="section" id="s3">
+    <h2>🔒 E2B Sandbox 执行层</h2>
+    <p class="lead">每个集成 Maige 的仓库都获得独立的 E2B 沙箱实例 —— Agent 的专属开发者工作空间。</p>
+    <div class="timeline">
+      <div class="tl-item"><div class="tl-dot"></div><div class="tl-phase">1. 仓库克隆</div><div class="tl-desc">将用户仓库克隆到 E2B 沙箱环境中</div></div>
+      <div class="tl-item"><div class="tl-dot"></div><div class="tl-phase">2. 依赖安装</div><div class="tl-desc">在隔离环境中安装项目依赖</div></div>
+      <div class="tl-item"><div class="tl-dot"></div><div class="tl-phase">3. Shell 命令执行</div><div class="tl-desc">Agent 像初级开发者一样运行 shell 命令</div></div>
+      <div class="tl-item"><div class="tl-dot"></div><div class="tl-phase">4. 测试与调试</div><div class="tl-desc">运行测试、复现 issue 或错误</div></div>
+      <div class="tl-item"><div class="tl-dot"></div><div class="tl-phase">5. 代码提交</div><div class="tl-desc">编写代码、commit、以 bot 身份开 PR</div></div>
+    </div>
+    <div class="compare-grid">
+      <div class="compare-card old">
+        <h4>替代方案：自建 AWS</h4>
+        <p>团队非基础设施工程师，自建可扩展的安全代码执行环境是巨大挑战</p>
+      </div>
+      <div class="compare-card new">
+        <h4>选择 E2B</h4>
+        <p>Custom Sandbox 模板 + bot 用户 GitHub 登录 + 隔离环境 → 开箱即用</p>
+      </div>
+    </div>
+  </section>
+
+  <section class="section" id="s4">
+    <h2>🌐 开源战略</h2>
+    <p class="lead">开源不仅是个人偏好，更是在 AI 时代软件商品化趋势下的战略选择。</p>
+    <div class="fail-grid">
+      <div class="card">
+        <h3>去中心化维护</h3>
+        <p style="font-size:.85rem">项目不依赖单一团队，社区可以共同维护和演进</p>
+      </div>
+      <div class="card">
+        <h3>软件商品化趋势</h3>
+        <p style="font-size:.85rem">AI 降低开发成本 → 专有软件护城河越来越难建 → 开源符合趋势</p>
+      </div>
+      <div class="card">
+        <h3>网络效应</h3>
+        <p style="font-size:.85rem">开源客户的用例天然公开 → 形成产品网络效应 → 降低获客成本</p>
+      </div>
+    </div>
+    <div class="card">
+      <h3>竞争格局</h3>
+      <p style="font-size:.9rem">同领域有 <span class="badge badge-pink">Sweep.dev</span><span class="badge badge-blue">Dosu.dev</span><span class="badge badge-green">Codegen</span> 等玩家。Ted 认为"空间足够大"，关键是帮助小团队围绕商业开源公司构建社区。</p>
+    </div>
+  </section>
+
+  <section class="section" id="s5">
+    <h2>⚡ 挑战与未来展望</h2>
+    <p class="lead">AI Agent 的非确定性和代码生成能力是核心技术挑战。</p>
+    <div class="compare-grid">
+      <div class="compare-card old">
+        <h4>当前挑战</h4>
+        <p>生成式 AI 写代码不够好；修改/插入代码更难；Agent 可能陷入循环或放弃任务</p>
+      </div>
+      <div class="compare-card new">
+        <h4>未来方向</h4>
+        <p>基于视觉的 AI 前端开发；识别 a11y 问题和 UI bug；改进代码搜索（embedding + 向量数据库）</p>
+      </div>
+    </div>
+    <div class="block-q">
+      <p>"如果开源模型能达到 GPT-3.5 水平但便宜 10-100 倍，Agent 可以更具探索性，做出更多有趣的事。这是我真正兴奋的方向。"</p>
+    </div>
+  </section>
+
+  <section class="section" id="s6">
+    <h2>💡 核心洞察</h2>
+    <p class="lead">从 Maige 案例中提取的 AI 代码助手构建经验。</p>
+    <div class="agent-grid">
+      <div class="card"><h3>每个 Repo 一个沙箱</h3><p style="font-size:.88rem">隔离的沙箱实例确保安全性，同时提供完整的开发环境体验</p></div>
+      <div class="card"><h3>事件驱动 + 自然语言规则</h3><p style="font-size:.88rem">精简的架构 + 灵活的自定义，让维护者定义 Agent 行为</p></div>
+      <div class="card"><h3>开源 = 信任</h3><p style="font-size:.88rem">自托管能力消除锁定担忧，开源用例形成产品网络效应</p></div>
+      <div class="card"><h3>模型成本是关键变量</h3><p style="font-size:.88rem">更便宜的模型 → Agent 可以更"探索性" → 更多创新可能</p></div>
+    </div>
+  </section>
+</div>
+
+<footer class="footer">
+  <p><a href="../">← 返回 E2B Blog Hub</a></p>
+  <p>原文：<a href="https://e2b.dev/blog/building-open-source-codebase-copilot-with-code-execution-layer" target="_blank">Building Open-Source Codebase Copilot with Code Execution Layer</a></p>
+  <p style="margin-top:1rem;font-size:.8rem;color:#475569">基于 E2B Blog 原文深度解析 · 仅供学习参考</p>
+</footer>
+</body>
+</html>

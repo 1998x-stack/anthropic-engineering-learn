@@ -1,0 +1,118 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>深度解析：Sweep 创始人分享 AI 编码助手构建经验</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+*{margin:0;padding:0;box-sizing:border-box}:root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--pink:#db2777;--rose:#f43f5e;--fuchsia:#a855f7;--green:#10b981;--blue:#3b82f6;--amber:#f59e0b;--teal:#14b8a6;--red:#ef4444;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',sans-serif}body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}.nav{position:sticky;top:0;z-index:100;backdrop-filter:blur(20px);background:rgba(15,23,42,.85);border-bottom:1px solid rgba(255,255,255,.08);padding:0 2rem;height:56px;display:flex;align-items:center;justify-content:space-between}.nav a{color:#f1f5f9;text-decoration:none;font-size:.9rem;font-weight:500}.nav-brand{font-weight:700;font-size:1.05rem;color:#db2777!important}.hero{background:linear-gradient(135deg,#0f172a 0%,#831843 50%,#db2777 100%);padding:5rem 2rem 4rem;color:#fff;text-align:center}.hero h1{font-size:2.4rem;font-weight:800;margin-bottom:1rem;line-height:1.2}.hero .subtitle{font-size:1.1rem;color:rgba(255,255,255,.8);max-width:700px;margin:0 auto 2.5rem}.hero-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:1rem;max-width:800px;margin:0 auto}.stat-card{background:rgba(255,255,255,.1);backdrop-filter:blur(10px);border:1px solid rgba(255,255,255,.15);border-radius:12px;padding:1.2rem}.stat-card .num{font-size:1.8rem;font-weight:800;color:#f9a8d4}.stat-card .label{font-size:.8rem;color:rgba(255,255,255,.7);margin-top:.25rem}.page{max-width:900px;margin:0 auto;padding:2rem}.toc{margin-bottom:3rem}.toc h2{font-size:1.1rem;font-weight:700;margin-bottom:1rem;color:var(--text-secondary)}.toc-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:.75rem}.toc-grid a{display:block;padding:.75rem 1rem;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);text-decoration:none;color:var(--text);font-size:.85rem;font-weight:500;transition:all .2s}.toc-grid a:hover{border-color:var(--pink);color:var(--pink);transform:translateY(-2px)}.toc-grid a span{color:var(--pink);font-weight:700;font-family:var(--mono);margin-right:.5rem}.section{margin-bottom:3rem}.section h2{font-size:1.6rem;font-weight:700;margin-bottom:.5rem;padding-bottom:.75rem;border-bottom:2px solid var(--border)}.lead{color:var(--text-secondary);font-size:.95rem;margin-bottom:1.5rem}.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;margin-bottom:1rem}.card h3{font-size:1.05rem;font-weight:600;margin-bottom:.5rem}.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1rem 0}.compare-card{background:var(--surface);border-radius:var(--radius);padding:1.25rem;border:2px solid var(--border)}.compare-card.old{border-color:#fca5a5;background:#fef2f2}.compare-card.new{border-color:#86efac;background:#f0fdf4}.compare-card h4{font-size:.95rem;font-weight:600;margin-bottom:.5rem}.timeline{position:relative;padding-left:2rem;margin:1.5rem 0}.timeline::before{content:'';position:absolute;left:7px;top:0;bottom:0;width:3px;background:linear-gradient(to bottom,#db2777,#a855f7,#3b82f6)}.tl-item{position:relative;margin-bottom:1.5rem;padding-left:1rem}.tl-dot{position:absolute;left:-2rem;top:4px;width:16px;height:16px;border-radius:50%;border:3px solid #db2777;background:#fff}.tl-item:nth-child(2) .tl-dot{border-color:#f43f5e}.tl-item:nth-child(3) .tl-dot{border-color:#a855f7}.tl-item:nth-child(4) .tl-dot{border-color:#3b82f6}.tl-phase{font-weight:700;font-size:.95rem;margin-bottom:.25rem}.tl-desc{font-size:.88rem;color:var(--text-secondary)}.flow{display:flex;align-items:center;gap:.5rem;margin:1.5rem 0;flex-wrap:wrap}.flow-step{background:var(--surface);border:2px solid var(--border);border-radius:var(--radius);padding:.75rem 1.25rem;font-size:.85rem;font-weight:600}.flow-step.pink{background:#fdf2f8;border-color:#db2777;color:#db2777}.flow-arrow{color:var(--text-secondary);font-weight:700;font-size:1.2rem}.block-q{border-left:4px solid #db2777;background:#fdf2f8;padding:1.25rem 1.5rem;border-radius:0 var(--radius) var(--radius) 0;margin:1.5rem 0;font-style:italic;color:#831843}.badge{display:inline-block;padding:.2rem .65rem;border-radius:20px;font-size:.75rem;font-weight:600;margin-right:.35rem}.badge-pink{background:#fce7f3;color:#be185d}.badge-green{background:#d1fae5;color:#065f46}.badge-blue{background:#dbeafe;color:#1e40af}.badge-amber{background:#fef3c7;color:#92400e}.agent-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem;margin:1rem 0}.fail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin:1rem 0}.footer{background:#0f172a;color:#94a3b8;padding:3rem 2rem;text-align:center;margin-top:4rem}.footer a{color:#db2777;text-decoration:none}.footer a:hover{text-decoration:underline}.footer p{margin:.5rem 0;font-size:.85rem}@media(max-width:768px){.hero h1{font-size:1.8rem}.hero-stats{grid-template-columns:repeat(2,1fr)}.toc-grid{grid-template-columns:1fr}.compare-grid,.agent-grid,.fail-grid{grid-template-columns:1fr}.flow{flex-direction:column;gap:8px}.flow-arrow{transform:rotate(90deg)}}
+</style>
+</head>
+<body>
+<nav class="nav"><a class="nav-brand" href="../">E2B Blog Hub</a><a href="../">← Back to Hub</a></nav>
+
+<header class="hero">
+  <h1>Sweep：AI 编码助手的构建经验</h1>
+  <p class="subtitle">YC S23 创业公司 Sweep 的创始人 William Zeng 和 Kevin Lu 分享 AI Agent 将 GitHub Issue 直接转化为 PR 的经验</p>
+  <div class="hero-stats">
+    <div class="stat-card"><div class="num">100</div><div class="label">PR/天</div></div>
+    <div class="stat-card"><div class="num">5000+</div><div class="label">GitHub Stars</div></div>
+    <div class="stat-card"><div class="num">3-5</div><div class="label">分钟启动时间</div></div>
+    <div class="stat-card"><div class="num">YC S23</div><div class="label">Y Combinator</div></div>
+  </div>
+</header>
+
+<div class="page">
+  <nav class="toc"><h2>目录导航</h2>
+    <div class="toc-grid">
+      <a href="#s1"><span>01</span>产品概述</a>
+      <a href="#s2"><span>02</span>调试策略</a>
+      <a href="#s3"><span>03</span>用户体验</a>
+      <a href="#s4"><span>04</span>核心洞察</a>
+    </div>
+  </nav>
+
+  <section class="section" id="s1">
+    <h2>🔧 Sweep：Issue → Pull Request</h2>
+    <p class="lead">Sweep 通过 embedding-based 代码搜索，将 GitHub Issue 直接转化为 Pull Request。</p>
+    <div class="flow">
+      <div class="flow-step">GitHub Issue 提交</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step pink">代码搜索 (Embedding)</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">Agent 规划方案</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step pink">生成 Pull Request</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">用户评论迭代</div>
+    </div>
+    <div class="card">
+      <h3>核心特点</h3>
+      <p style="font-size:.9rem"><span class="badge badge-pink">开源</span><span class="badge badge-blue">线性执行</span><span class="badge badge-green">无需 IDE</span><span class="badge badge-amber">评论迭代</span></p>
+      <p style="margin-top:.75rem;font-size:.88rem;color:var(--text-secondary)">目标强开发者用户群，限制使用次数（5 次/月 GPT-4，其余 GPT-3.5），确保用户用于真实工作而非探索实验。</p>
+    </div>
+  </section>
+
+  <section class="section" id="s2">
+    <h2>🐛 内部调试可视化工具</h2>
+    <p class="lead">Sweep 团队用 2 小时构建了自己的 chat 可视化工具来调试 Agent。</p>
+    <div class="compare-grid">
+      <div class="compare-card old">
+        <h4>调试挑战</h4>
+        <p>Agent 偶尔从一开始就走错方向或使用错误格式；无行业共识的调试工具</p>
+      </div>
+      <div class="compare-card new">
+        <h4>Sweep 的方案</h4>
+        <p>2 小时构建的 chat 可视化工具 + 线性 Agent 架构 = 简化问题定位，出问题就整体重启</p>
+      </div>
+    </div>
+    <div class="block-q">
+      <p>"由于 Agent 以线性方式运行，通常很容易确定问题原因并将过程分解为步骤。"</p>
+    </div>
+    <div class="timeline">
+      <div class="tl-item"><div class="tl-dot"></div><div class="tl-phase">用户报告问题</div><div class="tl-desc">大约每天一次，用户联系 Sweep 团队（终端用户无法访问可视化工具）</div></div>
+      <div class="tl-item"><div class="tl-dot"></div><div class="tl-phase">获取用户许可</div><div class="tl-desc">征得用户许可查看日志后进行调试</div></div>
+      <div class="tl-item"><div class="tl-dot"></div><div class="tl-phase">可视化对话历史</div><div class="tl-desc">通过内部工具查看 Agent 与 LLM 的完整对话记录</div></div>
+      <div class="tl-item"><div class="tl-dot"></div><div class="tl-phase">修复并重新投递</div><div class="tl-desc">修复问题后点击"redeliver"重新运行</div></div>
+    </div>
+  </section>
+
+  <section class="section" id="s3">
+    <h2>👥 用户体验策略</h2>
+    <p class="lead">服务器中心化架构 + 限制使用次数 = 确保用户将 Agent 用于有意义的工作。</p>
+    <div class="agent-grid">
+      <div class="card">
+        <h3>限制使用策略</h3>
+        <p style="font-size:.88rem">5 次/月 GPT-4，其余 GPT-3.5。发现早期用户多为技术探索而非真实工作，限流后使用质量大幅提升。</p>
+      </div>
+      <div class="card">
+        <h3>实际工作导向</h3>
+        <p style="font-size:.88rem">"我们希望用户将 Agent 用于有意义的工作，而不是玩测试仓库或实验。"</p>
+      </div>
+    </div>
+    <div class="card">
+      <h3>未来方向</h3>
+      <p style="font-size:.9rem">深入研究传统代码索引方式，目标是在代码理解和 Agent 理解两方面都变得精通。</p>
+    </div>
+  </section>
+
+  <section class="section" id="s4">
+    <h2>💡 核心洞察</h2>
+    <p class="lead">从 Sweep 的 YC 创业经验中提取的关键认知。</p>
+    <div class="fail-grid">
+      <div class="card"><h3>线性架构 = 简化调试</h3><p style="font-size:.85rem">线性 Agent 无需在中间停止，出错重启全流程是最务实的方式</p></div>
+      <div class="card"><h3>2 小时内建工具</h3><p style="font-size:.85rem">简单的内部可视化工具比复杂的 Agent 调试框架更实用</p></div>
+      <div class="card"><h3>限流提升价值</h3><p style="font-size:.85rem">限制使用次数迫使用户认真使用，反而提高了产品的感知价值</p></div>
+    </div>
+  </section>
+</div>
+
+<footer class="footer">
+  <p><a href="../">← 返回 E2B Blog Hub</a></p>
+  <p>原文：<a href="https://e2b.dev/blog/sweep-founders-share-learnings-from-building-an-ai-coding-assistant" target="_blank">Sweep Founders Share Learnings from Building an AI Coding Assistant</a></p>
+  <p style="margin-top:1rem;font-size:.8rem;color:#475569">基于 E2B Blog 原文深度解析 · 仅供学习参考</p>
+</footer>
+</body>
+</html>

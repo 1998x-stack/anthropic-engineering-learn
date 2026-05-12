@@ -1,0 +1,138 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>深度解析：OpenAI DevDay 2023</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--pink:#db2777;--purple:#6366f1;--teal:#14b8a6;--amber:#f59e0b;--green:#10b981;--red:#ef4444;--blue:#3b82f6;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',sans-serif}
+*{margin:0;padding:0;box-sizing:border-box}body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+.nav{position:sticky;top:0;z-index:100;background:rgba(15,23,42,.92);backdrop-filter:blur(12px);padding:12px 24px;display:flex;justify-content:space-between;align-items:center}.nav a{color:#f1f5f9;text-decoration:none;font-weight:600;font-size:15px}.nav a:hover{color:var(--pink)}
+.hero{background:linear-gradient(135deg,#0f172a 0%,#831843 50%,#db2777 100%);color:#fff;padding:80px 24px 60px;text-align:center}.hero h1{font-size:clamp(1.8rem,4vw,2.6rem);font-weight:800;margin-bottom:16px;line-height:1.3}.hero .subtitle{font-size:1.1rem;opacity:.85;max-width:700px;margin:0 auto 32px}
+.hero-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;max-width:800px;margin:0 auto}.stat-card{background:rgba(255,255,255,.1);border-radius:12px;padding:20px 12px;backdrop-filter:blur(8px)}.stat-card .num{font-size:1.6rem;font-weight:800;color:#fbcfe8}.stat-card .label{font-size:.8rem;opacity:.75;margin-top:4px}
+.page{max-width:900px;margin:0 auto;padding:32px 24px}
+.toc{margin-bottom:40px}.toc h2{font-size:1.2rem;margin-bottom:16px;color:var(--text-secondary)}.toc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(200px,1fr));gap:10px}.toc-grid a{display:block;padding:10px 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);text-decoration:none;font-size:.9rem;font-weight:500;transition:all .2s}.toc-grid a:hover{border-color:var(--pink);color:var(--pink)}
+.section{margin-bottom:48px}.section h2{font-size:1.5rem;font-weight:700;margin-bottom:8px}.lead{color:var(--text-secondary);margin-bottom:20px;font-size:.95rem}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}.card h3{font-size:1.1rem;font-weight:600;margin-bottom:8px}
+.fail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:16px 0}
+.agent-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0}
+.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}.compare-card{border-radius:var(--radius);padding:20px;border:2px solid}.compare-card.old{border-color:var(--amber);background:#fffbeb}.compare-card.new{border-color:var(--green);background:#f0fdf4}.compare-card h4{font-size:1rem;font-weight:600;margin-bottom:8px}
+.chart{margin:20px 0}.chart-row{display:flex;align-items:center;margin-bottom:10px}.chart-label{width:160px;font-size:.85rem;font-weight:500;flex-shrink:0}.chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}.chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;padding:0 12px;font-size:.8rem;font-weight:600;color:#fff}.chart-bar.pink{background:linear-gradient(90deg,#db2777,#ec4899)}.chart-bar.purple{background:linear-gradient(90deg,#6366f1,#818cf8)}.chart-bar.teal{background:linear-gradient(90deg,#0d9488,#14b8a6)}.chart-bar.amber{background:linear-gradient(90deg,#d97706,#f59e0b)}.chart-bar.green{background:linear-gradient(90deg,#059669,#10b981)}.chart-bar.blue{background:linear-gradient(90deg,#2563eb,#3b82f6)}
+.timeline{position:relative;padding-left:32px;margin:20px 0}.timeline::before{content:'';position:absolute;left:10px;top:0;bottom:0;width:3px;background:linear-gradient(180deg,var(--pink),var(--purple),var(--teal),var(--amber),var(--green),var(--blue))}.tl-item{position:relative;margin-bottom:24px}.tl-dot{position:absolute;left:-27px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid var(--pink);background:#fff}.tl-item:nth-child(2) .tl-dot{border-color:var(--purple)}.tl-item:nth-child(3) .tl-dot{border-color:var(--teal)}.tl-item:nth-child(4) .tl-dot{border-color:var(--amber)}.tl-item:nth-child(5) .tl-dot{border-color:var(--green)}.tl-item:nth-child(6) .tl-dot{border-color:var(--blue)}.tl-phase{font-weight:700;font-size:1rem;margin-bottom:2px}.tl-desc{color:var(--text-secondary);font-size:.9rem}
+.block-q{border-left:4px solid var(--pink);background:#fdf2f8;padding:16px 20px;border-radius:0 var(--radius) var(--radius) 0;margin:16px 0;font-style:italic;color:#831843}
+.flow{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:20px 0}.flow-step{background:var(--surface);border:2px solid var(--border);border-radius:var(--radius);padding:14px 20px;font-weight:600;font-size:.9rem;text-align:center}.flow-step.pink{border-color:var(--pink);background:#fdf2f8;color:#9d174d}.flow-step.purple{border-color:var(--purple);background:#eef2ff;color:#4338ca}.flow-step.teal{border-color:var(--teal);background:#f0fdfa;color:#0f766e}.flow-arrow{font-size:1.4rem;color:var(--text-secondary)}
+.footer{background:#0f172a;color:#94a3b8;padding:40px 24px;text-align:center;font-size:.85rem}.footer a{color:var(--pink);text-decoration:none}.footer a:hover{text-decoration:underline}
+@media(max-width:768px){.hero-stats{grid-template-columns:repeat(2,1fr)}.compare-grid,.agent-grid{grid-template-columns:1fr}.fail-grid{grid-template-columns:1fr}.chart-label{width:120px;font-size:.78rem}.flow{flex-direction:column;gap:8px}.flow-arrow{transform:rotate(90deg)}.toc-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<nav class="nav"><a href="../">E2B 技术博客</a><a href="../">← 返回 Hub</a></nav>
+
+<header class="hero">
+<h1>OpenAI DevDay 2023 深度解读</h1>
+<p class="subtitle">从 GPT-4 Turbo 到 GPTs 再到 Assistants API，E2B 团队视角下 2023 最大 AI 事件的三大公告</p>
+<div class="hero-stats">
+<div class="stat-card"><div class="num">128K</div><div class="label">Context 长度</div></div>
+<div class="stat-card"><div class="num">3x</div><div class="label">输入 Token 降价</div></div>
+<div class="stat-card"><div class="num">GPTs</div><div class="label">自定义 ChatGPT</div></div>
+<div class="stat-card"><div class="num">API</div><div class="label">Assistants API</div></div>
+</div>
+</header>
+
+<div class="page">
+<nav class="toc"><h2>目录导航</h2>
+<div class="toc-grid">
+<a href="#s1">1. GPT-4 Turbo</a>
+<a href="#s2">2. GPTs 自定义版本</a>
+<a href="#s3">3. Assistants API</a>
+<a href="#s4">4. 行业影响</a>
+</div>
+</nav>
+
+<section class="section" id="s1">
+<h2>🚀 GPT-4 Turbo</h2>
+<p class="lead">更长上下文、更低价格、更多控制——GPT-4 Turbo 六大核心升级。</p>
+
+<div class="timeline">
+<div class="tl-item"><div class="tl-dot"></div><div class="tl-phase">01. 上下文长度 128K</div><div class="tl-desc">约 300 页标准书籍，从 8K/32K 跃升到 128K tokens</div></div>
+<div class="tl-item"><div class="tl-dot"></div><div class="tl-phase">02. 更多控制</div><div class="tl-desc">JSON Mode 保证有效 JSON 输出，多函数并行调用，可复现输出（seed 参数）</div></div>
+<div class="tl-item"><div class="tl-dot"></div><div class="tl-phase">03. 知识更新至 2023.4</div><div class="tl-desc">内置 RAG 检索功能，支持外部文档和数据库集成</div></div>
+<div class="tl-item"><div class="tl-dot"></div><div class="tl-phase">04. 新模态</div><div class="tl-desc">DALL-E 3 + GPT-4 Vision + TTS 全部进入 API</div></div>
+<div class="tl-item"><div class="tl-dot"></div><div class="tl-phase">05. 定制化</div><div class="tl-desc">GPT-3.5 Fine-tuning 扩展到 16K 版本，GPT-4 Fine-tuning 实验计划</div></div>
+<div class="tl-item"><div class="tl-dot"></div><div class="tl-phase">06. 更高速率限制</div><div class="tl-desc">GPT-4 客户 tokens/min 翻倍，Copyright Shield 法律保护</div></div>
+</div>
+
+<div class="chart">
+<h3 style="margin-bottom:12px">价格对比（相对 GPT-4）</h3>
+<div class="chart-row"><div class="chart-label">GPT-4 Input</div><div class="chart-bar-wrap"><div class="chart-bar amber" style="width:100%">$30/1M tokens</div></div></div>
+<div class="chart-row"><div class="chart-label">GPT-4 Turbo Input</div><div class="chart-bar-wrap"><div class="chart-bar green" style="width:33%">$10/1M tokens (3x)</div></div></div>
+<div class="chart-row"><div class="chart-label">GPT-4 Output</div><div class="chart-bar-wrap"><div class="chart-bar amber" style="width:100%">$60/1M tokens</div></div></div>
+<div class="chart-row"><div class="chart-label">GPT-4 Turbo Output</div><div class="chart-bar-wrap"><div class="chart-bar green" style="width:50%">$30/1M tokens (2x)</div></div></div>
+</div>
+</section>
+
+<section class="section" id="s2">
+<h2>🤖 GPTs 自定义版本</h2>
+<p class="lead">每个人都可以用自然语言配置自己的 ChatGPT，无需编码——消费者导向的重大发布。</p>
+
+<div class="fail-grid">
+<div class="card"><h3>📋 Instructions</h3><p>自定义指令定义 GPT 行为</p></div>
+<div class="card"><h3>📚 Knowledge</h3><p>上传外部知识（最多10个文件）</p></div>
+<div class="card"><h3>⚡ Actions</h3><p>集成外部系统（API调用）</p></div>
+</div>
+
+<div class="compare-grid">
+<div class="compare-card old">
+<h4>GPTs 特征</h4>
+<p>扩展的知识 + 自定义指令 + Actions</p>
+</div>
+<div class="compare-card new">
+<h4>AI Agent 特征</h4>
+<p>长期记忆 + 规划 + 工具使用</p>
+</div>
+</div>
+</section>
+
+<section class="section" id="s3">
+<h2>🔧 Assistants API</h2>
+<p class="lead">GPTs 的开发者版本——API 级别的自编程 Agent，包含代码解释器和检索工具。</p>
+
+<div class="flow">
+<div class="flow-step pink">Assistants API</div>
+<div class="flow-arrow">→</div>
+<div class="flow-step purple">Function Calling</div>
+<div class="flow-arrow">+</div>
+<div class="flow-step teal">Retrieval</div>
+<div class="flow-arrow">+</div>
+<div class="flow-step pink">Code Interpreter</div>
+</div>
+
+<div class="card">
+<h3>核心改进</h3>
+<p>不再需要在每次 API 调用时包含所有历史消息来维护上下文。内置对话管理、Python 沙箱和内存功能。</p>
+</div>
+</section>
+
+<section class="section" id="s4">
+<h2>🌍 行业影响</h2>
+<p class="lead">OpenAI 从单纯追求 AGI 转向平台化战略，对软件开发的商品化将产生深远影响。</p>
+
+<div class="block-q">
+<p>"对于 AI 开发者社区来说，2024 年必将是生产之年（production year），我们很期待即将到来的一切。"</p>
+</div>
+
+<div class="agent-grid">
+<div class="card"><h3>受到威胁</h3><p>向量数据库初创公司（Assistants API 内置 Retrieval）、简单的 AI 包装器产品</p></div>
+<div class="card"><h3>获得机遇</h3><p>更多公司将为产品添加全新的 AI 功能，生态系统将更加丰富</p></div>
+</div>
+</section>
+</div>
+
+<footer class="footer">
+<p><a href="../">返回 Hub 首页</a> · 原文: <a href="https://e2b.dev/blog/openai-devday" target="_blank">e2b.dev/blog/openai-devday</a></p>
+<p style="margin-top:8px">E2B 技术博客深度解析系列</p>
+</footer>
+</body>
+</html>

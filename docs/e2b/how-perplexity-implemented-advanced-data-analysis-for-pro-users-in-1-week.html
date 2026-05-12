@@ -1,0 +1,74 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>深度解析：Perplexity 如何在一周内实现高级数据分析</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--pink:#db2777;--purple:#6366f1;--teal:#14b8a6;--amber:#f59e0b;--green:#10b981;--red:#ef4444;--blue:#3b82f6;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',sans-serif}*{margin:0;padding:0;box-sizing:border-box}body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}.nav{position:sticky;top:0;z-index:100;background:rgba(15,23,42,.92);backdrop-filter:blur(12px);padding:12px 24px;display:flex;justify-content:space-between;align-items:center}.nav a{color:#f1f5f9;text-decoration:none;font-weight:600;font-size:15px}.nav a:hover{color:var(--pink)}.hero{background:linear-gradient(135deg,#0f172a 0%,#831843 50%,#db2777 100%);color:#fff;padding:80px 24px 60px;text-align:center}.hero h1{font-size:clamp(1.6rem,4vw,2.4rem);font-weight:800;margin-bottom:16px;line-height:1.3}.hero .subtitle{font-size:1.1rem;opacity:.85;max-width:700px;margin:0 auto 32px}.hero-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;max-width:800px;margin:0 auto}.stat-card{background:rgba(255,255,255,.1);border-radius:12px;padding:20px 12px;backdrop-filter:blur(8px)}.stat-card .num{font-size:1.5rem;font-weight:800;color:#fbcfe8}.stat-card .label{font-size:.8rem;opacity:.75;margin-top:4px}.page{max-width:900px;margin:0 auto;padding:32px 24px}.section{margin-bottom:48px}.section h2{font-size:1.5rem;font-weight:700;margin-bottom:8px}.lead{color:var(--text-secondary);margin-bottom:20px;font-size:.95rem}.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}.card h3{font-size:1.1rem;font-weight:600;margin-bottom:8px}.toc{margin-bottom:40px}.toc h2{font-size:1.2rem;margin-bottom:16px;color:var(--text-secondary)}.toc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}.toc-grid a{display:block;padding:10px 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);text-decoration:none;font-size:.9rem;font-weight:500;transition:all .2s}.toc-grid a:hover{border-color:var(--pink);color:var(--pink)}.chart{margin:20px 0}.chart-row{display:flex;align-items:center;margin-bottom:10px}.chart-label{width:160px;font-size:.85rem;font-weight:500;flex-shrink:0}.chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}.chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;padding:0 12px;font-size:.8rem;font-weight:600;color:#fff}.chart-bar.pink{background:linear-gradient(90deg,#db2777,#ec4899)}.chart-bar.purple{background:linear-gradient(90deg,#6366f1,#818cf8)}.chart-bar.teal{background:linear-gradient(90deg,#0d9488,#14b8a6)}.chart-bar.amber{background:linear-gradient(90deg,#d97706,#f59e0b)}.chart-bar.green{background:linear-gradient(90deg,#059669,#10b981)}.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}.compare-card{border-radius:var(--radius);padding:20px;border:2px solid}.compare-card.old{border-color:var(--red);background:#fef2f2}.compare-card.new{border-color:var(--green);background:#f0fdf4}.compare-card h4{font-size:1rem;font-weight:600;margin-bottom:8px}.timeline{position:relative;padding-left:32px;margin:20px 0}.timeline::before{content:'';position:absolute;left:10px;top:0;bottom:0;width:3px;background:linear-gradient(180deg,var(--pink),var(--purple),var(--teal))}.tl-item{position:relative;margin-bottom:24px}.tl-dot{position:absolute;left:-27px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid var(--pink);background:#fff}.tl-item:nth-child(2) .tl-dot{border-color:var(--purple)}.tl-item:nth-child(3) .tl-dot{border-color:var(--teal)}.tl-phase{font-weight:700;font-size:1rem;margin-bottom:2px}.tl-desc{color:var(--text-secondary);font-size:.9rem}.block-q{border-left:4px solid var(--pink);background:#fdf2f8;padding:16px 20px;border-radius:0 var(--radius) var(--radius) 0;margin:16px 0;font-style:italic;color:#831843}.fail-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin:16px 0}.footer{background:#0f172a;color:#94a3b8;padding:40px 24px;text-align:center;font-size:.85rem}.footer a{color:var(--pink);text-decoration:none}.footer a:hover{text-decoration:underline}@media(max-width:768px){.hero-stats{grid-template-columns:repeat(2,1fr)}.compare-grid{grid-template-columns:1fr}.fail-grid{grid-template-columns:1fr}.chart-label{width:120px;font-size:.78rem}.toc-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<nav class="nav"><a href="../">E2B 技术博客</a><a href="../">← 返回 Hub</a></nav>
+<header class="hero">
+<h1>Perplexity 如何一周内上线高级数据分析</h1>
+<p class="subtitle">3.4 亿月搜索量的 AI 搜索引擎如何用 E2B Sandbox 实现安全、可扩展的代码解释器功能</p>
+<div class="hero-stats">
+<div class="stat-card"><div class="num">340M</div><div class="label">月搜索量</div></div>
+<div class="stat-card"><div class="num">1 周</div><div class="label">集成上线</div></div>
+<div class="stat-card"><div class="num">150ms</div><div class="label">沙箱启动</div></div>
+<div class="stat-card"><div class="num">数百万</div><div class="label">月沙箱运行量</div></div>
+</div>
+</header>
+<div class="page">
+<nav class="toc"><h2>目录导航</h2>
+<div class="toc-grid"><a href="#s1">1. 代码执行挑战</a><a href="#s2">2. 选择 E2B 的原因</a><a href="#s3">3. 实施过程</a><a href="#s4">4. 成果与展望</a></div>
+</nav>
+<section class="section" id="s1">
+<h2>🔍 代码执行挑战</h2>
+<p class="lead">当用户搜索股价或选举数据时，背后需要运行代码生成图表——在服务数百万用户时，这带来了真实的基础设施挑战。</p>
+<div class="fail-grid">
+<div class="card"><h3>安全隔离</h3><p>不能让 LLM 在应用运行的同一环境中执行代码和使用工具</p></div>
+<div class="card"><h3>性能要求</h3><p>用户注意力短暂，LLM 生成 token 已经很慢，其他一切必须极致优化</p></div>
+<div class="card"><h3>扩展性</h3><p>同时启动数千个编码运行时不是小事，可能导致性能退化</p></div>
+</div>
+</section>
+<section class="section" id="s2">
+<h2>✅ 选择 E2B 的原因</h2>
+<p class="lead">Firecracker 隔离安全、Python/JS 双 SDK、有状态的高度可定制代码执行——满足 Perplexity 规模需求。</p>
+<div class="chart">
+<h3 style="margin-bottom:12px">E2B 关键优势</h3>
+<div class="chart-row"><div class="chart-label">安全隔离</div><div class="chart-bar-wrap"><div class="chart-bar pink" style="width:95%">Firecracker microVM</div></div></div>
+<div class="chart-row"><div class="chart-label">SDK 易用性</div><div class="chart-bar-wrap"><div class="chart-bar purple" style="width:90%">Python + JS 双 SDK</div></div></div>
+<div class="chart-row"><div class="chart-label">有状态执行</div><div class="chart-bar-wrap"><div class="chart-bar teal" style="width:85%">高度可定制设置</div></div></div>
+<div class="chart-row"><div class="chart-label">启动速度</div><div class="chart-bar-wrap"><div class="chart-bar amber" style="width:95%">150-170ms</div></div></div>
+</div>
+<div class="block-q"><p>"我们现在每月运行数百万个 E2B Sandbox。" -- Denis Yarats, Perplexity CTO</p></div>
+</section>
+<section class="section" id="s3">
+<h2>⚙️ 实施过程</h2>
+<p class="lead">2024 年 7 月开始集成，8 月首版上线——E2B 工程团队深度参与功能协作。</p>
+<div class="timeline">
+<div class="tl-item"><div class="tl-dot"></div><div class="tl-phase">需求确立</div><div class="tl-desc">决定使用有状态代码执行（而非无状态），匹配搜索场景需求</div></div>
+<div class="tl-item"><div class="tl-dot"></div><div class="tl-phase">基础设施扩容</div><div class="tl-desc">提前规划负载，为企业级使用量扩展 E2B 基础设施</div></div>
+<div class="tl-item"><div class="tl-dot"></div><div class="tl-phase">功能协作</div><div class="tl-desc">共同开发沙箱功能（如 matplotlib 数据提取），匹配 Perplexity UX 细节</div></div>
+</div>
+<div class="block-q"><p>"我们在一周内就让 E2B 跑起来了。" -- Denis Yarats, Perplexity CTO</p></div>
+</section>
+<section class="section" id="s4">
+<h2>🚀 成果与展望</h2>
+<p class="lead">代码执行层上线后，编码相关查询的参与度显著增长，交互式图表让用户眼前一亮。</p>
+<div class="compare-grid">
+<div class="compare-card old"><h4>上线前</h4><p>搜索结果仅文本，无法实时展示数据图表，编码类查询体验受限</p></div>
+<div class="compare-card new"><h4>上线后</h4><p>交互式图表嵌入搜索结果，用户可自定义图表，前端可交互操作</p></div>
+</div>
+</section>
+</div>
+<footer class="footer">
+<p><a href="../">返回 Hub 首页</a> · 原文: <a href="https://e2b.dev/blog/how-perplexity-implemented-advanced-data-analysis-for-pro-users-in-1-week" target="_blank">e2b.dev/blog/how-perplexity-implemented-advanced-data-analysis-for-pro-users-in-1-week</a></p>
+<p style="margin-top:8px">E2B 技术博客深度解析系列</p>
+</footer>
+</body>
+</html>

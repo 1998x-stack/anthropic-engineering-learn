@@ -1,0 +1,109 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>深度解析：Scaling Firecracker - 用 OverlayFS 节省磁盘空间</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--pink:#db2777;--purple:#6366f1;--teal:#14b8a6;--amber:#f59e0b;--green:#10b981;--red:#ef4444;--blue:#3b82f6;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',sans-serif}*{margin:0;padding:0;box-sizing:border-box}body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}.nav{position:sticky;top:0;z-index:100;background:rgba(15,23,42,.92);backdrop-filter:blur(12px);padding:12px 24px;display:flex;justify-content:space-between;align-items:center}.nav a{color:#f1f5f9;text-decoration:none;font-weight:600;font-size:15px}.nav a:hover{color:var(--pink)}.hero{background:linear-gradient(135deg,#0f172a 0%,#831843 50%,#db2777 100%);color:#fff;padding:80px 24px 60px;text-align:center}.hero h1{font-size:clamp(1.6rem,4vw,2.4rem);font-weight:800;margin-bottom:16px;line-height:1.3}.hero .subtitle{font-size:1.1rem;opacity:.85;max-width:700px;margin:0 auto 32px}.hero-stats{display:grid;grid-template-columns:repeat(4,1fr);gap:16px;max-width:800px;margin:0 auto}.stat-card{background:rgba(255,255,255,.1);border-radius:12px;padding:20px 12px;backdrop-filter:blur(8px)}.stat-card .num{font-size:1.5rem;font-weight:800;color:#fbcfe8}.stat-card .label{font-size:.8rem;opacity:.75;margin-top:4px}.page{max-width:900px;margin:0 auto;padding:32px 24px}.section{margin-bottom:48px}.section h2{font-size:1.5rem;font-weight:700;margin-bottom:8px}.lead{color:var(--text-secondary);margin-bottom:20px;font-size:.95rem}.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:16px}.card h3{font-size:1.1rem;font-weight:600;margin-bottom:8px}.toc{margin-bottom:40px}.toc h2{font-size:1.2rem;margin-bottom:16px;color:var(--text-secondary)}.toc-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:10px}.toc-grid a{display:block;padding:10px 16px;background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);color:var(--text);text-decoration:none;font-size:.9rem;font-weight:500;transition:all .2s}.toc-grid a:hover{border-color:var(--pink);color:var(--pink)}.compare-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin-bottom:16px}.compare-card{border-radius:var(--radius);padding:20px;border:2px solid}.compare-card.old{border-color:var(--red);background:#fef2f2}.compare-card.new{border-color:var(--green);background:#f0fdf4}.compare-card h4{font-size:1rem;font-weight:600;margin-bottom:8px}.chart{margin:20px 0}.chart-row{display:flex;align-items:center;margin-bottom:10px}.chart-label{width:160px;font-size:.85rem;font-weight:500;flex-shrink:0}.chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;height:32px;overflow:hidden}.chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;padding:0 12px;font-size:.8rem;font-weight:600;color:#fff}.chart-bar.pink{background:linear-gradient(90deg,#db2777,#ec4899)}.chart-bar.purple{background:linear-gradient(90deg,#6366f1,#818cf8)}.chart-bar.teal{background:linear-gradient(90deg,#0d9488,#14b8a6)}.chart-bar.amber{background:linear-gradient(90deg,#d97706,#f59e0b)}.chart-bar.green{background:linear-gradient(90deg,#059669,#10b981)}.chart-bar.red{background:linear-gradient(90deg,#dc2626,#ef4444)}.code-block{background:#1e293b;color:#e2e8f0;padding:20px;border-radius:var(--radius);font-family:var(--mono);font-size:.85rem;overflow-x:auto;margin:16px 0;line-height:1.6}.flow{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:20px 0}.flow-step{background:var(--surface);border:2px solid var(--border);border-radius:var(--radius);padding:14px 20px;font-weight:600;font-size:.9rem;text-align:center}.flow-step.pink{border-color:var(--pink);background:#fdf2f8;color:#9d174d}.flow-step.purple{border-color:var(--purple);background:#eef2ff;color:#4338ca}.flow-step.teal{border-color:var(--teal);background:#f0fdfa;color:#0f766e}.flow-arrow{font-size:1.4rem;color:var(--text-secondary)}.timeline{position:relative;padding-left:32px;margin:20px 0}.timeline::before{content:'';position:absolute;left:10px;top:0;bottom:0;width:3px;background:linear-gradient(180deg,var(--pink),var(--purple),var(--teal))}.tl-item{position:relative;margin-bottom:24px}.tl-dot{position:absolute;left:-27px;top:4px;width:14px;height:14px;border-radius:50%;border:3px solid var(--pink);background:#fff}.tl-item:nth-child(2) .tl-dot{border-color:var(--purple)}.tl-item:nth-child(3) .tl-dot{border-color:var(--teal)}.tl-phase{font-weight:700;font-size:1rem;margin-bottom:2px}.tl-desc{color:var(--text-secondary);font-size:.9rem}.block-q{border-left:4px solid var(--pink);background:#fdf2f8;padding:16px 20px;border-radius:0 var(--radius) var(--radius) 0;margin:16px 0;font-style:italic;color:#831843}.agent-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:16px 0}.footer{background:#0f172a;color:#94a3b8;padding:40px 24px;text-align:center;font-size:.85rem}.footer a{color:var(--pink);text-decoration:none}.footer a:hover{text-decoration:underline}@media(max-width:768px){.hero-stats{grid-template-columns:repeat(2,1fr)}.compare-grid,.agent-grid{grid-template-columns:1fr}.chart-label{width:120px;font-size:.78rem}.flow{flex-direction:column;gap:8px}.flow-arrow{transform:rotate(90deg)}.toc-grid{grid-template-columns:1fr}}
+</style>
+</head>
+<body>
+<nav class="nav"><a href="../">E2B 技术博客</a><a href="../">← 返回 Hub</a></nav>
+<header class="hero">
+<h1>Scaling Firecracker: 用 OverlayFS 节省磁盘空间</h1>
+<p class="subtitle">大规模运行 Firecracker 实例时，Copy-on-Write 技术让数千个 VM 共享同一个只读根文件系统</p>
+<div class="hero-stats">
+<div class="stat-card"><div class="num">COW</div><div class="label">Copy-on-Write</div></div>
+<div class="stat-card"><div class="num">OverlayFS</div><div class="label">Linux 联合文件系统</div></div>
+<div class="stat-card"><div class="num">Squashfs</div><div class="label">压缩只读 FS</div></div>
+<div class="stat-card"><div class="num">3 步</div><div class="label">配置流程</div></div>
+</div>
+</header>
+<div class="page">
+<nav class="toc"><h2>目录导航</h2>
+<div class="toc-grid"><a href="#s1">1. OverlayFS 原理</a><a href="#s2">2. 创建只读 RootFS</a><a href="#s3">3. 创建可写 Overlay</a><a href="#s4">4. Firecracker 配置</a></div>
+</nav>
+<section class="section" id="s1">
+<h2>📚 OverlayFS 与 Copy-on-Write 原理</h2>
+<p class="lead">OverlayFS 将只读层（lower）和可写层（upper）合并为统一视图，修改时才复制文件到上层。</p>
+<div class="flow">
+<div class="flow-step pink">Lower Dir (只读)</div>
+<div class="flow-arrow">+</div>
+<div class="flow-step purple">Upper Dir (可写/空)</div>
+<div class="flow-arrow">=</div>
+<div class="flow-step teal">Merged Dir (统一视图)</div>
+</div>
+<div class="compare-grid">
+<div class="compare-card old"><h4>❌ 每实例复制 RootFS</h4><p>1000 个实例 x 数百 MB = 严重的磁盘空间问题。每次启动都需要完整复制。</p></div>
+<div class="compare-card new"><h4>✅ OverlayFS 共享</h4><p>1 份只读 RootFS + N 个空的 Overlay 层。仅修改的文件被复制，初始 0 字节开销。</p></div>
+</div>
+<div class="block-q"><p>"当你想修改 lower 目录中的文件时，OverlayFS 使用 Copy-on-Write：将文件复制到 upper 目录并在副本上修改，原始文件不受影响。"</p></div>
+</section>
+<section class="section" id="s2">
+<h2>📦 创建只读 RootFS</h2>
+<p class="lead">将根文件系统打包为 Squashfs 压缩只读镜像，添加 overlay-init 脚本作为入口。</p>
+<div class="timeline">
+<div class="tl-item"><div class="tl-dot"></div><div class="tl-phase">挂载原始 rootfs</div><div class="tl-desc">mount rootfs.ext4 到 /tmp/rootfs 进行修改</div></div>
+<div class="tl-item"><div class="tl-dot"></div><div class="tl-phase">添加 overlay-init</div><div class="tl-desc">在 /sbin/overlay-init 放置初始化脚本，设置 overlay 并调用真正的 init</div></div>
+<div class="tl-item"><div class="tl-dot"></div><div class="tl-phase">打包 Squashfs</div><div class="tl-desc">mksquashfs /tmp/rootfs rootfs.ext4 -noappend (压缩只读)</div></div>
+</div>
+<div class="card"><h3>overlay-init 核心逻辑</h3>
+<div class="code-block">pivot() {
+    mount -o noatime,lowerdir=/,\
+      upperdir=${rw_root},workdir=${work_dir} \
+      -t overlay "overlayfs:${rw_root}" /mnt
+    pivot_root /mnt /mnt/rom
+}
+# 然后调用 exec /sbin/init</div>
+</div>
+</section>
+<section class="section" id="s3">
+<h2>💾 创建可写 Overlay</h2>
+<p class="lead">每个实例一个稀疏 ext4 文件——声明 5GB 但实际占用 0 字节，按需增长。</p>
+<div class="card">
+<div class="code-block"># 创建 5GB 稀疏文件（实际 0 字节）
+dd if=/dev/zero of=overlay.ext4 bs=1M count=5120
+
+# 格式化为 ext4
+mkfs.ext4 overlay.ext4
+
+# ls -lh → 5.0G (声明大小)
+# du -h  → 0    (实际占用)</div>
+</div>
+<div class="chart">
+<h3 style="margin-bottom:12px">磁盘空间对比 (1000 个实例)</h3>
+<div class="chart-row"><div class="chart-label">无 OverlayFS</div><div class="chart-bar-wrap"><div class="chart-bar red" style="width:100%">1000 x 数百MB = 数百GB</div></div></div>
+<div class="chart-row"><div class="chart-label">有 OverlayFS</div><div class="chart-bar-wrap"><div class="chart-bar green" style="width:5%">1份RootFS + 稀疏文件</div></div></div>
+</div>
+</section>
+<section class="section" id="s4">
+<h2>⚙️ Firecracker 配置</h2>
+<p class="lead">配置两个 drive（只读 rootfs + 可写 overlay），在内核参数中指定 overlay-init。</p>
+<div class="agent-grid">
+<div class="card"><h3>Drive 1: RootFS</h3>
+<div class="code-block" style="font-size:.8rem">"drive_id": "rootfs"
+"is_root_device": true
+"is_read_only": true</div>
+</div>
+<div class="card"><h3>Drive 2: Overlay</h3>
+<div class="code-block" style="font-size:.8rem">"drive_id": "overlayfs"
+"is_root_device": false
+"is_read_only": false</div>
+</div>
+</div>
+<div class="card"><h3>内核参数</h3>
+<div class="code-block">init=/sbin/overlay-init overlay_root=vdb
+# vdb = 第二个 drive (overlay.ext4)
+# 不需要持久存储时: overlay_root=ram</div>
+</div>
+</section>
+</div>
+<footer class="footer">
+<p><a href="../">返回 Hub 首页</a> · 原文: <a href="https://e2b.dev/blog/scaling-firecracker-using-overlayfs-to-save-disk-space" target="_blank">e2b.dev/blog/scaling-firecracker-using-overlayfs-to-save-disk-space</a></p>
+<p style="margin-top:8px">E2B 技术博客深度解析系列</p>
+</footer>
+</body>
+</html>

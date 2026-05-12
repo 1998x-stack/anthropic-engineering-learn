@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>深度解析：AI Agents in the Wild</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--pink:#db2777;--fuchsia:#a21caf;--green:#10b981;--blue:#3b82f6;--amber:#f59e0b;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',sans-serif}*{margin:0;padding:0;box-sizing:border-box}body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}.nav{position:sticky;top:0;background:rgba(15,23,42,.92);backdrop-filter:blur(12px);padding:16px 32px;display:flex;justify-content:space-between;align-items:center;z-index:100;border-bottom:1px solid rgba(219,39,119,.3)}.nav-brand{color:#fff;font-weight:700;font-size:18px;text-decoration:none}.nav-back{color:rgba(255,255,255,.7);text-decoration:none;font-size:14px}.nav-back:hover{color:#fff}.hero{background:linear-gradient(135deg,#0f172a 0%,#831843 50%,#db2777 100%);padding:80px 32px;text-align:center;color:#fff}.hero h1{font-size:clamp(26px,4.5vw,44px);font-weight:800;margin-bottom:16px;line-height:1.2}.hero .subtitle{font-size:18px;color:rgba(255,255,255,.8);max-width:720px;margin:0 auto 40px}.hero-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:20px;max-width:800px;margin:0 auto}.stat-card{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:var(--radius);padding:20px;backdrop-filter:blur(8px)}.stat-card .num{font-size:24px;font-weight:800;color:#f9a8d4}.stat-card .label{font-size:13px;color:rgba(255,255,255,.7);margin-top:4px}.page{max-width:900px;margin:0 auto;padding:32px 24px}.toc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:48px}.toc h3{font-size:16px;margin-bottom:16px;color:var(--pink)}.toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px}.toc-grid a{display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--text);font-size:14px;padding:8px 12px;border-radius:8px;transition:background .2s}.toc-grid a:hover{background:rgba(219,39,119,.08)}.toc-grid .num{background:linear-gradient(135deg,var(--pink),var(--fuchsia));color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}.section{margin-bottom:56px}.section h2{font-size:24px;font-weight:700;margin-bottom:8px}.lead{color:var(--text-secondary);font-size:15px;margin-bottom:24px;border-left:3px solid var(--pink);padding-left:16px}.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}.card h4{font-size:16px;font-weight:600;margin-bottom:8px}.card p{font-size:14px;color:var(--text-secondary);line-height:1.7}.chart{margin:20px 0}.chart-row{display:flex;align-items:center;gap:12px;margin-bottom:10px}.chart-label{width:160px;font-size:13px;text-align:right;flex-shrink:0}.chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;overflow:hidden;height:28px}.chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;padding:0 10px;font-size:12px;font-weight:600;color:#fff}.chart-bar.pink{background:linear-gradient(90deg,var(--pink),var(--fuchsia))}.chart-bar.green{background:linear-gradient(90deg,var(--green),#059669)}.chart-bar.blue{background:linear-gradient(90deg,var(--blue),#2563eb)}.chart-bar.amber{background:linear-gradient(90deg,var(--amber),#d97706)}.agent-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}.block-q{background:linear-gradient(135deg,rgba(219,39,119,.06),rgba(162,28,175,.06));border-left:4px solid var(--pink);border-radius:0 var(--radius) var(--radius) 0;padding:20px 24px;margin:20px 0;font-size:15px;font-style:italic;color:var(--text-secondary)}.footer{background:#0f172a;color:rgba(255,255,255,.6);padding:40px 32px;text-align:center;font-size:14px}.footer a{color:var(--pink);text-decoration:none}.footer a:hover{text-decoration:underline}
+@media(max-width:768px){.agent-grid{grid-template-columns:1fr}.chart-label{width:120px;font-size:12px}.toc-grid{grid-template-columns:1fr}.hero{padding:48px 20px}}
+</style>
+</head>
+<body>
+<nav class="nav"><a href="../" class="nav-brand">E2B 技术博客</a><a href="../" class="nav-back">← Back to Hub</a></nav>
+<header class="hero">
+  <h1>🌍 AI Agents in the Wild</h1>
+  <p class="subtitle">E2B 对 50+ AI Agent 的全景扫描：从 AutoGPT 的 140K Stars 到编码助手的崛起，AI Agent 生态的五大发现</p>
+  <div class="hero-stats">
+    <div class="stat-card"><div class="num">56</div><div class="label">项目分析数</div></div>
+    <div class="stat-card"><div class="num">140K</div><div class="label">AutoGPT Stars</div></div>
+    <div class="stat-card"><div class="num">50:50</div><div class="label">开源 vs 闭源</div></div>
+    <div class="stat-card"><div class="num">编码</div><div class="label">最热门用例</div></div>
+  </div>
+</header>
+<div class="page">
+  <nav class="toc"><h3>📑 目录导航</h3><div class="toc-grid">
+    <a href="#s1"><span class="num">1</span>什么是 AI Agent</a>
+    <a href="#s2"><span class="num">2</span>五大发现</a>
+    <a href="#s3"><span class="num">3</span>未来展望</a>
+  </div></nav>
+
+  <section class="section" id="s1">
+    <h2>🤖 什么是 AI Agent</h2>
+    <p class="lead">Agent 使用短期记忆（in-context learning）和长期记忆（vector store），具备规划、逐步思考和自我反思能力，并能使用工具。</p>
+    <div class="agent-grid">
+      <div class="card"><h4>短期记忆</h4><p>In-context learning — 利用对话上下文理解任务</p></div>
+      <div class="card"><h4>长期记忆</h4><p>外部 vector store 检索历史信息</p></div>
+      <div class="card"><h4>规划能力</h4><p>将目标分解为小任务，逐步执行</p></div>
+      <div class="card"><h4>工具使用</h4><p>网页抓取、日历操作、终端命令等</p></div>
+    </div>
+  </section>
+
+  <section class="section" id="s2">
+    <h2>📊 五大发现</h2>
+    <p class="lead">对 56 个项目的分析揭示 AI Agent 生态的现状。</p>
+    <div class="chart">
+      <div class="chart-row"><div class="chart-label">开源 vs 闭源</div><div class="chart-bar-wrap"><div class="chart-bar pink" style="width:50%">约 50:50</div></div></div>
+      <div class="chart-row"><div class="chart-label">编码助手</div><div class="chart-bar-wrap"><div class="chart-bar green" style="width:90%">最热门用例</div></div></div>
+      <div class="chart-row"><div class="chart-label">生产力助手</div><div class="chart-bar-wrap"><div class="chart-bar blue" style="width:70%">第二热门</div></div></div>
+      <div class="chart-row"><div class="chart-label">No-code 平台</div><div class="chart-bar-wrap"><div class="chart-bar amber" style="width:65%">大量涌现</div></div></div>
+    </div>
+    <div class="block-q"><p>开发者最常遇到的困难：测试/评估、调试、监控，以及定位 agent 在哪个步骤出错和原因。</p></div>
+  </section>
+
+  <section class="section" id="s3">
+    <h2>🔮 未来展望</h2>
+    <p class="lead">Agent 将成为软件的未来，但需要更好的开发者工具来提升可靠性。</p>
+    <div class="card"><h4>核心挑战</h4><p>AI agent 有潜力像网站一样普遍，但需要先解决可靠性问题。开发者需要更好的工具来确信 agent 在按预期工作。</p></div>
+  </section>
+</div>
+<footer class="footer">
+  <p><a href="../">← 返回 Hub</a> · 原文：<a href="https://e2b.dev/blog/ai-agents-in-the-wild" target="_blank">e2b.dev</a></p>
+  <p style="margin-top:8px">E2B Blog Deep-Dive · 作者：Tereza Tizkova · 2023-06-16</p>
+</footer>
+</body>
+</html>

@@ -1,0 +1,110 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>深度解析：Hugging Face 用 E2B 复现 DeepSeek-R1</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#fafbfc;--surface:#fff;--text:#0f172a;--text-secondary:#64748b;--border:#e2e8f0;--radius:14px;--pink:#db2777;--fuchsia:#a21caf;--green:#10b981;--blue:#3b82f6;--amber:#f59e0b;--red:#ef4444;--mono:'JetBrains Mono',monospace;--sans:'Noto Sans SC','Inter',sans-serif}
+*{margin:0;padding:0;box-sizing:border-box}body{font-family:var(--sans);background:var(--bg);color:var(--text);line-height:1.7}
+.nav{position:sticky;top:0;background:rgba(15,23,42,.92);backdrop-filter:blur(12px);padding:16px 32px;display:flex;justify-content:space-between;align-items:center;z-index:100;border-bottom:1px solid rgba(219,39,119,.3)}.nav-brand{color:#fff;font-weight:700;font-size:18px;text-decoration:none}.nav-back{color:rgba(255,255,255,.7);text-decoration:none;font-size:14px}.nav-back:hover{color:#fff}
+.hero{background:linear-gradient(135deg,#0f172a 0%,#831843 50%,#db2777 100%);padding:80px 32px;text-align:center;color:#fff}.hero h1{font-size:clamp(26px,4.5vw,44px);font-weight:800;margin-bottom:16px;line-height:1.2}.hero .subtitle{font-size:18px;color:rgba(255,255,255,.8);max-width:720px;margin:0 auto 40px}
+.hero-stats{display:grid;grid-template-columns:repeat(auto-fit,minmax(150px,1fr));gap:20px;max-width:800px;margin:0 auto}.stat-card{background:rgba(255,255,255,.1);border:1px solid rgba(255,255,255,.15);border-radius:var(--radius);padding:20px;backdrop-filter:blur(8px)}.stat-card .num{font-size:24px;font-weight:800;color:#f9a8d4}.stat-card .label{font-size:13px;color:rgba(255,255,255,.7);margin-top:4px}
+.page{max-width:900px;margin:0 auto;padding:32px 24px}
+.toc{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:48px}.toc h3{font-size:16px;margin-bottom:16px;color:var(--pink)}.toc-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(250px,1fr));gap:10px}.toc-grid a{display:flex;align-items:center;gap:8px;text-decoration:none;color:var(--text);font-size:14px;padding:8px 12px;border-radius:8px;transition:background .2s}.toc-grid a:hover{background:rgba(219,39,119,.08)}.toc-grid .num{background:linear-gradient(135deg,var(--pink),var(--fuchsia));color:#fff;width:24px;height:24px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:11px;font-weight:700;flex-shrink:0}
+.section{margin-bottom:56px}.section h2{font-size:24px;font-weight:700;margin-bottom:8px}.lead{color:var(--text-secondary);font-size:15px;margin-bottom:24px;border-left:3px solid var(--pink);padding-left:16px}
+.card{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:24px;margin-bottom:20px}.card h4{font-size:16px;font-weight:600;margin-bottom:8px}.card p{font-size:14px;color:var(--text-secondary);line-height:1.7}
+.flow{display:flex;align-items:center;gap:12px;flex-wrap:wrap;margin:20px 0}.flow-step{background:var(--surface);border:1px solid var(--border);border-radius:10px;padding:14px 20px;font-size:14px;font-weight:500;flex:1;min-width:100px;text-align:center}.flow-step.pink{background:linear-gradient(135deg,rgba(219,39,119,.1),rgba(162,28,175,.1));border-color:var(--pink)}.flow-arrow{color:var(--pink);font-size:20px;font-weight:700;flex-shrink:0}
+.chart{margin:20px 0}.chart-row{display:flex;align-items:center;gap:12px;margin-bottom:10px}.chart-label{width:140px;font-size:13px;text-align:right;flex-shrink:0}.chart-bar-wrap{flex:1;background:#f1f5f9;border-radius:8px;overflow:hidden;height:28px}.chart-bar{height:100%;border-radius:8px;display:flex;align-items:center;padding:0 10px;font-size:12px;font-weight:600;color:#fff}.chart-bar.pink{background:linear-gradient(90deg,var(--pink),var(--fuchsia))}.chart-bar.green{background:linear-gradient(90deg,var(--green),#059669)}.chart-bar.blue{background:linear-gradient(90deg,var(--blue),#2563eb)}.chart-bar.amber{background:linear-gradient(90deg,var(--amber),#d97706)}
+.block-q{background:linear-gradient(135deg,rgba(219,39,119,.06),rgba(162,28,175,.06));border-left:4px solid var(--pink);border-radius:0 var(--radius) var(--radius) 0;padding:20px 24px;margin:20px 0;font-size:15px;font-style:italic;color:var(--text-secondary)}
+.agent-grid{display:grid;grid-template-columns:1fr 1fr;gap:16px;margin:20px 0}
+.code-block{background:#1e293b;color:#e2e8f0;border-radius:10px;padding:20px;font-family:var(--mono);font-size:12px;overflow-x:auto;margin:16px 0;line-height:1.5}
+.footer{background:#0f172a;color:rgba(255,255,255,.6);padding:40px 32px;text-align:center;font-size:14px}.footer a{color:var(--pink);text-decoration:none}.footer a:hover{text-decoration:underline}
+@media(max-width:768px){.agent-grid{grid-template-columns:1fr}.chart-label{width:100px;font-size:12px}.flow{flex-direction:column;gap:8px}.flow-arrow{transform:rotate(90deg)}.toc-grid{grid-template-columns:1fr}.hero{padding:48px 20px}}
+</style>
+</head>
+<body>
+<nav class="nav"><a href="../" class="nav-brand">E2B 技术博客</a><a href="../" class="nav-back">← Back to Hub</a></nav>
+
+<header class="hero">
+  <h1>🤗 Hugging Face 用 E2B 复现 DeepSeek-R1</h1>
+  <p class="subtitle">Open R1 项目：通过 Reinforcement Learning with Verifiable Rewards，使用 E2B sandbox 安全执行 LLM 生成的代码作为训练奖励信号</p>
+  <div class="hero-stats">
+    <div class="stat-card"><div class="num">150ms</div><div class="label">Sandbox 启动时间</div></div>
+    <div class="stat-card"><div class="num">100s</div><div class="label">并发 Sandbox 数</div></div>
+    <div class="stat-card"><div class="num">$几</div><div class="label">单次训练 E2B 成本</div></div>
+    <div class="stat-card"><div class="num">Open R1</div><div class="label">开源 Reasoning</div></div>
+  </div>
+</header>
+
+<div class="page">
+  <nav class="toc">
+    <h3>📑 目录导航</h3>
+    <div class="toc-grid">
+      <a href="#s1"><span class="num">1</span>Open R1 背景</a>
+      <a href="#s2"><span class="num">2</span>RLVR 训练流程</a>
+      <a href="#s3"><span class="num">3</span>E2B 代码执行 Reward</a>
+      <a href="#s4"><span class="num">4</span>集成实现</a>
+      <a href="#s5"><span class="num">5</span>未来方向</a>
+    </div>
+  </nav>
+
+  <section class="section" id="s1">
+    <h2>🎯 Open R1 背景</h2>
+    <p class="lead">DeepSeek-R1 发布后，Hugging Face 启动 Open R1 项目，逆向工程缺失的数据和训练 pipeline。</p>
+    <div class="card"><h4>核心方法：RLVR</h4><p>Reinforcement Learning with Verifiable Rewards — LLM 训练解决可验证正确性的问题，根据答案正确与否获得 1 或 0 的二元奖励。数学题用 Math-Verify 解析字符串验证，编程题则需要实际执行代码。</p></div>
+  </section>
+
+  <section class="section" id="s2">
+    <h2>⚙️ RLVR 训练流程</h2>
+    <p class="lead">竞赛编程的奖励需要执行 LLM 生成的代码并与 test cases 对比结果。</p>
+    <div class="flow">
+      <div class="flow-step">LLM 生成代码</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step pink">E2B Sandbox 执行</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">对比 Test Cases</div>
+      <div class="flow-arrow">→</div>
+      <div class="flow-step">返回 Reward</div>
+    </div>
+    <div class="block-q"><p>"本地执行 LLM 生成的代码风险极高 — 模型可能生成损坏硬盘甚至 rm -rf 整个目录的程序。" — Hugging Face 文档</p></div>
+  </section>
+
+  <section class="section" id="s3">
+    <h2>🔒 E2B 代码执行 Reward</h2>
+    <p class="lead">E2B sandbox 满足 RL 训练对安全性、速度和成本的严格要求。</p>
+    <div class="chart">
+      <div class="chart-row"><div class="chart-label">安全性</div><div class="chart-bar-wrap"><div class="chart-bar pink" style="width:95%">Firecracker microVM 隔离</div></div></div>
+      <div class="chart-row"><div class="chart-label">启动速度</div><div class="chart-bar-wrap"><div class="chart-bar green" style="width:98%">150-170ms 启动</div></div></div>
+      <div class="chart-row"><div class="chart-label">运行成本</div><div class="chart-bar-wrap"><div class="chart-bar blue" style="width:92%">单次训练仅几美元</div></div></div>
+      <div class="chart-row"><div class="chart-label">多语言支持</div><div class="chart-bar-wrap"><div class="chart-bar amber" style="width:85%">Python/JS/C++ + 更多</div></div></div>
+    </div>
+    <div class="block-q"><p>"We found E2B is a simple and cost-effective platform for this. It was extremely easy to set up." — Lewis Tunstall, Hugging Face Research Engineer</p></div>
+  </section>
+
+  <section class="section" id="s4">
+    <h2>🔧 集成实现</h2>
+    <p class="lead">几小时即可完成 E2B 集成，使用异步 Sandbox 并发启动数百个实例。</p>
+    <div class="agent-grid">
+      <div class="card"><h4>异步并发</h4><p>AsyncSandbox.create() + asyncio.gather() 并发运行数百个脚本</p></div>
+      <div class="card"><h4>Sandbox 持久性</h4><p>跨调用保持状态，Jupyter-like notebook 执行模式</p></div>
+      <div class="card"><h4>多语言支持</h4><p>指定语言参数即可切换 Python/JS/C++/Rust/Lean4</p></div>
+      <div class="card"><h4>快速集成</h4><p>"It took just a few hours to implement E2B" — Lewis Tunstall</p></div>
+    </div>
+  </section>
+
+  <section class="section" id="s5">
+    <h2>🔮 未来方向</h2>
+    <p class="lead">Hugging Face 计划扩大 RL pipeline，为 OlympicCoder 等模型提供代码执行反馈。</p>
+    <div class="block-q"><p>"We plan to scale up our reinforcement learning pipeline to target code execution feedback for models like OlympicCoder" — Lewis Tunstall</p></div>
+  </section>
+</div>
+
+<footer class="footer">
+  <p><a href="../">← 返回 Hub</a> · 原文：<a href="https://e2b.dev/blog/how-hugging-face-is-using-e2b-to-replicate-deepseek-r1" target="_blank">e2b.dev</a></p>
+  <p style="margin-top:8px">E2B Blog Deep-Dive · 作者：Tereza Tizkova · 2025-03-31</p>
+</footer>
+</body>
+</html>

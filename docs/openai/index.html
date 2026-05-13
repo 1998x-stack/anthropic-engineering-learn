@@ -7,6 +7,18 @@
   <link rel="stylesheet" href="../assets/style.css">
   <link rel="preconnect" href="https://fonts.googleapis.com">
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    .category-count {
+      font-size: 13px;
+      font-weight: 700;
+      background: #f1f5f9;
+      color: var(--text-secondary);
+      padding: 4px 12px;
+      border-radius: 999px;
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+  </style>
 </head>
 <body>
 
@@ -28,84 +40,46 @@
     <div class="hero-stats">
       <div class="stat"><span class="stat-num">9</span><span class="stat-label">Articles</span></div>
       <div class="stat"><span class="stat-num done">9</span><span class="stat-label">Deep-Dives</span></div>
+      <div class="stat"><span class="stat-num">2</span><span class="stat-label">Categories</span></div>
     </div>
   </div>
 </header>
 
 <main class="container">
 
+  <!-- ====== AGENTS & CODEX ====== -->
   <section class="category">
     <div class="category-header">
-      <div class="category-icon" style="background:linear-gradient(135deg,#0ea5e9,#0284c7)">📄</div>
+      <div class="category-icon" style="background:linear-gradient(135deg,#0ea5e9,#0284c7)">🤖</div>
       <div>
-        <h2>All Articles</h2>
-        <p>9 articles · 9 deep-dives</p>
+        <h2>Agents &amp; Codex</h2>
+        <p>Codex harness engineering, Responses API, data agents, and orchestration</p>
       </div>
+      <span class="category-count">6</span>
     </div>
     <div class="cards">
-      <a href="beyond-rate-limits.html" class="card card-done">
-        <div class="card-status"><span class="badge-done">✓ Done</span></div>
-        <div class="card-body">
-          <h3>Beyond rate limits: scaling access to Codex and Sora</h3>
-          <div class="card-meta"><span class="card-date">2026-02-13</span></div>
-        </div>
-      </a>
-      <a href="delivering-low-latency-voice-ai-at-scale.html" class="card card-done">
-        <div class="card-status"><span class="badge-done">✓ Done</span></div>
-        <div class="card-body">
-          <h3>How OpenAI delivers low-latency voice AI at scale</h3>
-          <div class="card-meta"><span class="card-date">2026-05-04</span></div>
-        </div>
-      </a>
-      <a href="equip-responses-api-computer-environment.html" class="card card-done">
-        <div class="card-status"><span class="badge-done">✓ Done</span></div>
-        <div class="card-body">
-          <h3>From model to agent: Equipping the Responses API with a computer environment</h3>
-          <div class="card-meta"><span class="card-date">2026-03-11</span></div>
-        </div>
-      </a>
-      <a href="harness-engineering.html" class="card card-done">
-        <div class="card-status"><span class="badge-done">✓ Done</span></div>
-        <div class="card-body">
-          <h3>Harness engineering: leveraging Codex in an agent-first world</h3>
-          <div class="card-meta"><span class="card-date">2026-02-11</span></div>
-        </div>
-      </a>
-      <a href="inside-our-in-house-data-agent.html" class="card card-done">
-        <div class="card-status"><span class="badge-done">✓ Done</span></div>
-        <div class="card-body">
-          <h3>Inside OpenAI's in-house data agent</h3>
-          <div class="card-meta"><span class="card-date">2026-01-29</span></div>
-        </div>
-      </a>
-      <a href="mrc-supercomputer-networking.html" class="card card-done">
-        <div class="card-status"><span class="badge-done">✓ Done</span></div>
-        <div class="card-body">
-          <h3>Supercomputer networking to accelerate large scale AI training</h3>
-          <div class="card-meta"><span class="card-date">2026-05-05</span></div>
-        </div>
-      </a>
-      <a href="open-source-codex-orchestration-symphony.html" class="card card-done">
-        <div class="card-status"><span class="badge-done">✓ Done</span></div>
-        <div class="card-body">
-          <h3>An open-source spec for Codex orchestration: Symphony</h3>
-          <div class="card-meta"><span class="card-date">2026-04-27</span></div>
-        </div>
-      </a>
-      <a href="speeding-up-agentic-workflows-with-websockets.html" class="card card-done">
-        <div class="card-status"><span class="badge-done">✓ Done</span></div>
-        <div class="card-body">
-          <h3>Speeding up agentic workflows with WebSockets in the Responses API</h3>
-          <div class="card-meta"><span class="card-date">2026-04-22</span></div>
-        </div>
-      </a>
-      <a href="unlocking-the-codex-harness.html" class="card card-done">
-        <div class="card-status"><span class="badge-done">✓ Done</span></div>
-        <div class="card-body">
-          <h3>Unlocking the Codex harness: how we built the App Server</h3>
-          <div class="card-meta"><span class="card-date">2026-02-04</span></div>
-        </div>
-      </a>
+      <a href="open-source-codex-orchestration-symphony.html" class="card card-done"><div class="card-status"><span class="badge-done">✓</span></div><div class="card-body"><h3>An open-source spec for Codex orchestration: Symphony</h3><div class="card-meta"><span class="card-date">2026-04-27</span></div></div></a>
+      <a href="speeding-up-agentic-workflows-with-websockets.html" class="card card-done"><div class="card-status"><span class="badge-done">✓</span></div><div class="card-body"><h3>Speeding up agentic workflows with WebSockets in the Responses API</h3><div class="card-meta"><span class="card-date">2026-04-22</span></div></div></a>
+      <a href="equip-responses-api-computer-environment.html" class="card card-done"><div class="card-status"><span class="badge-done">✓</span></div><div class="card-body"><h3>From model to agent: Equipping the Responses API with a computer environment</h3><div class="card-meta"><span class="card-date">2026-03-11</span></div></div></a>
+      <a href="harness-engineering.html" class="card card-done"><div class="card-status"><span class="badge-done">✓</span></div><div class="card-body"><h3>Harness engineering: leveraging Codex in an agent-first world</h3><div class="card-meta"><span class="card-date">2026-02-11</span></div></div></a>
+      <a href="unlocking-the-codex-harness.html" class="card card-done"><div class="card-status"><span class="badge-done">✓</span></div><div class="card-body"><h3>Unlocking the Codex harness: how we built the App Server</h3><div class="card-meta"><span class="card-date">2026-02-04</span></div></div></a>
+      <a href="inside-our-in-house-data-agent.html" class="card card-done"><div class="card-status"><span class="badge-done">✓</span></div><div class="card-body"><h3>Inside OpenAI&#x27;s in-house data agent</h3><div class="card-meta"><span class="card-date">2026-01-29</span></div></div></a>
+    </div>
+  </section>
+  <!-- ====== INFRASTRUCTURE ====== -->
+  <section class="category">
+    <div class="category-header">
+      <div class="category-icon" style="background:linear-gradient(135deg,#f59e0b,#d97706)">🔧</div>
+      <div>
+        <h2>Infrastructure</h2>
+        <p>Scaling systems — rate limits, voice AI, and supercomputer networking</p>
+      </div>
+      <span class="category-count">3</span>
+    </div>
+    <div class="cards">
+      <a href="mrc-supercomputer-networking.html" class="card card-done"><div class="card-status"><span class="badge-done">✓</span></div><div class="card-body"><h3>Supercomputer networking to accelerate large scale AI training</h3><div class="card-meta"><span class="card-date">2026-05-05</span></div></div></a>
+      <a href="delivering-low-latency-voice-ai-at-scale.html" class="card card-done"><div class="card-status"><span class="badge-done">✓</span></div><div class="card-body"><h3>How OpenAI delivers low-latency voice AI at scale</h3><div class="card-meta"><span class="card-date">2026-05-04</span></div></div></a>
+      <a href="beyond-rate-limits.html" class="card card-done"><div class="card-status"><span class="badge-done">✓</span></div><div class="card-body"><h3>Beyond rate limits: scaling access to Codex and Sora</h3><div class="card-meta"><span class="card-date">2026-02-13</span></div></div></a>
     </div>
   </section>
 

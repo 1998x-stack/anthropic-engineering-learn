@@ -1,17 +1,120 @@
 <!DOCTYPE html>
-<html lang="en"><head><meta charset="UTF-8"><meta name="viewport" content="width=device-width, initial-scale=1.0"><title>Browserbase — Engineering Blogs</title><link rel="stylesheet" href="../assets/style.css"><link rel="preconnect" href="https://fonts.googleapis.com"><link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet"></head><body>
-<nav class="nav"><div class="nav-inner"><a href=".." class="nav-brand"><span class="nav-logo">⚡</span><span>Engineering Blogs Hub</span></a><a href=".." style="font-size:13px;color:var(--text-secondary)">← Back to Hub</a></div></nav>
-<header class="hero"><div class="hero-inner"><div class="hero-tag">https://www.browserbase.com/blog</div><h1>Browserbase</h1><p>Cloud browser infrastructure — Stagehand SDK, automation, and tutorials.</p><div class="hero-stats"><div class="stat"><span class="stat-num">10</span><span class="stat-label">Articles</span></div><div class="stat"><span class="stat-num done">10</span><span class="stat-label">Deep-Dives</span></div></div></div></header>
-<main class="container"><section class="category"><div class="category-header"><div class="category-icon" style="background:linear-gradient(135deg,#f97316,#ea580c)">📄</div><div><h2>All Articles</h2><p>10 articles · 10 deep-dives</p></div></div><div class="cards">
-      <a href="autobrowse.html" class="card card-done"><div class="card-status"><span class="badge-done">✓ Done</span></div><div class="card-body"><h3>Autobrowse: The Mythos moment for Browser Agents is here</h3><div class="card-meta"><span class="card-date">2026-05-06</span></div></div></a>
-      <a href="becoming-multi-region.html" class="card card-done"><div class="card-status"><span class="badge-done">✓ Done</span></div><div class="card-body"><h3>Becoming Multi-Region</h3><div class="card-meta"><span class="card-date">2024-12-06</span></div></div></a>
-      <a href="benchmarks-are-marathons.html" class="card card-done"><div class="card-status"><span class="badge-done">✓ Done</span></div><div class="card-body"><h3>Benchmarks are marathons, here’s how we 5x’d our browser performance</h3><div class="card-meta"><span class="card-date">2026-04-30</span></div></div></a>
-      <a href="ai-browser-prompt-injection-containment-security.html" class="card card-done"><div class="card-status"><span class="badge-done">✓ Done</span></div><div class="card-body"><h3>Your AI browser is one malicious &lt;div&gt; away from going rogue</h3><div class="card-meta"><span class="card-date">2026-02-13</span></div></div></a>
-      <a href="ai-web-agent-sdk.html" class="card card-done"><div class="card-status"><span class="badge-done">✓ Done</span></div><div class="card-body"><h3>Stagehand gets even better – The AI Web Agent SDK</h3><div class="card-meta"><span class="card-date">2025-04-07</span></div></div></a>
-      <a href="1password-agentic-autofill.html" class="card card-done"><div class="card-status"><span class="badge-done">✓ Done</span></div><div class="card-body"><h3>1Password &amp; Browserbase - Pioneering agentic autofill for credential access</h3><div class="card-meta"><span class="card-date">2025-10-08</span></div></div></a>
-      <a href="an-internet-browser-for-ai.html" class="card card-done"><div class="card-status"><span class="badge-done">✓ Done</span></div><div class="card-body"><h3>An Internet Browser for AI</h3><div class="card-meta"><span class="card-date">2023-12-01</span></div></div></a>
-      <a href="automated-workflows.html" class="card card-done"><div class="card-status"><span class="badge-done">✓ Done</span></div><div class="card-body"><h3>8 workflows teams automate today with Browserbase</h3><div class="card-meta"><span class="card-date">2025-10-20</span></div></div></a>
-      <a href="best-proxy-scraper-web-automation.html" class="card card-done"><div class="card-status"><span class="badge-done">✓ Done</span></div><div class="card-body"><h3>What is the Best Proxy Scraper for Web Automation? 2025 Guide</h3><div class="card-meta"><span class="card-date">2025-11-07</span></div></div></a>
-      <a href="best-web-scraping-headless-browsers.html" class="card card-done"><div class="card-status"><span class="badge-done">✓ Done</span></div><div class="card-body"><h3>Best Headless Browsers for Web Scraping: Tools and Examples (2025 Guide)</h3><div class="card-meta"><span class="card-date">2025-11-07</span></div></div></a>
-    </div></section></main>
-<footer class="footer"><p>Source: <a href="https://www.browserbase.com/blog" target="_blank">browserbase.com</a> · <a href="..">← Back to Hub</a></p></footer></body></html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Browserbase — Engineering Blogs</title>
+  <link rel="stylesheet" href="../assets/style.css">
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet">
+  <style>
+    .category-count {
+      font-size: 13px;
+      font-weight: 700;
+      background: #f1f5f9;
+      color: var(--text-secondary);
+      padding: 4px 12px;
+      border-radius: 999px;
+      margin-left: auto;
+      flex-shrink: 0;
+    }
+  </style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <a href=".." class="nav-brand">
+      <span class="nav-logo">⚡</span>
+      <span>Engineering Blogs Hub</span>
+    </a>
+    <a href=".." style="font-size:13px;color:var(--text-secondary)">← Back to Hub</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="hero-inner">
+    <div class="hero-tag">https://www.browserbase.com/blog</div>
+    <h1>Browserbase</h1>
+    <p>Cloud browser infrastructure — Stagehand SDK, automation, and tutorials.</p>
+    <div class="hero-stats">
+      <div class="stat"><span class="stat-num">10</span><span class="stat-label">Articles</span></div>
+      <div class="stat"><span class="stat-num done">10</span><span class="stat-label">Deep-Dives</span></div>
+      <div class="stat"><span class="stat-num">4</span><span class="stat-label">Categories</span></div>
+    </div>
+  </div>
+</header>
+
+<main class="container">
+
+  <!-- ====== TUTORIALS ====== -->
+  <section class="category">
+    <div class="category-header">
+      <div class="category-icon" style="background:linear-gradient(135deg,#f97316,#ea580c)">📖</div>
+      <div>
+        <h2>Tutorials</h2>
+        <p>Guides on web scraping, proxies, and headless browsers</p>
+      </div>
+      <span class="category-count">5</span>
+    </div>
+    <div class="cards">
+      <a href="best-proxy-scraper-web-automation.html" class="card card-done"><div class="card-status"><span class="badge-done">✓</span></div><div class="card-body"><h3>What is the Best Proxy Scraper for Web Automation? 2025 Guide</h3><div class="card-meta"><span class="card-date">2025-11-07</span></div></div></a>
+      <a href="best-web-scraping-headless-browsers.html" class="card card-done"><div class="card-status"><span class="badge-done">✓</span></div><div class="card-body"><h3>Best Headless Browsers for Web Scraping: Tools and Examples (2025 Guide)</h3><div class="card-meta"><span class="card-date">2025-11-07</span></div></div></a>
+      <a href="automated-workflows.html" class="card card-done"><div class="card-status"><span class="badge-done">✓</span></div><div class="card-body"><h3>8 workflows teams automate today with Browserbase</h3><div class="card-meta"><span class="card-date">2025-10-20</span></div></div></a>
+      <a href="1password-agentic-autofill.html" class="card card-done"><div class="card-status"><span class="badge-done">✓</span></div><div class="card-body"><h3>1Password &amp; Browserbase - Pioneering agentic autofill for credential access</h3><div class="card-meta"><span class="card-date">2025-10-08</span></div></div></a>
+      <a href="an-internet-browser-for-ai.html" class="card card-done"><div class="card-status"><span class="badge-done">✓</span></div><div class="card-body"><h3>An Internet Browser for AI</h3><div class="card-meta"><span class="card-date">2023-12-01</span></div></div></a>
+    </div>
+  </section>
+  <!-- ====== STAGEHAND SDK ====== -->
+  <section class="category">
+    <div class="category-header">
+      <div class="category-icon" style="background:linear-gradient(135deg,#6366f1,#8b5cf6)">🎭</div>
+      <div>
+        <h2>Stagehand SDK</h2>
+        <p>The AI web agent SDK — features and updates</p>
+      </div>
+      <span class="category-count">2</span>
+    </div>
+    <div class="cards">
+      <a href="ai-browser-prompt-injection-containment-security.html" class="card card-done"><div class="card-status"><span class="badge-done">✓</span></div><div class="card-body"><h3>Your AI browser is one malicious &lt;div&gt; away from going rogue</h3><div class="card-meta"><span class="card-date">2026-02-13</span></div></div></a>
+      <a href="ai-web-agent-sdk.html" class="card card-done"><div class="card-status"><span class="badge-done">✓</span></div><div class="card-body"><h3>Stagehand gets even better – The AI Web Agent SDK</h3><div class="card-meta"><span class="card-date">2025-04-07</span></div></div></a>
+    </div>
+  </section>
+  <!-- ====== GENERAL ====== -->
+  <section class="category">
+    <div class="category-header">
+      <div class="category-icon" style="background:linear-gradient(135deg,#64748b,#475569)">📝</div>
+      <div>
+        <h2>General</h2>
+        <p>Infrastructure, security, and company updates</p>
+      </div>
+      <span class="category-count">2</span>
+    </div>
+    <div class="cards">
+      <a href="benchmarks-are-marathons.html" class="card card-done"><div class="card-status"><span class="badge-done">✓</span></div><div class="card-body"><h3>Benchmarks are marathons, here’s how we 5x’d our browser performance</h3><div class="card-meta"><span class="card-date">2026-04-30</span></div></div></a>
+      <a href="becoming-multi-region.html" class="card card-done"><div class="card-status"><span class="badge-done">✓</span></div><div class="card-body"><h3>Becoming Multi-Region</h3><div class="card-meta"><span class="card-date">2024-12-06</span></div></div></a>
+    </div>
+  </section>
+  <!-- ====== ANNOUNCEMENTS ====== -->
+  <section class="category">
+    <div class="category-header">
+      <div class="category-icon" style="background:linear-gradient(135deg,#0ea5e9,#0284c7)">📢</div>
+      <div>
+        <h2>Announcements</h2>
+        <p>Product launches and milestones</p>
+      </div>
+      <span class="category-count">1</span>
+    </div>
+    <div class="cards">
+      <a href="autobrowse.html" class="card card-done"><div class="card-status"><span class="badge-done">✓</span></div><div class="card-body"><h3>Autobrowse: The Mythos moment for Browser Agents is here</h3><div class="card-meta"><span class="card-date">2026-05-06</span></div></div></a>
+    </div>
+  </section>
+
+</main>
+
+<footer class="footer">
+  <p>Source: <a href="https://www.browserbase.com/blog" target="_blank">browserbase.com/blog</a> · <a href="..">← Back to Hub</a></p>
+</footer>
+
+</body>
+</html>

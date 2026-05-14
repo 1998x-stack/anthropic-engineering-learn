@@ -87,6 +87,54 @@
 | 35 | [Agent 评估就绪清单](./35-agent-evaluation-readiness-checklist.md) | LangChain Accounts | 6 步清单：追踪→数据集→评分器→CI/CD 门控 |
 | 36 | [可观测性驱动评估](./36-agent-observability-powers-evaluation.md) | LangChain Accounts | Run/Trace/Thread 三原语映射三级评估 |
 
+## Part 24：RAG 深度技术
+
+| # | 标题 | 作者 | 核心主题 |
+|---|------|------|----------|
+| 79 | [结构化切分与元数据 RAG](./79-a-chunk-by-any-other-name.md) | LangChain Team | HTML 标题层级切分 + 自查询检索器 |
+| 80 | [图元数据过滤 RAG](./80-graph-metadata-filtering-rag.md) | LangChain Team | Neo4j 多跳关系预过滤 + 向量搜索 |
+| 81 | [查询构造四策略](./81-query-construction.md) | LangChain Team | 元数据过滤/SQL/SQL+语义/Cypher |
+
+## Part 25：工具系统
+
+| # | 标题 | 作者 | 核心主题 |
+|---|------|------|----------|
+| 82 | [Agent 工具包](./82-agent-toolkits.md) | LangChain Team | 7 种 Toolkit，SQL 纠错循环 |
+| 83 | [工具调用标准化](./83-tool-calling-with-langchain.md) | LangChain Team | bind_tools/tool_calls/agent 三组件 |
+| 84 | [Command 多 Agent 工具](./84-command-tool-multi-agent.md) | LangChain Team | 无边图概念，跨层级 Handoff |
+
+## Part 26：安全与合规
+
+| # | 标题 | 作者 | 核心主题 |
+|---|------|------|----------|
+| 85 | [Agent 授权入门](./85-agent-authorization.md) | LangChain Team | AuthN vs AuthZ，Agent 三大独特挑战 |
+| 86 | [两种 Agent 授权模式](./86-two-types-agent-authorization.md) | LangChain Team | Assistant(代理用户) vs Claw(独立凭证) |
+| 87 | [PII 数据处理](./87-handling-pii-data.md) | LangChain Team | Presidio vs OpaquePrompts，日志脱敏 |
+
+## Part 27：生产运维与自学习
+
+| # | 标题 | 作者 | 核心主题 |
+|---|------|------|----------|
+| 88 | [在 AI 中 Traces 就是文档](./88-in-ai-traces-document-the-app.md) | Harrison Chase | 面向 Trace 的工程实践迁移 |
+| 89 | [生产环境 Agent 监控](./89-production-monitoring.md) | LangChain Team | 四大支柱：采集/发现/评估/审核 |
+| 90 | [自学习 AI 系统](./90-self-learning-gpts.md) | LangChain Team | 四步闭环：追踪→反馈→筛选→Few-shot 注入 |
+
+## Part 28：系统化改进与基准测试
+
+| # | 标题 | 作者 | 核心主题 |
+|---|------|------|----------|
+| 91 | [SCIPE 系统化改进](./91-scipe-systematic-improvement.md) | LangChain Team | 概率分析定位最值得修复的节点 |
+| 92 | [Promptim 自动优化](./92-promptim-prompt-optimizer.md) | LangChain Team | 跑分→元提示改写→再跑分循环，vs DSPy |
+| 93 | [Agent 工具使用基准](./93-benchmarking-agent-tool-use.md) | LangChain Team | 4 个基准任务，7 个模型对比 |
+
+## Part 29：知识图谱、Functional API 与工程复盘
+
+| # | 标题 | 作者 | 核心主题 |
+|---|------|------|----------|
+| 94 | [知识图谱增强 RAG](./94-knowledge-graphs-enhance-rag.md) | LangChain Team | 自动建图 + 三路混合检索 |
+| 95 | [LangGraph Functional API](./95-langgraph-functional-api.md) | LangChain Team | @entrypoint/@task 两原语，vs Graph API |
+| 96 | [重建 Chat LangChain](./96-rebuilding-chat-langchain.md) | LangChain Team | 放弃向量检索，双模 Agent + 子图架构 |
+
 ## Part 21：Runtime 设计与 Agent 记忆
 
 | # | 标题 | 作者 | 核心主题 |

@@ -47,6 +47,14 @@
 | 20 | [评估深度 Agent 五条经验](./20-evaluating-deep-agents-our-learnings.md) | LangChain Accounts | 定制断言/单步评估/完整轮次/多轮模拟/环境隔离 |
 | 21 | [追踪驱动改进循环](./21-traces-start-agent-improvement-loop.md) | LangChain Accounts | 追踪→富化→改进→验证→部署，完整反馈闭环 |
 
+## Part 5：上下文工程崛起与开放生态
+
+| # | 标题 | 作者 | 核心主题 |
+|---|------|------|----------|
+| 22 | [上下文工程的崛起](./22-the-rise-of-context-engineering.md) | Harrison Chase | 定义上下文工程，与提示工程的区别，五大要素 |
+| 23 | [文件系统驱动的上下文工程](./23-how-agents-can-use-filesystems-for-context-engineering.md) | Nick Huang | 文件系统解决四类上下文失败：过多/过大/找不到/缺失 |
+| 24 | [Deep Agents Deploy：开放替代方案](./24-deep-agents-deploy-open-alternative.md) | LangChain Team | 一键部署 vs 围墙花园，记忆所有权是核心战场 |
+
 ---
 
 ## 文章结构说明

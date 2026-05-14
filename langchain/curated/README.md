@@ -28,6 +28,17 @@
 | 11 | [Eval 驱动的 Harness 爬坡](./11-better-harness-eval-driven-hill-climbing.md) | LangChain Accounts | Eval 即训练数据，自动化爬坡方法论 |
 | 12 | [Agent 工程：新学科](./12-agent-engineering-a-new-discipline.md) | LangChain Team | 定义 Agent 工程学科，产品思维+工程+运维三支柱 |
 
+## Part 3：Deep Agents 全生态
+
+| # | 标题 | 作者 | 核心主题 |
+|---|------|------|----------|
+| 13 | [深度 Agent](./13-deep-agents.md) | Harrison Chase | 四大特征：详尽提示/规划工具/子Agent/文件系统 |
+| 14 | [生产级运行时](./14-runtime-behind-production-deep-agents.md) | Sydney Runkle, Vivek Trivedy | 11 层运行时基础设施：持久执行/记忆/多租户/HITL/可观测性 |
+| 15 | [技能系统](./15-using-skills-with-deep-agents.md) | Lance Martin | Skills = 渐进式披露，token 高效，持续学习 |
+| 16 | [上下文管理](./16-context-management-for-deepagents.md) | LangChain Team | 三层机制：大结果卸载/大输入截断/摘要压缩 |
+| 17 | [调试 Deep Agents](./17-debugging-deep-agents-with-langsmith.md) | LangChain Accounts | Polly AI 助手 + LangSmith Fetch CLI 调试工具链 |
+| 18 | [多模型调优](./18-tuning-deep-agents-different-models.md) | Vivek Trivedy, Mason Daugherty | Harness Profiles：按模型定制提示/工具/中间件 |
+
 ---
 
 ## 文章结构说明
@@ -51,8 +62,9 @@
 
 1. `12 Agent 工程新学科` → 理解这个领域是什么
 2. `01 线束解剖学` → 理解 Agent 系统的核心架构
-3. `07 上下文工程` → 掌握最关键的工程技能
-4. `04 GTM Agent 实战` → 看一个完整的业务落地案例
+3. `13 深度 Agent` → 了解什么让 Agent 从浅层变深度
+4. `07 上下文工程` → 掌握最关键的工程技能
+5. `04 GTM Agent 实战` → 看一个完整的业务落地案例
 
 ### 路径 B：构建改进闭环（适合实践者）
 
@@ -60,11 +72,22 @@
 2. `05 人类判断飞轮` → 融入人类专家知识
 3. `11 Eval 驱动爬坡` → 系统化改进方法论
 4. `10 Harness 工程优化` → 看 Top 30→Top 5 的具体操作
+5. `17 调试 Deep Agents` → Polly + CLI 实战调试
 
 ### 路径 C：深度架构（适合架构师）
 
 1. `01 线束解剖学` → 核心架构
 2. `08 中间件定制` → 扩展机制
 3. `02 异步子 Agent` → 并发编排
-4. `09 持续学习` → 三层学习架构
-5. `06 线束与记忆` → 开源战略思考
+4. `16 上下文管理` → 卸载/摘要/恢复策略
+5. `14 生产级运行时` → 持久执行、多租户、沙箱
+6. `18 多模型调优` → Harness Profiles 适配不同模型
+
+### 路径 D：Deep Agents 从入门到生产
+
+1. `13 深度 Agent` → 什么是 Deep Agents
+2. `15 技能系统` → Skills 渐进式披露
+3. `16 上下文管理` → 长时运行的上下文压缩
+4. `14 生产级运行时` → 部署到生产环境
+5. `17 调试` → 排查生产问题
+6. `18 多模型调优` → 适配不同模型提供商

@@ -39,6 +39,14 @@
 | 17 | [调试 Deep Agents](./17-debugging-deep-agents-with-langsmith.md) | LangChain Accounts | Polly AI 助手 + LangSmith Fetch CLI 调试工具链 |
 | 18 | [多模型调优](./18-tuning-deep-agents-different-models.md) | Vivek Trivedy, Mason Daugherty | Harness Profiles：按模型定制提示/工具/中间件 |
 
+## Part 4：评估与追踪实战
+
+| # | 标题 | 作者 | 核心主题 |
+|---|------|------|----------|
+| 19 | [评估工程：少即是多](./19-how-we-build-evals-for-deep-agents.md) | LangChain Accounts | 行为目录驱动评估设计，正确性优先于效率 |
+| 20 | [评估深度 Agent 五条经验](./20-evaluating-deep-agents-our-learnings.md) | LangChain Accounts | 定制断言/单步评估/完整轮次/多轮模拟/环境隔离 |
+| 21 | [追踪驱动改进循环](./21-traces-start-agent-improvement-loop.md) | LangChain Accounts | 追踪→富化→改进→验证→部署，完整反馈闭环 |
+
 ---
 
 ## 文章结构说明
@@ -91,3 +99,11 @@
 4. `14 生产级运行时` → 部署到生产环境
 5. `17 调试` → 排查生产问题
 6. `18 多模型调优` → 适配不同模型提供商
+
+### 路径 E：评估体系（适合质量工程师）
+
+1. `19 评估工程` → 如何设计有效的 Eval
+2. `20 评估五条经验` → 单步/多步/多轮/环境隔离实操
+3. `21 追踪驱动改进` → 从追踪到改进的完整闭环
+4. `11 Eval 驱动爬坡` → 自动化爬坡方法论
+5. `03 可观测性与反馈` → 反馈来源与平台需求

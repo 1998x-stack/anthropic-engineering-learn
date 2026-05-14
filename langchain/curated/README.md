@@ -87,6 +87,22 @@
 | 35 | [Agent 评估就绪清单](./35-agent-evaluation-readiness-checklist.md) | LangChain Accounts | 6 步清单：追踪→数据集→评分器→CI/CD 门控 |
 | 36 | [可观测性驱动评估](./36-agent-observability-powers-evaluation.md) | LangChain Accounts | Run/Trace/Thread 三原语映射三级评估 |
 
+## Part 19：框架思考、RAG 解构与记忆系统
+
+| # | 标题 | 作者 | 核心主题 |
+|---|------|------|----------|
+| 64 | [如何思考 Agent 框架](./64-how-to-think-about-agent-frameworks.md) | Harrison Chase | 工作流 vs Agent 混合体，控制上下文是关键 |
+| 65 | [RAG 技术全景拆解](./65-deconstructing-rag.md) | LangChain Team | 查询变换/路由/构造/索引/后处理五大模块 |
+| 66 | [Agent Builder 记忆系统](./66-agent-builder-memory-system.md) | LangChain Team | 虚拟文件系统表示记忆，用户纠正驱动学习 |
+
+## Part 20：Prompt 优化与产品指标
+
+| # | 标题 | 作者 | 核心主题 |
+|---|------|------|----------|
+| 67 | [Prompt 优化系统性方法](./67-exploring-prompt-optimization.md) | LangChain Team | 5 种算法对比，优化 = 长期记忆 |
+| 68 | [Few-shot 提升工具调用](./68-few-shot-prompting-tool-calling.md) | LangChain Team | 3 个动态示例 ≈ 13 个固定示例，消息格式 > 字符串 |
+| 69 | [AI 产品成功的隐藏指标](./69-hidden-metric-ai-product-success.md) | LangChain Team | CAIR 信心框架：Value/(Risk×Correction) |
+
 ## Part 17：Agent 设计模式深潜
 
 | # | 标题 | 作者 | 核心主题 |

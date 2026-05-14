@@ -87,6 +87,14 @@
 | 35 | [Agent 评估就绪清单](./35-agent-evaluation-readiness-checklist.md) | LangChain Accounts | 6 步清单：追踪→数据集→评分器→CI/CD 门控 |
 | 36 | [可观测性驱动评估](./36-agent-observability-powers-evaluation.md) | LangChain Accounts | Run/Trace/Thread 三原语映射三级评估 |
 
+## Part 30：Agent 记忆工程
+
+| # | 标题 | 作者 | 核心主题 |
+|---|------|------|----------|
+| 97 | [LangGraph Memory 语义搜索](./97-semantic-search-langgraph-memory.md) | LangChain Team | 从精确匹配到按"意思"检索记忆 |
+| 98 | [LangMem SDK](./98-langmem-sdk.md) | LangChain Team | 三种记忆（语义/程序/情景），自动优化行为模式 |
+| 99 | [Agent Builder 记忆实战](./99-how-we-built-agent-builder-memory.md) | LangChain Team | 文件即记忆，用户反馈驱动自然生长 |
+
 ## Part 24：RAG 深度技术
 
 | # | 标题 | 作者 | 核心主题 |

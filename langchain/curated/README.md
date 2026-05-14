@@ -87,6 +87,30 @@
 | 35 | [Agent 评估就绪清单](./35-agent-evaluation-readiness-checklist.md) | LangChain Accounts | 6 步清单：追踪→数据集→评分器→CI/CD 门控 |
 | 36 | [可观测性驱动评估](./36-agent-observability-powers-evaluation.md) | LangChain Accounts | Run/Trace/Thread 三原语映射三级评估 |
 
+## Part 21：Runtime 设计与 Agent 记忆
+
+| # | 标题 | 作者 | 核心主题 |
+|---|------|------|----------|
+| 70 | [构建 LangGraph](./70-building-langgraph.md) | LangChain Team | Channel-Node 执行算法，六大核心特性 |
+| 71 | [别再做 Workflow Builder](./71-not-another-workflow-builder.md) | Harrison Chase | 可视化工作流被高低两端夹击，真正问题是什么 |
+| 72 | [Agent 记忆系统](./72-memory-for-agents.md) | LangChain Team | CoALA 三种记忆（程序/语义/情景），热路径 vs 后台 |
+
+## Part 22：Ambient Agent、中间件与可观测性
+
+| # | 标题 | 作者 | 核心主题 |
+|---|------|------|----------|
+| 73 | [Ambient Agent 概念](./73-introducing-ambient-agents.md) | LangChain Team | 后台主动工作，通知/提问/审核三模式，Agent Inbox |
+| 74 | [Agent 中间件模式](./74-agent-middleware-patterns.md) | LangChain Team | before/after/modify 三钩子，洋葱模型执行 |
+| 75 | [框架与可观测性](./75-agent-frameworks-and-observability.md) | LangChain Team | LangSmith 框架无关设计，多框架+OTEL 集成 |
+
+## Part 23：LLM 评估方法论
+
+| # | 标题 | 作者 | 核心主题 |
+|---|------|------|----------|
+| 76 | [LLM 评估器准确性](./76-how-correct-are-llm-evaluators.md) | LangChain Team | 三种评估器基准测试，GPT-4 优势与固有偏见 |
+| 77 | [LLM-as-Judge 对齐人类偏好](./77-aligning-llm-judge-human-preferences.md) | LangChain Team | 自改进评估四步飞轮，少样本+人类纠正 |
+| 78 | [评估驱动开发](./78-evaluation-driven-development.md) | LangChain Team | Dosu 案例，EDD 六步工作流，失败信号金字塔 |
+
 ## Part 19：框架思考、RAG 解构与记忆系统
 
 | # | 标题 | 作者 | 核心主题 |

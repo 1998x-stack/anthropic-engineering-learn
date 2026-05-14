@@ -1,65 +1,211 @@
-# Your Harness, Your Memory
+# 你的线束，你的记忆：为什么 Agent 记忆的归属权决定了一切
 
-**Author:** Harrison Chase  
-**Source:** [LangChain Blog](https://www.langchain.com/blog/your-harness-your-memory)  
-**Date:** April 11, 2026  
-**Read Time:** 7 min
+**作者:** Harrison Chase  
+**来源:** [LangChain Blog](https://www.langchain.com/blog/your-harness-your-memory)  
+**日期:** 2026 年 4 月 11 日  
+**阅读时间:** 约 7 分钟
 
 ---
 
-Agent harnesses are becoming the dominant way to build agents, and they are not going anywhere. These harnesses are intimately tied to agent memory. If you used a closed harness — especially if it's behind a proprietary API — you are choosing to yield control of your agent's memory to a third party.
+> **一句话总结**  
+> 线束 (Harness) 管理着 Agent 的记忆 (Memory)。如果你使用封闭线束，你就把 Agent 最核心的资产 —— 记忆 —— 交给了第三方，并被永久锁定。
 
-## Agent Harnesses Are How You Build Agents
+---
 
-Examples include Claude Code, Deep Agents, Pi (powers OpenClaw), OpenCode, Codex, Letta Code, and more.
+## 核心要点
 
-When Claude Code's source code was leaked, there were **512k lines of code**. That code is the harness. Even the makers of the best model in the world are investing heavily in harnesses.
+1. **线束就是 Agent 的构建方式** —— 从 Claude Code 的 51.2 万行代码可以看出，连模型制造商自己都在重注线束工程
+2. **记忆不是插件，记忆就是线束本身** —— 短期记忆、长期记忆、上下文加载方式，全部由线束控制
+3. **不拥有线束 = 不拥有记忆** —— 封闭程度从"轻微"到"严重"分三级，最坏情况是完全丧失记忆的可见性和所有权
+4. **记忆是最深层的锁定机制** —— 模型可以轻松替换（因为无状态），但记忆一旦积累就无法迁移
+5. **开放线束 + 开放标准 = 真正的自主权** —— agents.md、skills 等开放标准是破除锁定的关键
 
-## Harnesses Are Tied to Memory
+---
 
-As Sarah Wooders put it: *"Memory isn't a plugin (it's the harness)"*.
+## 一、线束是构建 Agent 的方式
 
-A large responsibility of the harness is to interact with context. Managing context, and therefore memory, is a core capability of the agent harness. Memory is just a form of context:
+Agent 线束 (Agent Harness) 已经成为构建 Agent 的主流方式。当前主要的线束产品包括：
 
-- Short term memory (conversation messages, large tool call results) handled by the harness
-- Long term memory (cross-session memory) needs to be updated and read by the harness
-- How AGENTS.md/CLAUDE.md files are loaded into context
-- How skill metadata is shown to agents
-- What survives compaction, and what's lost
-- How the current working directory is represented
+| 线束 | 说明 |
+|------|------|
+| Claude Code | Anthropic 的编程 Agent |
+| Deep Agents | LangChain 的开源 Agent 线束 |
+| Pi (驱动 OpenClaw) | 开源线束 |
+| OpenCode | 开源编程 Agent |
+| Codex | OpenAI 的编程 Agent |
+| Letta Code | 基于 Letta 框架的编程 Agent |
 
-## If You Don't Own Your Harness, You Don't Own Your Memory
+> **一个关键事实**  
+> Claude Code 源码泄露时，发现其包含 **51.2 万行代码**。这就是线束的体量。即使拥有世界上最好模型的公司，也在线束上投入了巨大的工程资源。这说明：**模型本身不够，线束才是让模型变成产品的工程。**
 
-**Mildly bad**: If you use a stateful API (like OpenAI's Responses API), you store state on their server. Swapping models and resuming previous threads is no longer doable.
+---
 
-**Bad**: If you use a closed harness (like Claude Agent SDK), it interacts with memory in an unknown way. The shape of artifacts and how to use them is non-transferable.
+## 二、记忆就是线束
 
-**Worst**: When the whole harness, including long-term memory, is behind an API — you have zero ownership or visibility into memory.
+正如 Sarah Wooders 所说：
 
-Model providers are incentivized to move more behind APIs:
-- Anthropic launched Claude Managed Agents — everything behind an API, locked into their platform
-- Even though Codex is open source, it generates an encrypted compaction summary not usable outside the OpenAI ecosystem
+> *"Memory isn't a plugin — it's the harness."*  
+> *"记忆不是插件 —— 记忆就是线束本身。"*
 
-## Memory Creates Lock-in
+### 为什么记忆 = 线束？
 
-With memory, you build up a **proprietary dataset** — a dataset of user interactions and preferences. This allows you to provide a differentiated and increasingly intelligent experience.
+线束的核心职责是管理上下文 (Context)。而记忆本质上就是上下文的一种形式。线束控制着记忆的每一个环节：
 
-Without memory, agents are easily replicable by anyone who has access to the same tools. With memory, you have something that can't be easily copied.
+```
+┌─────────────────────────────────────────────────────┐
+│                  线束 (Harness)                       │
+│                                                     │
+│  ┌───────────────────┐   ┌────────────────────────┐ │
+│  │   短期记忆         │   │   长期记忆              │ │
+│  │   (Short-term)     │   │   (Long-term)          │ │
+│  │                   │   │                        │ │
+│  │ · 当前对话消息     │   │ · 跨会话持久化          │ │
+│  │ · 工具调用结果     │   │ · AGENTS.md / CLAUDE.md │ │
+│  │ · 压缩后存活的内容  │   │ · 技能 (Skills) 元数据  │ │
+│  │ · 工作目录表示     │   │ · 用户偏好和历史        │ │
+│  └───────────────────┘   └────────────────────────┘ │
+│                                                     │
+│           全部由线束读取、更新、管理                     │
+└─────────────────────────────────────────────────────┘
+```
 
-It's been relatively easy to switch model providers because they are stateless. As soon as there's state associated with switching, it's much harder — because this memory matters, and if you switch, you lose access to it.
+> **类比理解**  
+> 线束就像一个人的"大脑皮层"。短期记忆是工作记忆 —— 你正在处理的事情；长期记忆是经验 —— 你过去学到的东西。谁控制了大脑皮层，谁就控制了你的全部记忆。
 
-## Open Memory, Open Harnesses
+### 线束管理的记忆维度
 
-Memory should be:
-- **Open**, owned by whomever is developing the agentic experience
-- **Separate from model providers** — you want optionality to try whatever models are best
-- **Built on open standards** like agents.md and skills
+| 维度 | 说明 |
+|------|------|
+| 对话消息 | 当前会话中的短期记忆 |
+| 工具调用结果 | 大型工具输出的摘要与保留 |
+| 配置文件加载 | AGENTS.md / CLAUDE.md 如何注入上下文 |
+| 技能元数据 | 哪些技能信息对 Agent 可见 |
+| 压缩策略 | 什么信息在压缩中存活，什么丢失 |
+| 工作目录 | 当前工作环境如何呈现给模型 |
 
-Deep Agents as an example:
-- Open source
-- Model agnostic
-- Uses open standards (agents.md, skills)
-- Plugins to Mongo, Postgres, Redis for storing memories
-- Deployable via LangSmith Deployment or self-hosted
+---
 
-> In order to own your memory, you need to be using an Open Harness.
+## 三、不拥有线束 = 不拥有记忆
+
+> **为什么重要**  
+> 这不是一个理论问题。当你在封闭线束上积累了数月的使用数据和偏好记忆后，切换到另一个平台意味着**从零开始** —— 你所有的定制化体验瞬间消失。
+
+Harrison Chase 将封闭程度分为三个等级：
+
+```
+┌─────────────────────────────────────────────────────────────┐
+│                    记忆失控的三个等级                          │
+│                                                             │
+│  轻微 ──────────────── 严重 ──────────────── 最严重          │
+│                                                             │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────────┐  │
+│  │  有状态 API   │  │  封闭线束     │  │ 全托管 API        │  │
+│  │              │  │              │  │                  │  │
+│  │ 状态存在对方  │  │ 记忆交互方式  │  │ 线束 + 长期记忆   │  │
+│  │ 服务器上     │  │ 不透明       │  │ 全在 API 背后     │  │
+│  │              │  │              │  │                  │  │
+│  │ 例: OpenAI   │  │ 例: Claude   │  │ 例: Claude       │  │
+│  │ Responses API│  │ Agent SDK    │  │ Managed Agents   │  │
+│  │              │  │              │  │                  │  │
+│  │ 不能换模型   │  │ 产物不可迁移  │  │ 零所有权         │  │
+│  │ 不能续线程   │  │ 格式不通用   │  │ 零可见性         │  │
+│  └──────────────┘  └──────────────┘  └──────────────────┘  │
+└─────────────────────────────────────────────────────────────┘
+```
+
+### 模型供应商的激励方向
+
+模型供应商**天然有动力**把更多东西推到 API 背后，因为这能增加锁定：
+
+- **Anthropic** 推出了 Claude Managed Agents —— 一切都在 API 背后，完全锁定在他们的平台
+- **OpenAI** 的 Codex 虽然开源，但其压缩摘要 (Compaction Summary) 是**加密的** —— 在 OpenAI 生态之外无法使用
+
+---
+
+## 四、记忆是最深层的锁定
+
+> **类比理解**  
+> 想象你经营一家咖啡店，用某个 CRM 系统积累了三年的客户偏好数据 —— 谁喜欢燕麦奶、谁对坚果过敏、谁每周三下午来。如果这个 CRM 不让你导出数据，你就永远离不开它。Agent 记忆的锁定，本质上是同一回事。
+
+### 无记忆 vs 有记忆的 Agent
+
+```
+无记忆的 Agent                    有记忆的 Agent
+┌──────────────────┐            ┌──────────────────┐
+│  模型 + 工具      │            │  模型 + 工具      │
+│                  │            │  + 用户交互历史    │
+│  任何人都能复制   │            │  + 偏好数据集     │
+│  无差异化竞争力   │            │  + 定制化经验     │
+│                  │            │                  │
+│  可替代性: 高     │            │  可替代性: 低     │
+└──────────────────┘            └──────────────────┘
+```
+
+**关键洞察：**
+
+- **没有记忆**的 Agent 很容易被复制 —— 任何拥有相同工具的人都能做出一样的东西
+- **有了记忆**，你就拥有了一个**专属数据集 (Proprietary Dataset)** —— 用户交互和偏好的积累，这是无法轻易复制的
+- 切换模型供应商之所以容易，是因为模型调用是**无状态的** —— 每次调用独立，不依赖历史
+- 一旦有了状态（记忆），切换就变得**极其困难** —— 因为记忆确实重要，失去它意味着体验退化
+
+> **为什么重要**  
+> 这解释了为什么模型供应商都在争夺记忆层的控制权。谁拥有记忆，谁就拥有了最深层的用户锁定 —— 比模型本身更难替换。
+
+---
+
+## 五、解法：开放记忆，开放线束
+
+记忆应该满足三个原则：
+
+| 原则 | 含义 |
+|------|------|
+| **开放** | 记忆归开发者所有，而非模型供应商 |
+| **独立于模型供应商** | 保留随时切换到最优模型的自由度 |
+| **基于开放标准** | 使用 agents.md、skills 等社区标准 |
+
+### Deep Agents 的实践
+
+LangChain 的 Deep Agents 提供了一个开放线束的范例：
+
+- **开源** —— 代码完全可审计、可修改
+- **模型无关 (Model Agnostic)** —— 不绑定特定模型供应商
+- **开放标准** —— 使用 agents.md 和 skills
+- **灵活存储** —— 记忆可存入 MongoDB、PostgreSQL、Redis 等
+- **灵活部署** —— 通过 LangSmith Deployment 或自托管
+
+```
+┌─────────────────────────────────────────────────┐
+│              开放线束架构                          │
+│                                                 │
+│   ┌─────────┐   ┌─────────┐   ┌─────────┐      │
+│   │ Claude  │   │  GPT    │   │ Gemini  │      │
+│   │         │   │         │   │         │ ...  │
+│   └────┬────┘   └────┬────┘   └────┬────┘      │
+│        └──────────┬──┴────────────┘             │
+│                   │                             │
+│           ┌───────▼───────┐                     │
+│           │  开放线束      │                     │
+│           │  (agents.md,  │                     │
+│           │   skills)     │                     │
+│           └───────┬───────┘                     │
+│                   │                             │
+│        ┌──────────┼──────────┐                  │
+│        ▼          ▼          ▼                  │
+│   ┌────────┐ ┌────────┐ ┌────────┐             │
+│   │MongoDB │ │Postgres│ │ Redis  │             │
+│   └────────┘ └────────┘ └────────┘             │
+│                                                 │
+│   你的记忆，你的数据库，你的控制权                  │
+└─────────────────────────────────────────────────┘
+```
+
+> **核心结论：要拥有你的记忆，你必须使用开放线束。**
+
+---
+
+## 延伸思考
+
+1. **记忆的可迁移格式：** 如果行业建立了一个"记忆导出标准"（类似 GDPR 的数据可携权），会如何改变 Agent 市场的竞争格局？
+2. **锁定的灰色地带：** Codex 开源了代码但加密了压缩摘要 —— 这种"半开放"策略是否会成为行业常态？开发者应该如何识别和应对？
+3. **记忆作为护城河：** 如果记忆是最深层的锁定，那么创业公司是否应该优先投资记忆系统而非模型能力？
+4. **开放标准的演进：** agents.md 和 skills 还处于早期阶段。这些标准需要具备哪些能力，才能真正实现跨线束的记忆互操作？

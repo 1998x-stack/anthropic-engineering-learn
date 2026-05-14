@@ -1,59 +1,183 @@
-# Human Judgment in the Agent Improvement Loop
+# Agent 改进循环中的人类判断 (Human Judgment in the Agent Improvement Loop)
 
-**Author:** Rahul Verma  
-**Source:** [LangChain Blog](https://www.langchain.com/blog/human-judgment-in-the-agent-improvement-loop)  
-**Date:** April 9, 2026  
-**Read Time:** 11 min
+**作者:** Rahul Verma  
+**来源:** [LangChain Blog](https://www.langchain.com/blog/human-judgment-in-the-agent-improvement-loop)  
+**日期:** 2026 年 4 月 9 日  
+**阅读时间:** 约 11 分钟
 
 ---
 
-AI agents work best when they reflect the knowledge and judgment your team has built over time. Most great organizations rely on tacit knowledge that lives inside their employees' minds. Teams often don't realize how critical that information is until they try building AI agents to automate it.
+> **一句话总结:** AI Agent 的持续改进不能靠"人工逐条审查"，而要靠一个**评估飞轮 (Flywheel)**——让人类专家的判断力转化为自动化评估器，再用生产数据不断校准，形成"部署 -> 收集数据 -> 改进 -> 再部署"的正循环。
 
-## How Human Input Improves Each Component
+## 核心要点
 
-### Workflow Design
+- **隐性知识是瓶颈：** 组织最有价值的知识往往存在于员工脑中，构建 Agent 时才会发现这些知识从未被显式记录
+- **人类判断要"乘以杠杆"：** 专家不应逐条审查 Agent 输出，而应设计和校准自动化评估器 (Automated Evaluator)，让判断力被放大
+- **三阶段飞轮：** 开发期构建测试套件 -> 上线后自动化监控 -> 用生产数据持续优化测试集
+- **"黄金数据集" (Golden Dataset) 是护城河：** 从生产环境中筛选出的最佳表现数据，作为未来版本的基准线
+- **Agent 的三个可调节面：** 工作流设计 (Workflow)、工具设计 (Tool)、上下文工程 (Context Engineering)
 
-LLMs are great at sequencing their own actions. But there are benefits to using deterministic code for parts of the workflow: lower latency, fewer tokens, and guaranteed execution of critical steps. In regulatory or high-risk settings, code must strictly control the sequence of actions.
+---
 
-### Tool Design
+## 为什么"人类判断"是 Agent 改进的关键？
 
-Developers implement the tools the agent can use and configure the names, parameters, and descriptions that the LLM relies on. A key tradeoff is flexibility vs. control: a general `execute_sql` step allows for flexible queries but increases risk; parameterized query tools are safer but less capable.
+AI Agent 最佳状态是能反映团队长期积累的知识和判断力。但大多数组织依赖的是**隐性知识 (Tacit Knowledge)**——那些活在员工脑子里、从未被写成文档的经验。
 
-### Agent Context
+> **类比：** 想象一家餐厅的大厨离职了。菜谱都在，但新厨师做出来就是"差点意思"。那个"差点意思"就是隐性知识——火候的感觉、调料的比例直觉、什么时候该多放半勺盐。构建 AI Agent 就像让一个新厨师接手——你会突然发现有多少关键信息从来没被记录下来。
 
-Instead of cramming everything into one system prompt, teams curate documentation, examples, and domain rules in advance, then let the agent fetch what it needs at runtime. This is the discipline of **context engineering**.
+### 为什么重要
 
-## The Agent Improvement Loop
+> 团队往往在尝试用 AI Agent 自动化业务流程时，才第一次意识到隐性知识的关键程度。这意味着 Agent 的构建过程本身就是一次宝贵的知识显式化机会。
 
-The most successful teams follow a tight iteration loop:
+---
 
-1. **Build** an agent quickly
-2. **Deploy** it to a production or production-like environment
-3. **Collect data** at each step to guide improvements
-4. **Iterate** — it's the LLM's real-time reasoning, not code, that determines behavior
+## 人类输入改进 Agent 的三个层面
 
-### Key Principle: Automated Evaluations Aligned with Human Judgment
+Agent 不是一个不可分割的黑盒，而是由多个可独立调优的组件构成。人类判断在每个层面都发挥着不同作用：
 
-Teams get more leverage when humans help design and calibrate automated evaluators, rather than manually reviewing large volumes of agent outputs. The scalable approach is to translate expert judgment into automated evaluations.
+| 层面 | 人类的角色 | 关键权衡 |
+|------|-----------|---------|
+| **工作流设计 (Workflow)** | 决定哪些步骤用 LLM 推理、哪些用确定性代码 | 灵活性 vs. 可靠性——监管/高风险场景必须用代码严格控制步骤顺序 |
+| **工具设计 (Tool)** | 定义 Agent 可用工具的名称、参数和描述 | 灵活性 vs. 安全性——通用 `execute_sql` 灵活但危险；参数化查询安全但能力受限 |
+| **上下文工程 (Context Engineering)** | 策划文档、示例和领域规则，让 Agent 按需检索 | 信息量 vs. 精准度——不是把所有东西塞进 System Prompt，而是让 Agent 运行时动态获取所需内容 |
 
-## Phases of the Flywheel
+### 工具设计的灵活性-安全性光谱
 
-### Phase 1: Development — Curate Test Suites and Evaluators
+```
+高灵活 / 高风险                              低灵活 / 低风险
+◀━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━━▶
 
-Before development starts, engineers should have at least a small set of use case scenarios and expected behavior as part of project requirements. As the agent approaches production readiness, work with product managers and subject matter experts to build a comprehensive test suite.
+execute_sql("任意SQL")    参数化查询工具     预定义查询模板
+   ↑ Agent 可以做任何事       ↑ 中间地带        ↑ Agent 只能选择预设选项
+   ↑ 但可能删库              ↑ 有约束的灵活     ↑ 安全但能力受限
+```
 
-### Phase 2: After Deployment — Use Automated Evaluations and Monitoring
+---
 
-- **Online evaluations**: Configure evaluators to run on observability data as it comes in (e.g., code checks for slow/dangerous SQL, LLM-as-judge for user satisfaction)
-- **Alerts**: Trigger alerts when spikes in errors, latency, or negative evaluation scores occur
-- **Annotation queues**: Flag notable traces for human review
+## Agent 改进循环 (Improvement Loop)
 
-### Phase 3: Continuous Refinement — Turn Production Data into Test Suites
+最成功的团队遵循一个紧凑的迭代循环：
 
-After launch, real production data becomes the best source of test cases. Create datasets out of reviewed traces to run a more robust suite of evaluations. Curate a "golden dataset" of the agent's best work as a baseline for future versions.
+```
+    ┌──────────┐
+    │  1. 构建  │  快速搭建 Agent
+    │  Build   │
+    └────┬─────┘
+         │
+         ▼
+    ┌──────────┐
+    │  2. 部署  │  投入生产或类生产环境
+    │  Deploy  │
+    └────┬─────┘
+         │
+         ▼
+    ┌──────────┐
+    │ 3. 收集   │  在每一步收集数据
+    │  数据     │  用于指导改进方向
+    └────┬─────┘
+         │
+         ▼
+    ┌──────────┐
+    │  4. 迭代  │  基于数据调整 Agent
+    │ Iterate  │──────────┐
+    └──────────┘          │
+         ▲                │
+         └────────────────┘
+```
 
-## The Flywheel
+### 核心原则：自动化评估必须对齐人类判断
 
-> Human feedback improves evaluators, test suites, and the agent itself. The improved agent deployed gets us more data that tells us how to improve it. These insights drive the next development iteration.
+> **类比：** 如果说 Agent 是一个学生，那人类专家不应该亲自批改每一份试卷，而应该**编写评分标准 (Rubric)**，然后训练助教 (自动化评估器) 按标准打分。人类的时间花在设计和校准评分标准上，而不是逐份批改上。
 
-This is the key to creating AI agents that create meaningful value for your business.
+这就是"杠杆"的含义——把专家判断力从 O(n) 的逐条审查，转化为 O(1) 的规则/评估器设计。
+
+---
+
+## 评估飞轮的三个阶段 (Phases of the Flywheel)
+
+### 阶段一：开发期——构建测试套件和评估器
+
+**时机：** Agent 开发开始之前到接近上线  
+**参与者：** 工程师 + 产品经理 + 领域专家 (SME)
+
+1. 在项目启动时，至少准备一小组**用例场景**和**预期行为**作为需求的一部分
+2. 随着 Agent 接近生产就绪，与产品经理和领域专家合作构建**全面的测试套件**
+3. 设计自动化评估器，将专家的判断标准编码为可执行的检查
+
+> **关键点：** 测试套件不是开发完成后才写的——它是需求的一部分，从第一天就开始积累。
+
+### 阶段二：上线后——自动化评估与监控
+
+部署后，三类机制协同工作：
+
+| 机制 | 说明 | 示例 |
+|------|------|------|
+| **在线评估 (Online Evaluation)** | 对实时可观测性数据运行评估器 | 代码检查慢查询/危险 SQL；LLM-as-Judge 评估用户满意度 |
+| **告警 (Alerts)** | 当关键指标出现异常峰值时触发通知 | 错误率飙升、延迟上涨、负面评估分数激增 |
+| **标注队列 (Annotation Queue)** | 将值得关注的轨迹 (Trace) 标记出来供人工审查 | 异常行为、边界情况、评估器不确定的案例 |
+
+### 阶段三：持续优化——将生产数据转化为测试套件
+
+上线后，真实的生产数据成为**最佳的测试用例来源**：
+
+1. 从经过人工审查的轨迹中创建数据集
+2. 运行更稳健的评估套件
+3. 策划**"黄金数据集" (Golden Dataset)**——从 Agent 的最佳表现中精选，作为未来版本的基准线
+
+> **黄金数据集的意义：** 它不仅是测试用例，更是 Agent "应该长什么样"的标杆。每次迭代新版本时，先跑黄金数据集确认没有退化，再看新能力是否提升。
+
+---
+
+## 飞轮全景图
+
+```
+                    ┌─────────────────────┐
+                    │    人类专家判断       │
+                    │  (隐性知识显式化)     │
+                    └────────┬────────────┘
+                             │
+                     设计 & 校准
+                             │
+                             ▼
+         ┌──────────────────────────────────────┐
+         │         自动化评估器 & 测试套件         │
+         │    (将专家判断编码为可执行的标准)        │
+         └──────────┬───────────────┬───────────┘
+                    │               │
+              评估 Agent          指导改进
+                    │               │
+                    ▼               │
+         ┌──────────────────┐      │
+         │   Agent (生产中)  │      │
+         │  处理真实用户请求  │      │
+         └────────┬─────────┘      │
+                  │                 │
+           产生生产数据              │
+                  │                 │
+                  ▼                 │
+         ┌──────────────────┐      │
+         │   数据收集 & 监控  │──────┘
+         │  在线评估 / 告警   │
+         │  标注队列          │──────────┐
+         └──────────────────┘          │
+                                       │
+                              优质案例进入
+                              黄金数据集
+                                       │
+                                       ▼
+                            ┌─────────────────┐
+                            │  下一轮开发迭代   │
+                            │  更好的 Agent     │
+                            └─────────────────┘
+```
+
+> **飞轮效应：** 人类反馈改进评估器和测试套件，改进后的 Agent 部署到生产环境产生更多数据，这些数据又告诉我们如何进一步改进。每转一圈，Agent 都变得更好，评估体系也变得更精准。
+
+---
+
+## 延伸思考
+
+1. **冷启动问题：** 在 Agent 上线前没有生产数据，如何构建第一版有意义的测试套件？领域专家的参与方式应该是什么——写用例、做角色扮演、还是审查 Agent 的初始输出？
+2. **评估器的评估：** 自动化评估器本身也可能出错。如何知道评估器的判断是否真的对齐了人类判断？是否需要定期对评估器本身做"元评估"？
+3. **隐性知识的极限：** 有些隐性知识可能连专家自己都说不清楚（"我就是凭感觉"）。对于这类知识，飞轮模型是否仍然有效？是否需要其他方法来捕获？
+4. **组织激励：** 让领域专家花时间参与 Agent 改进循环，本质上是在要求他们"教会 AI 自己的工作"。这对组织的激励机制提出了什么挑战？如何设计制度让专家愿意深度参与？

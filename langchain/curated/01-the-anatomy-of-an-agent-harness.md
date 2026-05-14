@@ -1,88 +1,200 @@
-# The Anatomy of an Agent Harness
+# Agent 线束解剖学：模型如何变成工作引擎
 
-**Author:** Vivek Trivedy  
-**Source:** [LangChain Blog](https://www.langchain.com/blog/the-anatomy-of-an-agent-harness)  
-**Date:** March 10, 2026  
-**Read Time:** 12 min
+**作者:** Vivek Trivedy  
+**来源:** [LangChain Blog](https://www.langchain.com/blog/the-anatomy-of-an-agent-harness)  
+**日期:** 2026 年 3 月 10 日  
+**阅读时间:** 约 12 分钟
 
 ---
 
-TLDR: Agent = Model + Harness. Harness engineering is how we build systems around models to turn them into work engines. The model contains the intelligence and the harness makes that intelligence useful. We define what a harness is and derive the core components today's and tomorrow's agents need.
+> **一句话总结**  
+> Agent = 模型 + 线束 (Harness)。模型提供智能，线束把智能变成可用的工作系统。线束工程 (Harness Engineering) 是构建真正能干活的 Agent 的核心方法论。
 
-## Can Someone Please Define a "Harness"?
+---
 
+## 核心要点
+
+1. **线束定义了 Agent 的边界** —— 模型之外的一切代码、配置和执行逻辑，都是线束
+2. **裸模型不是 Agent** —— 没有状态、工具执行和反馈回路，模型只是一个文本生成器
+3. **文件系统是最基础的线束原语** —— 它支撑了持久存储、协作、版本控制等关键能力
+4. **上下文腐化 (Context Rot) 是长时任务的核心挑战** —— 压缩、卸载、技能按需加载是应对手段
+5. **模型训练与线束设计正在耦合演进** —— 但更好的线束可以让同一个模型从排行榜第 30 名跃升到第 5 名
+
+---
+
+## 一、什么是线束 (Harness)？
+
+### 一个公式
+
+```
 Agent = Model + Harness
+```
 
-If you're not the model, you're the harness.
+> **类比理解**  
+> 把模型想象成一颗高性能的发动机。它有强大的动力，但你不能骑着一颗发动机上路。你需要底盘、变速箱、方向盘、仪表盘 —— 这些就是"线束"。线束把原始动力转化为可操控的、安全的、有用的交通工具。
 
-A harness is every piece of code, configuration, and execution logic that isn't the model itself. A raw model is not an agent. But it becomes one when a harness gives it things like state, tool execution, feedback loops, and enforceable constraints.
+### 线束包含什么？
 
-Concretely, a harness includes things like:
+| 组件 | 说明 | 类比 |
+|------|------|------|
+| 系统提示 (System Prompt) | 定义 Agent 的角色和行为边界 | 驾驶手册 |
+| 工具 / 技能 / MCP | 给模型可调用的外部能力 | 车载工具箱 |
+| 基础设施 (文件系统、沙箱、浏览器) | 提供执行环境 | 公路和加油站 |
+| 编排逻辑 (子 Agent 调度、路由) | 管理多 Agent 协作 | 交通指挥系统 |
+| 钩子 / 中间件 (压缩、续写、代码检查) | 确定性执行保障 | 安全气囊和刹车系统 |
 
-- System Prompts
-- Tools, Skills, MCPs + and their descriptions
-- Bundled Infrastructure (filesystem, sandbox, browser)
-- Orchestration Logic (subagent spawning, handoffs, model routing)
-- Hooks/Middleware for deterministic execution (compaction, continuation, lint checks)
+---
 
-## Why Do We Need Harnesses? From a Model's Perspective
+## 二、为什么需要线束？
 
-Models (mostly) take in data like text, images, audio, video and they output text. That's it. Out of the box they cannot:
+### 模型本身能做什么？
 
-- Maintain durable state across interactions
-- Execute code
-- Access realtime knowledge
-- Setup environments and install packages to complete work
+模型的本质：**输入数据 (文本/图像/音频/视频) → 输出文本**。仅此而已。
 
-These are all harness level features. For example, to get a product UX like "chatting", we wrap the model in a while loop to track previous messages and append new user messages.
+裸模型 **做不到** 的事情：
 
-## Filesystems for Durable Storage and Context Management
+- 跨对话保持持久状态
+- 执行代码
+- 获取实时信息
+- 搭建环境、安装依赖来完成工作
 
-Harnesses ship with filesystem abstractions and tools for fs-ops. The filesystem is arguably the most foundational harness primitive because of what it unlocks:
+> **为什么重要**  
+> 我们日常使用的"聊天"体验，本质上就是线束在工作 —— 一个 `while` 循环跟踪对话历史、追加新消息。没有这个循环，模型每次回答都是"失忆"的。
 
-- Agents get a workspace to read data, code, and documentation
-- Work can be incrementally added and offloaded instead of holding everything in context
-- The filesystem is a natural collaboration surface. Multiple agents and humans can coordinate through shared files
-- Git adds versioning so agents can track work, rollback errors, and branch experiments
+---
 
-## Bash + Code as a General Purpose Tool
+## 三、线束的核心组件
 
-Harnesses ship with a bash tool so models can solve problems autonomously by writing & executing code. Bash + code exec is a big step towards giving models a computer and letting them figure out the rest autonomously.
+### 3.1 文件系统：最基础的原语
 
-## Sandboxes and Tools to Execute & Verify Work
+文件系统是线束中最重要的基础设施，因为它同时解锁了多个关键能力：
 
-Sandboxes give agents safe operating environments. Instead of executing locally, the harness can connect to a sandbox to run code, inspect files, install dependencies, and complete tasks. Tools like browsers, logs, screenshots, and test runners give agents a way to observe and analyze their work.
+```
+┌─────────────────────────────────────────┐
+│              文件系统 (Filesystem)         │
+│                                         │
+│  ┌──────────┐  ┌──────────┐  ┌────────┐ │
+│  │ 工作空间  │  │ 增量存储  │  │ 协作面  │ │
+│  │ 读数据    │  │ 卸载上下文│  │ 多Agent │ │
+│  │ 读代码    │  │ 减少内存  │  │ 人机共享│ │
+│  │ 读文档    │  │ 压力     │  │ 文件   │ │
+│  └──────────┘  └──────────┘  └────────┘ │
+│                    │                     │
+│              ┌─────┴─────┐               │
+│              │   Git     │               │
+│              │ 版本控制   │               │
+│              │ 回滚错误   │               │
+│              │ 分支实验   │               │
+│              └───────────┘               │
+└─────────────────────────────────────────┘
+```
 
-## Memory & Search for Continual Learning
+### 3.2 Bash + 代码执行：通用工具
 
-For memory, the filesystem is again a core primitive. Harnesses support memory file standards like AGENTS.md which get injected into context on agent start. As agents add and edit this file, harnesses load the updated file into context. This is a form of continual learning where agents durably store knowledge from one session and inject that knowledge into future sessions.
+线束内置 Bash 工具，让模型可以自主编写和执行代码。这是一个关键跨越 —— 相当于给模型一台电脑，让它自己想办法解决问题。
 
-## Battling Context Rot
+### 3.3 沙箱 (Sandbox)：安全的执行环境
 
-Context Rot describes how models become worse at reasoning and completing tasks as their context window fills up. Compaction addresses what to do when the context window is close to filling up. Tool call offloading helps reduce the impact of large tool outputs. Skills address the issue of too many tools or MCP servers loaded into context on agent start.
+沙箱提供隔离环境，让 Agent 可以安全地：
 
-## Long Horizon Autonomous Execution
+- 运行代码
+- 检查文件
+- 安装依赖
+- 使用浏览器、日志、截图、测试运行器来观察和分析自己的工作
 
-Long-horizon work requires durable state, planning, observation, and verification to keep working across multiple context windows:
+> **为什么重要**  
+> 没有沙箱，Agent 执行代码就像在生产服务器上直接 `rm -rf /` —— 任何错误都可能造成不可逆的损害。沙箱是"安全试错"的前提。
 
-- **Filesystems and git** for tracking work across sessions
-- **Ralph Loops** for continuing work — intercepts the model's exit attempt and reinjects the original prompt in a clean context window
-- **Planning and self-verification** to stay on track — agents decompose goals into steps and check correctness via tests
+### 3.4 记忆与搜索：持续学习
 
-## The Future of Harnesses
+文件系统再次成为核心。线束支持记忆文件标准（如 `AGENTS.md`），在 Agent 启动时注入上下文。Agent 修改这个文件后，线束在下次启动时加载更新内容。
 
-### The Coupling of Model Training and Harness Design
+```
+Session 1                    Session 2
+┌──────────┐                ┌──────────┐
+│ Agent 工作│                │ Agent 工作│
+│          │                │          │
+│ 学到新知识│───写入───→ AGENTS.md ───注入───→│ 带着知识  │
+│          │                │ 继续工作  │
+└──────────┘                └──────────┘
+```
 
-Today's agent products like Claude Code and Codex are post-trained with models and harnesses in the loop. This creates a feedback loop: useful primitives are discovered, added to the harness, and then used when training the next generation of models.
+这就是一种**持续学习 (Continual Learning)** —— Agent 在一次会话中积累的知识，可以持久化并在未来的会话中重用。
 
-But this doesn't mean the best harness is the one a model was post-trained with. On Terminal Bench 2.0, Opus 4.6 in Claude Code scores far below Opus 4.6 in other harnesses. By only changing the harness, a coding agent went from Top 30 to Top 5.
+---
 
-### Where Harness Engineering is Going
+## 四、对抗上下文腐化 (Context Rot)
 
-As models get more capable, some of what lives in the harness today will get absorbed into the model. But harnesses also engineer systems around model intelligence to make them more effective. Open problems being explored:
+上下文腐化描述的是：随着上下文窗口逐渐填满，模型的推理能力和任务完成质量会下降。
 
-- Orchestrating hundreds of agents working in parallel on a shared codebase
-- Agents that analyze their own traces to identify and fix harness-level failure modes
-- Harnesses that dynamically assemble the right tools and context just-in-time
+线束用三种策略应对：
 
-> The model contains the intelligence and the harness is the system that makes that intelligence useful.
+| 策略 | 解决的问题 | 机制 |
+|------|-----------|------|
+| **压缩 (Compaction)** | 上下文窗口即将填满 | 总结并丢弃旧内容，保留关键信息 |
+| **工具调用卸载 (Tool Call Offloading)** | 工具输出占据大量上下文 | 将大输出存入文件，只在上下文中保留摘要 |
+| **技能按需加载 (Skills)** | 启动时加载过多工具描述 | 按需加载而非全量加载 |
+
+> **类比理解**  
+> 上下文窗口就像你的工作台面。桌子上堆满了东西，你就找不到需要的工具了。压缩是"定期整理桌面"，卸载是"把不常用的放进抽屉"，技能加载是"只拿出当前任务需要的工具"。
+
+---
+
+## 五、长时自主执行 (Long Horizon Execution)
+
+长时任务需要跨多个上下文窗口持续工作，这要求：
+
+```
+┌────────────┐    ┌────────────┐    ┌────────────┐
+│ 上下文窗口 1│───→│ 上下文窗口 2│───→│ 上下文窗口 3│
+│            │    │            │    │            │
+│ 文件系统+Git│    │ 文件系统+Git│    │ 文件系统+Git│
+│ (持久状态)  │    │ (持久状态)  │    │ (持久状态)  │
+└────────────┘    └────────────┘    └────────────┘
+      │                 │                 │
+      └────── Ralph Loop (自动续写) ──────┘
+      │                 │                 │
+      └──── 规划 + 自我验证 (测试) ────────┘
+```
+
+三大支柱：
+
+1. **文件系统 + Git** —— 跨会话追踪工作进度
+2. **Ralph Loop** —— 当模型试图退出时，拦截退出并在新的上下文窗口中重新注入原始任务
+3. **规划 + 自我验证** —— Agent 将目标分解为步骤，通过测试检查正确性
+
+---
+
+## 六、线束的未来
+
+### 模型训练与线束设计的耦合
+
+如今的 Agent 产品（Claude Code、Codex 等）在后训练 (Post-training) 阶段就将模型和线束放在一起训练。这形成了一个飞轮：
+
+```
+发现有用的原语 → 加入线束 → 用于训练下一代模型 → 模型更好地使用这些原语
+```
+
+**但这不意味着模型只能配合它训练时用的线束。** 在 Terminal Bench 2.0 上，Opus 4.6 在 Claude Code 中的得分远低于在其他线束中的得分。仅仅更换线束，同一个编程 Agent 就从排行榜第 30 名跃升到了第 5 名。
+
+> **为什么重要**  
+> 这个数据说明：线束工程不是锦上添花，而是决定性的。相同的模型智能，不同的线束可以产生天壤之别的实际表现。
+
+### 前沿探索方向
+
+随着模型能力增强，当前线束中的部分功能会被模型"吸收"。但线束也在向更复杂的方向演进：
+
+- **大规模并行协作** —— 编排数百个 Agent 在共享代码库上协同工作
+- **自我诊断** —— Agent 分析自己的执行轨迹，识别并修复线束层面的故障模式
+- **动态组装** —— 线束实时按需组装最合适的工具和上下文
+
+> 模型包含智能，线束是让这份智能变得有用的系统。
+
+---
+
+## 延伸思考
+
+1. **线束与模型的边界会如何移动？** 随着模型越来越强，哪些当前的线束功能会被"内化"到模型中？哪些永远需要外部实现？
+2. **线束的可移植性问题：** 如果模型和线束越来越耦合，是否会出现"线束锁定 (Harness Lock-in)"？这对开源生态意味着什么？
+3. **从编程到通用：** 当前的线束设计主要围绕编程任务优化。对于科学研究、创意写作、企业流程自动化等领域，线束的核心原语会有什么不同？
+4. **测试与可观测性：** 我们如何评估一个线束的质量？是否需要类似"线束基准测试 (Harness Benchmark)"来度量线束本身的效能？

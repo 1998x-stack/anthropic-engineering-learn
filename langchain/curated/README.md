@@ -87,6 +87,14 @@
 | 35 | [Agent 评估就绪清单](./35-agent-evaluation-readiness-checklist.md) | LangChain Accounts | 6 步清单：追踪→数据集→评分器→CI/CD 门控 |
 | 36 | [可观测性驱动评估](./36-agent-observability-powers-evaluation.md) | LangChain Accounts | Run/Trace/Thread 三原语映射三级评估 |
 
+## Part 14：认知架构、MCP 辩论与构建指南
+
+| # | 标题 | 作者 | 核心主题 |
+|---|------|------|----------|
+| 49 | [什么是认知架构](./49-what-is-a-cognitive-architecture.md) | Harrison Chase | 五级自主光谱：纯代码→单调用→链→路由→Agent |
+| 50 | [MCP：昙花一现还是未来标准](./50-mcp-fad-or-fixture.md) | Harrison Chase vs Nuno Campos | CEO vs 技术负责人辩论，正反方观点深度碰撞 |
+| 51 | [六步构建 Agent 实操指南](./51-how-to-build-an-agent.md) | LangChain Accounts | 定义→SOP→MVP→编排→测试→部署，邮件 Agent 全程案例 |
+
 ## Part 13：开源 Agent 工具链与 EPD 变革
 
 | # | 标题 | 作者 | 核心主题 |

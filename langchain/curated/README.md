@@ -87,6 +87,22 @@
 | 35 | [Agent 评估就绪清单](./35-agent-evaluation-readiness-checklist.md) | LangChain Accounts | 6 步清单：追踪→数据集→评分器→CI/CD 门控 |
 | 36 | [可观测性驱动评估](./36-agent-observability-powers-evaluation.md) | LangChain Accounts | Run/Trace/Thread 三原语映射三级评估 |
 
+## Part 10：Agent 实用指南
+
+| # | 标题 | 作者 | 核心主题 |
+|---|------|------|----------|
+| 37 | [什么是 Agent](./37-what-is-an-agent.md) | Harrison Chase | Agent 是光谱，越 agentic 越需要框架/运行时/观测 |
+| 38 | [Agent 规划与推理](./38-planning-for-agents.md) | Harrison Chase | 领域特定认知架构 > 通用推理，代码替 LLM 做规划 |
+| 39 | [Claude Code → 领域 Agent](./39-how-to-turn-claude-code-into-domain-agent.md) | Aliyan Ishfaq | Claude.md + MCP = 最佳组合，82% vs 9% 完成率 |
+
+## Part 11：沟通、加速与互操作
+
+| # | 标题 | 作者 | 核心主题 |
+|---|------|------|----------|
+| 40 | [沟通就是一切](./40-communication-is-all-you-need.md) | Harrison Chase | Agent 出错 = 沟通失败，七个推论覆盖提示/代码/UX |
+| 41 | [如何加速你的 Agent](./41-how-do-i-speed-up-my-agent.md) | Harrison Chase | 五策略：找瓶颈/降感知/减调用/加速单次/并行 |
+| 42 | [Agent Protocol 互操作标准](./42-agent-protocol-interoperability.md) | LangChain Accounts | Runs/Threads/Store 三概念，跨框架标准通信 |
+
 ---
 
 ## 文章结构说明

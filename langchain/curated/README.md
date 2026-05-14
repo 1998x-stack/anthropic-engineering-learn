@@ -55,6 +55,14 @@
 | 23 | [文件系统驱动的上下文工程](./23-how-agents-can-use-filesystems-for-context-engineering.md) | Nick Huang | 文件系统解决四类上下文失败：过多/过大/找不到/缺失 |
 | 24 | [Deep Agents Deploy：开放替代方案](./24-deep-agents-deploy-open-alternative.md) | LangChain Team | 一键部署 vs 围墙花园，记忆所有权是核心战场 |
 
+## Part 6：生产自愈与规模化洞察
+
+| # | 标题 | 作者 | 核心主题 |
+|---|------|------|----------|
+| 25 | [Agent 生产自愈](./25-how-my-agents-self-heal-in-production.md) | LangChain Team | 部署→监控→分诊→修复自动循环，Poisson 检测 + Open SWE |
+| 26 | [从追踪到洞察](./26-from-traces-to-insights.md) | LangChain Accounts | 聚类发现未知模式，传统分析无法回答的 WHY |
+| 27 | [Terminal Bench 基准评估](./27-evaluating-deepagents-cli-on-terminal-bench.md) | LangChain Accounts | 基线建立 42.65%，Harbor 沙箱隔离评估框架 |
+
 ---
 
 ## 文章结构说明

@@ -87,6 +87,22 @@
 | 35 | [Agent 评估就绪清单](./35-agent-evaluation-readiness-checklist.md) | LangChain Accounts | 6 步清单：追踪→数据集→评分器→CI/CD 门控 |
 | 36 | [可观测性驱动评估](./36-agent-observability-powers-evaluation.md) | LangChain Accounts | Run/Trace/Thread 三原语映射三级评估 |
 
+## Part 17：Agent 设计模式深潜
+
+| # | 标题 | 作者 | 核心主题 |
+|---|------|------|----------|
+| 58 | [反思型 Agent](./58-reflection-agents.md) | LangChain Team | 基础反思→Reflexion→LATS，系统1/系统2思维 |
+| 59 | [规划型 Agent](./59-planning-agents.md) | LangChain Team | Plan-and-Execute/ReWOO/LLMCompiler，DAG 并行调度 |
+| 60 | [何时构建多 Agent 系统](./60-how-and-when-multi-agent.md) | LangChain Team | 上下文工程 + 读写分离，Cognition/Anthropic 洞察 |
+
+## Part 18：AI 新范式与工具链
+
+| # | 标题 | 作者 | 核心主题 |
+|---|------|------|----------|
+| 61 | [赢在 AI 新技术栈](./61-winning-in-ai-new-stack.md) | 5 位 CEO 联合 | AI 技术栈 6 大组件，四个发展阶段 |
+| 62 | [Polly：AI Agent 工程师](./62-introducing-polly-ai-agent-engineer.md) | LangChain Team | 追踪调试/对话分析/提示词优化三大能力 |
+| 63 | [开源模型跨越门槛](./63-open-models-crossed-threshold.md) | LangChain Team | GLM-5/MiniMax vs Opus/GPT，混合架构趋势 |
+
 ## Part 15：Agent UX 设计三部曲
 
 | # | 标题 | 作者 | 核心主题 |

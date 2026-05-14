@@ -63,6 +63,14 @@
 | 26 | [从追踪到洞察](./26-from-traces-to-insights.md) | LangChain Accounts | 聚类发现未知模式，传统分析无法回答的 WHY |
 | 27 | [Terminal Bench 基准评估](./27-evaluating-deepagents-cli-on-terminal-bench.md) | LangChain Accounts | 基线建立 42.65%，Harbor 沙箱隔离评估框架 |
 
+## Part 7：架构选型与实战案例
+
+| # | 标题 | 作者 | 核心主题 |
+|---|------|------|----------|
+| 28 | [框架/运行时/线束三层架构](./28-agent-frameworks-runtimes-and-harnesses.md) | LangChain Accounts | LangChain/LangGraph/DeepAgents 各层定位 |
+| 29 | [技能评估方法论](./29-evaluating-skills.md) | LangChain Accounts | 四步评估流水线，82% vs 9% 的技能增益 |
+| 30 | [Moda 设计 Agent 实战](./30-how-moda-builds-design-agents.md) | LangChain Team | 自定义 DSL、动态工具加载、Cursor 式协作 UX |
+
 ---
 
 ## 文章结构说明

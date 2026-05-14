@@ -79,6 +79,14 @@
 | 32 | [构建多 Agent 应用](./32-building-multi-agent-applications-with-deep-agents.md) | LangChain Team | 子代理隔离上下文 + 技能渐进披露，可组合使用 |
 | 33 | [尽职调查 Agent](./33-building-due-diligence-agent.md) | LangChain Team | 五路并行子代理→竞品扇出→交叉验证→合规审计 |
 
+## Part 9：Agentic 工程与评估体系
+
+| # | 标题 | 作者 | 核心主题 |
+|---|------|------|----------|
+| 34 | [Agentic 工程重塑软件开发](./34-agentic-engineering-redefining-software.md) | Renuka Kumar, Prashanth Ramagopal (Cisco) | 多 Agent 协作镜像真实团队，93% 调试提速 |
+| 35 | [Agent 评估就绪清单](./35-agent-evaluation-readiness-checklist.md) | LangChain Accounts | 6 步清单：追踪→数据集→评分器→CI/CD 门控 |
+| 36 | [可观测性驱动评估](./36-agent-observability-powers-evaluation.md) | LangChain Accounts | Run/Trace/Thread 三原语映射三级评估 |
+
 ---
 
 ## 文章结构说明

@@ -87,6 +87,14 @@
 | 35 | [Agent 评估就绪清单](./35-agent-evaluation-readiness-checklist.md) | LangChain Accounts | 6 步清单：追踪→数据集→评分器→CI/CD 门控 |
 | 36 | [可观测性驱动评估](./36-agent-observability-powers-evaluation.md) | LangChain Accounts | Run/Trace/Thread 三原语映射三级评估 |
 
+## Part 13：开源 Agent 工具链与 EPD 变革
+
+| # | 标题 | 作者 | 核心主题 |
+|---|------|------|----------|
+| 46 | [Open SWE：开源编程 Agent](./46-open-swe-open-source-coding-agent.md) | LangChain Team | 内部编程 Agent 架构模式，Stripe/Ramp/Coinbase 对比 |
+| 47 | [Open Deep Research](./47-open-deep-research.md) | LangChain Team | 三阶段深度研究：范围→研究→写作，多 Agent 并行 |
+| 48 | [编程 Agent 重塑 EPD](./48-how-coding-agents-reshape-epd.md) | Harrison Chase | PRD 已死/万岁，构建者 vs 评审者，系统思维为王 |
+
 ## Part 12：沙箱与自主上下文压缩
 
 | # | 标题 | 作者 | 核心主题 |

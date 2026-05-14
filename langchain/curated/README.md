@@ -87,6 +87,22 @@
 | 35 | [Agent 评估就绪清单](./35-agent-evaluation-readiness-checklist.md) | LangChain Accounts | 6 步清单：追踪→数据集→评分器→CI/CD 门控 |
 | 36 | [可观测性驱动评估](./36-agent-observability-powers-evaluation.md) | LangChain Accounts | Run/Trace/Thread 三原语映射三级评估 |
 
+## Part 15：Agent UX 设计三部曲
+
+| # | 标题 | 作者 | 核心主题 |
+|---|------|------|----------|
+| 52 | [Agent UX：聊天模式](./52-ux-for-agents-chat.md) | LangChain Team | 流式/非流式聊天，聊天只是起点不是终点 |
+| 53 | [Agent UX：环境模式](./53-ux-for-agents-ambient.md) | LangChain Team | 人在环上 vs 人在环中，Agent Inbox 反转模式 |
+| 54 | [Agent UX：后台与新范式](./54-ux-for-agents-background.md) | LangChain Team | 电子表格式/生成式 UI/协作式，五大 UX 范式总览 |
+
+## Part 16：基础设施与战略思考
+
+| # | 标题 | 作者 | 核心主题 |
+|---|------|------|----------|
+| 55 | [OpenAI 对认知架构的押注](./55-openais-bet-on-cognitive-architecture.md) | Harrison Chase | GPTs/Assistants API 战略，开源 vs 闭源认知架构 |
+| 56 | [为什么需要 Agent 基础设施](./56-why-agent-infrastructure.md) | LangChain Team | 持久执行/心跳/任务队列/扩缩容六大需求 |
+| 57 | [外包基础设施，拥有认知架构](./57-outsource-infrastructure-own-architecture.md) | LangChain Team | 贝索斯"啤酒理论"判断自研 vs 外包 |
+
 ## Part 14：认知架构、MCP 辩论与构建指南
 
 | # | 标题 | 作者 | 核心主题 |

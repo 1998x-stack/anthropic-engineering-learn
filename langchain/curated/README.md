@@ -87,6 +87,14 @@
 | 35 | [Agent 评估就绪清单](./35-agent-evaluation-readiness-checklist.md) | LangChain Accounts | 6 步清单：追踪→数据集→评分器→CI/CD 门控 |
 | 36 | [可观测性驱动评估](./36-agent-observability-powers-evaluation.md) | LangChain Accounts | Run/Trace/Thread 三原语映射三级评估 |
 
+## Part 12：沙箱与自主上下文压缩
+
+| # | 标题 | 作者 | 核心主题 |
+|---|------|------|----------|
+| 43 | [用沙箱执行代码](./43-execute-code-with-sandboxes.md) | LangChain Team | 五大沙箱需求、Setup 脚本、安全防护 |
+| 44 | [Agent 连接沙箱的两种模式](./44-two-patterns-agents-connect-sandboxes.md) | LangChain Team | Agent 在沙箱内 vs 沙箱作为工具，安全与迭代权衡 |
+| 45 | [自主上下文压缩](./45-autonomous-context-compression.md) | LangChain Accounts | 时机比阈值重要，Agent 自主决定何时压缩 |
+
 ## Part 10：Agent 实用指南
 
 | # | 标题 | 作者 | 核心主题 |

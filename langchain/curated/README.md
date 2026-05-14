@@ -71,6 +71,14 @@
 | 29 | [技能评估方法论](./29-evaluating-skills.md) | LangChain Accounts | 四步评估流水线，82% vs 9% 的技能增益 |
 | 30 | [Moda 设计 Agent 实战](./30-how-moda-builds-design-agents.md) | LangChain Team | 自定义 DSL、动态工具加载、Cursor 式协作 UX |
 
+## Part 8：多 Agent 架构与实战
+
+| # | 标题 | 作者 | 核心主题 |
+|---|------|------|----------|
+| 31 | [多 Agent 架构四模式](./31-choosing-the-right-multi-agent-architecture.md) | Sydney Runkle | 子代理/技能/交接/路由四种模式选型与性能对比 |
+| 32 | [构建多 Agent 应用](./32-building-multi-agent-applications-with-deep-agents.md) | LangChain Team | 子代理隔离上下文 + 技能渐进披露，可组合使用 |
+| 33 | [尽职调查 Agent](./33-building-due-diligence-agent.md) | LangChain Team | 五路并行子代理→竞品扇出→交叉验证→合规审计 |
+
 ---
 
 ## 文章结构说明

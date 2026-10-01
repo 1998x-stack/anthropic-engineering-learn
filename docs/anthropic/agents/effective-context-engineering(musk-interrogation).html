@@ -1,0 +1,300 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>马斯克式决策审问：AI Agent 的有效上下文工程</title>
+<link rel="stylesheet" href="base-dark.css">
+<style>
+:root {
+  --c1:#a371f7; --c1d:#3b1e6e;
+  --c2:#378ADD; --c2d:#185FA5;
+  --c3:#e2a83e; --c3d:#7a5518;
+  --c4:#28c840; --c4d:#1a7a2e;
+}
+.hero h1 em { background:linear-gradient(90deg,var(--c1),var(--c2)); }
+.prose { font-size:15px; color:var(--text); line-height:1.95; max-width:820px; margin-bottom:32px; }
+.prose strong { font-weight:700; }
+.prose blockquote {
+  margin:20px 0; padding:16px 20px; background:var(--bg2); border:1px solid var(--border);
+  border-radius:8px; border-left:3px solid var(--c2); color:var(--muted); font-size:14px;
+}
+.decision-card {
+  background:var(--bg2); border:1px solid var(--border); border-radius:12px;
+  padding:28px 32px; margin-bottom:24px;
+  transition:border-color .15s,background .15s;
+}
+.decision-card:hover { border-color:var(--border2); background:var(--bg3); }
+.dc-num { font-size:11px; font-weight:700; letter-spacing:.08em; color:var(--c1d); text-transform:uppercase; margin-bottom:10px; }
+.dc-title { font-size:20px; font-weight:700; line-height:1.4; margin-bottom:14px; }
+.dc-body { font-size:14px; color:var(--muted); line-height:1.85; }
+.dc-body strong { color:var(--text); }
+.dc-body em { font-style:normal; color:var(--c1); }
+.strategy-grid { display:grid; grid-template-columns:1fr 1fr 1fr; gap:16px; margin-bottom:24px; }
+.strategy-card {
+  background:var(--bg2); border:1px solid var(--border); border-radius:10px;
+  padding:20px; transition:border-color .15s,background .15s;
+}
+.strategy-card:hover { border-color:var(--border2); background:var(--bg3); }
+.st-label { font-size:11px; font-weight:700; letter-spacing:.05em; margin-bottom:8px; }
+.st-title { font-size:15px; font-weight:600; margin-bottom:8px; }
+.st-desc { font-size:13px; color:var(--muted); line-height:1.7; }
+.comp-table { width:100%; border-collapse:collapse; margin-bottom:32px; font-size:13px; }
+.comp-table th {
+  text-align:left; padding:10px 14px; background:var(--bg2);
+  border:1px solid var(--border); font-weight:600; color:var(--muted);
+  font-size:11px; text-transform:uppercase; letter-spacing:.06em;
+}
+.comp-table td { padding:10px 14px; border:1px solid var(--border); color:var(--text); }
+.summary-callout {
+  background:linear-gradient(135deg,var(--bg2),var(--bg3)); border:1px solid var(--border2);
+  border-radius:12px; padding:28px 32px; margin-top:48px;
+}
+.summary-callout p { font-size:14px; color:var(--muted); line-height:1.9; }
+.summary-callout strong { color:var(--text); }
+.code-quote {
+  background:var(--bg); border:1px solid var(--border); border-radius:8px;
+  padding:18px 22px; margin:20px 0; font-family:var(--mono); font-size:13px;
+  line-height:1.7; color:var(--code-text); overflow-x:auto;
+}
+.bullet-list { padding:0 0 0 20px; margin:12px 0; }
+.bullet-list li { font-size:14px; color:var(--muted); line-height:2; list-style-type:disc; }
+.bullet-list li::marker { color:var(--faint); }
+.bullet-list li strong { color:var(--text); }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <span class="nav-brand">Musk Interrogation <span>· Anthropic Engineering</span></span>
+    <a class="nl" href="#hero">概述</a>
+    <a class="nl" href="#q1">问题一</a>
+    <a class="nl" href="#q2">问题二</a>
+    <a class="nl" href="#results">结果</a>
+  </div>
+</nav>
+
+<div class="page">
+
+  <!-- ═══ HERO ═══ -->
+  <section class="hero" id="hero">
+    <div class="hero-badge">
+      <span class="dot"></span>2025-04-22 · Applied AI Team · Anthropic
+    </div>
+    <h1>AI Agent 的<em>有效上下文工程</em></h1>
+    <p>从 Prompt Engineering 到 Context Engineering——注意力是 LLM 最稀缺的资源。不是 token 长度，是信号密度。</p>
+    <div class="tag-row">
+      <span class="ltag" style="color:var(--c1);border-color:var(--c1);background:var(--c1d)">Context Engineering</span>
+      <span class="ltag" style="color:var(--c2);border-color:var(--c2);background:var(--c2d)">Attention Budget</span>
+      <span class="ltag" style="color:var(--c3);border-color:var(--c3);background:var(--c3d)">Just-in-Time</span>
+      <span class="ltag" style="color:var(--c4);border-color:var(--c4);background:var(--c4d)">Long-Horizon</span>
+    </div>
+  </section>
+
+  <!-- ═══ FLOW: 4 Decisions ═══ -->
+  <section class="flow">
+    <div class="sec-label">决策链概览</div>
+    <div class="flow-track">
+      <div class="flow-box">
+        <div class="fb-tag" style="color:var(--c1)">决策一</div>
+        <div class="fb-name">Prompt → Context</div>
+        <div class="fb-sub">从"写对词"到"管好信息宇宙"</div>
+      </div>
+      <div class="flow-arrow"><span class="arr-icon">→</span></div>
+      <div class="flow-box">
+        <div class="fb-tag" style="color:var(--c2)">决策二</div>
+        <div class="fb-name">Just-in-Time</div>
+        <div class="fb-sub">轻量引用 + 动态加载，空间成本优先</div>
+      </div>
+      <div class="flow-arrow"><span class="arr-icon">→</span></div>
+      <div class="flow-box">
+        <div class="fb-tag" style="color:var(--c3)">决策三</div>
+        <div class="fb-name">正确海拔</div>
+        <div class="fb-sub">强启发式框架，非硬规则、非模糊</div>
+      </div>
+      <div class="flow-arrow"><span class="arr-icon">→</span></div>
+      <div class="flow-box">
+        <div class="fb-tag" style="color:var(--c4)">决策四</div>
+        <div class="fb-name">三策略分工</div>
+        <div class="fb-sub">压缩·笔记·子Agent 各司其职</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ QUESTION 1 ═══ -->
+  <section class="layer-sec" id="q1">
+    <div class="layer-hdr">
+      <span class="layer-id-badge" style="background:var(--c1d);color:var(--c1)">问题一</span>
+      <span class="layer-title">你的故事——你做了什么决策，为什么？</span>
+    </div>
+    <div class="layer-def" style="border-color:var(--c1)">
+      全世界都在沉迷 prompt engineering 的时候，我在推动一个更根本的范式转移——从"写好 prompt"转向"管好 context"。这不是语义游戏。这是认知模型的根本改变。
+    </div>
+
+    <div class="decision-card">
+      <div class="dc-num">决策一</div>
+      <div class="dc-title">从 Prompt Engineering 到 Context Engineering</div>
+      <div class="dc-body">
+        <p><strong>主流做法：</strong>优化 prompt 的措辞、格式、few-shot 示例。</p>
+        <p style="margin-top:10px"><strong>物理本质：</strong>Agent 不是分类器。它在循环中运行——每次推理产生新数据，context 是不断膨胀的信息宇宙，而上下文窗口是固定大小的容器。真正的问题是：<strong>哪些 token 值得放入那个有限的窗口？</strong></p>
+        <p style="margin-top:10px"><strong>反直觉立场：</strong>公开说 prompt 格式正在变得不重要。Transformer 的 n² 注意力机制决定了注意力预算的物理瓶颈。上下文腐烂（context rot）是跨模型普适现象。如果不管 context，agent 会在自己产生的信息海洋中淹死。</p>
+      </div>
+    </div>
+
+    <div class="decision-card">
+      <div class="dc-num">决策二</div>
+      <div class="dc-title">Just-in-Time 上下文 vs. 预加载</div>
+      <div class="dc-body">
+        <p><strong>预加载的问题：</strong>不知道什么是真正相关的——倾向于"宁可多加载"。上下文里 70% 的 token 最终没被使用，但仍然消耗注意力预算。</p>
+        <p style="margin-top:10px"><strong>Just-in-Time 方案：</strong>Agent 保持<em>轻量级引用</em>（文件路径、查询、链接），推理过程中确定需要时才动态加载。模仿人类认知——不背整本书，记住"在图书馆哪层哪个书架"。</p>
+        <p style="margin-top:10px"><strong>物理洞察：</strong>对 agent 任务，空间成本（注意力预算）比时间成本（检索延迟）更致命。注意力耗尽的错误决策代价远大于额外检索延迟。混合策略——静态内容预加载，动态内容 Just-in-Time。</p>
+      </div>
+    </div>
+
+    <div class="decision-card">
+      <div class="dc-num">决策三</div>
+      <div class="dc-title">"正确的海拔"——在死板和模糊之间</div>
+      <div class="dc-body">
+        <p><strong>两个极端：</strong>硬编码 if-else 规则树（脆弱的决策树）vs. 模糊高层指导（"请专业地完成任务"）。</p>
+        <p style="margin-top:10px"><strong>Goldilocks 区域：</strong>给强启发式——不是操作手册，是<em>行为框架</em>。足够具体引导行为，足够灵活允许判断。</p>
+        <p style="margin-top:10px"><strong>Few-shot 质量 > 数量：</strong>5 个高质量典范示例胜过 50 个覆盖所有边缘的——模型从模式中学习，不是从规则中学习。</p>
+      </div>
+    </div>
+
+    <div class="decision-card">
+      <div class="dc-num">决策四</div>
+      <div class="dc-title">三种长时任务策略的物理分工</div>
+      <div class="dc-body">
+        <p>长时任务超出上下文窗口容量时，三个策略不是竞争是互补：</p>
+      </div>
+      <div class="strategy-grid" style="margin-top:16px">
+        <div class="strategy-card">
+          <div class="st-label" style="color:var(--c1)">压缩 Compaction</div>
+          <div class="st-title">保持对话流</div>
+          <div class="st-desc">总结压缩 → 新窗口。先最大化召回，再优化精度。最安全：清除深层工具调用结果。</div>
+        </div>
+        <div class="strategy-card">
+          <div class="st-label" style="color:var(--c2)">笔记 Note-taking</div>
+          <div class="st-title">持久化记忆</div>
+          <div class="st-desc">Agent 定期写笔记到窗口外。Claude 玩宝可梦：1234 步训练记录。开销极小。</div>
+        </div>
+        <div class="strategy-card">
+          <div class="st-label" style="color:var(--c4)">子Agent Sub-agents</div>
+          <div class="st-title">分离关注点</div>
+          <div class="st-desc">子 agent 干净窗口做专项工作 → 返回 1000-2000 token 蒸馏摘要。并行探索红利。</div>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ TRANSITION ═══ -->
+  <section class="layer-sec" style="background:linear-gradient(180deg, transparent, var(--bg2));border-bottom:1px solid var(--border);">
+    <div style="text-align:center;padding:20px 0;">
+      <span class="pill" style="font-size:13px;padding:4px 14px;">从架构决策到根本困境</span>
+      <p style="color:var(--muted);margin-top:12px;font-size:14px;">Transformer 的 n² 注意力 = 每个 token 都在消耗有限预算</p>
+    </div>
+  </section>
+
+  <!-- ═══ QUESTION 2 ═══ -->
+  <section class="layer-sec" id="q2">
+    <div class="layer-hdr">
+      <span class="layer-id-badge" style="background:var(--c4d);color:var(--c4)">问题二</span>
+      <span class="layer-title">你解决过最难的问题是什么？</span>
+    </div>
+    <div class="layer-def" style="border-color:var(--c4)">
+      Transformer 自注意力产生 n² 成对关系。10 万 token = 100 亿注意力关系。模型训练数据中短序列远常见于长序列。结果是渐进退化——不是硬断崖，是每个新 token 都在消耗"注意力预算"。
+    </div>
+
+    <div class="prose">
+      <strong>Situation &amp; Task</strong>
+      <p>Agent 在自身产生的信息洪流中溺水。把"一切可能相关"的信息塞进上下文——70% token 最终未被使用但全程消耗注意力。激进清理又丢掉"当时看起来不重要但后面变得关键"的信息。</p>
+    </div>
+
+    <div class="prose">
+      <strong>Action（核心行动）</strong>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">失败尝试</div>
+        <ul>
+          <li><strong>把一切都塞进上下文</strong>——agent 在信息洪流中溺水，关键指令注意力权重被稀释</li>
+          <li><strong>激进清理</strong>——丢掉了后来变得关键的微妙上下文</li>
+          <li><strong>只优化 prompt</strong>——措辞再好也解决不了信息过载</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-title">突破洞察</div>
+        <ul>
+          <li><strong>注意力经济</strong>——每个 token 有成本（注意力）和收益（信号）</li>
+          <li>最优上下文不是信息最多的——是<strong>边际信号最高的那组 token</strong></li>
+          <li>解释了反直觉现象：删信息提升性能、5 个好示例 > 50 个边缘示例</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="prose">
+      <blockquote>上下文工程不是在优化一个"东西"——它是在管理一个"注意力经济"。每个 token 有成本和收益。最优上下文不是"信息最多的上下文"——是边际信号最高的那组 token。</blockquote>
+    </div>
+
+    <div class="prose" style="margin-top:20px">
+      <strong>解决方案——三个层面的工程实践：</strong>
+    </div>
+    <ul class="bullet-list">
+      <li><strong>工具代币效率：</strong>返回"刚好够做下一个决策的信息"，紧凑结构化输出。最小可行工具集。</li>
+      <li><strong>渐进式信息揭示：</strong>agent 层层构建理解——文件大小暗示复杂度、命名暗示用途、时间戳代理相关性。</li>
+      <li><strong>"先召回再精度"的压缩调优：</strong>先确保捕获所有相关信息，再消除冗余内容。顺序不能反。</li>
+    </ul>
+  </section>
+
+  <!-- ═══ RESULTS ═══ -->
+  <section class="layer-sec" id="results">
+    <div class="layer-hdr">
+      <span class="layer-id-badge" style="background:var(--c3d);color:var(--c3)">结果</span>
+      <span class="layer-title">量化影响</span>
+    </div>
+
+    <table class="comp-table">
+      <tr><th>维度</th><th>之前</th><th>之后</th></tr>
+      <tr><td>工具调用结果污染</td><td style="color:var(--red)">深层历史堆积大量原始输出</td><td style="color:var(--green)">清除旧结果，释放数千 token 预算</td></tr>
+      <tr><td>长任务连贯性</td><td style="color:var(--muted)">超过上下文限制后行为退化</td><td style="color:var(--green)">压缩 + 笔记 + 子 agent 多策略维持</td></tr>
+      <tr><td>信息检索效率</td><td style="color:var(--muted)">预加载大量"以防万一"文档</td><td style="color:var(--green)">Just-in-Time 动态检索</td></tr>
+      <tr><td>Prompt 可维护性</td><td style="color:var(--red)">硬编码规则树，脆弱难维护</td><td style="color:var(--green)">强启发式框架，灵活可扩展</td></tr>
+      <tr><td>子 agent 效率</td><td style="color:var(--muted)">返回数万 token 原始结果</td><td style="color:var(--green)">1000-2000 token 蒸馏摘要</td></tr>
+    </table>
+
+    <div class="grid2">
+      <div class="card" style="border-color:var(--c3d)">
+        <div class="card-title">核心原则</div>
+        <ul>
+          <li><strong>注意力是最稀缺资源</strong>，不是 token 长度</li>
+          <li>从"我该说什么"到"我该让模型看到什么"</li>
+          <li>每个 token = 成本（注意力）+ 收益（信号）</li>
+        </ul>
+      </div>
+      <div class="card" style="border-color:var(--c2d)">
+        <div class="card-title">实践证据</div>
+        <ul>
+          <li>Claude Code 混合预加载 + Just-in-Time</li>
+          <li>Claude 玩宝可梦：零引导自主发展记忆策略</li>
+          <li>内存工具在 Claude Developer Platform 公测</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ SUMMARY ═══ -->
+  <div class="summary-callout">
+    <p><strong>核心洞察：</strong>注意力是 LLM 最稀缺的资源，不是 token 长度。给模型再大的上下文窗口，如果不管理信息密度，模型照样被噪音淹没。上下文工程的本质：在每一个推理时刻，找到那组边际信号最高的 token——不多也不少。这就是从 prompt engineering 到 context engineering 的根本转变。</p>
+    <p style="margin-top:14px"><strong>Transformer 物理现实：</strong>自注意力的 n² 机制意味着每个 token 都在消耗有限注意力预算。更大的窗口 = 更多可能的噪音 = 更需要主动管理。这是物理极限，不是工程选择。</p>
+  </div>
+
+</div>
+
+<div style="text-align:center;padding:40px 0 60px;font-size:12px;color:var(--faint);">
+  分析对象：<a href="https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents" style="color:var(--muted)">Effective context engineering for AI agents</a> · 分析框架：Musk-Style Decision Interrogation
+</div>
+
+</body>
+</html>

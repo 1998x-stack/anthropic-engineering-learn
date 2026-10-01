@@ -1,0 +1,282 @@
+<!DOCTYPE html>
+<html lang="zh">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>马斯克式决策审问：用并行 Claude 团队构建 C 编译器</title>
+<link rel="stylesheet" href="base-dark.css">
+<style>
+:root {
+  --c1:#f0883e; --c1d:#8b4a14;
+  --c2:#378ADD; --c2d:#185FA5;
+  --c3:#28c840; --c3d:#1a7a2e;
+  --c4:#f85149; --c4d:#8b1a1a;
+}
+.hero h1 em { background:linear-gradient(90deg,var(--c1),var(--c2)); }
+.prose { font-size:15px; color:var(--text); line-height:1.95; max-width:820px; margin-bottom:32px; }
+.prose strong { font-weight:700; }
+.prose blockquote {
+  margin:20px 0; padding:16px 20px; background:var(--bg2); border:1px solid var(--border);
+  border-radius:8px; border-left:3px solid var(--c2); color:var(--muted); font-size:14px;
+}
+.decision-card {
+  background:var(--bg2); border:1px solid var(--border); border-radius:12px;
+  padding:28px 32px; margin-bottom:24px;
+  transition:border-color .15s,background .15s;
+}
+.decision-card:hover { border-color:var(--border2); background:var(--bg3); }
+.dc-num { font-size:11px; font-weight:700; letter-spacing:.08em; color:var(--c1d); text-transform:uppercase; margin-bottom:10px; }
+.dc-title { font-size:20px; font-weight:700; line-height:1.4; margin-bottom:14px; }
+.dc-body { font-size:14px; color:var(--muted); line-height:1.85; }
+.dc-body strong { color:var(--text); }
+.dc-body em { font-style:normal; color:var(--c1); }
+.code-quote {
+  background:var(--bg); border:1px solid var(--border); border-radius:8px;
+  padding:18px 22px; margin:20px 0; font-family:var(--mono); font-size:13px;
+  line-height:1.7; color:var(--code-text); overflow-x:auto;
+}
+.code-quote .cm { color:var(--muted); }
+.comp-table { width:100%; border-collapse:collapse; margin-bottom:32px; font-size:13px; }
+.comp-table th {
+  text-align:left; padding:10px 14px; background:var(--bg2);
+  border:1px solid var(--border); font-weight:600; color:var(--muted);
+  font-size:11px; text-transform:uppercase; letter-spacing:.06em;
+}
+.comp-table td { padding:10px 14px; border:1px solid var(--border); color:var(--text); }
+.summary-callout {
+  background:linear-gradient(135deg,var(--bg2),var(--bg3)); border:1px solid var(--border2);
+  border-radius:12px; padding:28px 32px; margin-top:48px;
+}
+.summary-callout p { font-size:14px; color:var(--muted); line-height:1.9; }
+.summary-callout strong { color:var(--text); }
+.gate-item {
+  display:flex; align-items:flex-start; gap:12px; margin-bottom:12px;
+  font-size:14px; color:var(--muted);
+}
+.gate-icon { flex-shrink:0; width:22px; font-weight:700; }
+.gate-pass { color:var(--green); }
+.gate-fail { color:var(--red); }
+</style>
+</head>
+<body>
+
+<nav>
+  <div class="nav-inner">
+    <span class="nav-brand">Musk Interrogation <span>· Anthropic Engineering</span></span>
+    <a class="nl" href="#hero">概述</a>
+    <a class="nl" href="#q1">问题一</a>
+    <a class="nl" href="#q2">问题二</a>
+    <a class="nl" href="#results">结果</a>
+  </div>
+</nav>
+
+<div class="page">
+
+  <!-- ═══ HERO ═══ -->
+  <section class="hero" id="hero">
+    <div class="hero-badge">
+      <span class="dot"></span>2026-02-05 · Nicholas Carlini · Safeguards Team
+    </div>
+    <h1>用并行 Claude 团队构建 <em>C 编译器</em></h1>
+    <p>$20,000 · 2000 会话 · 16 个并行 Agent · 10 万行 Rust · 零人工干预 · 能编译 Linux 内核</p>
+    <div class="tag-row">
+      <span class="ltag" style="color:var(--c1);border-color:var(--c1);background:var(--c1d)">Agent Teams</span>
+      <span class="ltag" style="color:var(--c2);border-color:var(--c2);background:var(--c2d)">Parallelism</span>
+      <span class="ltag" style="color:var(--c3);border-color:var(--c3);background:var(--c3d)">Clean Room</span>
+      <span class="ltag" style="color:var(--muted);border-color:var(--border2);background:var(--bg3)">Rust</span>
+    </div>
+  </section>
+
+  <!-- ═══ FLOW: 4 Decisions ═══ -->
+  <section class="flow">
+    <div class="sec-label">决策链概览</div>
+    <div class="flow-track">
+      <div class="flow-box">
+        <div class="fb-tag" style="color:var(--c1)">决策一</div>
+        <div class="fb-name">去掉人类在循环中</div>
+        <div class="fb-sub">bash while-true 循环替代交互式开发</div>
+      </div>
+      <div class="flow-arrow"><span class="arr-icon">→</span></div>
+      <div class="flow-box">
+        <div class="fb-tag" style="color:var(--c2)">决策二</div>
+        <div class="fb-name">16 Agent 无编排器</div>
+        <div class="fb-sub">Git 文件锁为唯一协调机制</div>
+      </div>
+      <div class="flow-arrow"><span class="arr-icon">→</span></div>
+      <div class="flow-box">
+        <div class="fb-tag" style="color:var(--c3)">决策三</div>
+        <div class="fb-name">测试 &gt; Prompt</div>
+        <div class="fb-sub">测试是 agent 与正确性的唯一连接</div>
+      </div>
+      <div class="flow-arrow"><span class="arr-icon">→</span></div>
+      <div class="flow-box">
+        <div class="fb-tag" style="color:var(--c4)">决策四</div>
+        <div class="fb-name">干净室 + 无网络</div>
+        <div class="fb-sub">测量纯 LLM 能力边界</div>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ QUESTION 1 ═══ -->
+  <section class="layer-sec" id="q1">
+    <div class="layer-hdr">
+      <span class="layer-id-badge" style="background:var(--c1d);color:var(--c1)">问题一</span>
+      <span class="layer-title">你的故事——你做了什么决策，为什么？</span>
+    </div>
+    <div class="layer-def" style="border-color:var(--c1)">
+      我花了 $20,000 让 16 个 Claude 实例在几乎零人工干预的情况下，用 Rust 从零写了一个能编译 Linux 内核的 C 编译器。这不是为了省成本——我自己写可能更便宜。这是为了回答一个问题："AI agent 在不需人类的情况下，能独立完成多复杂的工程任务？"
+    </div>
+
+    <!-- Decision 1 -->
+    <div class="decision-card">
+      <div class="dc-num">决策一</div>
+      <div class="dc-title">团队自主运行 vs. 人类在循环中——故意把人踢出去</div>
+      <div class="dc-body">
+        <p><strong>主流做法：</strong>所有 agent scaffold 都假设人类操作员在线。人类在循环中是默认的安全机制。</p>
+        <p style="margin-top:10px"><strong>我的方案：</strong>一个 bash while-true 循环。每次 Claude 完成任务，立刻塞进下一个——循环永远运行。</p>
+        <div class="code-quote"><span class="cm">#!/bin/bash</span><br>while true; do<br>&nbsp;&nbsp;claude --dangerously-skip-permissions \<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;-p "$(cat AGENT_PROMPT.md)" \<br>&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;&nbsp;--model claude-opus-X-Y<br>done</div>
+        <p><strong>物理本质：</strong>把 Claude 从"交互式协作工具"变成"自主执行引擎"。人类工程师的三个职责被分解为可自动化替代品——验证（测试）、持久化（文件）、协调（git）。</p>
+      </div>
+    </div>
+
+    <!-- Decision 2 -->
+    <div class="decision-card">
+      <div class="dc-num">决策二</div>
+      <div class="dc-title">16 个 Agent 并行但没有编排器——让个体智能涌现集体行为</div>
+      <div class="dc-body">
+        <p><strong>反直觉决定：</strong>多 agent 系统的标准范式是 orchestrator-worker。我不用——因为我想测试涌现行为，不是编排行为。</p>
+        <p style="margin-top:10px"><strong>极简协调：</strong>基于 git 的文件锁。Agent 在 <em>current_tasks/</em> 目录写文件来 claim 任务。Git 同步强制避免冲突。合并冲突频繁——Claude 自己解决。</p>
+        <p style="margin-top:10px"><strong>深刻洞察：</strong>不加编排器有时更好。编排器是单点——错误的分解决策导致全队走错。16 个平等 agent 中，错误独立可恢复。</p>
+      </div>
+    </div>
+
+    <!-- Decision 3 -->
+    <div class="decision-card">
+      <div class="dc-num">决策三</div>
+      <div class="dc-title">测试质量 &gt; 代码质量——AI agent 的"道德罗盘"是它的测试套件</div>
+      <div class="dc-body">
+        <p><strong>真正的工程智慧：</strong>不是 prompt、不是架构、不是协调算法——是我花在测试上的时间。</p>
+        <p style="margin-top:10px">当 agent 完全自主运行时，测试是它与"正确性"的唯一连接。测试套件有盲区 → agent 在盲区里"优化"——产出通过测试但实际错误的代码。</p>
+        <p style="margin-top:10px"><strong>迭代循环：</strong>观察 agent 行为 → 识别失败模式 → 设计新测试覆盖 → 重复。为 Claude 设计的测试沟通方式——上下文污染控制、<em>--fast</em> 随机抽样、预计算统计。</p>
+      </div>
+    </div>
+
+    <!-- Decision 4 -->
+    <div class="decision-card">
+      <div class="dc-num">决策四</div>
+      <div class="dc-title">干净室实现 + 无网络——不是约束，是能力标尺</div>
+      <div class="dc-body">
+        <p><strong>不是安全原因：</strong>是测量纯 LLM 能力。如果 Claude 能上网——它找到现有实现、教程、模式。不是"构建"——是"复制+改编"。</p>
+        <p style="margin-top:10px"><strong>能力边界测绘：</strong>Opus 4.5 → 首个通过大测试套件但不能编译大型项目。Opus 4.6 → Linux 6.9、QEMU、FFmpeg、Redis、Doom。但 Opus 4.6 无法实现 16-bit x86 代码生成器——到了极限。</p>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ TRANSITION ═══ -->
+  <section class="layer-sec" style="background:linear-gradient(180deg, transparent, var(--bg2));border-bottom:1px solid var(--border);">
+    <div style="text-align:center;padding:20px 0;">
+      <span class="pill" style="font-size:13px;padding:4px 14px;">从决策链到最难问题</span>
+      <p style="color:var(--muted);margin-top:12px;font-size:14px;">所有决策就位后，16 个 agent 撞上了同一个根本障碍</p>
+    </div>
+  </section>
+
+  <!-- ═══ QUESTION 2 ═══ -->
+  <section class="layer-sec" id="q2">
+    <div class="layer-hdr">
+      <span class="layer-id-badge" style="background:var(--c4d);color:var(--c4)">问题二</span>
+      <span class="layer-title">你解决过最难的问题是什么？</span>
+    </div>
+    <div class="layer-def" style="border-color:var(--c4)">
+      编译 Linux 内核——所有 16 个 agent 全部卡死在同一个 bug 上。互相覆盖修改。并行化完全失效。不是 16 个人在合作——是 16 个人在同一个键盘上打字。
+    </div>
+
+    <div class="prose">
+      <strong>Situation &amp; Task（情境与任务）</strong>
+      <p>测试套件达到 99% 通过率后，每个 agent 可以独立工作。但编译 Linux 内核是一个巨大的、不可分解的单一任务——没有 1000 个独立测试。所有 agent 遇到同一个编译错误，修复同一个 bug，然后覆盖彼此的工作。</p>
+    </div>
+
+    <div class="prose">
+      <strong>Action（核心行动）</strong>
+    </div>
+
+    <div class="grid2">
+      <div class="card">
+        <div class="card-title">失败尝试</div>
+        <ul>
+          <li><strong>给 agent 分配不同文件</strong>——编译错误发生在哪个文件事前不知道</li>
+          <li><strong>让一个 agent 做内核编译</strong>——其他 15 个闲着</li>
+          <li><strong>分模块编译</strong>——同一个基础 bug 影响多个模块</li>
+        </ul>
+      </div>
+      <div class="card">
+        <div class="card-title">突破方案</div>
+        <ul>
+          <li><strong>GCC 作为已知正确编译器的 Oracle</strong></li>
+          <li>随机用 GCC 编译大部分文件，少部分给 Claude 编译器</li>
+          <li>逐步缩小失败范围——<strong>文件级别的二分查找</strong></li>
+          <li>delta debugging 找"单独工作但合起来失败"的文件对</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="prose">
+      <blockquote>GCC 是已知正确的编译器。让 GCC 来做文件级别的二分查找。这就像 git bisect，但在文件级别、编译器级别。"已知正确的编译器"是 oracle，"已知失败的文件集合"在每次迭代中减半。</blockquote>
+      <p style="margin-top:16px">这个方案把编译 Linux 内核——一个不可分解的任务——变成了<strong>数百个独立的文件级子任务</strong>。16 个 agent 终于可以并行工作，每个处理不同的文件、不同的 bug。</p>
+    </div>
+  </section>
+
+  <!-- ═══ RESULTS ═══ -->
+  <section class="layer-sec" id="results">
+    <div class="layer-hdr">
+      <span class="layer-id-badge" style="background:var(--c3d);color:var(--c3)">结果</span>
+      <span class="layer-title">量化产出</span>
+    </div>
+
+    <table class="comp-table">
+      <tr><th>指标</th><th>结果</th></tr>
+      <tr><td>编译器规模</td><td>10 万行 Rust 代码</td></tr>
+      <tr><td>测试通过率</td><td style="color:var(--green)">GCC torture test suite 99%</td></tr>
+      <tr><td>编译能力</td><td>Linux 6.9 (x86, ARM, RISC-V)、QEMU、FFmpeg、SQLite、PostgreSQL、Redis</td></tr>
+      <tr><td>终极测试</td><td style="color:var(--green)">✅ 编译并运行 Doom</td></tr>
+      <tr><td>总成本</td><td>$19,500 · 2000 会话 · 20 亿输入 token · 1.4 亿输出 token</td></tr>
+      <tr><td>平行后端</td><td>x86、ARM、RISC-V</td></tr>
+      <tr><td>架构</td><td>SSA IR + 多优化 pass</td></tr>
+      <tr><td>限制</td><td style="color:var(--muted)">16-bit x86 代码生成器未完成 · 代码效率低于 GCC</td></tr>
+    </table>
+
+    <div class="grid2">
+      <div class="card" style="border-color:var(--c3d)">
+        <div class="card-title">成就</div>
+        <ul>
+          <li>2000 个 Claude Code 会话，持续两周</li>
+          <li>干净室实现——无网络，仅依赖 Rust stdlib</li>
+          <li>能编译 Linux 6.9 在三个架构上</li>
+          <li>GCC torture suite 99% 通过率</li>
+        </ul>
+      </div>
+      <div class="card" style="border-color:var(--c4d)">
+        <div class="card-title">诚实局限</div>
+        <ul>
+          <li>生成代码效率低于关闭优化的 GCC</li>
+          <li>16-bit x86 代码生成器未成功</li>
+          <li>新功能频繁破坏已有功能</li>
+          <li>模型能力极限——不是工程问题</li>
+        </ul>
+      </div>
+    </div>
+  </section>
+
+  <!-- ═══ SUMMARY ═══ -->
+  <div class="summary-callout">
+    <p><strong>核心洞察：</strong>这个实验追问的不是"agent 团队能否构建编译器"，而是"人类在循环中的角色能否被自动化替代"。测试质量替代人类判断；文件系统替代人类记忆；git 替代人类协调。用 GCC oracle 将一个不可分解任务转化为数百个可并行子任务的二分策略——是"已知正确参照物 + 问题分解"这一工程原理的极致应用。</p>
+    <p style="margin-top:14px"><strong>最不安的发现：</strong>作为一个前渗透测试工程师——人们在部署自己从未亲自验证过的软件。测试只覆盖你想到的东西。AI 写了 10 万行代码——你不可能逐行审查。</p>
+  </div>
+
+</div>
+
+<div style="text-align:center;padding:40px 0 60px;font-size:12px;color:var(--faint);">
+  分析对象：<a href="https://www.anthropic.com/engineering/building-c-compiler" style="color:var(--muted)">Building a C compiler with a team of parallel Claudes</a> · 分析框架：Musk-Style Decision Interrogation
+</div>
+
+</body>
+</html>

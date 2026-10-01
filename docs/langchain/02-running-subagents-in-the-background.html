@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>深度解析：Running Subagents in the Background</title>
+<title>深度解析：在后台运行子智能体（Subagents）</title>
 <link rel="preconnect" href="https://fonts.googleapis.com">
 <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&family=Noto+Sans+SC:wght@300;400;500;600;700&display=swap" rel="stylesheet">
 <style>
@@ -12,11 +12,11 @@
 </style>
 </head>
 <body>
-<nav class="nav"><a href="../" class="nav-brand">LangChain 技术博客</a><a href="../" class="nav-back">&larr; Back to Hub</a></nav>
+<nav class="nav"><a href="../" class="nav-brand">LangChain 技术博客</a><a href="../" class="nav-back">&larr; 返回主页</a></nav>
 <header class="hero">
-  <span style="display:inline-block;background:rgba(16,185,129,.2);color:#a7f3d0;padding:4px 12px;border-radius:20px;font-size:12px;margin-bottom:16px">Curated</span>
-  <h1>Running Subagents in the Background</h1>
-  <p class="subtitle">Curated &middot; LangChain Team &middot; LangChain Blog</p>
+  <span style="display:inline-block;background:rgba(16,185,129,.2);color:#a7f3d0;padding:4px 12px;border-radius:20px;font-size:12px;margin-bottom:16px">精选文章</span>
+  <h1>在后台运行子智能体（Subagents）</h1>
+  <p class="subtitle">精选 &middot; LangChain Team &middot; LangChain Blog</p>
   <div class="hero-stats"><div class="stat-card"><div class="num">2</div><div class="label">核心章节</div></div>
 <div class="stat-card"><div class="num">6</div><div class="label">子话题</div></div>
 <div class="stat-card"><div class="num">2</div><div class="label">代码示例</div></div>
@@ -24,26 +24,28 @@
 </div>
 </header>
 <div class="page">
-  <nav class="toc"><h3>📑 目录导航</h3><div class="toc-grid"><a href="#s1"><span class="num">1</span>🔮 Where Traditional Subagents Break Down</a>
-<a href="#s2"><span class="num">2</span>💡 Enter: Async Subagents</a>
+  <nav class="toc"><h3>📑 目录导航</h3><div class="toc-grid"><a href="#s1"><span class="num">1</span>🔮 传统子智能体的瓶颈与局限</a>
+<a href="#s2"><span class="num">2</span>💡 异步子智能体：全新的解决方案</a>
 </div></nav>
-  <section class="section" id="s1"><h2>🔮 Where Traditional Subagents Break Down</h2><p class="lead">A subagent is an agent that a supervisor agent delegates scoped work to. This pattern works. But as we've given agents l</p><div class="card"><p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">A subagent is an agent that a supervisor agent delegates scoped work to. This pattern works. But as we've given agents longer and more complex tasks, inline subagents have started to break down.</p>
-<h3 style="font-size:18px;font-weight:600;margin:28px 0 12px;color:var(--text)">Problem 1: Deadlock While Subagents Are Working</h3>
-<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">Because of the way that tool calling works inside of an agent, the supervisor can't reason about anything else until the tool call has been answered with the subagent response. If a subagent takes an hour, you have to wait an hour before you can interact with the agent again.</p>
-<h3 style="font-size:18px;font-weight:600;margin:28px 0 12px;color:var(--text)">Problem 2: New Information Is Hard to Coordinate</h3>
-<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">With inline subagents:</p>
+  <section class="section" id="s1"><h2>🔮 传统子智能体的瓶颈与局限</h2><p class="lead">子智能体（Subagent）是主管智能体将特定范围的工作委托给的从属智能体。这种模式本身是可行的，但随着我们赋予智能体越来越长、越来越复杂的任务，内联式子智能体（inline subagents）开始暴露出严重的架构缺陷。</p><div class="card"><p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">子智能体是主管智能体将范围明确的工作委托给的独立智能体。这种委托模式在简单场景中运行良好。然而，当任务变得更加复杂和耗时后，内联子智能体的根本架构问题开始显现——它将任务的委派与结果的等待紧密耦合在一起，导致整个系统陷入阻塞。</p>
+<h3 style="font-size:18px;font-weight:600;margin:28px 0 12px;color:var(--text)">问题一：子智能体工作时的死锁</h3>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">由于工具调用（tool calling）在智能体内部的工作机制，主管智能体在收到子智能体的响应之前，无法进行任何其他推理或操作。这是因为 LLM 的工具调用遵循严格的请求-响应模式：主管发出一次工具调用后，必须等待该调用返回结果才能继续生成下一步推理。如果某个子智能体需要运行一个小时，那么你就必须等待整整一个小时才能再次与主管智能体交互。这种阻塞不仅浪费了主管智能体的算力，更严重破坏了用户体验——尤其是在需要人机交互（Human-in-the-Loop）的场景中。</p>
+<h3 style="font-size:18px;font-weight:600;margin:28px 0 12px;color:var(--text)">问题二：新信息难以协调</h3>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">在内联子智能体的架构下，信息协调面临多重困境：</p>
 <ul style="margin:12px 0;padding-left:20px">
-<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7">User can't talk to the supervisor while it's blocked</li>
-<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7">Subagents can't run concurrently — no cross-pollination of results</li>
-<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7">Subagent turns are all-or-nothing — no mid-task updates</li>
-</ul></div></section>
-<section class="section" id="s2"><h2>💡 Enter: Async Subagents</h2><p class="lead">A simple way to think about async subagents: subagents that run in the background instead of sequentially. The superviso</p><div class="card"><p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">A simple way to think about async subagents: subagents that run in the background instead of sequentially. The supervisor launches a task, gets a task ID back immediately, and continues working. It's "fire-and-steer" rather than "fire-and-forget."</p>
-<h3 style="font-size:18px;font-weight:600;margin:28px 0 12px;color:var(--text)">How They Work — Task Management Tools</h3>
-<div style="overflow-x:auto;margin:16px 0"><table style="width:100%;border-collapse:collapse;font-size:14px"><tr><th style="background:linear-gradient(135deg,#065f46,#047857);color:#fff;padding:12px 16px;text-align:left;font-weight:600">Tool</th><th style="background:linear-gradient(135deg,#065f46,#047857);color:#fff;padding:12px 16px;text-align:left;font-weight:600">Purpose</th></tr><tr><td style="padding:12px 16px;border-bottom:1px solid var(--border)"><code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:0.9em;color:#059669">start_async_task</code></td><td style="padding:12px 16px;border-bottom:1px solid var(--border)">Launch a task on a remote agent. Returns a task ID immediately</td></tr><tr><td style="padding:12px 16px;border-bottom:1px solid var(--border)"><code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:0.9em;color:#059669">check_async_task</code></td><td style="padding:12px 16px;border-bottom:1px solid var(--border)">Poll a task's status and retrieve its result when complete</td></tr><tr><td style="padding:12px 16px;border-bottom:1px solid var(--border)"><code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:0.9em;color:#059669">update_async_task</code></td><td style="padding:12px 16px;border-bottom:1px solid var(--border)">Send follow-up instructions to a running task</td></tr><tr><td style="padding:12px 16px;border-bottom:1px solid var(--border)"><code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:0.9em;color:#059669">cancel_async_task</code></td><td style="padding:12px 16px;border-bottom:1px solid var(--border)">Cancel a running task</td></tr><tr><td style="padding:12px 16px;border-bottom:1px solid var(--border)"><code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:0.9em;color:#059669">list_async_tasks</code></td><td style="padding:12px 16px;border-bottom:1px solid var(--border)">List all tracked tasks with their current statuses</td></tr></table></div>
-<h3 style="font-size:18px;font-weight:600;margin:28px 0 12px;color:var(--text)">Built on Agent Protocol</h3>
-<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">Async subagents are built on <a href="https://github.com/langchain-ai/agent-protocol" target="_blank" style="color:#059669;text-decoration:underline">Agent Protocol</a>, a framework-agnostic API specification for managing remote agents. It defines standard endpoints for creating threads, launching runs, polling status, sending updates, and managing long-term memory.</p>
-<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">Deployment flexibility: run on LangSmith deployments for a managed experience, or host yourself on your own infrastructure.</p>
-<h3 style="font-size:18px;font-weight:600;margin:28px 0 12px;color:var(--text)">Usage Example (TypeScript)</h3>
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7">用户无法在主管智能体被阻塞时与其对话——这意味着用户无法提供新的指令、纠正方向或补充上下文</li>
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7">多个子智能体无法并发运行——结果之间无法交叉参考，每个子任务必须严格串行执行，极大地延长了总体耗时</li>
+<li style="margin:6px 0;font-size:14px;color:var(--text-secondary);line-height:1.7">子智能体的执行是全有或全无的——没有中间状态更新，主管智能体无法根据部分结果做出实时调整</li>
+</ul>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">归根结底，这些问题的本质是<strong>任务委派与结果等待的紧耦合</strong>。传统的同步工具调用模型假设工具会快速返回，但子智能体的执行时间是不可预测的。这种架构上的不匹配使得扩展到复杂的多智能体工作流变得不切实际。</p></div></section>
+<section class="section" id="s2"><h2>💡 异步子智能体：全新的解决方案</h2><p class="lead">异步子智能体的核心思想很简单：让子智能体在后台运行，而非串行阻塞。主管智能体启动一个任务后立即获得任务 ID，然后可以继续处理其他工作。这是一种"发射并引导"（fire-and-steer）而非"发射后遗忘"（fire-and-forget）的模式。</p><div class="card"><p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">理解异步子智能体最简单的方式：它们是在后台运行的子智能体，而非顺序执行的。主管智能体启动一个任务，立即获得一个任务 ID 作为句柄，然后可以自由地继续推理、启动更多子任务或与用户交互。这是一种"发射并引导"的模式——主管智能体保持对任务的监控和控制权，同时不会被任何单个子任务阻塞。</p>
+<h3 style="font-size:18px;font-weight:600;margin:28px 0 12px;color:var(--text)">工作原理——任务管理工具集</h3>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">异步子智能体通过五个核心工具实现生命周期管理，这些工具共同构成了一个完整的异步任务编排接口：</p>
+<div style="overflow-x:auto;margin:16px 0"><table style="width:100%;border-collapse:collapse;font-size:14px"><tr><th style="background:linear-gradient(135deg,#065f46,#047857);color:#fff;padding:12px 16px;text-align:left;font-weight:600">工具名称</th><th style="background:linear-gradient(135deg,#065f46,#047857);color:#fff;padding:12px 16px;text-align:left;font-weight:600">功能说明</th></tr><tr><td style="padding:12px 16px;border-bottom:1px solid var(--border)"><code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:0.9em;color:#059669">start_async_task</code></td><td style="padding:12px 16px;border-bottom:1px solid var(--border)">在远程智能体上启动一个任务，立即返回任务 ID。主管智能体无需等待执行完成即可继续后续操作。</td></tr><tr><td style="padding:12px 16px;border-bottom:1px solid var(--border)"><code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:0.9em;color:#059669">check_async_task</code></td><td style="padding:12px 16px;border-bottom:1px solid var(--border)">轮询任务状态，并在任务完成后获取结果。支持查询中间状态（running / completed / failed）。</td></tr><tr><td style="padding:12px 16px;border-bottom:1px solid var(--border)"><code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:0.9em;color:#059669">update_async_task</code></td><td style="padding:12px 16px;border-bottom:1px solid var(--border)">向正在运行的任务发送后续指令——例如追加新的上下文信息、调整任务优先级或修改搜索方向。</td></tr><tr><td style="padding:12px 16px;border-bottom:1px solid var(--border)"><code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:0.9em;color:#059669">cancel_async_task</code></td><td style="padding:12px 16px;border-bottom:1px solid var(--border)">取消正在运行的任务。适用于任务已过时或发现更好路径时的场景。</td></tr><tr><td style="padding:12px 16px;border-bottom:1px solid var(--border)"><code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:0.9em;color:#059669">list_async_tasks</code></td><td style="padding:12px 16px;border-bottom:1px solid var(--border)">列出所有已跟踪的任务及其当前状态，为主管智能体提供全局态势感知。</td></tr></table></div>
+<h3 style="font-size:18px;font-weight:600;margin:28px 0 12px;color:var(--text)">基于 Agent Protocol 构建</h3>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">异步子智能体基于 <a href="https://github.com/langchain-ai/agent-protocol" target="_blank" style="color:#059669;text-decoration:underline">Agent Protocol</a> 构建——这是一个与框架无关的 API 规范，用于管理远程智能体。它定义了创建线程（thread）、启动运行（run）、轮询状态、发送更新以及管理长期记忆（memory）的标准端点。Agent Protocol 的框架无关性意味着你可以混合使用不同框架构建的子智能体——例如用 LangGraph 构建一个研究智能体，用 CrewAI 构建另一个编码智能体，它们都可以通过统一的 Agent Protocol 接口与主管智能体协作。</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0"><strong>灵活的部署选择：</strong>你可以使用 LangSmith 部署获得全托管体验（包括自动扩缩容、日志追踪和监控），也可以将其部署在自己的基础设施上——Docker 容器、虚拟机或 Kubernetes 集群均可。</p>
+<h3 style="font-size:18px;font-weight:600;margin:28px 0 12px;color:var(--text)">使用示例（TypeScript）</h3>
 <pre style="background:#1e293b;color:#e2e8f0;padding:16px;border-radius:10px;overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.6;margin:16px 0">// agents.ts
 import { createAgent } from "langchain";
 import { createDeepAgent } from "deepagents";
@@ -62,7 +64,8 @@ export const agent = createDeepAgent({
     graphId: "researcher",
   }],
 });</pre>
-<h3 style="font-size:18px;font-weight:600;margin:28px 0 12px;color:var(--text)">Self-hosted</h3>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">上面的代码展示了异步子智能体的核心设置：<code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:0.9em;color:#059669">createAgent</code> 定义了一个独立的研究智能体，而 <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:0.9em;color:#059669">createDeepAgent</code> 创建的主管智能体通过 <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:0.9em;color:#059669">graphId</code> 引用子智能体。当主管智能体需要研究某个主题时，它会调用 <code style="background:#f1f5f9;padding:2px 6px;border-radius:4px;font-family:var(--mono);font-size:0.9em;color:#059669">start_async_task</code> 来异步启动研究任务。</p>
+<h3 style="font-size:18px;font-weight:600;margin:28px 0 12px;color:var(--text)">自托管部署</h3>
 <pre style="background:#1e293b;color:#e2e8f0;padding:16px;border-radius:10px;overflow-x:auto;font-family:var(--mono);font-size:13px;line-height:1.6;margin:16px 0">export const agent = createDeepAgent({
   model: "anthropic:claude-opus-4-6",
   subagents: [{
@@ -72,13 +75,13 @@ export const agent = createDeepAgent({
     url: "http://localhost:2024", // points to your self-hosted server
   }],
 });</pre>
-<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">The self-hosted server implements Agent Protocol endpoints and can run anywhere — Docker container, VM, or Kubernetes cluster.</p>
-<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0"><strong>Learn more:</strong> <a href="https://docs.langchain.com/oss/javascript/deepagents/async-subagents" target="_blank" style="color:#059669;text-decoration:underline">Async Subagents Documentation</a></p></div></section>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0">自托管服务器实现 Agent Protocol 端点，可以运行在任何地方——Docker 容器、虚拟机或 Kubernetes 集群均可。自托管方案适合对数据隐私有严格要求的企业场景，所有智能体通信都在你自己的网络内部完成。需要注意的是，自托管时你需要自行管理扩缩容、健康检查和日志收集。</p>
+<p style="font-size:14px;color:var(--text-secondary);line-height:1.8;margin:12px 0"><strong>了解更多：</strong> <a href="https://docs.langchain.com/oss/javascript/deepagents/async-subagents" target="_blank" style="color:#059669;text-decoration:underline">异步子智能体文档</a></p></div></section>
 
 </div>
 <footer class="footer">
-  <p><a href="../">&larr; 返回 Hub</a> &middot; 原文：<a href="https://docs.langchain.com/oss/javascript/deepagents/async-subagents" target="_blank">langchain.com</a></p>
-  <p style="margin-top:8px">LangChain Blog Deep-Dive &middot; LangChain Team &middot; </p>
+  <p><a href="../">&larr; 返回主页</a> &middot; 原文：<a href="https://docs.langchain.com/oss/javascript/deepagents/async-subagents" target="_blank">langchain.com</a></p>
+  <p style="margin-top:8px">LangChain 博客深度解析 &middot; LangChain Team &middot; </p>
 </footer>
 </body>
 </html>

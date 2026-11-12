@@ -106,8 +106,8 @@ class ReconciliationTests(unittest.TestCase):
 
     def test_preexisting_note_link_is_not_mistaken_for_external_only(self):
         self.make("anthropic/agents/example(musk-interrogation).md",
-                  "# Example note\\n\\n> **分析对象**: "
-                  "[Article](https://www.anthropic.com/engineering/example)\\n")
+                  "# Example note\n\n> **分析对象**: "
+                  "[Article](https://www.anthropic.com/engineering/example)\n")
         enriched, report = enrich(self.root, self.rows)
         note_id = "note:anthropic:example:interrogation"
         note = next(row for row in enriched if row["id"] == note_id)

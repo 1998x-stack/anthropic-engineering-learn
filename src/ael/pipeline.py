@@ -149,9 +149,12 @@ def generated_outputs(root: Path, rows: list[dict], audit: dict) -> dict[Path, s
 
 def build_catalog(root: Path, records: list[dict], audit: dict | None = None) -> dict:
     """Full searchable Registry index, retaining the published 'items' contract."""
-    from .knowledge import build_index
+    from .knowledge import KnowledgeError, build_index
 
-    result = build_index(root, records, audit)
+    try:
+        result = build_index(root, records, audit)
+    except KnowledgeError as exc:
+        raise PipelineError(str(exc)) from exc
     page_paths, ids = set(), set()
     for item in result["items"]:
         page = item.get("site_path")

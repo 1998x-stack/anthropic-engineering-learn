@@ -22,7 +22,7 @@ UNKNOWN = {"", "unknown", "n/a", "none", "null", "not found", "untitled", "undef
 EXPECTED_HOSTS = {
     "anthropic": ("anthropic.com",),
     "openai": ("openai.com",),
-    "langchain": ("langchain.com",),
+    "langchain": ("langchain.com", "langchain.dev"),
     "llamaindex": ("llamaindex.ai",),
     "modal": ("modal.com",),
     "e2b": ("e2b.dev",),

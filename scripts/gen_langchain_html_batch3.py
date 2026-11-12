@@ -9,7 +9,7 @@ import re
 import html
 import subprocess
 
-BASE_DIR = "/Users/xd/.openclaw/workspace/05-学习文档/anthropic-engineering"
+BASE_DIR = os.path.dirname(os.path.dirname(os.path.abspath(__file__)))
 OUT_DIR = os.path.join(BASE_DIR, "docs", "langchain")
 
 # Get file list using the exact command specified

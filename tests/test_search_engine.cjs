@@ -33,3 +33,18 @@ test("snippets are bounded and never interpreted as HTML", () => {
   assert.ok(excerpt.length <= 110);
   assert.equal(Search.snippet(text, ["not_found"]), "");
 });
+
+
+test("browser shard loader accepts generated JSON names and rejects traversal", () => {
+  const fs = require("node:fs");
+  const path = require("node:path");
+  const js = fs.readFileSync(path.join(__dirname, "../docs/explore/app.js"), "utf8");
+  const match = js.match(/if \(!\/(.+?)\/\.test\(shard\.file\)\)/);
+  assert.ok(match, "shard filename validation must stay present");
+  const pattern = new RegExp(match[1]);
+  assert.ok(pattern.test("langchain-000.json"));
+  assert.ok(pattern.test("browser-use-015.json"));
+  assert.equal(pattern.test("../notes-000.json"), false);
+  assert.equal(pattern.test("evil.json/../langchain-000.json"), false);
+  assert.equal(pattern.test("langchain-000.json.js"), false);
+});

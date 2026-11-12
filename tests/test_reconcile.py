@@ -165,6 +165,8 @@ class ReconciliationTests(unittest.TestCase):
         self.assertNotIn("metadata_provenance", updated)
 
     def test_paper_editorial_metadata_is_not_cleared(self):
+        # This isolated fixture contains no Anthropic records.
+        (self.root / "registry/verified-overrides.json").write_text("{}", encoding="utf-8")
         self.make("papers/sample.pdf", "%PDF-1.4\n")
         paper = self.row("paper:sample", "paper", "papers/sample.pdf", "papers")
         paper["title"] = "Curated paper title"

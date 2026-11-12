@@ -85,3 +85,7 @@ Registry is reset to unreviewed during reconciliation. Topic decisions in
 Review new events with `PYTHONPATH=src python -m ael review --check`, then
 run `PYTHONPATH=src python -m ael reconcile --write` to regenerate the
 Registry, and `PYTHONPATH=src python -m ael check` before merging.
+
+## Historical HTML aliases
+
+Some older static HTML pages use a filename that differs from the migrated Research Note slug. `registry/site-aliases.json` is a small, explicit exception list; it is **not** an inferred title-to-ID join. Each alias must point to an existing HTML file in the corresponding publisher directory and record the precise expected page title, matching the current Research Note heading, plus a rationale. Reconciliation rejects missing pages, duplicate mappings, unsafe paths and title mismatches. The original URL remains valid, and the Registry may safely mark that note as having a published HTML asset without changing Markdown or HTML bytes.

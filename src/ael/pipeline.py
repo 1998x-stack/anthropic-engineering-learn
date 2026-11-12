@@ -180,7 +180,7 @@ def build_catalog(root: Path, records: list[dict]) -> dict:
     return {"schema_version": 1, "count": len(items), "items": items}
 
 
-def verify(root: Path) -> dict:
+def verify(root: Path, check_catalog: bool = True) -> dict:
     registry_path, _ = registry_paths(root)
     errors = validate(root, registry_path)
     if errors:
@@ -193,7 +193,7 @@ def verify(root: Path) -> dict:
         raise PipelineError("Generated metadata drift: " + ", ".join(drift))
     catalog = build_catalog(root, rows)
     existing_catalog = root / "docs" / "catalog.json"
-    if existing_catalog.exists() and existing_catalog.read_text(encoding="utf-8") != canonical_json(catalog):
+    if check_catalog and existing_catalog.exists() and existing_catalog.read_text(encoding="utf-8") != canonical_json(catalog):
         raise PipelineError("Generated site catalog drift: docs/catalog.json")
     return {"records": len(rows), "published_catalog_entries": catalog["count"],
             "metadata_conflicts": len(audit["field_conflicts"]),
@@ -239,7 +239,7 @@ def run(command: str, root: Path = ROOT, write: bool = False, check: bool = Fals
             # Validate structural and content integrity before building manifest.
             rows, _ = prepare(root, include_new=False)
         else:
-            verify(root)
+            verify(root, check_catalog=False)
             rows = read_records(registry_paths(root)[0])
         catalog = canonical_json(build_catalog(root, rows))
         destination = root / "docs" / "catalog.json"

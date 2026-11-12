@@ -268,9 +268,12 @@
     const params = new URLSearchParams(window.location.search);
     $("search").value = params.get("q") || "";
     filters.forEach((key) => { $(key).value = params.get(key) || ""; });
-    refresh();
     const id = params.get("id");
-    if (id && state.byId.has(id)) showDetail(id, false);
+    const valid = id && state.byId.has(id);
+    $("detail").hidden = !valid;
+    $("detail").dataset.selected = valid ? id : "";
+    refresh();
+    if (valid) showDetail(id, false);
   }
   async function load() {
     try {

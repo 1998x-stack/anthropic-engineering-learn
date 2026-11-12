@@ -200,6 +200,62 @@ def note_reference_urls(text: str, source: str) -> list[str]:
     return found
 
 
+def validate_official_date_checks(root: Path, overrides: dict[str, dict]) -> None:
+    """Validate a historical official-page observation, without live network access."""
+    path = root / "registry" / "official-date-checks.json"
+    if not path.is_file():
+        return  # Isolated fixtures may not use a publisher evidence ledger.
+    doc = json.loads(path.read_text(encoding="utf-8"))
+    if (not isinstance(doc, dict) or set(doc) !=
+            {"schema_version", "method", "checked_articles"}
+            or doc["schema_version"] != 1
+            or doc["method"] != "official_publisher_page_observation"
+            or not isinstance(doc["checked_articles"], list)):
+        raise ValueError("invalid official-date-checks.json schema")
+    seen = set()
+    for check in doc["checked_articles"]:
+        required = {"id", "evidence_url", "observed_published_at", "checked_at"}
+        if not isinstance(check, dict) or set(check) != required:
+            raise ValueError("official date check missing required fields")
+        ident = check["id"]
+        if not isinstance(ident, str) or ident in seen or ident not in overrides:
+            raise ValueError(f"duplicate or unknown official date check: {ident}")
+        seen.add(ident)
+        original = overrides[ident]
+        if (check["evidence_url"] != original["evidence_url"] or
+                check["observed_published_at"] != original.get("published_at")):
+            raise ValueError(f"{ident}: official evidence/date disagrees with override")
+        if not clean_date(check["observed_published_at"]):
+            raise ValueError(f"{ident}: invalid publisher publication date")
+        try:
+            checked_on = date.fromisoformat(check["checked_at"])
+        except (ValueError, TypeError):
+            raise ValueError(f"{ident}: invalid source-check date") from None
+        if checked_on < date.fromisoformat(check["observed_published_at"]):
+            raise ValueError(f"{ident}: source checked before publication")
+    dated = {ident for ident, entry in overrides.items() if "published_at" in entry}
+    if seen != dated:
+        raise ValueError("official date check coverage differs from dated overrides")
+
+
+def validate_article_evidence_url(ident: str, raw: str) -> None:
+    """Require evidence from this record's own Anthropic article, not an index."""
+    if not isinstance(raw, str):
+        raise ValueError(f"{ident}: invalid evidence_url")
+    try:
+        parts = urlsplit(raw)
+        segments = parts.path.strip("/").split("/")
+        slug = ident.split(":")[-1]
+        if (parts.scheme != "https" or parts.hostname != "www.anthropic.com"
+                or parts.username or parts.password or parts.port
+                or parts.query or parts.fragment or len(segments) != 2
+                or segments[0] not in {"research", "engineering"}
+                or segments[1].casefold() != slug.casefold()):
+            raise ValueError(f"{ident}: evidence_url must be matching Anthropic article")
+    except ValueError as exc:
+        raise ValueError(f"{ident}: invalid or unrelated article evidence_url") from exc
+
+
 def read_overrides(root: Path) -> dict[str, dict]:
     path = root / "registry" / "verified-overrides.json"
     if not path.exists():
@@ -214,6 +270,9 @@ def read_overrides(root: Path) -> dict[str, dict]:
             raise ValueError(f"{ident}: invalid evidence_url")
         if any(k not in ("canonical_url", "published_at", "title", "author", "evidence_url") for k in entry):
             raise ValueError(f"{ident}: unsupported override field")
+        if ident.startswith("source:anthropic:"):
+            validate_article_evidence_url(ident, entry["evidence_url"])
+    validate_official_date_checks(root, values)
     return values
 
 

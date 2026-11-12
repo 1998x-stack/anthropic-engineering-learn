@@ -9,6 +9,7 @@ from __future__ import annotations
 import argparse
 from collections import Counter, defaultdict
 from datetime import date
+from html import unescape as html_unescape
 import hashlib
 import json
 from pathlib import Path
@@ -114,7 +115,55 @@ def legacy_meta_path(root: Path, row: dict) -> Path | None:
     return path if path.is_file() else None
 
 
-def published_path(root: Path, row: dict, historical_path: str | None = None) -> str | None:
+
+def read_site_aliases(root: Path, records: list[dict]) -> dict[str, str]:
+    """Allow reviewed, title-matched historical HTML paths without guessing."""
+    manifest = root / "registry" / "site-aliases.json"
+    if not manifest.is_file():
+        return {}
+    data = json.loads(manifest.read_text(encoding="utf-8"))
+    if (not isinstance(data, dict) or set(data) != {"schema_version", "aliases"}
+            or data["schema_version"] != 1 or not isinstance(data["aliases"], list)):
+        raise ValueError("site-aliases.json requires schema_version=1 and aliases array")
+    by_id = {row["id"]: row for row in records}
+    used_paths: set[str] = set()
+    aliases: dict[str, str] = {}
+    for entry in data["aliases"]:
+        if not isinstance(entry, dict) or set(entry) != {"id", "site_path", "html_title", "rationale"}:
+            raise ValueError("historical site alias requires id/site_path/html_title/rationale")
+        ident, site = entry["id"], entry["site_path"]
+        if not isinstance(ident, str) or ident not in by_id or ident in aliases:
+            raise ValueError(f"unknown or duplicate historical site alias: {ident}")
+        row = by_id[ident]
+        if row["kind"] != "article_note":
+            raise ValueError(f"{ident}: only research notes support historical site aliases")
+        if not isinstance(site, str):
+            raise ValueError(f"{ident}: invalid site path")
+        parts = Path(site)
+        if (parts.is_absolute() or ".." in parts.parts or len(parts.parts) < 3
+                or parts.parts[:2] != ("docs", row["source"]) or parts.suffix != ".html"
+                or site in used_paths):
+            raise ValueError(f"{ident}: unsafe or duplicate historical HTML path")
+        page = root / site
+        if not page.is_file():
+            raise ValueError(f"{ident}: missing historical HTML")
+        if not isinstance(entry["rationale"], str) or len(entry["rationale"].strip()) < 20:
+            raise ValueError(f"{ident}: a documented mapping rationale is required")
+        title = entry["html_title"]
+        if not isinstance(title, str) or not title:
+            raise ValueError(f"{ident}: expected HTML title is required")
+        match = re.search(r"<title>\s*(.*?)\s*</title>", page.read_text(encoding="utf-8"),
+                          re.IGNORECASE | re.DOTALL)
+        note_title = first_heading((root / row["path"]).read_text(encoding="utf-8"))
+        if not match or html_unescape(match.group(1)).strip() != title or note_title != title:
+            raise ValueError(f"{ident}: HTML and research-note title evidence do not match")
+        aliases[ident] = site
+        used_paths.add(site)
+    return aliases
+
+
+def published_path(root: Path, row: dict, historical_path: str | None = None,
+                   site_aliases: dict[str, str] | None = None) -> str | None:
     path = historical_path or row["path"]
     stem = Path(path).stem
     source = row["source"]
@@ -123,7 +172,8 @@ def published_path(root: Path, row: dict, historical_path: str | None = None) ->
         parts = Path(path).parts
         if len(parts) > 2:
             candidates.insert(0, Path("docs") / source / parts[1] / (stem + ".html"))
-    return next((p.as_posix() for p in candidates if (root / p).is_file()), None)
+    return next((p.as_posix() for p in candidates if (root / p).is_file()),
+                (site_aliases or {}).get(row["id"]))
 
 
 def note_reference_urls(text: str, source: str) -> list[str]:
@@ -173,6 +223,7 @@ def enrich(root: Path, records: list[dict]) -> tuple[list[dict], dict]:
     overrides = read_overrides(root)
     from .review import approved_content_decisions
     review_states = approved_content_decisions(root, records)
+    site_aliases = read_site_aliases(root, records)
     from .migration import read_moves
     moves_by_id = {move["id"]: move for move in read_moves(root)}
     ids = {r["id"] for r in records}
@@ -206,7 +257,7 @@ def enrich(root: Path, records: list[dict]) -> tuple[list[dict], dict]:
         if not path.is_file():
             raise FileNotFoundError(row["path"])
         rec["source_sha256"] = hashlib.sha256(path.read_bytes()).hexdigest()
-        html = published_path(root, row, moves_by_id.get(row["id"], {}).get("from"))
+        html = published_path(root, row, moves_by_id.get(row["id"], {}).get("from"), site_aliases)
         if rec.get("publication_status") != "archived":
             rec["publication_status"] = "published" if html else "not_published"
         if html:

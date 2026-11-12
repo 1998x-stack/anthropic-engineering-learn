@@ -1,0 +1,17 @@
+{
+  "source:anthropic:building-effective-agents": {
+    "published_at": "2024-12-19",
+    "canonical_url": "https://www.anthropic.com/research/building-effective-agents",
+    "evidence_url": "https://www.anthropic.com/research/building-effective-agents"
+  },
+  "source:anthropic:multi-agent-research-system": {
+    "published_at": "2025-06-13",
+    "canonical_url": "https://www.anthropic.com/research/multi-agent-research-system",
+    "evidence_url": "https://www.anthropic.com/research/multi-agent-research-system"
+  },
+  "source:anthropic:contextual-retrieval": {
+    "published_at": "2024-09-19",
+    "canonical_url": "https://www.anthropic.com/research/contextual-retrieval",
+    "evidence_url": "https://www.anthropic.com/research/contextual-retrieval"
+  }
+}

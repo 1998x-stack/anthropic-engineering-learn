@@ -1,0 +1,11 @@
+{
+  "schema_version": 1,
+  "aliases": [
+    {
+      "id": "note:anthropic:effective-context-engineering-for-ai-agents:interrogation",
+      "site_path": "docs/anthropic/agents/effective-context-engineering(musk-interrogation).html",
+      "html_title": "马斯克式决策审问：AI Agent 的有效上下文工程",
+      "rationale": "The archival static page title exactly matches the migrated research-note heading; the historical HTML route is preserved."
+    }
+  ]
+}

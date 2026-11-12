@@ -246,6 +246,12 @@ def run(command: str, root: Path = ROOT, write: bool = False, check: bool = Fals
                     "written": safe_write(root, {destination: catalog})}
         return {"entries": json.loads(catalog)["count"], "output": "docs/catalog.json",
                 "dry_run": True}
+    if command == "fulltext":
+        from .fulltext import run as fulltext_run
+        return fulltext_run(root=root, write=write, check=check)
+    if command == "review":
+        from .review import run as review_run
+        return review_run(root=root, write=write, check=check)
     if command == "check":
         return verify(root)
     raise PipelineError(f"Unknown pipeline stage: {command}")
@@ -254,11 +260,11 @@ def run(command: str, root: Path = ROOT, write: bool = False, check: bool = Fals
 def main(argv: list[str] | None = None, root: Path = ROOT) -> int:
     parser = argparse.ArgumentParser(description=__doc__)
     subs = parser.add_subparsers(dest="command", required=True)
-    for command in ("plan", "ingest", "normalize", "validate", "reconcile", "publish", "check"):
+    for command in ("plan", "ingest", "normalize", "validate", "reconcile", "publish", "fulltext", "review", "check"):
         sub = subs.add_parser(command)
-        if command in ("ingest", "reconcile", "publish"):
+        if command in ("ingest", "reconcile", "publish", "fulltext", "review"):
             sub.add_argument("--write", action="store_true", help="explicitly write allowlisted generated files")
-        if command == "publish":
+        if command in ("publish", "fulltext", "review"):
             sub.add_argument("--check", action="store_true", help="require an up-to-date generated catalog")
     args = parser.parse_args(argv)
     if getattr(args, "check", False) and getattr(args, "write", False):

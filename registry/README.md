@@ -53,3 +53,11 @@ All 123 registered research notes now live under `content/research/article-notes
 The search portal at `docs/explore/` consumes the build-time `docs/catalog.json` (schema v2). The prior `count` / `items` still represent only mapped HTML; `records` now covers the full Registry. The search covers titles, metadata and short local excerpts, **not full text or vector embeddings**.
 
 `registry/topics.json` defines transparent title/ID/path keyword heuristics. These are suggestions rather than human-verified topic decisions. `registry/projects.json` contains manually linked, GitHub-confirmed external repositories in `repository_link_only` status; no experimental conclusions are asserted. The page exposes unresolved source associations from the existing citation audit without inventing sources.
+
+## Phase 7 — human-reviewed topics and source-link review queue
+
+The `registry/review-queue.json` is a deterministic, evidence-first checklist derived from `records.jsonl` plus `audit-report.json`. It includes 67 unlinked notes plus four linked records with historical URL mismatches, rather than guessing links.
+
+`registry/review-decisions.json` is the **explicit topic review ledger**. Each decision requires a stable record ID, reviewed topic IDs, current document SHA-256, reviewer identity, review date and evidence rationale. It does not alter `review_status` or automatically create missing `related_ids`. As of this phase the ledger is empty: no human topic approvals are being claimed.
+
+The Explorer's full Markdown index is generated into `docs/explore/data/` with `PYTHONPATH=src python -m ael fulltext --write`; content is neither moved nor edited. PDF records are included by title only. Verify with `... fulltext --check`. No semantic search claims.

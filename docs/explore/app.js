@@ -2,6 +2,7 @@
 
 (function () {
   const ROOT = "https://github.com/1998x-stack/anthropic-engineering-learn/blob/main/";
+  const Search = globalThis.ExplorerSearch;
   const $ = (id) => document.getElementById(id);
   const pageSize = 24;
   const kinds = {source_article: "SOURCE", article_note: "RESEARCH", paper: "PAPER"};
@@ -12,8 +13,10 @@
     no_explicit_citation: "缺少明确原文 URL",
     ambiguous: "来源存在歧义"
   };
-  const filters = ["source", "kind", "topic", "visibility", "reference"];
-  const state = {data: null, byId: new Map(), inbound: new Map(), shown: 0, matches: []};
+  const filters = ["scope", "source", "kind", "topic", "visibility", "reference"];
+  const state = {data: null, byId: new Map(), inbound: new Map(), shown: 0, matches: [],
+    fullText: new Map(), fullTextReady: false, fullTextLoading: false,
+    fullTextFailed: false, fullTextError: ""};
 
   function element(tag, className, text) {
     const result = document.createElement(tag);
@@ -51,9 +54,7 @@
     a.rel = "noopener noreferrer";
     return a;
   }
-  function normal(value) {
-    return String(value || "").normalize("NFKC").toLocaleLowerCase();
-  }
+  function normal(value) { return Search.normalize(value); }
   function topicLabel(id) {
     const t = (state.data.topics || []).find((x) => x.id === id);
     return t ? t.label_zh : id;
@@ -76,18 +77,63 @@
       }
     }
     if (!tokens.length) return true;
-    const text = normal([item.title, item.id, item.summary, item.source, item.author,
-      item.published_at, ...(item.topics || []).map(topicLabel)].join(" "));
-    return tokens.every((term) => text.includes(term));
+    const body = $("scope").value === "metadata" || !state.fullTextReady
+      ? undefined : state.fullText.get(item.id);
+    return Search.matches(item, tokens, body, (item.topics || []).map(topicLabel));
   }
   function score(item, tokens) {
-    if (!tokens.length) return item.kind === "article_note" ? 2 : item.kind === "source_article" ? 1 : 0;
-    const title = normal(item.title), id = normal(item.id), summary = normal(item.summary);
-    const topics = normal((item.topics || []).map(topicLabel).join(" "));
-    return tokens.reduce((score, term) => score +
-      (title.includes(term) ? 12 : 0) + (id.includes(term) ? 6 : 0) +
-      (topics.includes(term) ? 4 : 0) + (summary.includes(term) ? 2 : 0), 0);
+    const body = $("scope").value === "metadata" || !state.fullTextReady
+      ? undefined : state.fullText.get(item.id);
+    return Search.rank(item, tokens, body, (item.topics || []).map(topicLabel));
   }
+
+  async function ensureFullText() {
+    if (state.fullTextLoading || state.fullTextReady || state.fullTextFailed) return;
+    state.fullTextLoading = true;
+    try {
+      const manifestResponse = await fetch("data/manifest.json");
+      if (!manifestResponse.ok) throw new Error("无法获取全文分片清单");
+      const manifest = await manifestResponse.json();
+      if (manifest.schema_version !== 1 || !Array.isArray(manifest.shards) ||
+          manifest.count !== state.data.records.length) {
+        throw new Error("全文索引与当前 Registry 不一致");
+      }
+      const documents = new Map();
+      let next = 0;
+      async function worker() {
+        while (next < manifest.shards.length) {
+          const shard = manifest.shards[next++];
+          if (!/^[a-z][a-z0-9-]*-[0-9]{3,}\.json$/.test(shard.file)) {
+            throw new Error("索引分片名称不合法");
+          }
+          const resp = await fetch("data/" + shard.file);
+          if (!resp.ok) throw new Error("无法加载全文分片 " + shard.file);
+          const payload = await resp.json();
+          if (payload.schema_version !== 1 || payload.source !== shard.source ||
+              !Array.isArray(payload.items) || payload.items.length !== shard.count) {
+            throw new Error("全文分片内容不匹配 " + shard.file);
+          }
+          for (const doc of payload.items) {
+            if (!state.byId.has(doc.id) || documents.has(doc.id) || typeof doc.text !== "string") {
+              throw new Error("全文索引 ID 缺失或重复");
+            }
+            documents.set(doc.id, doc.text);
+          }
+        }
+      }
+      await Promise.all(Array.from({length: Math.min(4, manifest.shards.length)}, worker));
+      if (documents.size !== manifest.count) throw new Error("全文索引未完整加载");
+      state.fullText = documents;
+      state.fullTextReady = true;
+    } catch (error) {
+      state.fullTextFailed = true;
+      state.fullTextError = String(error.message || error);
+    } finally {
+      state.fullTextLoading = false;
+      refresh();
+    }
+  }
+
   function syncURL() {
     const params = new URLSearchParams();
     if ($("search").value.trim()) params.set("q", $("search").value.trim());
@@ -113,6 +159,13 @@
     heading.append(title);
     card.append(heading);
     if (item.summary) card.append(element("p", "summary", item.summary));
+    if (state.fullTextReady && $("scope").value !== "metadata") {
+      const excerpt = Search.snippet(state.fullText.get(item.id),
+        Search.tokenize($("search").value), 210);
+      if (excerpt && excerpt !== item.summary) {
+        card.append(element("p", "summary", "正文命中： " + excerpt));
+      }
+    }
     const tags = element("div", "tag-row");
     for (const topic of item.topics || []) tags.append(element("span", "topic", topicLabel(topic)));
     if (item.kind === "article_note" && !hasLocalSource(item)) {
@@ -141,7 +194,10 @@
   }
   function refresh() {
     if (!state.data) return;
-    const tokens = normal($("search").value).split(/\s+/).filter(Boolean);
+    const tokens = Search.tokenize($("search").value);
+    const wantFullText = $("scope").value !== "metadata";
+    if (wantFullText && tokens.length && !state.fullTextReady &&
+        !state.fullTextFailed && !state.fullTextLoading) ensureFullText();
     const source = state.data.records.filter((item) => matchesFilters(item, tokens));
     state.matches = source.sort((a, b) =>
       score(b, tokens) - score(a, tokens) ||
@@ -150,9 +206,15 @@
     state.shown = 0;
     $("result-list").replaceChildren();
     $("result-count").textContent = count(state.matches.length);
-    $("status").textContent = state.matches.length
-      ? "覆盖 Registry 全量内容。主题分类是规则建议，详情可查看明确的来源关系。"
-      : "未找到匹配条目，请更换关键词或清除筛选条件。";
+    $("status").textContent = wantFullText && tokens.length && state.fullTextLoading
+      ? "正在按需加载全文分片，目前先展示标题与摘要匹配；正文载入后结果会自动更新。"
+      : wantFullText && tokens.length && state.fullTextFailed
+      ? "全文索引加载失败（" + state.fullTextError + "），目前仅显示元数据匹配。"
+      : state.matches.length
+      ? wantFullText && state.fullTextReady && tokens.length
+        ? "正文全文检索已完成；PDF 仅检索标题与元数据。"
+        : "覆盖 Registry 全量记录；主题为可追溯的规则建议。"
+      : "未找到匹配内容，请更换关键词或清除筛选条件。";
     if (state.matches.length) renderPage();
     else {
       const empty = element("div", "empty");
@@ -210,7 +272,11 @@
       const tags = element("div", "tag-row");
       item.topics.forEach((topic) => tags.append(element("span", "topic", topicLabel(topic))));
       body.append(tags);
-      body.append(element("p", "detail-note", "关键词规则生成，未经逐篇人工确认。"));
+      body.append(element("p", "detail-note",
+        item.topic_review_status === "reviewed"
+          ? "主题由编辑审阅并根据当前文档 SHA-256 绑定；审阅人：" + item.topic_reviewer +
+            "，日期：" + item.topic_reviewed_at
+          : "主题由关键词规则建议，尚未经逐篇人工确认。"));
     }
     const related = new Set([...(item.related_ids || []), ...(state.inbound.get(id) || [])]);
     related.delete(id);
@@ -267,7 +333,7 @@
   function restoreFromURL() {
     const params = new URLSearchParams(window.location.search);
     $("search").value = params.get("q") || "";
-    filters.forEach((key) => { $(key).value = params.get(key) || ""; });
+    filters.forEach((key) => { $(key).value = params.get(key) || (key === "scope" ? "fulltext" : ""); });
     const id = params.get("id");
     const valid = id && state.byId.has(id);
     $("detail").hidden = !valid;
@@ -294,12 +360,16 @@
       }
       populateFilters();
       restoreFromURL();
-      $("search").addEventListener("input", refresh);
+      let searchDebounce;
+      $("search").addEventListener("input", () => {
+        clearTimeout(searchDebounce);
+        searchDebounce = setTimeout(refresh, 160);
+      });
       filters.forEach((id) => $(id).addEventListener("change", refresh));
       $("load-more").addEventListener("click", renderPage);
       $("reset").addEventListener("click", () => {
         $("search").value = "";
-        filters.forEach((id) => { $(id).value = ""; });
+        filters.forEach((id) => { $(id).value = id === "scope" ? "fulltext" : ""; });
         refresh();
         $("search").focus();
       });

@@ -7,6 +7,7 @@
   <meta name="color-scheme" content="light">
   <title>Knowledge Explorer · Agent Engineering</title>
   <link rel="stylesheet" href="style.css">
+  <script src="search-engine.js" defer></script>
   <script src="app.js" defer></script>
 </head>
 <body>
@@ -21,7 +22,7 @@
       <p class="subtitle">从官方工程文章到中文研究解读，再到可追溯的外部项目。一个入口，跨来源检索。</p>
       <div class="searchbar">
         <span class="search-icon" aria-hidden="true">⌕</span>
-        <label class="sr-only" for="search">检索标题、文章摘录、主题或 ID</label>
+        <label class="sr-only" for="search">全文检索或搜索标题、文章摘录、主题和 ID</label>
         <input id="search" type="search" placeholder="搜索 Harness、Memory、RAG、评估……" autocomplete="off" spellcheck="false">
         <kbd class="shortcut">/</kbd>
       </div>
@@ -38,6 +39,14 @@
     <aside class="sidebar" aria-label="检索筛选">
       <div class="aside-heading"><h2>筛选条件</h2><button id="reset" class="text-action" type="button">清除</button></div>
       <div class="filter">
+        <label for="scope">搜索范围</label>
+        <select id="scope">
+          <option value="fulltext" selected>全文检索（按需加载）</option>
+          <option value="metadata">标题、摘要及元数据</option>
+        </select>
+        <p class="hint">Markdown 正文分片按需加载；PDF 暂只支持标题与元数据。</p>
+      </div>
+      <div class="filter">
         <label for="source">内容来源</label>
         <select id="source"><option value="">全部来源</option></select>
       </div>
@@ -53,7 +62,7 @@
       <div class="filter">
         <label for="topic">知识主题</label>
         <select id="topic"><option value="">全部主题</option></select>
-        <p class="hint">主题由标题与路径的关键词规则生成，尚未经逐篇人工核验。</p>
+        <p class="hint">主题默认由关键词规则生成；只有附证据的人工审阅决策才显示为“已审核”。</p>
       </div>
       <div class="filter">
         <label for="visibility">阅读方式</label>
@@ -77,7 +86,8 @@
       </div>
       <section class="method">
         <h3>关于这些数据</h3>
-        <p>搜索范围包含 Registry 全量元数据与短摘录，不是全文或语义向量检索。原文链接和关系均保留审核状态。</p>
+        <p>可按需加载完整 Markdown 正文进行关键词全文检索（不包含 PDF 正文）；不使用向量或语义检索。来源与主题保留可审计状态。</p>
+        <a href="https://github.com/1998x-stack/anthropic-engineering-learn/blob/main/registry/review-queue.json" target="_blank" rel="noopener noreferrer">查看来源审核队列 ↗</a>
         <a href="https://github.com/1998x-stack/anthropic-engineering-learn/blob/main/registry/README.md" target="_blank" rel="noopener noreferrer">查看证据和数据规则 ↗</a>
       </section>
     </aside>

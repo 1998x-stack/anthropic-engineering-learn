@@ -135,6 +135,8 @@ def build_index(root: Path, rows: list[dict], audit: dict | None = None) -> dict
     from .migration import read_moves
 
     taxonomy = load_taxonomy(root)
+    from .review import approved_topic_decisions
+    topic_reviews = approved_topic_decisions(root, rows, {t["id"] for t in taxonomy["topics"]})
     id_index = {r["id"]: r for r in rows}
     if len(id_index) != len(rows):
         raise KnowledgeError("Duplicate Registry IDs")
@@ -147,15 +149,21 @@ def build_index(root: Path, rows: list[dict], audit: dict | None = None) -> dict
     statuses = audited_status_map(root, rows, audit)
     records, topic_counts = [], Counter()
     for row in sorted(rows, key=lambda x: x["id"]):
-        topics = assign_topics(row, taxonomy)
+        reviewed = topic_reviews.get(row["id"])
+        topics = list(reviewed["topics"]) if reviewed else assign_topics(row, taxonomy)
         topic_counts.update(topics)
         item = {
             "id": row["id"], "kind": row["kind"], "source": row["source"],
             "title": row.get("title") or Path(row["path"]).stem,
             "content_path": row["path"], "review_status": row["review_status"],
             "publication_status": row["publication_status"],
-            "topics": topics, "topic_basis": taxonomy.get("assignment_policy", "keyword_rules_v1"),
+            "topics": topics,
+            "topic_basis": "editorial_review_with_sha256_evidence" if reviewed else taxonomy.get("assignment_policy", "keyword_rules_v1"),
+            "topic_review_status": "reviewed" if reviewed else "heuristic",
         }
+        if reviewed:
+            item["topic_reviewed_at"] = reviewed["reviewed_at"]
+            item["topic_reviewer"] = reviewed["reviewer"]
         summary = short_summary(root, row)
         if summary:
             item["summary"] = summary
@@ -187,6 +195,7 @@ def build_index(root: Path, rows: list[dict], audit: dict | None = None) -> dict
                 r["kind"] == "article_note" and not any(x.startswith(("source:", "paper:"))
                 for x in r.get("related_ids", [])) for r in records),
             "untagged": sum(not r["topics"] for r in records),
+            "editorially_reviewed_topics": len(topic_reviews),
             "topic_counts": dict(sorted(topic_counts.items())),
         },
     }

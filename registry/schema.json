@@ -1,0 +1,81 @@
+{
+  "$schema": "https://json-schema.org/draft/2020-12/schema",
+  "$id": "https://github.com/1998x-stack/anthropic-engineering-learn/blob/main/registry/schema.json",
+  "title": "Knowledge Hub Registry Record",
+  "type": "object",
+  "required": [
+    "id",
+    "kind",
+    "source",
+    "path",
+    "review_status",
+    "publication_status"
+  ],
+  "properties": {
+    "id": {
+      "type": "string",
+      "pattern": "^(source|note|paper):[a-z0-9][a-z0-9._:-]*$"
+    },
+    "kind": {
+      "enum": [
+        "source_article",
+        "article_note",
+        "paper"
+      ]
+    },
+    "source": {
+      "enum": [
+        "anthropic",
+        "openai",
+        "langchain",
+        "llamaindex",
+        "modal",
+        "e2b",
+        "browser-use",
+        "browserbase",
+        "papers"
+      ]
+    },
+    "path": {
+      "type": "string",
+      "minLength": 1
+    },
+    "canonical_url": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "uri"
+    },
+    "published_at": {
+      "type": [
+        "string",
+        "null"
+      ],
+      "format": "date"
+    },
+    "review_status": {
+      "enum": [
+        "unreviewed",
+        "verified",
+        "rejected"
+      ]
+    },
+    "publication_status": {
+      "enum": [
+        "unspecified",
+        "published",
+        "not_published",
+        "archived"
+      ]
+    },
+    "related_ids": {
+      "type": "array",
+      "uniqueItems": true,
+      "items": {
+        "type": "string"
+      }
+    }
+  },
+  "additionalProperties": false
+}

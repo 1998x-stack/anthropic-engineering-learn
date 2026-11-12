@@ -2524,6 +2524,10 @@
           "value": "LiteParse: Local Document Parsing for AI Agents"
         },
         {
+          "origin": "_meta/llamaindex/blog__liteparse-local-document-parsing-for-ai-agents.json",
+          "value": "LiteParse: Local Document Parsing for AI Agents"
+        },
+        {
           "origin": "llamaindex/posts/document-processing/blog__liteparse-local-document-parsing-for-ai-agents.md#heading",
           "value": "OCR invoked automatically"
         }
@@ -3483,14 +3487,7 @@
       "id": "source:llamaindex:blog__zep-and-llamaindex-a-vector-store-walkthrough-564edb8c22dc"
     }
   ],
-  "invalid_candidates": [
-    {
-      "field": "meta_file",
-      "id": "source:llamaindex:blog__liteparse-local-document-parsing-for-ai-agents",
-      "origin": "_meta/llamaindex/blog__liteparse-local-document-parsing-for-ai-agents.json",
-      "raw": "Invalid control character at: line 1 column 494 (char 493)"
-    }
-  ],
+  "invalid_candidates": [],
   "legacy_metadata": {
     "anthropic_index_matched": 23,
     "matched": 519,

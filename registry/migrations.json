@@ -12,6 +12,732 @@
       "from": "langchain/curated/01-the-anatomy-of-an-agent-harness.md",
       "to": "content/research/article-notes/langchain/01-the-anatomy-of-an-agent-harness.md",
       "sha256": "45a544d6187d91de7567dbce760849bd83c493aee21c4a813e6d2ef4688aa219"
+    },
+    {
+      "id": "note:anthropic:ai-resistant-technical-evaluations:interrogation",
+      "from": "anthropic/evals/AI-resistant-technical-evaluations(musk-interrogation).md",
+      "to": "content/research/article-notes/anthropic/AI-resistant-technical-evaluations(musk-interrogation).md",
+      "sha256": "f22e7bfdacb8c9f734f9fe6756e038301cfda41110bc19a937d5220ad02ebb00"
+    },
+    {
+      "id": "note:anthropic:building-c-compiler:interrogation",
+      "from": "anthropic/agents/building-c-compiler(musk-interrogation).md",
+      "to": "content/research/article-notes/anthropic/building-c-compiler(musk-interrogation).md",
+      "sha256": "3692aff4e6e7d4e009a9ad6ee978c5127c46b61bc952ff3264c421c6d838bab2"
+    },
+    {
+      "id": "note:anthropic:contextual-retrieval:interrogation",
+      "from": "anthropic/tools-mcp/contextual-retrieval(musk-interrogation).md",
+      "to": "content/research/article-notes/anthropic/contextual-retrieval(musk-interrogation).md",
+      "sha256": "39004e1e5f498fb2b6b8f9bfff87809daf7e5f9e70d3fd12c3d912e3202e86a1"
+    },
+    {
+      "id": "note:anthropic:demystifying-evals-for-ai-agents:interrogation",
+      "from": "anthropic/evals/demystifying-evals-for-ai-agents(musk-interrogation).md",
+      "to": "content/research/article-notes/anthropic/demystifying-evals-for-ai-agents(musk-interrogation).md",
+      "sha256": "81e711af35eed243006db81d03ec7c8fdb99a361b5d6971fb87f1316594e3932"
+    },
+    {
+      "id": "note:anthropic:effective-context-engineering-for-ai-agents:interrogation",
+      "from": "anthropic/agents/effective-context-engineering-for-ai-agents(musk-interrogation).md",
+      "to": "content/research/article-notes/anthropic/effective-context-engineering-for-ai-agents(musk-interrogation).md",
+      "sha256": "9ccea3a8950e9cf49e9edc74fc69978620bae94768adbc9cbce5fd03bc1f0d01"
+    },
+    {
+      "id": "note:anthropic:effective-harnesses-for-long-running-agents:interrogation",
+      "from": "anthropic/agents/effective-harnesses-for-long-running-agents(musk-interrogation).md",
+      "to": "content/research/article-notes/anthropic/effective-harnesses-for-long-running-agents(musk-interrogation).md",
+      "sha256": "58b792aa082be40138901f54740d89a927c0ad0df19d1728edb9af7c5ad2987b"
+    },
+    {
+      "id": "note:anthropic:equipping-agents-for-the-real-world-with-agent-skills:interrogation",
+      "from": "anthropic/agents/equipping-agents-for-the-real-world-with-agent-skills(musk-interrogation).md",
+      "to": "content/research/article-notes/anthropic/equipping-agents-for-the-real-world-with-agent-skills(musk-interrogation).md",
+      "sha256": "11326652f644556c05e1da2ee303c0f76228413ab5bc90c932b1db5f0bb7fb4f"
+    },
+    {
+      "id": "note:anthropic:eval-awareness-browsecomp:interrogation",
+      "from": "anthropic/evals/eval-awareness-browsecomp(musk-interrogation).md",
+      "to": "content/research/article-notes/anthropic/eval-awareness-browsecomp(musk-interrogation).md",
+      "sha256": "f64abd5eddfe161dc22353d7ae69c071b31174861cee1a4312eb26ce6ff7b29d"
+    },
+    {
+      "id": "note:anthropic:harness-design-long-running-apps:interrogation",
+      "from": "anthropic/agents/harness-design-long-running-apps(musk-interrogation).md",
+      "to": "content/research/article-notes/anthropic/harness-design-long-running-apps(musk-interrogation).md",
+      "sha256": "5876b910c917528c56d7a11a400a765f00f73e806f33888dbf076664b9dee407"
+    },
+    {
+      "id": "note:anthropic:managed-agents:interrogation",
+      "from": "anthropic/agents/managed-agents(musk-interrogation).md",
+      "to": "content/research/article-notes/anthropic/managed-agents(musk-interrogation).md",
+      "sha256": "0be1e9ee691729beb2dec0fb3753484fc87358b283101ed06ef79631524965cb"
+    },
+    {
+      "id": "note:anthropic:multi-agent-research-system:interrogation",
+      "from": "anthropic/agents/multi-agent-research-system(musk-interrogation).md",
+      "to": "content/research/article-notes/anthropic/multi-agent-research-system(musk-interrogation).md",
+      "sha256": "0016ea7211bcf0c1ba2dd48dc381c46986d094a389bec77250b5a910dc63488f"
+    },
+    {
+      "id": "note:anthropic:swe-bench-sonnet:interrogation",
+      "from": "anthropic/evals/swe-bench-sonnet(musk-interrogation).md",
+      "to": "content/research/article-notes/anthropic/swe-bench-sonnet(musk-interrogation).md",
+      "sha256": "2bff3a24ac178e5dd1e970554535eb78d94cca772f6d11f8605512c43b511c84"
+    },
+    {
+      "id": "note:langchain:02-running-subagents-in-the-background",
+      "from": "langchain/curated/02-running-subagents-in-the-background.md",
+      "to": "content/research/article-notes/langchain/02-running-subagents-in-the-background.md",
+      "sha256": "f1eed71ca1e7bce12521d3214bfc7b704c84a122852f8473e5e57b91a8f6ce33"
+    },
+    {
+      "id": "note:langchain:03-agent-observability-needs-feedback",
+      "from": "langchain/curated/03-agent-observability-needs-feedback.md",
+      "to": "content/research/article-notes/langchain/03-agent-observability-needs-feedback.md",
+      "sha256": "356b7e8898603a70d27d8ce9aa0e9e327245b43ca345c2c69dd1708314732f64"
+    },
+    {
+      "id": "note:langchain:04-how-we-built-langchains-gtm-agent",
+      "from": "langchain/curated/04-how-we-built-langchains-gtm-agent.md",
+      "to": "content/research/article-notes/langchain/04-how-we-built-langchains-gtm-agent.md",
+      "sha256": "92ad268cf03cf04a3066ae20b875c20067b177a1b7a7d59adc6c5aa726c60c65"
+    },
+    {
+      "id": "note:langchain:05-human-judgment-in-the-agent-improvement-loop",
+      "from": "langchain/curated/05-human-judgment-in-the-agent-improvement-loop.md",
+      "to": "content/research/article-notes/langchain/05-human-judgment-in-the-agent-improvement-loop.md",
+      "sha256": "ba390508acc9bf70dd43c2fde3b20b15ad9b679bf37669e543c3d73e6037043f"
+    },
+    {
+      "id": "note:langchain:06-your-harness-your-memory",
+      "from": "langchain/curated/06-your-harness-your-memory.md",
+      "to": "content/research/article-notes/langchain/06-your-harness-your-memory.md",
+      "sha256": "3d5c9521ecdb3adaa70230b76907366201f28d28196fe3a98ba68ed64fd6daa4"
+    },
+    {
+      "id": "note:langchain:07-context-engineering-for-agents",
+      "from": "langchain/curated/07-context-engineering-for-agents.md",
+      "to": "content/research/article-notes/langchain/07-context-engineering-for-agents.md",
+      "sha256": "0dfda9d8d14c44bd89b43f4f7f17f6d2a2e41f897ed599a4d48ad9a15783c7aa"
+    },
+    {
+      "id": "note:langchain:08-how-middleware-lets-you-customize-your-agent-harness",
+      "from": "langchain/curated/08-how-middleware-lets-you-customize-your-agent-harness.md",
+      "to": "content/research/article-notes/langchain/08-how-middleware-lets-you-customize-your-agent-harness.md",
+      "sha256": "4974e04ec4da1d67f6737453a0d406e4a1d1f5eb9bce7f588eb9188cfb5e65f7"
+    },
+    {
+      "id": "note:langchain:09-continual-learning-for-ai-agents",
+      "from": "langchain/curated/09-continual-learning-for-ai-agents.md",
+      "to": "content/research/article-notes/langchain/09-continual-learning-for-ai-agents.md",
+      "sha256": "67a5b6b097c54ba5ed00fea4b4373abcca00e0ecac461872811b078ebb6e4beb"
+    },
+    {
+      "id": "note:langchain:10-improving-deep-agents-with-harness-engineering",
+      "from": "langchain/curated/10-improving-deep-agents-with-harness-engineering.md",
+      "to": "content/research/article-notes/langchain/10-improving-deep-agents-with-harness-engineering.md",
+      "sha256": "fd7d699cf3a26ecc060b82341712462c23a4428776772c4832c06564ac53f94b"
+    },
+    {
+      "id": "note:langchain:11-better-harness-eval-driven-hill-climbing",
+      "from": "langchain/curated/11-better-harness-eval-driven-hill-climbing.md",
+      "to": "content/research/article-notes/langchain/11-better-harness-eval-driven-hill-climbing.md",
+      "sha256": "a8e17c7e1c8bf66344e403df1c7b96096153607d8af7374c9e1dec6aaae847e1"
+    },
+    {
+      "id": "note:langchain:12-agent-engineering-a-new-discipline",
+      "from": "langchain/curated/12-agent-engineering-a-new-discipline.md",
+      "to": "content/research/article-notes/langchain/12-agent-engineering-a-new-discipline.md",
+      "sha256": "81bc29c9de02e5b5ab55f89403dca3280cac7ab44ba58a202024faf061f05e9f"
+    },
+    {
+      "id": "note:langchain:13-deep-agents",
+      "from": "langchain/curated/13-deep-agents.md",
+      "to": "content/research/article-notes/langchain/13-deep-agents.md",
+      "sha256": "9f29fb252779d6d8c3a9c0e8b86254970d9a28261e69e2f5e43f1750b38ff0c2"
+    },
+    {
+      "id": "note:langchain:14-runtime-behind-production-deep-agents",
+      "from": "langchain/curated/14-runtime-behind-production-deep-agents.md",
+      "to": "content/research/article-notes/langchain/14-runtime-behind-production-deep-agents.md",
+      "sha256": "0282bd82401ef17901626f50ca3a3728f5fd7eddb5574d6465f52d8a8105b464"
+    },
+    {
+      "id": "note:langchain:15-using-skills-with-deep-agents",
+      "from": "langchain/curated/15-using-skills-with-deep-agents.md",
+      "to": "content/research/article-notes/langchain/15-using-skills-with-deep-agents.md",
+      "sha256": "ac16ffa9855becfb7373fab907a58cb8935268d1ba8f3339cb8a3bcfb497c012"
+    },
+    {
+      "id": "note:langchain:16-context-management-for-deepagents",
+      "from": "langchain/curated/16-context-management-for-deepagents.md",
+      "to": "content/research/article-notes/langchain/16-context-management-for-deepagents.md",
+      "sha256": "6a4ca8e52bc5749ac1823263f5fe996aee25ecc5a40470135dcc434e6a0221b0"
+    },
+    {
+      "id": "note:langchain:17-debugging-deep-agents-with-langsmith",
+      "from": "langchain/curated/17-debugging-deep-agents-with-langsmith.md",
+      "to": "content/research/article-notes/langchain/17-debugging-deep-agents-with-langsmith.md",
+      "sha256": "2e190479822784d405698cd984f664624c6740b868254e9c8bfa2c155ffd2ce3"
+    },
+    {
+      "id": "note:langchain:18-tuning-deep-agents-different-models",
+      "from": "langchain/curated/18-tuning-deep-agents-different-models.md",
+      "to": "content/research/article-notes/langchain/18-tuning-deep-agents-different-models.md",
+      "sha256": "14be5ca85dc665ba460637d180eb4983e1b44d25d1e98b5ab0bb6487f915dc6c"
+    },
+    {
+      "id": "note:langchain:19-how-we-build-evals-for-deep-agents",
+      "from": "langchain/curated/19-how-we-build-evals-for-deep-agents.md",
+      "to": "content/research/article-notes/langchain/19-how-we-build-evals-for-deep-agents.md",
+      "sha256": "0cf8ed5559350950737bd125437db6f6e62300c6117cf184df803eeaa79ab5de"
+    },
+    {
+      "id": "note:langchain:20-evaluating-deep-agents-our-learnings",
+      "from": "langchain/curated/20-evaluating-deep-agents-our-learnings.md",
+      "to": "content/research/article-notes/langchain/20-evaluating-deep-agents-our-learnings.md",
+      "sha256": "44a7849b3e1f118187e905c7093fa470be039bde7e3b7b1e94dd7b5872a56b8d"
+    },
+    {
+      "id": "note:langchain:21-traces-start-agent-improvement-loop",
+      "from": "langchain/curated/21-traces-start-agent-improvement-loop.md",
+      "to": "content/research/article-notes/langchain/21-traces-start-agent-improvement-loop.md",
+      "sha256": "78987f291308f43d538762f4fab2e67ac98b6b2dfb1f3e5029cd986418714a4f"
+    },
+    {
+      "id": "note:langchain:22-the-rise-of-context-engineering",
+      "from": "langchain/curated/22-the-rise-of-context-engineering.md",
+      "to": "content/research/article-notes/langchain/22-the-rise-of-context-engineering.md",
+      "sha256": "2efb8cf71aa6dcdc17807e81295e6aee1ccc23c90e479504bd95cd0dea211472"
+    },
+    {
+      "id": "note:langchain:23-how-agents-can-use-filesystems-for-context-engineering",
+      "from": "langchain/curated/23-how-agents-can-use-filesystems-for-context-engineering.md",
+      "to": "content/research/article-notes/langchain/23-how-agents-can-use-filesystems-for-context-engineering.md",
+      "sha256": "931fa10cc5bf645c64120bae51ad5c55478cfeb056a168e1e726b324c2713c3e"
+    },
+    {
+      "id": "note:langchain:24-deep-agents-deploy-open-alternative",
+      "from": "langchain/curated/24-deep-agents-deploy-open-alternative.md",
+      "to": "content/research/article-notes/langchain/24-deep-agents-deploy-open-alternative.md",
+      "sha256": "b1ce40c7b3973f08b054151033f37d4c1501c528def24ec94b224e883fc90cf1"
+    },
+    {
+      "id": "note:langchain:25-how-my-agents-self-heal-in-production",
+      "from": "langchain/curated/25-how-my-agents-self-heal-in-production.md",
+      "to": "content/research/article-notes/langchain/25-how-my-agents-self-heal-in-production.md",
+      "sha256": "9af3dbf1f52c28fbc70676e5bd423610b65bfa2b8f04dc8e3c5e37b0c8531745"
+    },
+    {
+      "id": "note:langchain:26-from-traces-to-insights",
+      "from": "langchain/curated/26-from-traces-to-insights.md",
+      "to": "content/research/article-notes/langchain/26-from-traces-to-insights.md",
+      "sha256": "eae7d9c47ab28324cf802b9ed53e95e75da26c4b98a4a03e5e9a1e7b2041069d"
+    },
+    {
+      "id": "note:langchain:27-evaluating-deepagents-cli-on-terminal-bench",
+      "from": "langchain/curated/27-evaluating-deepagents-cli-on-terminal-bench.md",
+      "to": "content/research/article-notes/langchain/27-evaluating-deepagents-cli-on-terminal-bench.md",
+      "sha256": "ebccadd7e7ab3f2efbedcff76c04352f32fb11b8ef2d9d5830869227e7ba66e3"
+    },
+    {
+      "id": "note:langchain:28-agent-frameworks-runtimes-and-harnesses",
+      "from": "langchain/curated/28-agent-frameworks-runtimes-and-harnesses.md",
+      "to": "content/research/article-notes/langchain/28-agent-frameworks-runtimes-and-harnesses.md",
+      "sha256": "4b1952ae9f4cd31f0cb456649569924755cef2bb3420727e7360dbdac971bf6d"
+    },
+    {
+      "id": "note:langchain:29-evaluating-skills",
+      "from": "langchain/curated/29-evaluating-skills.md",
+      "to": "content/research/article-notes/langchain/29-evaluating-skills.md",
+      "sha256": "31c4aa6644936674454cab4a393e329b23b648820e7008c0c05c67d125bd373b"
+    },
+    {
+      "id": "note:langchain:30-how-moda-builds-design-agents",
+      "from": "langchain/curated/30-how-moda-builds-design-agents.md",
+      "to": "content/research/article-notes/langchain/30-how-moda-builds-design-agents.md",
+      "sha256": "2e7c4fc55f5860498ccb5f6c7436ecb3914ecc1d4607260d4f391b9db19f8aea"
+    },
+    {
+      "id": "note:langchain:31-choosing-the-right-multi-agent-architecture",
+      "from": "langchain/curated/31-choosing-the-right-multi-agent-architecture.md",
+      "to": "content/research/article-notes/langchain/31-choosing-the-right-multi-agent-architecture.md",
+      "sha256": "4cad979aca9cc202b1ef233b9d90cc086cea39f71e9a2d07d6fe4c13d192cd07"
+    },
+    {
+      "id": "note:langchain:32-building-multi-agent-applications-with-deep-agents",
+      "from": "langchain/curated/32-building-multi-agent-applications-with-deep-agents.md",
+      "to": "content/research/article-notes/langchain/32-building-multi-agent-applications-with-deep-agents.md",
+      "sha256": "2b6cd9ed48d1f824c31e7a92643549e3ef328a93def8f222d6baa12320eeec0a"
+    },
+    {
+      "id": "note:langchain:33-building-due-diligence-agent",
+      "from": "langchain/curated/33-building-due-diligence-agent.md",
+      "to": "content/research/article-notes/langchain/33-building-due-diligence-agent.md",
+      "sha256": "d01f115ef4b770892f709a17005b1daa79b8727dd822473ea89a34eca82feee3"
+    },
+    {
+      "id": "note:langchain:34-agentic-engineering-redefining-software",
+      "from": "langchain/curated/34-agentic-engineering-redefining-software.md",
+      "to": "content/research/article-notes/langchain/34-agentic-engineering-redefining-software.md",
+      "sha256": "a3304e5c3620e1f3f025eb0a022c963c3927a76235f2341b7a913281ac572cc3"
+    },
+    {
+      "id": "note:langchain:35-agent-evaluation-readiness-checklist",
+      "from": "langchain/curated/35-agent-evaluation-readiness-checklist.md",
+      "to": "content/research/article-notes/langchain/35-agent-evaluation-readiness-checklist.md",
+      "sha256": "a27f02679576f838d78e125a296ac7e77cb3d178ba39e34b5cb25550e777989b"
+    },
+    {
+      "id": "note:langchain:36-agent-observability-powers-evaluation",
+      "from": "langchain/curated/36-agent-observability-powers-evaluation.md",
+      "to": "content/research/article-notes/langchain/36-agent-observability-powers-evaluation.md",
+      "sha256": "c8f7bdfc1c266d6e546caa445b251ad4521427c0550c5a4cd8131e5d71c73935"
+    },
+    {
+      "id": "note:langchain:37-what-is-an-agent",
+      "from": "langchain/curated/37-what-is-an-agent.md",
+      "to": "content/research/article-notes/langchain/37-what-is-an-agent.md",
+      "sha256": "1c09c0403042504586c448649d6570d4d0310e63baee447ea00e76e0ed28676d"
+    },
+    {
+      "id": "note:langchain:38-planning-for-agents",
+      "from": "langchain/curated/38-planning-for-agents.md",
+      "to": "content/research/article-notes/langchain/38-planning-for-agents.md",
+      "sha256": "876339b150320a454c19e78f25ce7c463e4aa2ae2d49f5b342fcb55aeee7a220"
+    },
+    {
+      "id": "note:langchain:39-how-to-turn-claude-code-into-domain-agent",
+      "from": "langchain/curated/39-how-to-turn-claude-code-into-domain-agent.md",
+      "to": "content/research/article-notes/langchain/39-how-to-turn-claude-code-into-domain-agent.md",
+      "sha256": "32a7c76b21dd11ae4e15ddc340973b2dc9cb605086381fd18f80dffa670ab7e0"
+    },
+    {
+      "id": "note:langchain:40-communication-is-all-you-need",
+      "from": "langchain/curated/40-communication-is-all-you-need.md",
+      "to": "content/research/article-notes/langchain/40-communication-is-all-you-need.md",
+      "sha256": "43ddabe21439db4ad5f16400f70b36319460156701d15d36f3f4d721f5af5f88"
+    },
+    {
+      "id": "note:langchain:41-how-do-i-speed-up-my-agent",
+      "from": "langchain/curated/41-how-do-i-speed-up-my-agent.md",
+      "to": "content/research/article-notes/langchain/41-how-do-i-speed-up-my-agent.md",
+      "sha256": "f615b150d9b539ff0b0553c4e6039b5c10d93cad3c1f6500304ddb442189605e"
+    },
+    {
+      "id": "note:langchain:42-agent-protocol-interoperability",
+      "from": "langchain/curated/42-agent-protocol-interoperability.md",
+      "to": "content/research/article-notes/langchain/42-agent-protocol-interoperability.md",
+      "sha256": "396a26c082252462ec4eec5cf93f1a1d738714aa811f42215cd7438e0150c121"
+    },
+    {
+      "id": "note:langchain:43-execute-code-with-sandboxes",
+      "from": "langchain/curated/43-execute-code-with-sandboxes.md",
+      "to": "content/research/article-notes/langchain/43-execute-code-with-sandboxes.md",
+      "sha256": "151f3c9b7bcefce903bc224a082d23d064ebca25e21623f668d4cc8708e3ee52"
+    },
+    {
+      "id": "note:langchain:44-two-patterns-agents-connect-sandboxes",
+      "from": "langchain/curated/44-two-patterns-agents-connect-sandboxes.md",
+      "to": "content/research/article-notes/langchain/44-two-patterns-agents-connect-sandboxes.md",
+      "sha256": "37f6504c34ccd3ad448bee6d58b4aa8afb34399b2c0d2f1fd084675efc4087c7"
+    },
+    {
+      "id": "note:langchain:45-autonomous-context-compression",
+      "from": "langchain/curated/45-autonomous-context-compression.md",
+      "to": "content/research/article-notes/langchain/45-autonomous-context-compression.md",
+      "sha256": "9a5bb9900e08276d03bc5b009ee2967772e6d9f8580822f676a5d6a4f164dd48"
+    },
+    {
+      "id": "note:langchain:46-open-swe-open-source-coding-agent",
+      "from": "langchain/curated/46-open-swe-open-source-coding-agent.md",
+      "to": "content/research/article-notes/langchain/46-open-swe-open-source-coding-agent.md",
+      "sha256": "70b393a3aed02280204347bb4cfcb5dfc2b25f5d82be3613e07a9feb286c078f"
+    },
+    {
+      "id": "note:langchain:47-open-deep-research",
+      "from": "langchain/curated/47-open-deep-research.md",
+      "to": "content/research/article-notes/langchain/47-open-deep-research.md",
+      "sha256": "2f046a0309e12dd3a36636700895e32a2b9c3393caf13641b9f897c8324256b8"
+    },
+    {
+      "id": "note:langchain:48-how-coding-agents-reshape-epd",
+      "from": "langchain/curated/48-how-coding-agents-reshape-epd.md",
+      "to": "content/research/article-notes/langchain/48-how-coding-agents-reshape-epd.md",
+      "sha256": "9d562f338bfb5e1f323177bf5c4e8378d0a00265918f4ce03d4f1471907e05c8"
+    },
+    {
+      "id": "note:langchain:49-what-is-a-cognitive-architecture",
+      "from": "langchain/curated/49-what-is-a-cognitive-architecture.md",
+      "to": "content/research/article-notes/langchain/49-what-is-a-cognitive-architecture.md",
+      "sha256": "17fe9c8953e950f79e946d21d6013d6ee1098c5fbeeae413b166215c5c90b77b"
+    },
+    {
+      "id": "note:langchain:50-mcp-fad-or-fixture",
+      "from": "langchain/curated/50-mcp-fad-or-fixture.md",
+      "to": "content/research/article-notes/langchain/50-mcp-fad-or-fixture.md",
+      "sha256": "df66793d0520cc6042be12c4a207244516c2e21db5199b2ab9de9b6258e34e3e"
+    },
+    {
+      "id": "note:langchain:51-how-to-build-an-agent",
+      "from": "langchain/curated/51-how-to-build-an-agent.md",
+      "to": "content/research/article-notes/langchain/51-how-to-build-an-agent.md",
+      "sha256": "b694f60fbc789c6202d1cc65cf75f9303aac392ccdd497fcb0deae0f39e6806a"
+    },
+    {
+      "id": "note:langchain:52-ux-for-agents-chat",
+      "from": "langchain/curated/52-ux-for-agents-chat.md",
+      "to": "content/research/article-notes/langchain/52-ux-for-agents-chat.md",
+      "sha256": "301853bdbc5243d5ea2c5eb6c6345e95d34e2aeca0fd0adf31491613a89181cb"
+    },
+    {
+      "id": "note:langchain:53-ux-for-agents-ambient",
+      "from": "langchain/curated/53-ux-for-agents-ambient.md",
+      "to": "content/research/article-notes/langchain/53-ux-for-agents-ambient.md",
+      "sha256": "dd086082730c7ad44e29c7412acf1f65c2b39ee0b347579c73a918c39ecc3fdd"
+    },
+    {
+      "id": "note:langchain:54-ux-for-agents-background",
+      "from": "langchain/curated/54-ux-for-agents-background.md",
+      "to": "content/research/article-notes/langchain/54-ux-for-agents-background.md",
+      "sha256": "13f5df927040fd836ef430b95b432fca85540cfbc5e2de2b5ffb545f0434990d"
+    },
+    {
+      "id": "note:langchain:55-openais-bet-on-cognitive-architecture",
+      "from": "langchain/curated/55-openais-bet-on-cognitive-architecture.md",
+      "to": "content/research/article-notes/langchain/55-openais-bet-on-cognitive-architecture.md",
+      "sha256": "1241aff38345ab22a05ccdeefcb3a4bec011506780b262b9e94b51c15518d646"
+    },
+    {
+      "id": "note:langchain:56-why-agent-infrastructure",
+      "from": "langchain/curated/56-why-agent-infrastructure.md",
+      "to": "content/research/article-notes/langchain/56-why-agent-infrastructure.md",
+      "sha256": "ad50ef06bc8f124c9f45f65a4445158bdf8b2beb98e91a33b07865b720fedf30"
+    },
+    {
+      "id": "note:langchain:57-outsource-infrastructure-own-architecture",
+      "from": "langchain/curated/57-outsource-infrastructure-own-architecture.md",
+      "to": "content/research/article-notes/langchain/57-outsource-infrastructure-own-architecture.md",
+      "sha256": "a0b878e067f3f358640f601a51917fc107d8de30b7f4212a1c7b11d3e65a1f92"
+    },
+    {
+      "id": "note:langchain:58-reflection-agents",
+      "from": "langchain/curated/58-reflection-agents.md",
+      "to": "content/research/article-notes/langchain/58-reflection-agents.md",
+      "sha256": "e22f8cae7a899d87ea5a802ab589b3a5c5af90418f8b9acae20354f068cd8a28"
+    },
+    {
+      "id": "note:langchain:59-planning-agents",
+      "from": "langchain/curated/59-planning-agents.md",
+      "to": "content/research/article-notes/langchain/59-planning-agents.md",
+      "sha256": "d04c0bfa2a85380391a0a0cda903cefb603ba899fb912b4f3dcf92f315acbb0e"
+    },
+    {
+      "id": "note:langchain:60-how-and-when-multi-agent",
+      "from": "langchain/curated/60-how-and-when-multi-agent.md",
+      "to": "content/research/article-notes/langchain/60-how-and-when-multi-agent.md",
+      "sha256": "e3bba5a0134792506fa36f76dcb018f4ae5c1d6fda5162d2df19fdd6cde01dcf"
+    },
+    {
+      "id": "note:langchain:61-winning-in-ai-new-stack",
+      "from": "langchain/curated/61-winning-in-ai-new-stack.md",
+      "to": "content/research/article-notes/langchain/61-winning-in-ai-new-stack.md",
+      "sha256": "1cfbc671683f96a407f978e02cd918422cacc626a2e201859d1b129be4c8099b"
+    },
+    {
+      "id": "note:langchain:62-introducing-polly-ai-agent-engineer",
+      "from": "langchain/curated/62-introducing-polly-ai-agent-engineer.md",
+      "to": "content/research/article-notes/langchain/62-introducing-polly-ai-agent-engineer.md",
+      "sha256": "088775d5227cdb9d97971e6da18a70603f975857defcd1e9ee5be0ae4ce68ecf"
+    },
+    {
+      "id": "note:langchain:63-open-models-crossed-threshold",
+      "from": "langchain/curated/63-open-models-crossed-threshold.md",
+      "to": "content/research/article-notes/langchain/63-open-models-crossed-threshold.md",
+      "sha256": "35d6fa4b441d0c32e542ce69330f153a671c2f52d69a98db3706847179fb3b7e"
+    },
+    {
+      "id": "note:langchain:64-how-to-think-about-agent-frameworks",
+      "from": "langchain/curated/64-how-to-think-about-agent-frameworks.md",
+      "to": "content/research/article-notes/langchain/64-how-to-think-about-agent-frameworks.md",
+      "sha256": "96c0ab88942a04b12e1b7e958825a31be41a7cd77bcee90106eb62c45defbe6b"
+    },
+    {
+      "id": "note:langchain:65-deconstructing-rag",
+      "from": "langchain/curated/65-deconstructing-rag.md",
+      "to": "content/research/article-notes/langchain/65-deconstructing-rag.md",
+      "sha256": "1decea277a9218ba55cd03ba52c354098d33f95b45d9bc60dbe723b974559393"
+    },
+    {
+      "id": "note:langchain:66-agent-builder-memory-system",
+      "from": "langchain/curated/66-agent-builder-memory-system.md",
+      "to": "content/research/article-notes/langchain/66-agent-builder-memory-system.md",
+      "sha256": "88824fb701cb104be31f12063e3b4db1caf841b44d7df5cc1cf2fe1477237339"
+    },
+    {
+      "id": "note:langchain:67-exploring-prompt-optimization",
+      "from": "langchain/curated/67-exploring-prompt-optimization.md",
+      "to": "content/research/article-notes/langchain/67-exploring-prompt-optimization.md",
+      "sha256": "3062b98a5be1a4970c294076d3ca4a6856926c6a8c46de801461abbe48db2006"
+    },
+    {
+      "id": "note:langchain:68-few-shot-prompting-tool-calling",
+      "from": "langchain/curated/68-few-shot-prompting-tool-calling.md",
+      "to": "content/research/article-notes/langchain/68-few-shot-prompting-tool-calling.md",
+      "sha256": "f4659e334c3b8a9fc296da21d6b8227f0740c85b57b6290d8abf2b7c1104e12f"
+    },
+    {
+      "id": "note:langchain:69-hidden-metric-ai-product-success",
+      "from": "langchain/curated/69-hidden-metric-ai-product-success.md",
+      "to": "content/research/article-notes/langchain/69-hidden-metric-ai-product-success.md",
+      "sha256": "6090d188a496b2646484ef719aa9a2c2241f9f9232dbf5f0010baf33c585e6c8"
+    },
+    {
+      "id": "note:langchain:70-building-langgraph",
+      "from": "langchain/curated/70-building-langgraph.md",
+      "to": "content/research/article-notes/langchain/70-building-langgraph.md",
+      "sha256": "27e78d327df9627da2047241e987935a0444dcc19e740546c505675182dfe25f"
+    },
+    {
+      "id": "note:langchain:71-not-another-workflow-builder",
+      "from": "langchain/curated/71-not-another-workflow-builder.md",
+      "to": "content/research/article-notes/langchain/71-not-another-workflow-builder.md",
+      "sha256": "1fbebff010855d81b0228617392442af0df2a9c3dad608fb7f9dcb18b11dea91"
+    },
+    {
+      "id": "note:langchain:72-memory-for-agents",
+      "from": "langchain/curated/72-memory-for-agents.md",
+      "to": "content/research/article-notes/langchain/72-memory-for-agents.md",
+      "sha256": "bcc870aa0ede59d71e1878c73bb93ab11cde6f13a344c4c6e857e2ad5d7d8bc2"
+    },
+    {
+      "id": "note:langchain:73-introducing-ambient-agents",
+      "from": "langchain/curated/73-introducing-ambient-agents.md",
+      "to": "content/research/article-notes/langchain/73-introducing-ambient-agents.md",
+      "sha256": "685d71d468cf6a51b835de8e737ab5b244b00d041f95c1129328e2086a8710a3"
+    },
+    {
+      "id": "note:langchain:74-agent-middleware-patterns",
+      "from": "langchain/curated/74-agent-middleware-patterns.md",
+      "to": "content/research/article-notes/langchain/74-agent-middleware-patterns.md",
+      "sha256": "18597e905b6ffe524336bdfaa254d6fd255d4db1fb9525214680ce3ec445fcb0"
+    },
+    {
+      "id": "note:langchain:75-agent-frameworks-and-observability",
+      "from": "langchain/curated/75-agent-frameworks-and-observability.md",
+      "to": "content/research/article-notes/langchain/75-agent-frameworks-and-observability.md",
+      "sha256": "825a1c66eef696a57d5b4aaa87994fbbf5d6a0a806563c504eb87a1ded3aa942"
+    },
+    {
+      "id": "note:langchain:76-how-correct-are-llm-evaluators",
+      "from": "langchain/curated/76-how-correct-are-llm-evaluators.md",
+      "to": "content/research/article-notes/langchain/76-how-correct-are-llm-evaluators.md",
+      "sha256": "3eee9f725562a0811c1064fcc1f42ee7e30d7b73317aa17ae111bda5a7660d10"
+    },
+    {
+      "id": "note:langchain:77-aligning-llm-judge-human-preferences",
+      "from": "langchain/curated/77-aligning-llm-judge-human-preferences.md",
+      "to": "content/research/article-notes/langchain/77-aligning-llm-judge-human-preferences.md",
+      "sha256": "1a2ac3baad10c276792ace921800fa38f1e70413b1e392cc15da7cc37fb492eb"
+    },
+    {
+      "id": "note:langchain:78-evaluation-driven-development",
+      "from": "langchain/curated/78-evaluation-driven-development.md",
+      "to": "content/research/article-notes/langchain/78-evaluation-driven-development.md",
+      "sha256": "5b98b628c899a5da987d6150149d5a920bda68b635e41d385ba4d7f33364c978"
+    },
+    {
+      "id": "note:langchain:79-a-chunk-by-any-other-name",
+      "from": "langchain/curated/79-a-chunk-by-any-other-name.md",
+      "to": "content/research/article-notes/langchain/79-a-chunk-by-any-other-name.md",
+      "sha256": "e6da7ec2969c5eaa0d2881ba8576e1977bfee7cb136d6b4e3880fdb0b7fd720e"
+    },
+    {
+      "id": "note:langchain:80-graph-metadata-filtering-rag",
+      "from": "langchain/curated/80-graph-metadata-filtering-rag.md",
+      "to": "content/research/article-notes/langchain/80-graph-metadata-filtering-rag.md",
+      "sha256": "60ee17b91317d34ae202a2b27b54b8646f6b79f6466993da6e1778694b5dfc17"
+    },
+    {
+      "id": "note:langchain:81-query-construction",
+      "from": "langchain/curated/81-query-construction.md",
+      "to": "content/research/article-notes/langchain/81-query-construction.md",
+      "sha256": "afa882c2ab1b983a7e4d51969b19ceb59d7467dc4c800f2effd084fe2064e132"
+    },
+    {
+      "id": "note:langchain:82-agent-toolkits",
+      "from": "langchain/curated/82-agent-toolkits.md",
+      "to": "content/research/article-notes/langchain/82-agent-toolkits.md",
+      "sha256": "5c3c45b40c8a317dba4b6f876964e72be528323e1c08687ec76a916cb699b26c"
+    },
+    {
+      "id": "note:langchain:83-tool-calling-with-langchain",
+      "from": "langchain/curated/83-tool-calling-with-langchain.md",
+      "to": "content/research/article-notes/langchain/83-tool-calling-with-langchain.md",
+      "sha256": "f457de7133dec45edd32299a8756dd1788c6e809d781d39bbed0280f65ead484"
+    },
+    {
+      "id": "note:langchain:84-command-tool-multi-agent",
+      "from": "langchain/curated/84-command-tool-multi-agent.md",
+      "to": "content/research/article-notes/langchain/84-command-tool-multi-agent.md",
+      "sha256": "bd88fd819f7d0d4e616ef02e6195072e3b6e8fe634ce65a8d8400b65ea3403ae"
+    },
+    {
+      "id": "note:langchain:85-agent-authorization",
+      "from": "langchain/curated/85-agent-authorization.md",
+      "to": "content/research/article-notes/langchain/85-agent-authorization.md",
+      "sha256": "91df8d1086e279dca0b05a39c6320cc90c573c9dadf71e12b2700c429e8a3aaf"
+    },
+    {
+      "id": "note:langchain:86-two-types-agent-authorization",
+      "from": "langchain/curated/86-two-types-agent-authorization.md",
+      "to": "content/research/article-notes/langchain/86-two-types-agent-authorization.md",
+      "sha256": "add02a344cf56c894eb185add2112eb3d3a53e869d340d8f72faf614fd4da6bf"
+    },
+    {
+      "id": "note:langchain:87-handling-pii-data",
+      "from": "langchain/curated/87-handling-pii-data.md",
+      "to": "content/research/article-notes/langchain/87-handling-pii-data.md",
+      "sha256": "85b67c737792e27c9446d979edf3c78f726d9a24593633983acb812d224a67cb"
+    },
+    {
+      "id": "note:langchain:88-in-ai-traces-document-the-app",
+      "from": "langchain/curated/88-in-ai-traces-document-the-app.md",
+      "to": "content/research/article-notes/langchain/88-in-ai-traces-document-the-app.md",
+      "sha256": "235ad0d1bf9a7fe4c1a06c1cf4c77a546881e58ed6eb6a6edf75cb416d45d9b7"
+    },
+    {
+      "id": "note:langchain:89-production-monitoring",
+      "from": "langchain/curated/89-production-monitoring.md",
+      "to": "content/research/article-notes/langchain/89-production-monitoring.md",
+      "sha256": "b895379220f43807f72373ddb792d0f3ced7dc6abebb85f35a5c4224233b205d"
+    },
+    {
+      "id": "note:langchain:90-self-learning-gpts",
+      "from": "langchain/curated/90-self-learning-gpts.md",
+      "to": "content/research/article-notes/langchain/90-self-learning-gpts.md",
+      "sha256": "41f524719c55c5f7710efd44fee5301d14c7c89741b55337e4ae1ca7b11d01da"
+    },
+    {
+      "id": "note:langchain:91-scipe-systematic-improvement",
+      "from": "langchain/curated/91-scipe-systematic-improvement.md",
+      "to": "content/research/article-notes/langchain/91-scipe-systematic-improvement.md",
+      "sha256": "8ca58b44d7799fa9bf69d6f0a65e7074cb4d0d727712c56295d9f58f2c1770a9"
+    },
+    {
+      "id": "note:langchain:92-promptim-prompt-optimizer",
+      "from": "langchain/curated/92-promptim-prompt-optimizer.md",
+      "to": "content/research/article-notes/langchain/92-promptim-prompt-optimizer.md",
+      "sha256": "a7bcb136cebfe8121030106e72eb26ded35996cd7c5b34f1b97ab97bf60cec15"
+    },
+    {
+      "id": "note:langchain:93-benchmarking-agent-tool-use",
+      "from": "langchain/curated/93-benchmarking-agent-tool-use.md",
+      "to": "content/research/article-notes/langchain/93-benchmarking-agent-tool-use.md",
+      "sha256": "6a2ba09a3111736b7a35f8801063e05f3956ed4ff0a19f7eb0c75b20039728e2"
+    },
+    {
+      "id": "note:langchain:94-knowledge-graphs-enhance-rag",
+      "from": "langchain/curated/94-knowledge-graphs-enhance-rag.md",
+      "to": "content/research/article-notes/langchain/94-knowledge-graphs-enhance-rag.md",
+      "sha256": "45fb34c211927b16cf317e896615a17976bf7206be3282c865eb62977dc52630"
+    },
+    {
+      "id": "note:langchain:95-langgraph-functional-api",
+      "from": "langchain/curated/95-langgraph-functional-api.md",
+      "to": "content/research/article-notes/langchain/95-langgraph-functional-api.md",
+      "sha256": "b60b4e049b136ed3f911b9be50d3a789776e96dc9faf62cc0ee54e81a3dd5163"
+    },
+    {
+      "id": "note:langchain:96-rebuilding-chat-langchain",
+      "from": "langchain/curated/96-rebuilding-chat-langchain.md",
+      "to": "content/research/article-notes/langchain/96-rebuilding-chat-langchain.md",
+      "sha256": "3e979851c3d4d45e651f3dae6efcbf845e18b2e8127c74bde3056c905f8a1fb3"
+    },
+    {
+      "id": "note:langchain:97-semantic-search-langgraph-memory",
+      "from": "langchain/curated/97-semantic-search-langgraph-memory.md",
+      "to": "content/research/article-notes/langchain/97-semantic-search-langgraph-memory.md",
+      "sha256": "e280aeb11850e821581a7df3f57da13c036c37911bbe8aab5a5233c7de1cb14e"
+    },
+    {
+      "id": "note:langchain:98-langmem-sdk",
+      "from": "langchain/curated/98-langmem-sdk.md",
+      "to": "content/research/article-notes/langchain/98-langmem-sdk.md",
+      "sha256": "2fc3f7476431217f225019acd0b9c0a946e107f92c7e725f3e194a538a985ffc"
+    },
+    {
+      "id": "note:langchain:99-how-we-built-agent-builder-memory",
+      "from": "langchain/curated/99-how-we-built-agent-builder-memory.md",
+      "to": "content/research/article-notes/langchain/99-how-we-built-agent-builder-memory.md",
+      "sha256": "1f5840dec7b94bd261196b675004d2b0656e9237c91a96591a5c2ae593fd265c"
+    },
+    {
+      "id": "note:llamaindex:01-data-agents",
+      "from": "llamaindex/curated/01-data-agents.md",
+      "to": "content/research/article-notes/llamaindex/01-data-agents.md",
+      "sha256": "2e9bfb17671401b7fdcddc83a5ed284ca15b5332084cd8fc4472daea57c28fa4"
+    },
+    {
+      "id": "note:llamaindex:02-dumber-agents-better-constraints",
+      "from": "llamaindex/curated/02-dumber-agents-better-constraints.md",
+      "to": "content/research/article-notes/llamaindex/02-dumber-agents-better-constraints.md",
+      "sha256": "197efad5590a08ea0aeda866afae27907c0c764695a2c46efea842b846659ae3"
+    },
+    {
+      "id": "note:llamaindex:03-agent-memory-long-short-term",
+      "from": "llamaindex/curated/03-agent-memory-long-short-term.md",
+      "to": "content/research/article-notes/llamaindex/03-agent-memory-long-short-term.md",
+      "sha256": "df37c520e4f1e026f64790da40722fa56a7e3923172c17af78d50b21e4976f13"
+    },
+    {
+      "id": "note:llamaindex:04-building-better-agent-tools",
+      "from": "llamaindex/curated/04-building-better-agent-tools.md",
+      "to": "content/research/article-notes/llamaindex/04-building-better-agent-tools.md",
+      "sha256": "b61bf57f19a3b0b1caf509c0911a036cc23974644781e7d2c1b3b7a3fc7e2882"
+    },
+    {
+      "id": "note:llamaindex:05-multi-agent-concierge-system",
+      "from": "llamaindex/curated/05-multi-agent-concierge-system.md",
+      "to": "content/research/article-notes/llamaindex/05-multi-agent-concierge-system.md",
+      "sha256": "21e75362ef7fe896c680625927a0d5f481c2ddefb43a50ce3836efc2a1f35e20"
+    },
+    {
+      "id": "note:llamaindex:06-optimal-agent-design-patterns",
+      "from": "llamaindex/curated/06-optimal-agent-design-patterns.md",
+      "to": "content/research/article-notes/llamaindex/06-optimal-agent-design-patterns.md",
+      "sha256": "cb059ec3286cee5cb83fa501bb109196a54c137165a61b313f71da02d1c908db"
+    },
+    {
+      "id": "note:llamaindex:07-agentic-document-processing",
+      "from": "llamaindex/curated/07-agentic-document-processing.md",
+      "to": "content/research/article-notes/llamaindex/07-agentic-document-processing.md",
+      "sha256": "2b3556089e41bdf88a812e83fd8810740aad4cc39d47d28356c30617fdc4a14e"
+    },
+    {
+      "id": "note:llamaindex:08-agentic-document-workflows",
+      "from": "llamaindex/curated/08-agentic-document-workflows.md",
+      "to": "content/research/article-notes/llamaindex/08-agentic-document-workflows.md",
+      "sha256": "cd77c593d68950c22cd6fc6f9045966637bb0c52b90cc496a8130aa04dbc8991"
+    },
+    {
+      "id": "note:openai:harness-engineering:interrogation",
+      "from": "openai/posts/harness-engineering(musk-interrogation).md",
+      "to": "content/research/article-notes/openai/harness-engineering(musk-interrogation).md",
+      "sha256": "ddf3112f49c436bb3c54c3d6cd0cb2da4d7bc926fc56d3567d59660296a2f6ba"
+    },
+    {
+      "id": "note:papers:swe-agent:interrogation",
+      "from": "papers/SWE-Agent(musk-interrogation).md",
+      "to": "content/research/article-notes/papers/SWE-Agent(musk-interrogation).md",
+      "sha256": "f8e6fbad7b1b4be68042b5ac4bfd5555083459434ce8e2420ab84363159a8fee"
+    },
+    {
+      "id": "note:papers:transformer:interrogation",
+      "from": "papers/transformer(musk-interrogation).md",
+      "to": "content/research/article-notes/papers/transformer(musk-interrogation).md",
+      "sha256": "53ba869d7219cb2283272f178347d6a11b23d8fb395c32260124e225312f4db5"
     }
   ]
 }

@@ -89,6 +89,31 @@ class ReconciliationTests(unittest.TestCase):
         self.assertEqual(report, report2)
         self.assertEqual({r["id"] for r in first}, {r["id"] for r in self.rows})
 
+    def test_note_citation_kept_when_original_is_missing(self):
+        self.make("langchain/curated/02-external-only.md",
+                  "# External note\n\n**来源:** [Blog](https://blog.langchain.dev/external-only/)\n")
+        extended = self.rows + [self.row("note:langchain:02-external-only",
+                                         "article_note", "langchain/curated/02-external-only.md",
+                                         "langchain")]
+        enriched, audit = enrich(self.root, extended)
+        row = next(r for r in enriched if r["id"] == "note:langchain:02-external-only")
+        self.assertEqual(row["source_reference_url"], "https://blog.langchain.dev/external-only")
+        self.assertFalse(row.get("related_ids"))
+        self.assertIn("note:langchain:02-external-only", audit["unlinked_notes"])
+        self.assertEqual(audit["note_reference_status"]["external_only"], 1)
+        self.assertTrue(any(x["id"] == row["id"] and x["status"] == "external_only"
+                            for x in audit["note_reference_links"]))
+
+    def test_missing_citation_is_not_guessed_from_title(self):
+        self.make("langchain/curated/03-original.md", "# Original\\n(no explicit source)\\n")
+        added = self.row("note:langchain:03-original", "article_note",
+                         "langchain/curated/03-original.md", "langchain")
+        records, audit = enrich(self.root, self.rows + [added])
+        row = next(x for x in records if x["id"] == added["id"])
+        self.assertNotIn("source_reference_url", row)
+        self.assertNotIn("related_ids", row)
+        self.assertIn("note:langchain:03-original", audit["unlinked_notes"])
+
     def test_reject_unknown_and_invalid(self):
         self.assertIsNone(clean_date("Unknown"))
         self.assertIsNone(clean_date("2026-99-99"))

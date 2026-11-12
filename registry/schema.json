@@ -98,6 +98,11 @@
         "type": "string",
         "minLength": 1
       }
+    },
+    "source_reference_url": {
+      "type": "string",
+      "format": "uri",
+      "pattern": "^https://"
     }
   },
   "additionalProperties": false

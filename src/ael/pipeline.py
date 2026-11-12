@@ -149,6 +149,8 @@ def generated_outputs(root: Path, rows: list[dict], audit: dict) -> dict[Path, s
 
 def build_catalog(root: Path, records: list[dict]) -> dict:
     """Build site-readable JSON from registered HTML ONLY, without editing HTML."""
+    from .migration import read_moves
+    aliases_by_id = {m["id"]: m["from"] for m in read_moves(root)}
     items = []
     pages = set()
     ids = set()
@@ -170,10 +172,15 @@ def build_catalog(root: Path, records: list[dict]) -> dict:
         item = {
             "id": record["id"], "kind": record["kind"],
             "source": record["source"], "site_path": page,
+            "content_path": record["path"],
             "title": record.get("title", Path(record["path"]).stem),
         }
         if record.get("canonical_url"):
             item["canonical_url"] = record["canonical_url"]
+        if record.get("source_reference_url"):
+            item["source_reference_url"] = record["source_reference_url"]
+        if record["id"] in aliases_by_id:
+            item["legacy_markdown_path"] = aliases_by_id[record["id"]]
         if record.get("related_ids"):
             item["related_ids"] = record["related_ids"]
         items.append(item)

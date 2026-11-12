@@ -41,3 +41,9 @@ Use `PYTHONPATH=src python -m ael plan` for a zero-write preview, `PYTHONPATH=sr
 ## Phase 4: path migrations
 
 A stable note ID can point to a new `content/research/article-notes/<source>/` path. `registry/migrations.json` records old path, new path and original SHA-256. Legacy Markdown paths become compatibility links, excluded from inventory. The moved content is byte-for-byte identical and existing HTML is not rewritten. Use `PYTHONPATH=src python -m ael.migration check` to enforce these invariants. The Registry remains the authority for new paths; the migration manifest is a historical alias map, not a second content index.
+
+## Phase 5 — complete Research consolidation
+
+All 123 registered research notes now live under `content/research/article-notes/`; their 123 legacy Markdown paths are compatibility aliases (not HTTP redirects). `migrations.json` is the identity/path evidence ledger.
+
+`source_reference_url` on a note means an explicitly cited external original; it does not claim that source has been ingested. `audit-report.json` partitions notes into `matched`, `external_only`, `no_explicit_citation`, and `ambiguous` statuses. Never fabricate a `related_ids` reference when the original is absent.

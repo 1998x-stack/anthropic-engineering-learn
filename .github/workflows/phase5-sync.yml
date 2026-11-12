@@ -1,0 +1,34 @@
+name: Phase 5 migration snapshot (branch only)
+on:
+  push:
+    branches: [refactor/phase-5-research-consolidation]
+permissions:
+  contents: write
+jobs:
+  reconcile:
+    if: github.actor != 'github-actions[bot]'
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          persist-credentials: true
+      - uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+      - name: Regenerate metadata and audit from unchanged notes
+        run: PYTHONPATH=src python -m ael reconcile --write
+      - name: Validate integrity and provenance
+        run: |
+          PYTHONPATH=src python -m ael.migration check
+          PYTHONPATH=src python -m ael.registry validate
+          PYTHONPATH=src python -m ael check
+          PYTHONPATH=src python -m unittest discover -s tests -v
+      - name: Commit generated registry/audit snapshot
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add registry/records.jsonl registry/audit-report.json
+          if ! git diff --cached --quiet; then
+            git commit -m "data(registry): update canonical research-note paths and citation audit"
+            git push origin HEAD:refactor/phase-5-research-consolidation
+          fi

@@ -67,6 +67,70 @@ def approved_topic_decisions(root: Path, rows: list[dict], topics: set[str]) -> 
     return accepted
 
 
+
+def approved_content_decisions(root: Path, rows: list[dict]) -> dict[str, str]:
+    """Resolve append-only editorial events against current content bytes.
+
+    A manual change to Registry review_status is not an approval. Any later
+    content modification invalidates the last approval until reviewed again.
+    """
+    path = root / "registry" / "content-review-decisions.json"
+    if not path.is_file():
+        return {}
+    data = json.loads(path.read_text(encoding="utf-8"))
+    if (not isinstance(data, dict) or set(data) != {"schema_version", "events"}
+            or data["schema_version"] != 1 or not isinstance(data["events"], list)):
+        raise ReviewError("content-review-decisions.json requires schema_version=1 and events array")
+    records = {row["id"]: row for row in rows}
+    seen_events: set[str] = set()
+    latest: dict[str, dict] = {}
+    for event in data["events"]:
+        required = {"event_id", "id", "action", "evidence_sha256",
+                    "reviewer", "reviewed_at", "rationale", "evidence_urls"}
+        if not isinstance(event, dict) or set(event) != required:
+            raise ReviewError("content review event has missing or unsupported fields")
+        event_id, ident = event["event_id"], event["id"]
+        if (not isinstance(event_id, str) or not event_id.strip()
+                or event_id in seen_events or not isinstance(ident, str) or ident not in records):
+            raise ReviewError(f"invalid/duplicate event or unknown record: {event_id}")
+        seen_events.add(event_id)
+        if event["action"] not in {"approve", "reject", "revoke"}:
+            raise ReviewError(f"{event_id}: invalid review action")
+        if not isinstance(event["reviewer"], str) or len(event["reviewer"].strip()) < 2:
+            raise ReviewError(f"{event_id}: reviewer identity required")
+        if not isinstance(event["rationale"], str) or len(event["rationale"].strip()) < 20:
+            raise ReviewError(f"{event_id}: evidence rationale required")
+        try:
+            reviewed_at = date.fromisoformat(event["reviewed_at"])
+        except (TypeError, ValueError):
+            raise ReviewError(f"{event_id}: invalid review date") from None
+        urls = event["evidence_urls"]
+        if (not isinstance(urls, list) or len(urls) != len(set(map(str, urls)))
+                or any(not isinstance(url, str) or not url.startswith("https://") for url in urls)):
+            raise ReviewError(f"{event_id}: evidence_urls must be unique HTTPS URLs")
+        if event["action"] == "approve" and not urls:
+            raise ReviewError(f"{event_id}: approval requires primary-source evidence URLs")
+        digest = event["evidence_sha256"]
+        if (not isinstance(digest, str) or len(digest) != 64
+                or any(char not in "0123456789abcdef" for char in digest)):
+            raise ReviewError(f"{event_id}: invalid evidence SHA-256")
+        if ident in latest and reviewed_at < date.fromisoformat(latest[ident]["reviewed_at"]):
+            raise ReviewError(f"{event_id}: history must be chronological")
+        latest[ident] = event
+
+    statuses = {}
+    for ident, event in latest.items():
+        content_path = (root / records[ident]["path"]).resolve()
+        if not content_path.is_relative_to(root.resolve()) or not content_path.is_file():
+            raise ReviewError(f"{ident}: missing or unsafe reviewed content")
+        current_sha = hashlib.sha256(content_path.read_bytes()).hexdigest()
+        if event["evidence_sha256"] != current_sha:
+            raise ReviewError(f"{ident}: stale content approval; re-review or revoke explicitly")
+        statuses[ident] = {"approve": "verified", "reject": "rejected",
+                           "revoke": "unreviewed"}[event["action"]]
+    return statuses
+
+
 def build_queue(rows: list[dict], audit: dict) -> dict:
     links = audit.get("note_reference_links")
     if not isinstance(links, list):
@@ -128,6 +192,7 @@ def generate(root: Path = ROOT) -> tuple[Path, str, dict]:
     audit = json.loads((root / "registry" / "audit-report.json").read_text(encoding="utf-8"))
     from .knowledge import load_taxonomy
     approved_topic_decisions(root, rows, {t["id"] for t in load_taxonomy(root)["topics"]})
+    approved_content_decisions(root, rows)
     queue = build_queue(rows, audit)
     return root / "registry" / "review-queue.json", canonical(queue), queue
 

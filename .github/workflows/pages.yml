@@ -21,6 +21,19 @@ jobs:
       - name: Checkout
         uses: actions/checkout@v4
 
+      - name: Setup Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.11"
+
+      - name: Validate content snapshot
+        run: PYTHONPATH=src python -m ael check
+
+      - name: Generate static catalog from Registry
+        run: |
+          PYTHONPATH=src python -m ael publish --write
+          PYTHONPATH=src python -m ael publish --check
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
         with:

@@ -1,10 +1,10 @@
 # Engineering Blogs 汇总
 
-> **Architecture migration (Phase 2):** The reconciled source-of-truth inventory and audit live in [registry/records.jsonl](registry/records.jsonl). See [registry/README.md](registry/README.md) for field provenance, conflict auditing, validation commands, and migration safeguards. Legacy source folders and GitHub Pages remain unchanged.
+> **Architecture migration (Phase 3):** The reconciled source-of-truth inventory and audit live in [registry/records.jsonl](registry/records.jsonl). Use [scripts/README.md](scripts/README.md) for the supported dry-run-first CLI, and [registry/README.md](registry/README.md) for provenance and audits. Legacy source folders and historical HTML remain unchanged; Pages now emits a derived JSON catalog.
 
-AI/Infra 领域工程博客合集，按来源分目录，共 ~1000 篇文章。
+AI/Infra 领域工程知识合集：Registry 登记 **991 篇来源文章、123 篇研究笔记、5 份 PDF**，按来源保留现有目录。
 
-> 最后整理：2026-05-12
+> Registry 统计基准：2026-11-12（由 records.jsonl 提供）
 
 ---
 
@@ -13,16 +13,19 @@ AI/Infra 领域工程博客合集，按来源分目录，共 ~1000 篇文章。
 ```
 .
 ├── anthropic/          Anthropic 官方工程博客 (23 篇)
-├── langchain/          LangChain 博客 (6 篇精选 + 409 篇全量)
+├── langchain/          LangChain 博客 (99 篇精选 + 409 篇来源文章)
 ├── openai/             OpenAI 工程博客 (9 篇)
-├── llamaindex/         LlamaIndex 博客 (382 篇)
+├── llamaindex/         LlamaIndex 博客 (382 篇来源文章 + 8 篇精选)
 ├── modal/              Modal 博客 (69 篇)
 ├── e2b/                E2B 博客 (61 篇)
 ├── browser-use/        Browser Use 博客 (29 篇)
 ├── browserbase/        Browserbase 博客 (10 篇)
 ├── _meta/              元数据索引 (JSON)
-├── _scripts/           抓取与维护脚本
-└── docs/               Anthropic 文档站点镜像
+├── _scripts/           历史维护脚本（不再作为官方入口）
+├── registry/           权威内容清单与审计结果
+├── src/ael/            安全、可校验的统一 CLI
+├── scripts/            历史页面生成脚本及迁移说明
+└── docs/               GitHub Pages 静态内容与构建时目录
 ```
 
 ---
@@ -77,5 +80,5 @@ Anthropic 官方工程实践文章，按主题分类。
 
 | 目录 | 说明 |
 |------|------|
-| `_scripts/` | 博客抓取、清理、去重、索引重建脚本 (12 个 Python 脚本) |
-| `_meta/` | 各来源的 JSON 元数据索引 |
+| `src/ael/` | 正式入口：`PYTHONPATH=src python -m ael plan`，再按需显式 `--write` |
+| `_meta/` | 旧 JSON 元数据（只读，暂不删除） |

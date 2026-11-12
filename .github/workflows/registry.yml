@@ -25,3 +25,11 @@ jobs:
           test "$(PYTHONPATH=src python -m ael.registry sync | cut -d' ' -f1)" = "0"
       - name: Check metadata and site inventory drift
         run: PYTHONPATH=src python -m ael.reconcile check
+      - name: Verify unified pipeline plan and state
+        run: |
+          PYTHONPATH=src python -m ael plan
+          PYTHONPATH=src python -m ael check
+      - name: Build and validate deterministic site catalog
+        run: |
+          PYTHONPATH=src python -m ael publish --write
+          PYTHONPATH=src python -m ael publish --check

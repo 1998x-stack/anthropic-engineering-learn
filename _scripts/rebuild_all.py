@@ -4,6 +4,7 @@ import os
 import re
 import subprocess
 import json
+import sys
 
 BASE = os.path.dirname(os.path.abspath(__file__))
 

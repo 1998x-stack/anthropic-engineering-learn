@@ -46,4 +46,4 @@ A stable note ID can point to a new `content/research/article-notes/<source>/` p
 
 All 123 registered research notes now live under `content/research/article-notes/`; their 123 legacy Markdown paths are compatibility aliases (not HTTP redirects). `migrations.json` is the identity/path evidence ledger.
 
-`source_reference_url` on a note means an explicitly cited external original; it does not claim that source has been ingested. `audit-report.json` partitions notes into `matched`, `external_only`, `no_explicit_citation`, and `ambiguous` statuses. Never fabricate a `related_ids` reference when the original is absent.
+`source_reference_url` on a note means an explicitly cited external original; it does not claim that source has been ingested. `audit-report.json` partitions notes into `matched`, `external_only`, `linked_by_id_url_mismatch`, `no_explicit_citation`, and `ambiguous` statuses. Never fabricate a `related_ids` reference when the original is absent.

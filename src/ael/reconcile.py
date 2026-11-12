@@ -186,6 +186,18 @@ def enrich(root: Path, records: list[dict]) -> tuple[list[dict], dict]:
 
     for row in records:
         rec = dict(row)
+        # Derived metadata must be recalculated from current evidence. Copying the
+        # prior Registry record preserves stable identity and editorial state,
+        # but stale computed fields and their provenance must not survive a rerun.
+        evidence = dict(rec.get("metadata_provenance", {}))
+        derived_fields = (
+            COMPUTED_FIELDS if row["kind"] == "source_article"
+            else ("title",) if row["kind"] == "article_note"
+            else ()
+        )
+        for field in derived_fields:
+            rec.pop(field, None)
+            evidence.pop(field, None)
         path = root / row["path"]
         if not path.is_file():
             raise FileNotFoundError(row["path"])
@@ -254,7 +266,6 @@ def enrich(root: Path, records: list[dict]) -> tuple[list[dict], dict]:
             else:
                 rec.pop("source_reference_url", None)
 
-        evidence = dict(rec.get("metadata_provenance", {}))
         for field in COMPUTED_FIELDS:
             ranked = sorted(candidates.get(field, ()), key=lambda item: (item[0], item[1]))
             if not ranked:
@@ -272,6 +283,8 @@ def enrich(root: Path, records: list[dict]) -> tuple[list[dict], dict]:
                 evidence["source_reference_url"] = row["path"] + "#source-reference"
         if evidence:
             rec["metadata_provenance"] = evidence
+        else:
+            rec.pop("metadata_provenance", None)
         if row["kind"] == "source_article" and rec.get("canonical_url"):
             source_urls[rec["canonical_url"]].append(row["id"])
         output.append(rec)

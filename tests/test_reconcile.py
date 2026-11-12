@@ -126,6 +126,53 @@ class ReconciliationTests(unittest.TestCase):
         self.assertNotIn("related_ids", row)
         self.assertIn("note:langchain:03-original", audit["unlinked_notes"])
 
+
+    def test_reconcile_revokes_stale_source_metadata_and_provenance(self):
+        first, _ = enrich(self.root, self.rows)
+        original = next(x for x in first if x["id"] == "source:langchain:original")
+        self.assertEqual(original["author"], "Original Author")
+        self.assertEqual(original["published_at"], "2026-02-10")
+        self.assertIn("canonical_url", original)
+
+        # Simulate removal of all authoritative metadata candidates.
+        (self.root / "_meta/langchain/original.json").unlink()
+        self.make("langchain/posts/deep-agents/original.md", "# Revised title\n")
+        second, _ = enrich(self.root, first)
+        refreshed = next(x for x in second if x["id"] == original["id"])
+        self.assertEqual(refreshed["title"], "Revised title")
+        for key in ("author", "published_at", "canonical_url"):
+            self.assertNotIn(key, refreshed)
+            self.assertNotIn(key, refreshed.get("metadata_provenance", {}))
+        self.assertEqual(refreshed["review_status"], original["review_status"])
+
+        # Reconciliation is idempotent even after a field was withdrawn.
+        third, _ = enrich(self.root, second)
+        self.assertEqual(render_records(second), render_records(third))
+
+    def test_reconcile_does_not_keep_removed_note_title_or_citation(self):
+        self.make("langchain/curated/01-study.md",
+                  "# Evidence note\n\n**来源:** [Original](https://www.langchain.com/blog/original)\n")
+        first, _ = enrich(self.root, self.rows)
+        note = next(x for x in first if x["id"] == "note:langchain:01-study")
+        self.assertIn("title", note)
+        self.assertIn("source_reference_url", note)
+
+        self.make("langchain/curated/01-study.md", "This note has no title or explicit citation.\n")
+        second, _ = enrich(self.root, first)
+        updated = next(x for x in second if x["id"] == note["id"])
+        self.assertNotIn("title", updated)
+        self.assertNotIn("source_reference_url", updated)
+        self.assertNotIn("metadata_provenance", updated)
+
+    def test_paper_editorial_metadata_is_not_cleared(self):
+        self.make("papers/sample.pdf", "%PDF-1.4\n")
+        paper = self.row("paper:sample", "paper", "papers/sample.pdf", "papers")
+        paper["title"] = "Curated paper title"
+        paper["author"] = "Editorial author"
+        refreshed, _ = enrich(self.root, [paper])
+        self.assertEqual(refreshed[0]["title"], "Curated paper title")
+        self.assertEqual(refreshed[0]["author"], "Editorial author")
+
     def test_reject_unknown_and_invalid(self):
         self.assertIsNone(clean_date("Unknown"))
         self.assertIsNone(clean_date("2026-99-99"))

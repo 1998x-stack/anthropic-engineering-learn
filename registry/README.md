@@ -37,3 +37,7 @@ PYTHONPATH=src python -m unittest discover -s tests -v
 ## Phase 3 update
 
 Use `PYTHONPATH=src python -m ael plan` for a zero-write preview, `PYTHONPATH=src python -m ael check` to enforce reproducibility, and `PYTHONPATH=src python -m ael publish --write` to create the static JSON catalog in a Pages build. The historical crawlers are not called by the pipeline. Original files and HTML pages remain read-only.
+
+## Phase 4: path migrations
+
+A stable note ID can point to a new `content/research/article-notes/<source>/` path. `registry/migrations.json` records old path, new path and original SHA-256. Legacy Markdown paths become compatibility links, excluded from inventory. The moved content is byte-for-byte identical and existing HTML is not rewritten. Use `PYTHONPATH=src python -m ael.migration check` to enforce these invariants. The Registry remains the authority for new paths; the migration manifest is a historical alias map, not a second content index.

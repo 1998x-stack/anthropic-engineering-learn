@@ -1,0 +1,17 @@
+{
+  "schema_version": 1,
+  "moves": [
+    {
+      "id": "note:anthropic:building-effective-agents:interrogation",
+      "from": "anthropic/agents/building-effective-agents(musk-interrogation).md",
+      "to": "content/research/article-notes/anthropic/building-effective-agents(musk-interrogation).md",
+      "sha256": "7b71a7766fbeb3784a1a2a720c7130b9f193798301f9552abfc6edaec24826e2"
+    },
+    {
+      "id": "note:langchain:01-the-anatomy-of-an-agent-harness",
+      "from": "langchain/curated/01-the-anatomy-of-an-agent-harness.md",
+      "to": "content/research/article-notes/langchain/01-the-anatomy-of-an-agent-harness.md",
+      "sha256": "45a544d6187d91de7567dbce760849bd83c493aee21c4a813e6d2ef4688aa219"
+    }
+  ]
+}

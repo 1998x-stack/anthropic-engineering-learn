@@ -175,6 +175,41 @@ class ReconciliationTests(unittest.TestCase):
         self.assertEqual(refreshed[0]["title"], "Curated paper title")
         self.assertEqual(refreshed[0]["author"], "Editorial author")
 
+    def test_article_evidence_must_point_to_matching_article(self):
+        from ael.reconcile import read_overrides
+        path = self.root / "registry/verified-overrides.json"
+        for bad in ("https://www.anthropic.com/engineering",
+                    "https://www.anthropic.com/research/someone-elses-article",
+                    "https://www.anthropic.com/research/example?tracking=1",
+                    "https://evil.example/research/example"):
+            path.write_text(json.dumps({
+                "source:anthropic:example": {"published_at": "2024-12-19",
+                                               "evidence_url": bad}}), encoding="utf-8")
+            with self.subTest(bad=bad), self.assertRaises(ValueError):
+                read_overrides(self.root)
+
+    def test_official_date_checks_enforce_coverage_and_observed_date(self):
+        from ael.reconcile import read_overrides
+        path = self.root / "registry/verified-overrides.json"
+        date_log = self.root / "registry/official-date-checks.json"
+        identity = "source:anthropic:example"
+        original = json.loads(path.read_text(encoding="utf-8"))[identity]
+        valid = {"id": identity, "evidence_url": original["evidence_url"],
+                 "observed_published_at": original["published_at"],
+                 "checked_at": "2026-11-12"}
+        doc = {"schema_version": 1, "method": "official_publisher_page_observation",
+               "checked_articles": [valid]}
+        date_log.write_text(json.dumps(doc), encoding="utf-8")
+        self.assertEqual(read_overrides(self.root)[identity], original)
+        doc["checked_articles"][0]["observed_published_at"] = "2025-01-01"
+        date_log.write_text(json.dumps(doc), encoding="utf-8")
+        with self.assertRaises(ValueError):
+            read_overrides(self.root)
+        doc["checked_articles"] = []
+        date_log.write_text(json.dumps(doc), encoding="utf-8")
+        with self.assertRaises(ValueError):
+            read_overrides(self.root)
+
     def test_reject_unknown_and_invalid(self):
         self.assertIsNone(clean_date("Unknown"))
         self.assertIsNone(clean_date("2026-99-99"))

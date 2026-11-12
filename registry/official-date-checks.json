@@ -1,0 +1,144 @@
+{
+  "schema_version": 1,
+  "method": "official_publisher_page_observation",
+  "checked_articles": [
+    {
+      "id": "source:anthropic:a-postmortem-of-three-recent-issues",
+      "evidence_url": "https://www.anthropic.com/research/a-postmortem-of-three-recent-issues",
+      "observed_published_at": "2025-09-17",
+      "checked_at": "2026-11-12"
+    },
+    {
+      "id": "source:anthropic:advanced-tool-use",
+      "evidence_url": "https://www.anthropic.com/research/advanced-tool-use",
+      "observed_published_at": "2025-11-24",
+      "checked_at": "2026-11-12"
+    },
+    {
+      "id": "source:anthropic:ai-resistant-technical-evaluations",
+      "evidence_url": "https://www.anthropic.com/research/AI-resistant-technical-evaluations",
+      "observed_published_at": "2026-01-21",
+      "checked_at": "2026-11-12"
+    },
+    {
+      "id": "source:anthropic:april-23-postmortem",
+      "evidence_url": "https://www.anthropic.com/research/april-23-postmortem",
+      "observed_published_at": "2026-04-23",
+      "checked_at": "2026-11-12"
+    },
+    {
+      "id": "source:anthropic:building-c-compiler",
+      "evidence_url": "https://www.anthropic.com/research/building-c-compiler",
+      "observed_published_at": "2026-02-05",
+      "checked_at": "2026-11-12"
+    },
+    {
+      "id": "source:anthropic:building-effective-agents",
+      "evidence_url": "https://www.anthropic.com/research/building-effective-agents",
+      "observed_published_at": "2024-12-19",
+      "checked_at": "2026-11-12"
+    },
+    {
+      "id": "source:anthropic:claude-code-auto-mode",
+      "evidence_url": "https://www.anthropic.com/research/claude-code-auto-mode",
+      "observed_published_at": "2026-03-25",
+      "checked_at": "2026-11-12"
+    },
+    {
+      "id": "source:anthropic:claude-code-sandboxing",
+      "evidence_url": "https://www.anthropic.com/research/claude-code-sandboxing",
+      "observed_published_at": "2025-10-20",
+      "checked_at": "2026-11-12"
+    },
+    {
+      "id": "source:anthropic:claude-think-tool",
+      "evidence_url": "https://www.anthropic.com/research/claude-think-tool",
+      "observed_published_at": "2025-03-20",
+      "checked_at": "2026-11-12"
+    },
+    {
+      "id": "source:anthropic:code-execution-with-mcp",
+      "evidence_url": "https://www.anthropic.com/research/code-execution-with-mcp",
+      "observed_published_at": "2025-11-04",
+      "checked_at": "2026-11-12"
+    },
+    {
+      "id": "source:anthropic:contextual-retrieval",
+      "evidence_url": "https://www.anthropic.com/research/contextual-retrieval",
+      "observed_published_at": "2024-09-19",
+      "checked_at": "2026-11-12"
+    },
+    {
+      "id": "source:anthropic:demystifying-evals-for-ai-agents",
+      "evidence_url": "https://www.anthropic.com/research/demystifying-evals-for-ai-agents",
+      "observed_published_at": "2026-01-09",
+      "checked_at": "2026-11-12"
+    },
+    {
+      "id": "source:anthropic:desktop-extensions",
+      "evidence_url": "https://www.anthropic.com/research/desktop-extensions",
+      "observed_published_at": "2025-06-26",
+      "checked_at": "2026-11-12"
+    },
+    {
+      "id": "source:anthropic:effective-context-engineering-for-ai-agents",
+      "evidence_url": "https://www.anthropic.com/research/effective-context-engineering-for-ai-agents",
+      "observed_published_at": "2025-09-29",
+      "checked_at": "2026-11-12"
+    },
+    {
+      "id": "source:anthropic:effective-harnesses-for-long-running-agents",
+      "evidence_url": "https://www.anthropic.com/research/effective-harnesses-for-long-running-agents",
+      "observed_published_at": "2025-11-26",
+      "checked_at": "2026-11-12"
+    },
+    {
+      "id": "source:anthropic:equipping-agents-for-the-real-world-with-agent-skills",
+      "evidence_url": "https://www.anthropic.com/research/equipping-agents-for-the-real-world-with-agent-skills",
+      "observed_published_at": "2025-10-16",
+      "checked_at": "2026-11-12"
+    },
+    {
+      "id": "source:anthropic:eval-awareness-browsecomp",
+      "evidence_url": "https://www.anthropic.com/research/eval-awareness-browsecomp",
+      "observed_published_at": "2026-03-06",
+      "checked_at": "2026-11-12"
+    },
+    {
+      "id": "source:anthropic:harness-design-long-running-apps",
+      "evidence_url": "https://www.anthropic.com/research/harness-design-long-running-apps",
+      "observed_published_at": "2026-03-24",
+      "checked_at": "2026-11-12"
+    },
+    {
+      "id": "source:anthropic:infrastructure-noise",
+      "evidence_url": "https://www.anthropic.com/research/infrastructure-noise",
+      "observed_published_at": "2026-02-05",
+      "checked_at": "2026-11-12"
+    },
+    {
+      "id": "source:anthropic:managed-agents",
+      "evidence_url": "https://www.anthropic.com/research/managed-agents",
+      "observed_published_at": "2026-04-08",
+      "checked_at": "2026-11-12"
+    },
+    {
+      "id": "source:anthropic:multi-agent-research-system",
+      "evidence_url": "https://www.anthropic.com/research/multi-agent-research-system",
+      "observed_published_at": "2025-06-13",
+      "checked_at": "2026-11-12"
+    },
+    {
+      "id": "source:anthropic:swe-bench-sonnet",
+      "evidence_url": "https://www.anthropic.com/research/swe-bench-sonnet",
+      "observed_published_at": "2025-01-06",
+      "checked_at": "2026-11-12"
+    },
+    {
+      "id": "source:anthropic:writing-tools-for-agents",
+      "evidence_url": "https://www.anthropic.com/research/writing-tools-for-agents",
+      "observed_published_at": "2025-09-11",
+      "checked_at": "2026-11-12"
+    }
+  ]
+}

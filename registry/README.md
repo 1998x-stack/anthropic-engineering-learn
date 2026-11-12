@@ -89,3 +89,18 @@ Registry, and `PYTHONPATH=src python -m ael check` before merging.
 ## Historical HTML aliases
 
 Some older static HTML pages use a filename that differs from the migrated Research Note slug. `registry/site-aliases.json` is a small, explicit exception list; it is **not** an inferred title-to-ID join. Each alias must point to an existing HTML file in the corresponding publisher directory and record the precise expected page title, matching the current Research Note heading, plus a rationale. Reconciliation rejects missing pages, duplicate mappings, unsafe paths and title mismatches. The original URL remains valid, and the Registry may safely mark that note as having a published HTML asset without changing Markdown or HTML bytes.
+
+## Phase 8.1 — official publication-date evidence
+
+On 2026-11-12, all 23 Anthropic dated overrides were checked against their
+specific publisher article pages. The 18 generic blog-homepage evidence links
+were replaced with article URLs under `/research/<slug>`, the observed
+redirect destinations of the historical `/engineering/<slug>` addresses.
+Historical canonical URLs remain unchanged to preserve source-note joins.
+
+`registry/official-date-checks.json` is a point-in-time observational snapshot:
+ID, publisher evidence URL, observed publication date, and inspection date.
+It does not prove that CI has fetched the live article or that a human editor
+has approved the full document. CI rejects missing/duplicate observations,
+conflicting dates or evidence URLs, unrelated-article evidence and homepages.
+Changing a date requires a fresh official-source inspection and snapshot update.

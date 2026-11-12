@@ -103,7 +103,7 @@
       async function worker() {
         while (next < manifest.shards.length) {
           const shard = manifest.shards[next++];
-          if (!/^[a-z][a-z0-9-]*-[0-9]{3,}\\.json$/.test(shard.file)) {
+          if (!/^[a-z][a-z0-9-]*-[0-9]{3,}\.json$/.test(shard.file)) {
             throw new Error("索引分片名称不合法");
           }
           const resp = await fetch("data/" + shard.file);

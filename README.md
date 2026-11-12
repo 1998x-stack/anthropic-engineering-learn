@@ -1,6 +1,6 @@
 # Engineering Blogs 汇总
 
-> **Architecture migration (Phase 1):** The source-of-truth content inventory lives in [registry/records.jsonl](registry/records.jsonl). See [registry/README.md](registry/README.md) for scope, validation commands, and migration safeguards. Legacy source folders and GitHub Pages remain unchanged.
+> **Architecture migration (Phase 2):** The reconciled source-of-truth inventory and audit live in [registry/records.jsonl](registry/records.jsonl). See [registry/README.md](registry/README.md) for field provenance, conflict auditing, validation commands, and migration safeguards. Legacy source folders and GitHub Pages remain unchanged.
 
 AI/Infra 领域工程博客合集，按来源分目录，共 ~1000 篇文章。
 

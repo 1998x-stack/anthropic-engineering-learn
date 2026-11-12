@@ -23,3 +23,5 @@ jobs:
       - name: Check for unregistered content
         run: |
           test "$(PYTHONPATH=src python -m ael.registry sync | cut -d' ' -f1)" = "0"
+      - name: Check metadata and site inventory drift
+        run: PYTHONPATH=src python -m ael.reconcile check

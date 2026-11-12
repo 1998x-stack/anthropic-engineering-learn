@@ -1,0 +1,97 @@
+{
+  "source:anthropic:a-postmortem-of-three-recent-issues": {
+    "published_at": "2025-09-17",
+    "evidence_url": "https://www.anthropic.com/engineering"
+  },
+  "source:anthropic:advanced-tool-use": {
+    "published_at": "2025-11-24",
+    "evidence_url": "https://www.anthropic.com/engineering"
+  },
+  "source:anthropic:ai-resistant-technical-evaluations": {
+    "published_at": "2026-01-21",
+    "evidence_url": "https://www.anthropic.com/engineering"
+  },
+  "source:anthropic:april-23-postmortem": {
+    "published_at": "2026-04-23",
+    "evidence_url": "https://www.anthropic.com/engineering"
+  },
+  "source:anthropic:building-c-compiler": {
+    "published_at": "2026-02-05",
+    "evidence_url": "https://www.anthropic.com/engineering"
+  },
+  "source:anthropic:building-effective-agents": {
+    "published_at": "2024-12-19",
+    "canonical_url": "https://www.anthropic.com/research/building-effective-agents",
+    "evidence_url": "https://www.anthropic.com/research/building-effective-agents"
+  },
+  "source:anthropic:claude-code-auto-mode": {
+    "published_at": "2026-03-25",
+    "evidence_url": "https://www.anthropic.com/engineering"
+  },
+  "source:anthropic:claude-code-sandboxing": {
+    "published_at": "2025-10-20",
+    "evidence_url": "https://www.anthropic.com/engineering"
+  },
+  "source:anthropic:claude-think-tool": {
+    "published_at": "2025-03-20",
+    "evidence_url": "https://www.anthropic.com/research/claude-think-tool"
+  },
+  "source:anthropic:code-execution-with-mcp": {
+    "published_at": "2025-11-04",
+    "evidence_url": "https://www.anthropic.com/engineering"
+  },
+  "source:anthropic:contextual-retrieval": {
+    "published_at": "2024-09-19",
+    "canonical_url": "https://www.anthropic.com/research/contextual-retrieval",
+    "evidence_url": "https://www.anthropic.com/research/contextual-retrieval"
+  },
+  "source:anthropic:demystifying-evals-for-ai-agents": {
+    "published_at": "2026-01-09",
+    "evidence_url": "https://www.anthropic.com/engineering"
+  },
+  "source:anthropic:desktop-extensions": {
+    "published_at": "2025-06-26",
+    "evidence_url": "https://www.anthropic.com/engineering"
+  },
+  "source:anthropic:effective-context-engineering-for-ai-agents": {
+    "published_at": "2025-09-29",
+    "evidence_url": "https://www.anthropic.com/engineering"
+  },
+  "source:anthropic:effective-harnesses-for-long-running-agents": {
+    "published_at": "2025-11-26",
+    "evidence_url": "https://www.anthropic.com/engineering"
+  },
+  "source:anthropic:equipping-agents-for-the-real-world-with-agent-skills": {
+    "published_at": "2025-10-16",
+    "evidence_url": "https://www.anthropic.com/engineering"
+  },
+  "source:anthropic:eval-awareness-browsecomp": {
+    "published_at": "2026-03-06",
+    "evidence_url": "https://www.anthropic.com/engineering"
+  },
+  "source:anthropic:harness-design-long-running-apps": {
+    "published_at": "2026-03-24",
+    "evidence_url": "https://www.anthropic.com/engineering"
+  },
+  "source:anthropic:infrastructure-noise": {
+    "published_at": "2026-02-05",
+    "evidence_url": "https://www.anthropic.com/engineering"
+  },
+  "source:anthropic:managed-agents": {
+    "published_at": "2026-04-08",
+    "evidence_url": "https://www.anthropic.com/engineering"
+  },
+  "source:anthropic:multi-agent-research-system": {
+    "published_at": "2025-06-13",
+    "canonical_url": "https://www.anthropic.com/research/multi-agent-research-system",
+    "evidence_url": "https://www.anthropic.com/research/multi-agent-research-system"
+  },
+  "source:anthropic:swe-bench-sonnet": {
+    "published_at": "2025-01-06",
+    "evidence_url": "https://www.anthropic.com/research/swe-bench-sonnet"
+  },
+  "source:anthropic:writing-tools-for-agents": {
+    "published_at": "2025-09-11",
+    "evidence_url": "https://www.anthropic.com/engineering"
+  }
+}

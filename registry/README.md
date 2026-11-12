@@ -1,24 +1,35 @@
-# Registry — Phase 1
+# Registry — Phase 2: metadata and provenance
 
-`records.jsonl` is the **single authoritative inventory** of currently managed content files. Each JSON line represents one source article, research note, or PDF; metadata is intentionally conservative at bootstrap time.
+**Authority:** \`registry/records.jsonl\` holds stable identities, file paths, source metadata, local-site publication status and links. Legacy \`_meta/\`, \`index.json\` and article frontmatter are **read-only inputs** during this phase. They are not removed. The audit is \`registry/audit-report.json\`.
 
-- Stable `id` identifies the content; `path` is only its current location. Renaming a file must update its registered path **without changing its ID**.
-- `review_status=unreviewed` means no human provenance check has been performed. It does **not** mean the content was never displayed on the website.
-- `publication_status=unspecified` means publication status has not yet been reconciled with `docs/`.
-- Never infer `canonical_url` or publication dates from a filename. Missing facts should remain absent until verified.
-- `related_ids` is only automatically added for explicitly named `(musk-interrogation)` notes pointing to a matching source/paper; other relationships require explicit review.
-- Legacy `_meta/`, top-level `index.json`, existing frontmatter, and HTML are retained as migration inputs, **not** authoritative for new edits.
+## Verification is field-level, not assumed
 
-Commands (Python 3.11+, no runtime dependencies):
+- Data extracted from Markdown, old JSON or the old index is **provisional**. It is not automatically certified as the original publisher's truth.
+- A small, human-checked collection of official URLs and dates lives in \`registry/verified-overrides.json\`. The \`evidence_url\` points to the actual primary-source page. Its values override old local metadata, but \`review_status\` remains \`unreviewed\` until full editorial review.
+- Source-precedence for provisional data: article frontmatter → article header → corresponding \`_meta/\` JSON → Anthropic \`index.json\` → Markdown H1 (title only). Verified overrides take precedence over all of these.
+- Every chosen field can be traced to \`metadata_provenance\`. Conflicting candidates are reported, **not erased**; unsupported/unknown dates and authors are omitted.
+- Research notes have **their own title**; they do not inherit the original author's byline, publication date or canonical source URL. A link to an original source is represented in \`related_ids\`.
+- \`source_sha256\` fingerprints the current file and is useful for detecting accidental content changes. It is not a publisher-authentication proof.
+- \`publication_status=published\` here means **a matching static HTML asset is present under \`docs/\`**, which is the GitHub Pages input. It does not guarantee public deployment or that editorial review passed. \`not_published\` means no matching HTML was found; \`archived\` is respected.
+- Duplicated canonical URLs, unmatched legacy metadata, unlinked research notes and unmapped HTML appear in \`audit-report.json\`. These are an **audit queue**, not an excuse to delete historical content.
+- The registry is the only authoritative index for **new workflows**; do not hand-edit generated metadata. Make editorial changes in \`verified-overrides.json\` or source files and regenerate.
 
-```bash
-PYTHONPATH=src python -m ael.registry report
+## Commands
+
+Python 3.11+, standard library only:
+
+\`\`\`bash
+PYTHONPATH=src python -m ael.reconcile report
+PYTHONPATH=src python -m ael.reconcile apply  # deterministically regenerate records + audit
+PYTHONPATH=src python -m ael.reconcile check  # fail on drift or broken references
 PYTHONPATH=src python -m ael.registry validate
-PYTHONPATH=src python -m ael.registry sync           # preview new content records
-PYTHONPATH=src python -m ael.registry sync --write   # append records for new content
 PYTHONPATH=src python -m unittest discover -s tests -v
-```
+\`\`\`
 
-`sync` never deletes or silently renames existing IDs. Move existing files only after updating their registry paths in the same commit. CI checks coverage, referential integrity, and missing paths. `docs/` is untouched in Phase 1.
+## Migration invariants
 
-Next phase: reconcile verified canonical URLs, publication dates, source hashes, and site visibility; defer filesystem moves and static-site regeneration until link-preservation tests exist.
+1. No original Markdown, old metadata, PDF or HTML gets deleted or rewritten by the reconciler.
+2. Stable IDs and existing explicit relationships are preserved, including when filenames later change.
+3. The audit records source conflicts and coverage gaps instead of guessing missing facts.
+4. No automatic upgrade to \`review_status=verified\`.
+5. The website is **not regenerated** in this phase; static-site link preservation belongs to a later migration.

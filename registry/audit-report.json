@@ -4923,13 +4923,19 @@
       "url": "https://www.anthropic.com/engineering/building-c-compiler"
     },
     {
+      "existing_related_ids": [
+        "source:anthropic:building-effective-agents"
+      ],
       "id": "note:anthropic:building-effective-agents:interrogation",
-      "status": "external_only",
+      "status": "linked_by_id_url_mismatch",
       "url": "https://www.anthropic.com/engineering/building-effective-agents"
     },
     {
+      "existing_related_ids": [
+        "source:anthropic:contextual-retrieval"
+      ],
       "id": "note:anthropic:contextual-retrieval:interrogation",
-      "status": "external_only",
+      "status": "linked_by_id_url_mismatch",
       "url": "https://www.anthropic.com/engineering/contextual-retrieval"
     },
     {
@@ -4975,8 +4981,11 @@
       "url": "https://www.anthropic.com/engineering/managed-agents"
     },
     {
+      "existing_related_ids": [
+        "source:anthropic:multi-agent-research-system"
+      ],
       "id": "note:anthropic:multi-agent-research-system:interrogation",
-      "status": "external_only",
+      "status": "linked_by_id_url_mismatch",
       "url": "https://www.anthropic.com/engineering/multi-agent-research-system"
     },
     {
@@ -5524,13 +5533,17 @@
       "status": "no_explicit_citation"
     },
     {
+      "existing_related_ids": [
+        "paper:transformer"
+      ],
       "id": "note:papers:transformer:interrogation",
-      "status": "external_only",
+      "status": "linked_by_id_url_mismatch",
       "url": "https://arxiv.org/abs/1706.03762"
     }
   ],
   "note_reference_status": {
-    "external_only": 24,
+    "external_only": 20,
+    "linked_by_id_url_mismatch": 4,
     "matched": 51,
     "no_explicit_citation": 48
   },

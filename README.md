@@ -1,6 +1,6 @@
 # Engineering Blogs 汇总
 
-> **Architecture migration (Phase 6):** The reconciled source-of-truth inventory and audit live in [registry/records.jsonl](registry/records.jsonl). Use [scripts/README.md](scripts/README.md) for the supported dry-run-first CLI, and [registry/README.md](registry/README.md) for provenance and audits. All 123 curated/research notes are now consolidated under `content/research/article-notes/` with old Markdown compatibility links; publisher source articles and historical HTML remain in place. The [Knowledge Explorer](https://1998x-stack.github.io/anthropic-engineering-learn/explore/) now provides a Registry-wide search portal.
+> **Architecture migration (Phase 7):** The reconciled source-of-truth inventory and audit live in [registry/records.jsonl](registry/records.jsonl). Use [scripts/README.md](scripts/README.md) for the supported dry-run-first CLI, and [registry/README.md](registry/README.md) for provenance and audits. All 123 curated/research notes are now consolidated under `content/research/article-notes/` with old Markdown compatibility links; publisher source articles and historical HTML remain in place. The [Knowledge Explorer](https://1998x-stack.github.io/anthropic-engineering-learn/explore/) now provides a Registry-wide search portal.
 
 AI/Infra 领域工程知识合集：Registry 登记 **991 篇来源文章、123 篇研究笔记、5 份 PDF**，按来源保留现有目录。
 
@@ -78,9 +78,9 @@ Anthropic 官方工程实践文章，按主题分类。
 
 ## Knowledge Explorer · 跨来源检索
 
-打开 [知识检索门户](https://1998x-stack.github.io/anthropic-engineering-learn/explore/)：可按来源、内容类型、主题、站点发布状态和来源关联状态筛选 **1,119 条 Registry 记录**（阶段 6 基线）。尚未发布 HTML 的条目提供 GitHub Markdown / PDF 跳转，已有 HTML 的条目继续使用原有页面。主题是基于关键词的建议，**不是人工审核标签，也不是向量检索**。
+打开 [知识检索门户](https://1998x-stack.github.io/anthropic-engineering-learn/explore/)：可按来源、内容类型、主题、站点发布状态和来源关联状态筛选 **1,119 条 Registry 记录**（阶段 6 基线）。尚未发布 HTML 的条目提供 GitHub Markdown / PDF 跳转，已有 HTML 的条目继续使用原有页面。支持按需加载的完整 Markdown 关键词检索（PDF 仅可检索元数据，非语义向量检索）。主题默认是关键词建议；只有经编辑提供 SHA-256 证据与审阅记录的决策才显示为已审核。
 
-关联项目仅作为工程仓库链接，不声称实验结果已验证。实现与证据政策见 [docs/explore/README.md](docs/explore/README.md)、[registry/topics.json](registry/topics.json) 与 [registry/projects.json](registry/projects.json)。
+67 篇未建立本地原文关联的笔记已列入 [来源核验队列](registry/review-queue.json)，另有 4 篇需检查历史 URL 差异。尚无充足证据的记录不会自动关联。关联项目仅作为工程仓库链接，不声称实验结果已验证。实现与证据政策见 [docs/explore/README.md](docs/explore/README.md)、[registry/topics.json](registry/topics.json) 与 [registry/projects.json](registry/projects.json)。
 
 ## 工具
 

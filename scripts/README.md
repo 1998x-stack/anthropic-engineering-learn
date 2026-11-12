@@ -48,3 +48,8 @@ Historical scripts are *not* part of the supported pipeline or CI:
 Do **not** run these against the main content tree without a snapshot/diff review. This stage fixes two known portability defects but does not certify legacy scrapers safe; migration to source-specific adapters is future work.
 
 See [registry/README.md](../registry/README.md) for provenance and verified-overrides rules.
+
+## Phase 7 commands
+
+`PYTHONPATH=src python -m ael review --check` validates the source-link triage queue and topic decision evidence.
+`PYTHONPATH=src python -m ael fulltext --write` generates full Markdown search shards for the static Explorer; `... fulltext --check` guards against missing or stale outputs. The only written files are JSON under `docs/explore/data/` for this new subcommand.

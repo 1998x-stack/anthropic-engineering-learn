@@ -3,3 +3,4 @@
 docs/catalog.json
 __pycache__/
 *.py[cod]
+docs/explore/data/

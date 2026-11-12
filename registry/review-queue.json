@@ -1,0 +1,760 @@
+{
+  "items": [
+    {
+      "explicit_reference_url": "https://www.anthropic.com/engineering/building-effective-agents",
+      "has_local_source": true,
+      "id": "note:anthropic:building-effective-agents:interrogation",
+      "path": "content/research/article-notes/anthropic/building-effective-agents(musk-interrogation).md",
+      "reference_status": "linked_by_id_url_mismatch",
+      "related_ids": [
+        "source:anthropic:building-effective-agents"
+      ],
+      "required_action": "Verify official URL redirect or archival alias; preserve current stable-ID link",
+      "source": "anthropic",
+      "source_sha256": "7b71a7766fbeb3784a1a2a720c7130b9f193798301f9552abfc6edaec24826e2",
+      "title": "马斯克式决策审问：构建有效的 AI Agent"
+    },
+    {
+      "explicit_reference_url": "https://www.anthropic.com/engineering/contextual-retrieval",
+      "has_local_source": true,
+      "id": "note:anthropic:contextual-retrieval:interrogation",
+      "path": "content/research/article-notes/anthropic/contextual-retrieval(musk-interrogation).md",
+      "reference_status": "linked_by_id_url_mismatch",
+      "related_ids": [
+        "source:anthropic:contextual-retrieval"
+      ],
+      "required_action": "Verify official URL redirect or archival alias; preserve current stable-ID link",
+      "source": "anthropic",
+      "source_sha256": "39004e1e5f498fb2b6b8f9bfff87809daf7e5f9e70d3fd12c3d912e3202e86a1",
+      "title": "马斯克式决策审问：AI 系统中的上下文检索"
+    },
+    {
+      "explicit_reference_url": "https://www.anthropic.com/engineering/multi-agent-research-system",
+      "has_local_source": true,
+      "id": "note:anthropic:multi-agent-research-system:interrogation",
+      "path": "content/research/article-notes/anthropic/multi-agent-research-system(musk-interrogation).md",
+      "reference_status": "linked_by_id_url_mismatch",
+      "related_ids": [
+        "source:anthropic:multi-agent-research-system"
+      ],
+      "required_action": "Verify official URL redirect or archival alias; preserve current stable-ID link",
+      "source": "anthropic",
+      "source_sha256": "0016ea7211bcf0c1ba2dd48dc381c46986d094a389bec77250b5a910dc63488f",
+      "title": "马斯克式决策审问：Anthropic 多智能体研究系统"
+    },
+    {
+      "explicit_reference_url": "https://arxiv.org/abs/1706.03762",
+      "has_local_source": true,
+      "id": "note:papers:transformer:interrogation",
+      "path": "content/research/article-notes/papers/transformer(musk-interrogation).md",
+      "reference_status": "linked_by_id_url_mismatch",
+      "related_ids": [
+        "paper:transformer"
+      ],
+      "required_action": "Verify official URL redirect or archival alias; preserve current stable-ID link",
+      "source": "papers",
+      "source_sha256": "53ba869d7219cb2283272f178347d6a11b23d8fb395c32260124e225312f4db5",
+      "title": "马斯克式决策审问：注意力即一切——Transformer 的诞生"
+    },
+    {
+      "explicit_reference_url": "https://www.langchain.com/blog/better-harness-eval-driven-hill-climbing",
+      "has_local_source": false,
+      "id": "note:langchain:11-better-harness-eval-driven-hill-climbing",
+      "path": "content/research/article-notes/langchain/11-better-harness-eval-driven-hill-climbing.md",
+      "reference_status": "external_only",
+      "required_action": "Verify cited original, ingest it if appropriate, then link by exact source evidence",
+      "source": "langchain",
+      "source_sha256": "a8e17c7e1c8bf66344e403df1c7b96096153607d8af7374c9e1dec6aaae847e1",
+      "title": "Better-Harness：用评估驱动的爬山法持续优化 Agent 线束"
+    },
+    {
+      "explicit_reference_url": "https://www.langchain.com/blog/the-runtime-behind-production-deep-agents",
+      "has_local_source": false,
+      "id": "note:langchain:14-runtime-behind-production-deep-agents",
+      "path": "content/research/article-notes/langchain/14-runtime-behind-production-deep-agents.md",
+      "reference_status": "external_only",
+      "required_action": "Verify cited original, ingest it if appropriate, then link by exact source evidence",
+      "source": "langchain",
+      "source_sha256": "0282bd82401ef17901626f50ca3a3728f5fd7eddb5574d6465f52d8a8105b464",
+      "title": "生产级深度 Agent 背后的运行时：线束之下的 11 层基础设施"
+    },
+    {
+      "explicit_reference_url": "https://www.langchain.com/blog/context-management-for-deep-agents",
+      "has_local_source": false,
+      "id": "note:langchain:16-context-management-for-deepagents",
+      "path": "content/research/article-notes/langchain/16-context-management-for-deepagents.md",
+      "reference_status": "external_only",
+      "required_action": "Verify cited original, ingest it if appropriate, then link by exact source evidence",
+      "source": "langchain",
+      "source_sha256": "6a4ca8e52bc5749ac1823263f5fe996aee25ecc5a40470135dcc434e6a0221b0",
+      "title": "深度 Agent 的上下文管理：让长任务 Agent 不迷路、不失忆"
+    },
+    {
+      "explicit_reference_url": "https://www.langchain.com/blog/the-agent-improvement-loop-starts-with-a-trace",
+      "has_local_source": false,
+      "id": "note:langchain:21-traces-start-agent-improvement-loop",
+      "path": "content/research/article-notes/langchain/21-traces-start-agent-improvement-loop.md",
+      "reference_status": "external_only",
+      "required_action": "Verify cited original, ingest it if appropriate, then link by exact source evidence",
+      "source": "langchain",
+      "source_sha256": "78987f291308f43d538762f4fab2e67ac98b6b2dfb1f3e5029cd986418714a4f",
+      "title": "Agent 改进循环从追踪开始 (The Agent Improvement Loop Starts with a Trace)"
+    },
+    {
+      "explicit_reference_url": "https://blog.langchain.dev/the-rise-of-context-engineering",
+      "has_local_source": false,
+      "id": "note:langchain:22-the-rise-of-context-engineering",
+      "path": "content/research/article-notes/langchain/22-the-rise-of-context-engineering.md",
+      "reference_status": "external_only",
+      "required_action": "Verify cited original, ingest it if appropriate, then link by exact source evidence",
+      "source": "langchain",
+      "source_sha256": "2efb8cf71aa6dcdc17807e81295e6aee1ccc23c90e479504bd95cd0dea211472",
+      "title": "上下文工程\"的崛起 (The Rise of \"Context Engineering\")"
+    },
+    {
+      "explicit_reference_url": "https://www.langchain.com/blog/deep-agents-deploy-open-alternative",
+      "has_local_source": false,
+      "id": "note:langchain:24-deep-agents-deploy-open-alternative",
+      "path": "content/research/article-notes/langchain/24-deep-agents-deploy-open-alternative.md",
+      "reference_status": "external_only",
+      "required_action": "Verify cited original, ingest it if appropriate, then link by exact source evidence",
+      "source": "langchain",
+      "source_sha256": "b1ce40c7b3973f08b054151033f37d4c1501c528def24ec94b224e883fc90cf1",
+      "title": "Deep Agents Deploy：一条命令部署生产级 Agent 的开放替代方案"
+    },
+    {
+      "explicit_reference_url": "https://www.langchain.com/blog/evaluating-deep-agents-cli-on-terminal-bench",
+      "has_local_source": false,
+      "id": "note:langchain:27-evaluating-deepagents-cli-on-terminal-bench",
+      "path": "content/research/article-notes/langchain/27-evaluating-deepagents-cli-on-terminal-bench.md",
+      "reference_status": "external_only",
+      "required_action": "Verify cited original, ingest it if appropriate, then link by exact source evidence",
+      "source": "langchain",
+      "source_sha256": "ebccadd7e7ab3f2efbedcff76c04352f32fb11b8ef2d9d5830869227e7ba66e3",
+      "title": "在 Terminal Bench 2.0 上评估 Deep Agents CLI：基线测量与评估基础设施"
+    },
+    {
+      "explicit_reference_url": "https://www.langchain.com/blog/agent-frameworks-runtimes-and-harnesses",
+      "has_local_source": false,
+      "id": "note:langchain:28-agent-frameworks-runtimes-and-harnesses",
+      "path": "content/research/article-notes/langchain/28-agent-frameworks-runtimes-and-harnesses.md",
+      "reference_status": "external_only",
+      "required_action": "Verify cited original, ingest it if appropriate, then link by exact source evidence",
+      "source": "langchain",
+      "source_sha256": "4b1952ae9f4cd31f0cb456649569924755cef2bb3420727e7360dbdac971bf6d",
+      "title": "Agent 基础设施的三层架构：框架、运行时与线束"
+    },
+    {
+      "explicit_reference_url": "https://www.langchain.com/blog/how-moda-builds-design-agents",
+      "has_local_source": false,
+      "id": "note:langchain:30-how-moda-builds-design-agents",
+      "path": "content/research/article-notes/langchain/30-how-moda-builds-design-agents.md",
+      "reference_status": "external_only",
+      "required_action": "Verify cited original, ingest it if appropriate, then link by exact source evidence",
+      "source": "langchain",
+      "source_sha256": "2e7c4fc55f5860498ccb5f6c7436ecb3914ecc1d4607260d4f391b9db19f8aea",
+      "title": "Moda 如何用 Deep Agents 构建生产级 AI 设计 Agent"
+    },
+    {
+      "explicit_reference_url": "https://www.langchain.com/blog/building-due-diligence-agent",
+      "has_local_source": false,
+      "id": "note:langchain:33-building-due-diligence-agent",
+      "path": "content/research/article-notes/langchain/33-building-due-diligence-agent.md",
+      "reference_status": "external_only",
+      "required_action": "Verify cited original, ingest it if appropriate, then link by exact source evidence",
+      "source": "langchain",
+      "source_sha256": "d01f115ef4b770892f709a17005b1daa79b8727dd822473ea89a34eca82feee3",
+      "title": "构建企业尽职调查 Agent：Deep Agents + LangSmith + 并行子代理"
+    },
+    {
+      "explicit_reference_url": "https://www.langchain.com/blog/agentic-engineering-how-swarms-of-ai-agents-are-redefining-software-engineering",
+      "has_local_source": false,
+      "id": "note:langchain:34-agentic-engineering-redefining-software",
+      "path": "content/research/article-notes/langchain/34-agentic-engineering-redefining-software.md",
+      "reference_status": "external_only",
+      "required_action": "Verify cited original, ingest it if appropriate, then link by exact source evidence",
+      "source": "langchain",
+      "source_sha256": "a3304e5c3620e1f3f025eb0a022c963c3927a76235f2341b7a913281ac572cc3",
+      "title": "Agentic Engineering：当 AI Agent 群体重新定义软件工程"
+    },
+    {
+      "explicit_reference_url": "https://www.langchain.com/blog/agent-observability-powers-evaluation",
+      "has_local_source": false,
+      "id": "note:langchain:36-agent-observability-powers-evaluation",
+      "path": "content/research/article-notes/langchain/36-agent-observability-powers-evaluation.md",
+      "reference_status": "external_only",
+      "required_action": "Verify cited original, ingest it if appropriate, then link by exact source evidence",
+      "source": "langchain",
+      "source_sha256": "c8f7bdfc1c266d6e546caa445b251ad4521427c0550c5a4cd8131e5d71c73935",
+      "title": "Agent 可观测性驱动 Agent 评估 (Agent Observability Powers Agent Evaluation)"
+    },
+    {
+      "explicit_reference_url": "https://blog.langchain.dev/what-is-an-agent",
+      "has_local_source": false,
+      "id": "note:langchain:37-what-is-an-agent",
+      "path": "content/research/article-notes/langchain/37-what-is-an-agent.md",
+      "reference_status": "external_only",
+      "required_action": "Verify cited original, ingest it if appropriate, then link by exact source evidence",
+      "source": "langchain",
+      "source_sha256": "1c09c0403042504586c448649d6570d4d0310e63baee447ea00e76e0ed28676d",
+      "title": "什么是 Agent？—— 从\"听话工具\"到\"自主决策\"的光谱"
+    },
+    {
+      "explicit_reference_url": "https://blog.langchain.dev/planning-for-agents",
+      "has_local_source": false,
+      "id": "note:langchain:38-planning-for-agents",
+      "path": "content/research/article-notes/langchain/38-planning-for-agents.md",
+      "reference_status": "external_only",
+      "required_action": "Verify cited original, ingest it if appropriate, then link by exact source evidence",
+      "source": "langchain",
+      "source_sha256": "876339b150320a454c19e78f25ce7c463e4aa2ae2d49f5b342fcb55aeee7a220",
+      "title": "Agent 的规划与推理：让 AI 学会\"想清楚再做"
+    },
+    {
+      "explicit_reference_url": "https://blog.langchain.dev/agent-protocol-interoperability",
+      "has_local_source": false,
+      "id": "note:langchain:42-agent-protocol-interoperability",
+      "path": "content/research/article-notes/langchain/42-agent-protocol-interoperability.md",
+      "reference_status": "external_only",
+      "required_action": "Verify cited original, ingest it if appropriate, then link by exact source evidence",
+      "source": "langchain",
+      "source_sha256": "396a26c082252462ec4eec5cf93f1a1d738714aa811f42215cd7438e0150c121",
+      "title": "Agent Protocol：Agent 互操作标准"
+    },
+    {
+      "explicit_reference_url": "https://blog.langchain.dev/execute-code-with-sandboxes",
+      "has_local_source": false,
+      "id": "note:langchain:43-execute-code-with-sandboxes",
+      "path": "content/research/article-notes/langchain/43-execute-code-with-sandboxes.md",
+      "reference_status": "external_only",
+      "required_action": "Verify cited original, ingest it if appropriate, then link by exact source evidence",
+      "source": "langchain",
+      "source_sha256": "151f3c9b7bcefce903bc224a082d23d064ebca25e21623f668d4cc8708e3ee52",
+      "title": "用沙箱执行代码：让 Agent 安全地写代码、跑代码"
+    },
+    {
+      "explicit_reference_url": "https://blog.langchain.dev/",
+      "has_local_source": false,
+      "id": "note:langchain:44-two-patterns-agents-connect-sandboxes",
+      "path": "content/research/article-notes/langchain/44-two-patterns-agents-connect-sandboxes.md",
+      "reference_status": "external_only",
+      "required_action": "Verify cited original, ingest it if appropriate, then link by exact source evidence",
+      "source": "langchain",
+      "source_sha256": "37f6504c34ccd3ad448bee6d58b4aa8afb34399b2c0d2f1fd084675efc4087c7",
+      "title": "Agent 连接沙箱的两种模式"
+    },
+    {
+      "explicit_reference_url": "https://www.langchain.com/blog/how-coding-agents-reshape-epd",
+      "has_local_source": false,
+      "id": "note:langchain:48-how-coding-agents-reshape-epd",
+      "path": "content/research/article-notes/langchain/48-how-coding-agents-reshape-epd.md",
+      "reference_status": "external_only",
+      "required_action": "Verify cited original, ingest it if appropriate, then link by exact source evidence",
+      "source": "langchain",
+      "source_sha256": "9d562f338bfb5e1f323177bf5c4e8378d0a00265918f4ce03d4f1471907e05c8",
+      "title": "编程 Agent 如何重塑工程、产品与设计"
+    },
+    {
+      "explicit_reference_url": "https://blog.langchain.dev/what-is-a-cognitive-architecture",
+      "has_local_source": false,
+      "id": "note:langchain:49-what-is-a-cognitive-architecture",
+      "path": "content/research/article-notes/langchain/49-what-is-a-cognitive-architecture.md",
+      "reference_status": "external_only",
+      "required_action": "Verify cited original, ingest it if appropriate, then link by exact source evidence",
+      "source": "langchain",
+      "source_sha256": "17fe9c8953e950f79e946d21d6013d6ee1098c5fbeeae413b166215c5c90b77b",
+      "title": "什么是认知架构"
+    },
+    {
+      "explicit_reference_url": "https://blog.langchain.dev/mcp-fad-or-fixture",
+      "has_local_source": false,
+      "id": "note:langchain:50-mcp-fad-or-fixture",
+      "path": "content/research/article-notes/langchain/50-mcp-fad-or-fixture.md",
+      "reference_status": "external_only",
+      "required_action": "Verify cited original, ingest it if appropriate, then link by exact source evidence",
+      "source": "langchain",
+      "source_sha256": "df66793d0520cc6042be12c4a207244516c2e21db5199b2ab9de9b6258e34e3e",
+      "title": "MCP：昙花一现还是未来标准？"
+    },
+    {
+      "has_local_source": false,
+      "id": "note:langchain:45-autonomous-context-compression",
+      "path": "content/research/article-notes/langchain/45-autonomous-context-compression.md",
+      "reference_status": "no_explicit_citation",
+      "required_action": "Find and document the original citation; do not infer from title alone",
+      "source": "langchain",
+      "source_sha256": "9a5bb9900e08276d03bc5b009ee2967772e6d9f8580822f676a5d6a4f164dd48",
+      "title": "自主上下文压缩：让 Agent 自己决定何时\"清理记忆"
+    },
+    {
+      "has_local_source": false,
+      "id": "note:langchain:47-open-deep-research",
+      "path": "content/research/article-notes/langchain/47-open-deep-research.md",
+      "reference_status": "no_explicit_citation",
+      "required_action": "Find and document the original citation; do not infer from title alone",
+      "source": "langchain",
+      "source_sha256": "2f046a0309e12dd3a36636700895e32a2b9c3393caf13641b9f897c8324256b8",
+      "title": "Open Deep Research：开源深度研究智能体"
+    },
+    {
+      "has_local_source": false,
+      "id": "note:langchain:52-ux-for-agents-chat",
+      "path": "content/research/article-notes/langchain/52-ux-for-agents-chat.md",
+      "reference_status": "no_explicit_citation",
+      "required_action": "Find and document the original citation; do not infer from title alone",
+      "source": "langchain",
+      "source_sha256": "301853bdbc5243d5ea2c5eb6c6345e95d34e2aeca0fd0adf31491613a89181cb",
+      "title": "AI Agent 的用户体验（一）：聊天界面"
+    },
+    {
+      "has_local_source": false,
+      "id": "note:langchain:53-ux-for-agents-ambient",
+      "path": "content/research/article-notes/langchain/53-ux-for-agents-ambient.md",
+      "reference_status": "no_explicit_citation",
+      "required_action": "Find and document the original citation; do not infer from title alone",
+      "source": "langchain",
+      "source_sha256": "dd086082730c7ad44e29c7412acf1f65c2b39ee0b347579c73a918c39ecc3fdd",
+      "title": "AI Agent 的用户体验（二）：环境式 Agent"
+    },
+    {
+      "has_local_source": false,
+      "id": "note:langchain:54-ux-for-agents-background",
+      "path": "content/research/article-notes/langchain/54-ux-for-agents-background.md",
+      "reference_status": "no_explicit_citation",
+      "required_action": "Find and document the original citation; do not infer from title alone",
+      "source": "langchain",
+      "source_sha256": "13f5df927040fd836ef430b95b432fca85540cfbc5e2de2b5ffb545f0434990d",
+      "title": "AI Agent 的用户体验（三）：电子表格、生成式 UI 和协作式交互"
+    },
+    {
+      "has_local_source": false,
+      "id": "note:langchain:55-openais-bet-on-cognitive-architecture",
+      "path": "content/research/article-notes/langchain/55-openais-bet-on-cognitive-architecture.md",
+      "reference_status": "no_explicit_citation",
+      "required_action": "Find and document the original citation; do not infer from title alone",
+      "source": "langchain",
+      "source_sha256": "1241aff38345ab22a05ccdeefcb3a4bec011506780b262b9e94b51c15518d646",
+      "title": "OpenAI 押注认知架构：一场关于 AI 应用「大脑」的战略豪赌"
+    },
+    {
+      "has_local_source": false,
+      "id": "note:langchain:56-why-agent-infrastructure",
+      "path": "content/research/article-notes/langchain/56-why-agent-infrastructure.md",
+      "reference_status": "no_explicit_citation",
+      "required_action": "Find and document the original citation; do not infer from title alone",
+      "source": "langchain",
+      "source_sha256": "ad50ef06bc8f124c9f45f65a4445158bdf8b2beb98e91a33b07865b720fedf30",
+      "title": "为什么 Agent 基础设施至关重要：你的 AI 应用需要新的「地基」"
+    },
+    {
+      "has_local_source": false,
+      "id": "note:langchain:57-outsource-infrastructure-own-architecture",
+      "path": "content/research/article-notes/langchain/57-outsource-infrastructure-own-architecture.md",
+      "reference_status": "no_explicit_citation",
+      "required_action": "Find and document the original citation; do not infer from title alone",
+      "source": "langchain",
+      "source_sha256": "a0b878e067f3f358640f601a51917fc107d8de30b7f4212a1c7b11d3e65a1f92",
+      "title": "基础设施外包，认知架构自研：AI 应用的战略选择"
+    },
+    {
+      "has_local_source": false,
+      "id": "note:langchain:58-reflection-agents",
+      "path": "content/research/article-notes/langchain/58-reflection-agents.md",
+      "reference_status": "no_explicit_citation",
+      "required_action": "Find and document the original citation; do not infer from title alone",
+      "source": "langchain",
+      "source_sha256": "e22f8cae7a899d87ea5a802ab589b3a5c5af90418f8b9acae20354f068cd8a28",
+      "title": "反思型智能体 (Reflection Agents)"
+    },
+    {
+      "has_local_source": false,
+      "id": "note:langchain:59-planning-agents",
+      "path": "content/research/article-notes/langchain/59-planning-agents.md",
+      "reference_status": "no_explicit_citation",
+      "required_action": "Find and document the original citation; do not infer from title alone",
+      "source": "langchain",
+      "source_sha256": "d04c0bfa2a85380391a0a0cda903cefb603ba899fb912b4f3dcf92f315acbb0e",
+      "title": "规划型智能体 (Planning Agents)"
+    },
+    {
+      "has_local_source": false,
+      "id": "note:langchain:60-how-and-when-multi-agent",
+      "path": "content/research/article-notes/langchain/60-how-and-when-multi-agent.md",
+      "reference_status": "no_explicit_citation",
+      "required_action": "Find and document the original citation; do not infer from title alone",
+      "source": "langchain",
+      "source_sha256": "e3bba5a0134792506fa36f76dcb018f4ae5c1d6fda5162d2df19fdd6cde01dcf",
+      "title": "何时以及如何构建多智能体系统 (Multi-Agent Systems)"
+    },
+    {
+      "has_local_source": false,
+      "id": "note:langchain:61-winning-in-ai-new-stack",
+      "path": "content/research/article-notes/langchain/61-winning-in-ai-new-stack.md",
+      "reference_status": "no_explicit_citation",
+      "required_action": "Find and document the original citation; do not infer from title alone",
+      "source": "langchain",
+      "source_sha256": "1cfbc671683f96a407f978e02cd918422cacc626a2e201859d1b129be4c8099b",
+      "title": "赢在 AI 时代，先搞定新技术栈"
+    },
+    {
+      "has_local_source": false,
+      "id": "note:langchain:62-introducing-polly-ai-agent-engineer",
+      "path": "content/research/article-notes/langchain/62-introducing-polly-ai-agent-engineer.md",
+      "reference_status": "no_explicit_citation",
+      "required_action": "Find and document the original citation; do not infer from title alone",
+      "source": "langchain",
+      "source_sha256": "088775d5227cdb9d97971e6da18a70603f975857defcd1e9ee5be0ae4ce68ecf",
+      "title": "Polly：你的 AI Agent 调试搭档"
+    },
+    {
+      "has_local_source": false,
+      "id": "note:langchain:63-open-models-crossed-threshold",
+      "path": "content/research/article-notes/langchain/63-open-models-crossed-threshold.md",
+      "reference_status": "no_explicit_citation",
+      "required_action": "Find and document the original citation; do not infer from title alone",
+      "source": "langchain",
+      "source_sha256": "35d6fa4b441d0c32e542ce69330f153a671c2f52d69a98db3706847179fb3b7e",
+      "title": "开源模型已经跨过临界点"
+    },
+    {
+      "has_local_source": false,
+      "id": "note:langchain:64-how-to-think-about-agent-frameworks",
+      "path": "content/research/article-notes/langchain/64-how-to-think-about-agent-frameworks.md",
+      "reference_status": "no_explicit_citation",
+      "required_action": "Find and document the original citation; do not infer from title alone",
+      "source": "langchain",
+      "source_sha256": "96c0ab88942a04b12e1b7e958825a31be41a7cd77bcee90106eb62c45defbe6b",
+      "title": "如何正确理解 Agent 框架"
+    },
+    {
+      "has_local_source": false,
+      "id": "note:langchain:65-deconstructing-rag",
+      "path": "content/research/article-notes/langchain/65-deconstructing-rag.md",
+      "reference_status": "no_explicit_citation",
+      "required_action": "Find and document the original citation; do not infer from title alone",
+      "source": "langchain",
+      "source_sha256": "1decea277a9218ba55cd03ba52c354098d33f95b45d9bc60dbe723b974559393",
+      "title": "拆解 RAG：检索增强生成的完整技术地图"
+    },
+    {
+      "has_local_source": false,
+      "id": "note:langchain:66-agent-builder-memory-system",
+      "path": "content/research/article-notes/langchain/66-agent-builder-memory-system.md",
+      "reference_status": "no_explicit_citation",
+      "required_action": "Find and document the original citation; do not infer from title alone",
+      "source": "langchain",
+      "source_sha256": "88824fb701cb104be31f12063e3b4db1caf841b44d7df5cc1cf2fe1477237339",
+      "title": "Agent Builder 的记忆系统是怎么构建的"
+    },
+    {
+      "has_local_source": false,
+      "id": "note:langchain:67-exploring-prompt-optimization",
+      "path": "content/research/article-notes/langchain/67-exploring-prompt-optimization.md",
+      "reference_status": "no_explicit_citation",
+      "required_action": "Find and document the original citation; do not infer from title alone",
+      "source": "langchain",
+      "source_sha256": "3062b98a5be1a4970c294076d3ca4a6856926c6a8c46de801461abbe48db2006",
+      "title": "探索提示词优化：让 AI 自己学会写更好的提示词"
+    },
+    {
+      "has_local_source": false,
+      "id": "note:langchain:68-few-shot-prompting-tool-calling",
+      "path": "content/research/article-notes/langchain/68-few-shot-prompting-tool-calling.md",
+      "reference_status": "no_explicit_citation",
+      "required_action": "Find and document the original citation; do not infer from title alone",
+      "source": "langchain",
+      "source_sha256": "f4659e334c3b8a9fc296da21d6b8227f0740c85b57b6290d8abf2b7c1104e12f",
+      "title": "少样本提示如何提升工具调用性能：用示范教 AI 正确使用工具"
+    },
+    {
+      "has_local_source": false,
+      "id": "note:langchain:69-hidden-metric-ai-product-success",
+      "path": "content/research/article-notes/langchain/69-hidden-metric-ai-product-success.md",
+      "reference_status": "no_explicit_citation",
+      "required_action": "Find and document the original citation; do not infer from title alone",
+      "source": "langchain",
+      "source_sha256": "6090d188a496b2646484ef719aa9a2c2241f9f9232dbf5f0010baf33c585e6c8",
+      "title": "决定 AI 产品成败的隐藏指标：CAIR 用户信心框架"
+    },
+    {
+      "has_local_source": false,
+      "id": "note:langchain:70-building-langgraph",
+      "path": "content/research/article-notes/langchain/70-building-langgraph.md",
+      "reference_status": "no_explicit_citation",
+      "required_action": "Find and document the original citation; do not infer from title alone",
+      "source": "langchain",
+      "source_sha256": "27e78d327df9627da2047241e987935a0444dcc19e740546c505675182dfe25f",
+      "title": "构建 LangGraph：从第一性原理设计 Agent 运行时"
+    },
+    {
+      "has_local_source": false,
+      "id": "note:langchain:71-not-another-workflow-builder",
+      "path": "content/research/article-notes/langchain/71-not-another-workflow-builder.md",
+      "reference_status": "no_explicit_citation",
+      "required_action": "Find and document the original citation; do not infer from title alone",
+      "source": "langchain",
+      "source_sha256": "1fbebff010855d81b0228617392442af0df2a9c3dad608fb7f9dcb18b11dea91",
+      "title": "别再做工作流构建器了"
+    },
+    {
+      "has_local_source": false,
+      "id": "note:langchain:72-memory-for-agents",
+      "path": "content/research/article-notes/langchain/72-memory-for-agents.md",
+      "reference_status": "no_explicit_citation",
+      "required_action": "Find and document the original citation; do not infer from title alone",
+      "source": "langchain",
+      "source_sha256": "bcc870aa0ede59d71e1878c73bb93ab11cde6f13a344c4c6e857e2ad5d7d8bc2",
+      "title": "Agent 的记忆系统"
+    },
+    {
+      "has_local_source": false,
+      "id": "note:langchain:73-introducing-ambient-agents",
+      "path": "content/research/article-notes/langchain/73-introducing-ambient-agents.md",
+      "reference_status": "no_explicit_citation",
+      "required_action": "Find and document the original citation; do not infer from title alone",
+      "source": "langchain",
+      "source_sha256": "685d71d468cf6a51b835de8e737ab5b244b00d041f95c1129328e2086a8710a3",
+      "title": "环境代理：让 AI 不再等你开口"
+    },
+    {
+      "has_local_source": false,
+      "id": "note:langchain:74-agent-middleware-patterns",
+      "path": "content/research/article-notes/langchain/74-agent-middleware-patterns.md",
+      "reference_status": "no_explicit_citation",
+      "required_action": "Find and document the original citation; do not infer from title alone",
+      "source": "langchain",
+      "source_sha256": "18597e905b6ffe524336bdfaa254d6fd255d4db1fb9525214680ce3ec445fcb0",
+      "title": "Agent 中间件：用插件思维驯服复杂代理"
+    },
+    {
+      "has_local_source": false,
+      "id": "note:langchain:75-agent-frameworks-and-observability",
+      "path": "content/research/article-notes/langchain/75-agent-frameworks-and-observability.md",
+      "reference_status": "no_explicit_citation",
+      "required_action": "Find and document the original citation; do not infer from title alone",
+      "source": "langchain",
+      "source_sha256": "825a1c66eef696a57d5b4aaa87994fbbf5d6a0a806563c504eb87a1ded3aa942",
+      "title": "Agent 框架与可观测性：为什么它们必须分开"
+    },
+    {
+      "has_local_source": false,
+      "id": "note:langchain:79-a-chunk-by-any-other-name",
+      "path": "content/research/article-notes/langchain/79-a-chunk-by-any-other-name.md",
+      "reference_status": "no_explicit_citation",
+      "required_action": "Find and document the original citation; do not infer from title alone",
+      "source": "langchain",
+      "source_sha256": "e6da7ec2969c5eaa0d2881ba8576e1977bfee7cb136d6b4e3880fdb0b7fd720e",
+      "title": "结构化文本切分与元数据增强的 RAG"
+    },
+    {
+      "has_local_source": false,
+      "id": "note:langchain:80-graph-metadata-filtering-rag",
+      "path": "content/research/article-notes/langchain/80-graph-metadata-filtering-rag.md",
+      "reference_status": "no_explicit_citation",
+      "required_action": "Find and document the original citation; do not infer from title alone",
+      "source": "langchain",
+      "source_sha256": "60ee17b91317d34ae202a2b27b54b8646f6b79f6466993da6e1778694b5dfc17",
+      "title": "基于图的元数据过滤：提升 RAG 向量搜索的精度"
+    },
+    {
+      "has_local_source": false,
+      "id": "note:langchain:81-query-construction",
+      "path": "content/research/article-notes/langchain/81-query-construction.md",
+      "reference_status": "no_explicit_citation",
+      "required_action": "Find and document the original citation; do not infer from title alone",
+      "source": "langchain",
+      "source_sha256": "afa882c2ab1b983a7e4d51969b19ceb59d7467dc4c800f2effd084fe2064e132",
+      "title": "查询构造：让 LLM 把自然语言变成数据库查询"
+    },
+    {
+      "has_local_source": false,
+      "id": "note:langchain:82-agent-toolkits",
+      "path": "content/research/article-notes/langchain/82-agent-toolkits.md",
+      "reference_status": "no_explicit_citation",
+      "required_action": "Find and document the original citation; do not infer from title alone",
+      "source": "langchain",
+      "source_sha256": "5c3c45b40c8a317dba4b6f876964e72be528323e1c08687ec76a916cb699b26c",
+      "title": "Agent Toolkits: 给 AI 智能体配一套专业工具箱"
+    },
+    {
+      "has_local_source": false,
+      "id": "note:langchain:83-tool-calling-with-langchain",
+      "path": "content/research/article-notes/langchain/83-tool-calling-with-langchain.md",
+      "reference_status": "no_explicit_citation",
+      "required_action": "Find and document the original citation; do not infer from title alone",
+      "source": "langchain",
+      "source_sha256": "f457de7133dec45edd32299a8756dd1788c6e809d781d39bbed0280f65ead484",
+      "title": "Tool Calling with LangChain: 让大模型学会\"打电话\"调用工具"
+    },
+    {
+      "has_local_source": false,
+      "id": "note:langchain:84-command-tool-multi-agent",
+      "path": "content/research/article-notes/langchain/84-command-tool-multi-agent.md",
+      "reference_status": "no_explicit_citation",
+      "required_action": "Find and document the original citation; do not infer from title alone",
+      "source": "langchain",
+      "source_sha256": "bd88fd819f7d0d4e616ef02e6195072e3b6e8fe634ce65a8d8400b65ea3403ae",
+      "title": "Command: LangGraph 多 Agent 架构的新利器"
+    },
+    {
+      "has_local_source": false,
+      "id": "note:langchain:88-in-ai-traces-document-the-app",
+      "path": "content/research/article-notes/langchain/88-in-ai-traces-document-the-app.md",
+      "reference_status": "no_explicit_citation",
+      "required_action": "Find and document the original citation; do not infer from title alone",
+      "source": "langchain",
+      "source_sha256": "235ad0d1bf9a7fe4c1a06c1cf4c77a546881e58ed6eb6a6edf75cb416d45d9b7",
+      "title": "在 AI 时代，追踪记录就是你的应用文档"
+    },
+    {
+      "has_local_source": false,
+      "id": "note:langchain:89-production-monitoring",
+      "path": "content/research/article-notes/langchain/89-production-monitoring.md",
+      "reference_status": "no_explicit_citation",
+      "required_action": "Find and document the original citation; do not infer from title alone",
+      "source": "langchain",
+      "source_sha256": "b895379220f43807f72373ddb792d0f3ced7dc6abebb85f35a5c4224233b205d",
+      "title": "Agent 生产环境监控：如何观测和评估 LLM Agent"
+    },
+    {
+      "has_local_source": false,
+      "id": "note:langchain:90-self-learning-gpts",
+      "path": "content/research/article-notes/langchain/90-self-learning-gpts.md",
+      "reference_status": "no_explicit_citation",
+      "required_action": "Find and document the original citation; do not infer from title alone",
+      "source": "langchain",
+      "source_sha256": "41f524719c55c5f7710efd44fee5301d14c7c89741b55337e4ae1ca7b11d01da",
+      "title": "自学习 GPT：用用户反馈自动改进你的 AI 应用"
+    },
+    {
+      "has_local_source": false,
+      "id": "note:langchain:94-knowledge-graphs-enhance-rag",
+      "path": "content/research/article-notes/langchain/94-knowledge-graphs-enhance-rag.md",
+      "reference_status": "no_explicit_citation",
+      "required_action": "Find and document the original citation; do not infer from title alone",
+      "source": "langchain",
+      "source_sha256": "45fb34c211927b16cf317e896615a17976bf7206be3282c865eb62977dc52630",
+      "title": "94 | 用知识图谱增强 RAG 的检索准确性"
+    },
+    {
+      "has_local_source": false,
+      "id": "note:langchain:95-langgraph-functional-api",
+      "path": "content/research/article-notes/langchain/95-langgraph-functional-api.md",
+      "reference_status": "no_explicit_citation",
+      "required_action": "Find and document the original citation; do not infer from title alone",
+      "source": "langchain",
+      "source_sha256": "b60b4e049b136ed3f911b9be50d3a789776e96dc9faf62cc0ee54e81a3dd5163",
+      "title": "95 | LangGraph Functional API：用普通 Python 函数构建 AI 工作流"
+    },
+    {
+      "has_local_source": false,
+      "id": "note:langchain:96-rebuilding-chat-langchain",
+      "path": "content/research/article-notes/langchain/96-rebuilding-chat-langchain.md",
+      "reference_status": "no_explicit_citation",
+      "required_action": "Find and document the original citation; do not infer from title alone",
+      "source": "langchain",
+      "source_sha256": "3e979851c3d4d45e651f3dae6efcbf845e18b2e8127c74bde3056c905f8a1fb3",
+      "title": "96 | 重建 Chat LangChain：从向量检索到多源智能体的实战复盘"
+    },
+    {
+      "has_local_source": false,
+      "id": "note:langchain:97-semantic-search-langgraph-memory",
+      "path": "content/research/article-notes/langchain/97-semantic-search-langgraph-memory.md",
+      "reference_status": "no_explicit_citation",
+      "required_action": "Find and document the original citation; do not infer from title alone",
+      "source": "langchain",
+      "source_sha256": "e280aeb11850e821581a7df3f57da13c036c37911bbe8aab5a5233c7de1cb14e",
+      "title": "LangGraph Memory 的语义搜索：让 Agent 按\"意思\"找记忆"
+    },
+    {
+      "has_local_source": false,
+      "id": "note:langchain:98-langmem-sdk",
+      "path": "content/research/article-notes/langchain/98-langmem-sdk.md",
+      "reference_status": "no_explicit_citation",
+      "required_action": "Find and document the original citation; do not infer from title alone",
+      "source": "langchain",
+      "source_sha256": "2fc3f7476431217f225019acd0b9c0a946e107f92c7e725f3e194a538a985ffc",
+      "title": "LangMem SDK：给 Agent 装上长期记忆的三种方式"
+    },
+    {
+      "has_local_source": false,
+      "id": "note:langchain:99-how-we-built-agent-builder-memory",
+      "path": "content/research/article-notes/langchain/99-how-we-built-agent-builder-memory.md",
+      "reference_status": "no_explicit_citation",
+      "required_action": "Find and document the original citation; do not infer from title alone",
+      "source": "langchain",
+      "source_sha256": "1f5840dec7b94bd261196b675004d2b0656e9237c91a96591a5c2ae593fd265c",
+      "title": "Agent Builder 的记忆系统是怎么造出来的"
+    },
+    {
+      "has_local_source": false,
+      "id": "note:llamaindex:01-data-agents",
+      "path": "content/research/article-notes/llamaindex/01-data-agents.md",
+      "reference_status": "no_explicit_citation",
+      "required_action": "Find and document the original citation; do not infer from title alone",
+      "source": "llamaindex",
+      "source_sha256": "2e9bfb17671401b7fdcddc83a5ed284ca15b5332084cd8fc4472daea57c28fa4",
+      "title": "Data Agents：让 LLM 不只是回答问题，还能动手干活"
+    },
+    {
+      "has_local_source": false,
+      "id": "note:llamaindex:02-dumber-agents-better-constraints",
+      "path": "content/research/article-notes/llamaindex/02-dumber-agents-better-constraints.md",
+      "reference_status": "no_explicit_citation",
+      "required_action": "Find and document the original citation; do not infer from title alone",
+      "source": "llamaindex",
+      "source_sha256": "197efad5590a08ea0aeda866afae27907c0c764695a2c46efea842b846659ae3",
+      "title": "越笨的 Agent 越需要约束：复杂度该放在哪一层？"
+    },
+    {
+      "has_local_source": false,
+      "id": "note:llamaindex:03-agent-memory-long-short-term",
+      "path": "content/research/article-notes/llamaindex/03-agent-memory-long-short-term.md",
+      "reference_status": "no_explicit_citation",
+      "required_action": "Find and document the original citation; do not infer from title alone",
+      "source": "llamaindex",
+      "source_sha256": "df37c520e4f1e026f64790da40722fa56a7e3923172c17af78d50b21e4976f13",
+      "title": "Agent 记忆系统：让 AI 记住你是谁、说过什么"
+    },
+    {
+      "has_local_source": false,
+      "id": "note:llamaindex:04-building-better-agent-tools",
+      "path": "content/research/article-notes/llamaindex/04-building-better-agent-tools.md",
+      "reference_status": "no_explicit_citation",
+      "required_action": "Find and document the original citation; do not infer from title alone",
+      "source": "llamaindex",
+      "source_sha256": "b61bf57f19a3b0b1caf509c0911a036cc23974644781e7d2c1b3b7a3fc7e2882",
+      "title": "如何为 LLM Agent 打造好用的工具"
+    },
+    {
+      "has_local_source": false,
+      "id": "note:llamaindex:05-multi-agent-concierge-system",
+      "path": "content/research/article-notes/llamaindex/05-multi-agent-concierge-system.md",
+      "reference_status": "no_explicit_citation",
+      "required_action": "Find and document the original citation; do not infer from title alone",
+      "source": "llamaindex",
+      "source_sha256": "21e75362ef7fe896c680625927a0d5f481c2ddefb43a50ce3836efc2a1f35e20",
+      "title": "多 Agent 礼宾系统：如何让一群 Agent 协作服务用户"
+    },
+    {
+      "has_local_source": false,
+      "id": "note:llamaindex:06-optimal-agent-design-patterns",
+      "path": "content/research/article-notes/llamaindex/06-optimal-agent-design-patterns.md",
+      "reference_status": "no_explicit_citation",
+      "required_action": "Find and document the original citation; do not infer from title alone",
+      "source": "llamaindex",
+      "source_sha256": "cb059ec3286cee5cb83fa501bb109196a54c137165a61b313f71da02d1c908db",
+      "title": "弯而不断：Agent 设计的最优模式"
+    }
+  ],
+  "needs_url_alias_verification": 4,
+  "policy": "Evidence queue only; no source ID guessed from titles or similarity",
+  "schema_version": 1,
+  "status_counts": {
+    "external_only": 20,
+    "linked_by_id_url_mismatch": 4,
+    "no_explicit_citation": 47
+  },
+  "total": 71,
+  "unlinked": 67
+}

@@ -34,6 +34,14 @@ jobs:
           PYTHONPATH=src python -m ael publish --write
           PYTHONPATH=src python -m ael publish --check
 
+      - name: Verify editorial review queue
+        run: PYTHONPATH=src python -m ael review --check
+
+      - name: Generate and verify static full-text search index
+        run: |
+          PYTHONPATH=src python -m ael fulltext --write
+          PYTHONPATH=src python -m ael fulltext --check
+
       - name: Setup Pages
         uses: actions/configure-pages@v4
         with:

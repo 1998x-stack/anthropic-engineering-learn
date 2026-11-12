@@ -85,6 +85,11 @@ class MigrationTests(unittest.TestCase):
         self.write("registry/migrations.json", json.dumps({"schema_version": 1, "moves": [self.move, self.move]}))
         self.assertTrue(any("duplicate" in e for e in validate_moves(self.root, self.rows)))
 
+    def test_migration_remains_compatible_with_original_doc_links(self):
+        link = (self.root / self.old).read_text(encoding="utf-8")
+        self.assertIn("查看完整研究笔记", link)
+        self.assertIn("../../content/research/article-notes/", link)
+
     def test_missing_migrated_file_is_detected(self):
         (self.root / self.new).unlink()
         self.assertTrue(any("migrated note missing" in e for e in validate_moves(self.root, self.rows)))

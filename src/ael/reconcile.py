@@ -22,7 +22,7 @@ UNKNOWN = {"", "unknown", "n/a", "none", "null", "not found", "untitled", "undef
 EXPECTED_HOSTS = {
     "anthropic": ("anthropic.com",),
     "openai": ("openai.com",),
-    "langchain": ("langchain.com",),
+    "langchain": ("langchain.com", "langchain.dev"),
     "llamaindex": ("llamaindex.ai",),
     "modal": ("modal.com",),
     "e2b": ("e2b.dev",),
@@ -126,6 +126,30 @@ def published_path(root: Path, row: dict, historical_path: str | None = None) ->
     return next((p.as_posix() for p in candidates if (root / p).is_file()), None)
 
 
+def note_reference_urls(text: str, source: str) -> list[str]:
+    """Only explicit primary-source citations near the beginning of a note.
+
+    Do not guess a source from article title, filename, or a random body link.
+    """
+    found = []
+    for line in text.splitlines()[:80]:
+        if not re.match(r"^\s*(?:>\s*)?(?:\*\*)?(?:来源|原文(?:链接)?|分析对象|Source(?: URL)?|Original(?: article)?)", line, flags=re.IGNORECASE):
+            continue
+        for match in re.finditer(r"\]\((https://[^\s)]+)\)", line):
+            raw = match.group(1)
+            url = clean_url(raw, source)
+            if source == "papers" and not url:
+                try:
+                    parsed = urlsplit(raw)
+                    if parsed.scheme == "https" and parsed.hostname in ("arxiv.org", "www.arxiv.org"):
+                        url = urlunsplit(("https", "arxiv.org", parsed.path.rstrip("/"), "", ""))
+                except ValueError:
+                    pass
+            if url and url not in found:
+                found.append(url)
+    return found
+
+
 def read_overrides(root: Path) -> dict[str, dict]:
     path = root / "registry" / "verified-overrides.json"
     if not path.exists():
@@ -158,6 +182,7 @@ def enrich(root: Path, records: list[dict]) -> tuple[list[dict], dict]:
     output = []
     source_urls: dict[str, list[str]] = defaultdict(list)
     note_urls: dict[str, str] = {}
+    ambiguous_notes: list[dict] = []
 
     for row in records:
         rec = dict(row)
@@ -217,15 +242,17 @@ def enrich(root: Path, records: list[dict]) -> tuple[list[dict], dict]:
                         put(field, verified[field], "registry/verified-overrides.json#" + row["id"], 0)
         elif row["kind"] == "article_note":
             put("title", first_heading(data), row["path"] + "#heading", 10)
-            # A note cites its subject: it does not inherit the source's author/date.
-            head = data[:1200]
-            m = re.search(r"\*\*来源[:：]\*\*.*?\((https://[^)]+)\)", head)
-            if not m:
-                m = re.search(r"^>\s*\*\*分析对象\*\*[:：]?\s*\[[^\]]+\]\((https://[^)]+)\)", head, re.MULTILINE)
-            if m and row["source"] != "papers":
-                url = clean_url(m.group(1), row["source"])
-                if url:
-                    note_urls[row["id"]] = url
+            # A research note is not the original publisher's article.
+            # Preserve its explicit citation without inheriting original author/date.
+            urls = note_reference_urls(data, row["source"])
+            if len(urls) == 1:
+                note_urls[row["id"]] = urls[0]
+                rec["source_reference_url"] = urls[0]
+            elif len(urls) > 1:
+                ambiguous_notes.append({"id": row["id"], "candidate_urls": urls})
+                rec.pop("source_reference_url", None)
+            else:
+                rec.pop("source_reference_url", None)
 
         evidence = dict(rec.get("metadata_provenance", {}))
         for field in COMPUTED_FIELDS:
@@ -239,6 +266,10 @@ def enrich(root: Path, records: list[dict]) -> tuple[list[dict], dict]:
             if len(distinct) > 1:
                 conflicts.append({"id": row["id"], "field": field, "chosen": chosen,
                                   "candidates": [{"value": v, "origin": o} for _, o, v in ranked]})
+        if row["kind"] == "article_note":
+            evidence.pop("source_reference_url", None)
+            if rec.get("source_reference_url"):
+                evidence["source_reference_url"] = row["path"] + "#source-reference"
         if evidence:
             rec["metadata_provenance"] = evidence
         if row["kind"] == "source_article" and rec.get("canonical_url"):
@@ -249,10 +280,26 @@ def enrich(root: Path, records: list[dict]) -> tuple[list[dict], dict]:
                   if len(members) > 1]
     target_by_url = {url: members[0] for url, members in source_urls.items() if len(members) == 1}
     linked = 0
+    link_status = []
+    ambiguous_ids = {entry["id"] for entry in ambiguous_notes}
     for rec in output:
         if rec["kind"] != "article_note":
             continue
-        target = target_by_url.get(note_urls.get(rec["id"], ""))
+        url = note_urls.get(rec["id"])
+        target = target_by_url.get(url or "")
+        if rec["id"] in ambiguous_ids:
+            link_status.append({"id": rec["id"], "status": "ambiguous"})
+        elif url:
+            existing_targets = [x for x in rec.get("related_ids", [])
+                                if x in ids and (x.startswith("source:") or x.startswith("paper:"))]
+            status = ("matched" if target else
+                      "ambiguous" if url in [d["url"] for d in duplicates] else
+                      "linked_by_id_url_mismatch" if existing_targets else "external_only")
+            link_status.append({"id": rec["id"], "status": status, "url": url,
+                                **({"source_id": target} if target else {}),
+                                **({"existing_related_ids": existing_targets} if existing_targets and not target else {})})
+        else:
+            link_status.append({"id": rec["id"], "status": "no_explicit_citation"})
         if target and target != rec["id"]:
             related = list(rec.get("related_ids", []))
             if target not in related:
@@ -293,6 +340,9 @@ def enrich(root: Path, records: list[dict]) -> tuple[list[dict], dict]:
         "missing_source_author": missing_authors,
         "unlinked_notes": unlinked_notes,
         "note_source_url_matched": linked,
+        "note_reference_status": dict(sorted(Counter(item["status"] for item in link_status).items())),
+        "note_reference_links": sorted(link_status, key=lambda x: x["id"]),
+        "note_ambiguous_citations": sorted(ambiguous_notes, key=lambda x: x["id"]),
         "unmapped_site_html": sorted(site_files - indexed_site_files),
         "duplicate_source_urls": duplicates,
         "field_conflicts": sorted(conflicts, key=lambda c: (c["id"], c["field"])),

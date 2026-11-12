@@ -3544,24 +3544,15 @@
     "note:langchain:73-introducing-ambient-agents",
     "note:langchain:74-agent-middleware-patterns",
     "note:langchain:75-agent-frameworks-and-observability",
-    "note:langchain:76-how-correct-are-llm-evaluators",
-    "note:langchain:77-aligning-llm-judge-human-preferences",
-    "note:langchain:78-evaluation-driven-development",
     "note:langchain:79-a-chunk-by-any-other-name",
     "note:langchain:80-graph-metadata-filtering-rag",
     "note:langchain:81-query-construction",
     "note:langchain:82-agent-toolkits",
     "note:langchain:83-tool-calling-with-langchain",
     "note:langchain:84-command-tool-multi-agent",
-    "note:langchain:85-agent-authorization",
-    "note:langchain:86-two-types-agent-authorization",
-    "note:langchain:87-handling-pii-data",
     "note:langchain:88-in-ai-traces-document-the-app",
     "note:langchain:89-production-monitoring",
     "note:langchain:90-self-learning-gpts",
-    "note:langchain:91-scipe-systematic-improvement",
-    "note:langchain:92-promptim-prompt-optimizer",
-    "note:langchain:93-benchmarking-agent-tool-use",
     "note:langchain:94-knowledge-graphs-enhance-rag",
     "note:langchain:95-langgraph-functional-api",
     "note:langchain:96-rebuilding-chat-langchain",
@@ -4917,7 +4908,646 @@
     "source:llamaindex:blog__zep-and-llamaindex-a-vector-store-walkthrough-564edb8c22dc"
   ],
   "missing_source_url": [],
-  "note_source_url_matched": 42,
+  "note_ambiguous_citations": [],
+  "note_reference_links": [
+    {
+      "id": "note:anthropic:ai-resistant-technical-evaluations:interrogation",
+      "source_id": "source:anthropic:ai-resistant-technical-evaluations",
+      "status": "matched",
+      "url": "https://www.anthropic.com/engineering/AI-resistant-technical-evaluations"
+    },
+    {
+      "id": "note:anthropic:building-c-compiler:interrogation",
+      "source_id": "source:anthropic:building-c-compiler",
+      "status": "matched",
+      "url": "https://www.anthropic.com/engineering/building-c-compiler"
+    },
+    {
+      "existing_related_ids": [
+        "source:anthropic:building-effective-agents"
+      ],
+      "id": "note:anthropic:building-effective-agents:interrogation",
+      "status": "linked_by_id_url_mismatch",
+      "url": "https://www.anthropic.com/engineering/building-effective-agents"
+    },
+    {
+      "existing_related_ids": [
+        "source:anthropic:contextual-retrieval"
+      ],
+      "id": "note:anthropic:contextual-retrieval:interrogation",
+      "status": "linked_by_id_url_mismatch",
+      "url": "https://www.anthropic.com/engineering/contextual-retrieval"
+    },
+    {
+      "id": "note:anthropic:demystifying-evals-for-ai-agents:interrogation",
+      "source_id": "source:anthropic:demystifying-evals-for-ai-agents",
+      "status": "matched",
+      "url": "https://www.anthropic.com/engineering/demystifying-evals-for-ai-agents"
+    },
+    {
+      "id": "note:anthropic:effective-context-engineering-for-ai-agents:interrogation",
+      "source_id": "source:anthropic:effective-context-engineering-for-ai-agents",
+      "status": "matched",
+      "url": "https://www.anthropic.com/engineering/effective-context-engineering-for-ai-agents"
+    },
+    {
+      "id": "note:anthropic:effective-harnesses-for-long-running-agents:interrogation",
+      "source_id": "source:anthropic:effective-harnesses-for-long-running-agents",
+      "status": "matched",
+      "url": "https://www.anthropic.com/engineering/effective-harnesses-for-long-running-agents"
+    },
+    {
+      "id": "note:anthropic:equipping-agents-for-the-real-world-with-agent-skills:interrogation",
+      "source_id": "source:anthropic:equipping-agents-for-the-real-world-with-agent-skills",
+      "status": "matched",
+      "url": "https://www.anthropic.com/engineering/equipping-agents-for-the-real-world-with-agent-skills"
+    },
+    {
+      "id": "note:anthropic:eval-awareness-browsecomp:interrogation",
+      "source_id": "source:anthropic:eval-awareness-browsecomp",
+      "status": "matched",
+      "url": "https://www.anthropic.com/engineering/eval-awareness-browsecomp"
+    },
+    {
+      "id": "note:anthropic:harness-design-long-running-apps:interrogation",
+      "source_id": "source:anthropic:harness-design-long-running-apps",
+      "status": "matched",
+      "url": "https://www.anthropic.com/engineering/harness-design-long-running-apps"
+    },
+    {
+      "id": "note:anthropic:managed-agents:interrogation",
+      "source_id": "source:anthropic:managed-agents",
+      "status": "matched",
+      "url": "https://www.anthropic.com/engineering/managed-agents"
+    },
+    {
+      "existing_related_ids": [
+        "source:anthropic:multi-agent-research-system"
+      ],
+      "id": "note:anthropic:multi-agent-research-system:interrogation",
+      "status": "linked_by_id_url_mismatch",
+      "url": "https://www.anthropic.com/engineering/multi-agent-research-system"
+    },
+    {
+      "id": "note:anthropic:swe-bench-sonnet:interrogation",
+      "source_id": "source:anthropic:swe-bench-sonnet",
+      "status": "matched",
+      "url": "https://www.anthropic.com/engineering/swe-bench-sonnet"
+    },
+    {
+      "id": "note:langchain:01-the-anatomy-of-an-agent-harness",
+      "source_id": "source:langchain:the-anatomy-of-an-agent-harness",
+      "status": "matched",
+      "url": "https://www.langchain.com/blog/the-anatomy-of-an-agent-harness"
+    },
+    {
+      "id": "note:langchain:02-running-subagents-in-the-background",
+      "source_id": "source:langchain:running-subagents-in-the-background",
+      "status": "matched",
+      "url": "https://www.langchain.com/blog/running-subagents-in-the-background"
+    },
+    {
+      "id": "note:langchain:03-agent-observability-needs-feedback",
+      "source_id": "source:langchain:agent-observability-needs-feedback-to-power-learning",
+      "status": "matched",
+      "url": "https://www.langchain.com/blog/agent-observability-needs-feedback-to-power-learning"
+    },
+    {
+      "id": "note:langchain:04-how-we-built-langchains-gtm-agent",
+      "source_id": "source:langchain:how-we-built-langchains-gtm-agent",
+      "status": "matched",
+      "url": "https://www.langchain.com/blog/how-we-built-langchains-gtm-agent"
+    },
+    {
+      "id": "note:langchain:05-human-judgment-in-the-agent-improvement-loop",
+      "source_id": "source:langchain:human-judgment-in-the-agent-improvement-loop",
+      "status": "matched",
+      "url": "https://www.langchain.com/blog/human-judgment-in-the-agent-improvement-loop"
+    },
+    {
+      "id": "note:langchain:06-your-harness-your-memory",
+      "source_id": "source:langchain:your-harness-your-memory",
+      "status": "matched",
+      "url": "https://www.langchain.com/blog/your-harness-your-memory"
+    },
+    {
+      "id": "note:langchain:07-context-engineering-for-agents",
+      "source_id": "source:langchain:context-engineering-for-agents",
+      "status": "matched",
+      "url": "https://www.langchain.com/blog/context-engineering-for-agents"
+    },
+    {
+      "id": "note:langchain:08-how-middleware-lets-you-customize-your-agent-harness",
+      "source_id": "source:langchain:how-middleware-lets-you-customize-your-agent-harness",
+      "status": "matched",
+      "url": "https://www.langchain.com/blog/how-middleware-lets-you-customize-your-agent-harness"
+    },
+    {
+      "id": "note:langchain:09-continual-learning-for-ai-agents",
+      "source_id": "source:langchain:continual-learning-for-ai-agents",
+      "status": "matched",
+      "url": "https://www.langchain.com/blog/continual-learning-for-ai-agents"
+    },
+    {
+      "id": "note:langchain:10-improving-deep-agents-with-harness-engineering",
+      "source_id": "source:langchain:improving-deep-agents-with-harness-engineering",
+      "status": "matched",
+      "url": "https://www.langchain.com/blog/improving-deep-agents-with-harness-engineering"
+    },
+    {
+      "id": "note:langchain:11-better-harness-eval-driven-hill-climbing",
+      "status": "external_only",
+      "url": "https://www.langchain.com/blog/better-harness-eval-driven-hill-climbing"
+    },
+    {
+      "id": "note:langchain:12-agent-engineering-a-new-discipline",
+      "source_id": "source:langchain:agent-engineering-a-new-discipline",
+      "status": "matched",
+      "url": "https://www.langchain.com/blog/agent-engineering-a-new-discipline"
+    },
+    {
+      "id": "note:langchain:13-deep-agents",
+      "source_id": "source:langchain:deep-agents",
+      "status": "matched",
+      "url": "https://www.langchain.com/blog/deep-agents"
+    },
+    {
+      "id": "note:langchain:14-runtime-behind-production-deep-agents",
+      "status": "external_only",
+      "url": "https://www.langchain.com/blog/the-runtime-behind-production-deep-agents"
+    },
+    {
+      "id": "note:langchain:15-using-skills-with-deep-agents",
+      "source_id": "source:langchain:using-skills-with-deep-agents",
+      "status": "matched",
+      "url": "https://www.langchain.com/blog/using-skills-with-deep-agents"
+    },
+    {
+      "id": "note:langchain:16-context-management-for-deepagents",
+      "status": "external_only",
+      "url": "https://www.langchain.com/blog/context-management-for-deep-agents"
+    },
+    {
+      "id": "note:langchain:17-debugging-deep-agents-with-langsmith",
+      "source_id": "source:langchain:debugging-deep-agents-with-langsmith",
+      "status": "matched",
+      "url": "https://www.langchain.com/blog/debugging-deep-agents-with-langsmith"
+    },
+    {
+      "id": "note:langchain:18-tuning-deep-agents-different-models",
+      "source_id": "source:langchain:tuning-deep-agents-different-models",
+      "status": "matched",
+      "url": "https://www.langchain.com/blog/tuning-deep-agents-different-models"
+    },
+    {
+      "id": "note:langchain:19-how-we-build-evals-for-deep-agents",
+      "source_id": "source:langchain:how-we-build-evals-for-deep-agents",
+      "status": "matched",
+      "url": "https://www.langchain.com/blog/how-we-build-evals-for-deep-agents"
+    },
+    {
+      "id": "note:langchain:20-evaluating-deep-agents-our-learnings",
+      "source_id": "source:langchain:evaluating-deep-agents-our-learnings",
+      "status": "matched",
+      "url": "https://www.langchain.com/blog/evaluating-deep-agents-our-learnings"
+    },
+    {
+      "id": "note:langchain:21-traces-start-agent-improvement-loop",
+      "status": "external_only",
+      "url": "https://www.langchain.com/blog/the-agent-improvement-loop-starts-with-a-trace"
+    },
+    {
+      "id": "note:langchain:22-the-rise-of-context-engineering",
+      "status": "external_only",
+      "url": "https://blog.langchain.dev/the-rise-of-context-engineering"
+    },
+    {
+      "id": "note:langchain:23-how-agents-can-use-filesystems-for-context-engineering",
+      "source_id": "source:langchain:how-agents-can-use-filesystems-for-context-engineering",
+      "status": "matched",
+      "url": "https://www.langchain.com/blog/how-agents-can-use-filesystems-for-context-engineering"
+    },
+    {
+      "id": "note:langchain:24-deep-agents-deploy-open-alternative",
+      "status": "external_only",
+      "url": "https://www.langchain.com/blog/deep-agents-deploy-open-alternative"
+    },
+    {
+      "id": "note:langchain:25-how-my-agents-self-heal-in-production",
+      "source_id": "source:langchain:how-my-agents-self-heal-in-production",
+      "status": "matched",
+      "url": "https://www.langchain.com/blog/how-my-agents-self-heal-in-production"
+    },
+    {
+      "id": "note:langchain:26-from-traces-to-insights",
+      "source_id": "source:langchain:from-traces-to-insights-understanding-agent-behavior-at-scale",
+      "status": "matched",
+      "url": "https://www.langchain.com/blog/from-traces-to-insights-understanding-agent-behavior-at-scale"
+    },
+    {
+      "id": "note:langchain:27-evaluating-deepagents-cli-on-terminal-bench",
+      "status": "external_only",
+      "url": "https://www.langchain.com/blog/evaluating-deep-agents-cli-on-terminal-bench"
+    },
+    {
+      "id": "note:langchain:28-agent-frameworks-runtimes-and-harnesses",
+      "status": "external_only",
+      "url": "https://www.langchain.com/blog/agent-frameworks-runtimes-and-harnesses"
+    },
+    {
+      "id": "note:langchain:29-evaluating-skills",
+      "source_id": "source:langchain:evaluating-skills",
+      "status": "matched",
+      "url": "https://www.langchain.com/blog/evaluating-skills"
+    },
+    {
+      "id": "note:langchain:30-how-moda-builds-design-agents",
+      "status": "external_only",
+      "url": "https://www.langchain.com/blog/how-moda-builds-design-agents"
+    },
+    {
+      "id": "note:langchain:31-choosing-the-right-multi-agent-architecture",
+      "source_id": "source:langchain:choosing-the-right-multi-agent-architecture",
+      "status": "matched",
+      "url": "https://www.langchain.com/blog/choosing-the-right-multi-agent-architecture"
+    },
+    {
+      "id": "note:langchain:32-building-multi-agent-applications-with-deep-agents",
+      "source_id": "source:langchain:building-multi-agent-applications-with-deep-agents",
+      "status": "matched",
+      "url": "https://www.langchain.com/blog/building-multi-agent-applications-with-deep-agents"
+    },
+    {
+      "id": "note:langchain:33-building-due-diligence-agent",
+      "status": "external_only",
+      "url": "https://www.langchain.com/blog/building-due-diligence-agent"
+    },
+    {
+      "id": "note:langchain:34-agentic-engineering-redefining-software",
+      "status": "external_only",
+      "url": "https://www.langchain.com/blog/agentic-engineering-how-swarms-of-ai-agents-are-redefining-software-engineering"
+    },
+    {
+      "id": "note:langchain:35-agent-evaluation-readiness-checklist",
+      "source_id": "source:langchain:agent-evaluation-readiness-checklist",
+      "status": "matched",
+      "url": "https://www.langchain.com/blog/agent-evaluation-readiness-checklist"
+    },
+    {
+      "id": "note:langchain:36-agent-observability-powers-evaluation",
+      "status": "external_only",
+      "url": "https://www.langchain.com/blog/agent-observability-powers-evaluation"
+    },
+    {
+      "id": "note:langchain:37-what-is-an-agent",
+      "status": "external_only",
+      "url": "https://blog.langchain.dev/what-is-an-agent"
+    },
+    {
+      "id": "note:langchain:38-planning-for-agents",
+      "status": "external_only",
+      "url": "https://blog.langchain.dev/planning-for-agents"
+    },
+    {
+      "id": "note:langchain:39-how-to-turn-claude-code-into-domain-agent",
+      "source_id": "source:langchain:how-to-turn-claude-code-into-a-domain-specific-coding-agent",
+      "status": "matched",
+      "url": "https://www.langchain.com/blog/how-to-turn-claude-code-into-a-domain-specific-coding-agent"
+    },
+    {
+      "id": "note:langchain:40-communication-is-all-you-need",
+      "source_id": "source:langchain:communication-is-all-you-need",
+      "status": "matched",
+      "url": "https://www.langchain.com/blog/communication-is-all-you-need"
+    },
+    {
+      "id": "note:langchain:41-how-do-i-speed-up-my-agent",
+      "source_id": "source:langchain:how-do-i-speed-up-my-agent",
+      "status": "matched",
+      "url": "https://www.langchain.com/blog/how-do-i-speed-up-my-agent"
+    },
+    {
+      "id": "note:langchain:42-agent-protocol-interoperability",
+      "status": "external_only",
+      "url": "https://blog.langchain.dev/agent-protocol-interoperability"
+    },
+    {
+      "id": "note:langchain:43-execute-code-with-sandboxes",
+      "status": "external_only",
+      "url": "https://blog.langchain.dev/execute-code-with-sandboxes"
+    },
+    {
+      "id": "note:langchain:44-two-patterns-agents-connect-sandboxes",
+      "status": "external_only",
+      "url": "https://blog.langchain.dev/"
+    },
+    {
+      "id": "note:langchain:45-autonomous-context-compression",
+      "status": "no_explicit_citation"
+    },
+    {
+      "id": "note:langchain:46-open-swe-open-source-coding-agent",
+      "source_id": "source:langchain:open-swe-an-open-source-framework-for-internal-coding-agents",
+      "status": "matched",
+      "url": "https://www.langchain.com/blog/open-swe-an-open-source-framework-for-internal-coding-agents"
+    },
+    {
+      "id": "note:langchain:47-open-deep-research",
+      "status": "no_explicit_citation"
+    },
+    {
+      "id": "note:langchain:48-how-coding-agents-reshape-epd",
+      "status": "external_only",
+      "url": "https://www.langchain.com/blog/how-coding-agents-reshape-epd"
+    },
+    {
+      "id": "note:langchain:49-what-is-a-cognitive-architecture",
+      "status": "external_only",
+      "url": "https://blog.langchain.dev/what-is-a-cognitive-architecture"
+    },
+    {
+      "id": "note:langchain:50-mcp-fad-or-fixture",
+      "status": "external_only",
+      "url": "https://blog.langchain.dev/mcp-fad-or-fixture"
+    },
+    {
+      "id": "note:langchain:51-how-to-build-an-agent",
+      "source_id": "source:langchain:how-to-build-an-agent",
+      "status": "matched",
+      "url": "https://www.langchain.com/blog/how-to-build-an-agent"
+    },
+    {
+      "id": "note:langchain:52-ux-for-agents-chat",
+      "status": "no_explicit_citation"
+    },
+    {
+      "id": "note:langchain:53-ux-for-agents-ambient",
+      "status": "no_explicit_citation"
+    },
+    {
+      "id": "note:langchain:54-ux-for-agents-background",
+      "status": "no_explicit_citation"
+    },
+    {
+      "id": "note:langchain:55-openais-bet-on-cognitive-architecture",
+      "status": "no_explicit_citation"
+    },
+    {
+      "id": "note:langchain:56-why-agent-infrastructure",
+      "status": "no_explicit_citation"
+    },
+    {
+      "id": "note:langchain:57-outsource-infrastructure-own-architecture",
+      "status": "no_explicit_citation"
+    },
+    {
+      "id": "note:langchain:58-reflection-agents",
+      "status": "no_explicit_citation"
+    },
+    {
+      "id": "note:langchain:59-planning-agents",
+      "status": "no_explicit_citation"
+    },
+    {
+      "id": "note:langchain:60-how-and-when-multi-agent",
+      "status": "no_explicit_citation"
+    },
+    {
+      "id": "note:langchain:61-winning-in-ai-new-stack",
+      "status": "no_explicit_citation"
+    },
+    {
+      "id": "note:langchain:62-introducing-polly-ai-agent-engineer",
+      "status": "no_explicit_citation"
+    },
+    {
+      "id": "note:langchain:63-open-models-crossed-threshold",
+      "status": "no_explicit_citation"
+    },
+    {
+      "id": "note:langchain:64-how-to-think-about-agent-frameworks",
+      "status": "no_explicit_citation"
+    },
+    {
+      "id": "note:langchain:65-deconstructing-rag",
+      "status": "no_explicit_citation"
+    },
+    {
+      "id": "note:langchain:66-agent-builder-memory-system",
+      "status": "no_explicit_citation"
+    },
+    {
+      "id": "note:langchain:67-exploring-prompt-optimization",
+      "status": "no_explicit_citation"
+    },
+    {
+      "id": "note:langchain:68-few-shot-prompting-tool-calling",
+      "status": "no_explicit_citation"
+    },
+    {
+      "id": "note:langchain:69-hidden-metric-ai-product-success",
+      "status": "no_explicit_citation"
+    },
+    {
+      "id": "note:langchain:70-building-langgraph",
+      "status": "no_explicit_citation"
+    },
+    {
+      "id": "note:langchain:71-not-another-workflow-builder",
+      "status": "no_explicit_citation"
+    },
+    {
+      "id": "note:langchain:72-memory-for-agents",
+      "status": "no_explicit_citation"
+    },
+    {
+      "id": "note:langchain:73-introducing-ambient-agents",
+      "status": "no_explicit_citation"
+    },
+    {
+      "id": "note:langchain:74-agent-middleware-patterns",
+      "status": "no_explicit_citation"
+    },
+    {
+      "id": "note:langchain:75-agent-frameworks-and-observability",
+      "status": "no_explicit_citation"
+    },
+    {
+      "id": "note:langchain:76-how-correct-are-llm-evaluators",
+      "source_id": "source:langchain:how-correct-are-llm-evaluators",
+      "status": "matched",
+      "url": "https://www.langchain.com/blog/how-correct-are-llm-evaluators"
+    },
+    {
+      "id": "note:langchain:77-aligning-llm-judge-human-preferences",
+      "source_id": "source:langchain:aligning-llm-as-a-judge-with-human-preferences",
+      "status": "matched",
+      "url": "https://www.langchain.com/blog/aligning-llm-as-a-judge-with-human-preferences"
+    },
+    {
+      "id": "note:langchain:78-evaluation-driven-development",
+      "source_id": "source:langchain:iterating-towards-llm-reliability-with-evaluation-driven-development",
+      "status": "matched",
+      "url": "https://www.langchain.com/blog/iterating-towards-llm-reliability-with-evaluation-driven-development"
+    },
+    {
+      "id": "note:langchain:79-a-chunk-by-any-other-name",
+      "status": "no_explicit_citation"
+    },
+    {
+      "id": "note:langchain:80-graph-metadata-filtering-rag",
+      "status": "no_explicit_citation"
+    },
+    {
+      "id": "note:langchain:81-query-construction",
+      "status": "no_explicit_citation"
+    },
+    {
+      "id": "note:langchain:82-agent-toolkits",
+      "status": "no_explicit_citation"
+    },
+    {
+      "id": "note:langchain:83-tool-calling-with-langchain",
+      "status": "no_explicit_citation"
+    },
+    {
+      "id": "note:langchain:84-command-tool-multi-agent",
+      "status": "no_explicit_citation"
+    },
+    {
+      "id": "note:langchain:85-agent-authorization",
+      "source_id": "source:langchain:agent-authorization-explainer",
+      "status": "matched",
+      "url": "https://www.langchain.com/blog/agent-authorization-explainer"
+    },
+    {
+      "id": "note:langchain:86-two-types-agent-authorization",
+      "source_id": "source:langchain:two-different-types-of-agent-authorization",
+      "status": "matched",
+      "url": "https://www.langchain.com/blog/two-different-types-of-agent-authorization"
+    },
+    {
+      "id": "note:langchain:87-handling-pii-data",
+      "source_id": "source:langchain:handling-pii-data-in-langchain",
+      "status": "matched",
+      "url": "https://www.langchain.com/blog/handling-pii-data-in-langchain"
+    },
+    {
+      "id": "note:langchain:88-in-ai-traces-document-the-app",
+      "status": "no_explicit_citation"
+    },
+    {
+      "id": "note:langchain:89-production-monitoring",
+      "status": "no_explicit_citation"
+    },
+    {
+      "id": "note:langchain:90-self-learning-gpts",
+      "status": "no_explicit_citation"
+    },
+    {
+      "id": "note:langchain:91-scipe-systematic-improvement",
+      "source_id": "source:langchain:scipe-systematic-chain-improvement-and-problem-evaluation",
+      "status": "matched",
+      "url": "https://www.langchain.com/blog/scipe-systematic-chain-improvement-and-problem-evaluation"
+    },
+    {
+      "id": "note:langchain:92-promptim-prompt-optimizer",
+      "source_id": "source:langchain:promptim",
+      "status": "matched",
+      "url": "https://www.langchain.com/blog/promptim"
+    },
+    {
+      "id": "note:langchain:93-benchmarking-agent-tool-use",
+      "source_id": "source:langchain:benchmarking-agent-tool-use",
+      "status": "matched",
+      "url": "https://www.langchain.com/blog/benchmarking-agent-tool-use"
+    },
+    {
+      "id": "note:langchain:94-knowledge-graphs-enhance-rag",
+      "status": "no_explicit_citation"
+    },
+    {
+      "id": "note:langchain:95-langgraph-functional-api",
+      "status": "no_explicit_citation"
+    },
+    {
+      "id": "note:langchain:96-rebuilding-chat-langchain",
+      "status": "no_explicit_citation"
+    },
+    {
+      "id": "note:langchain:97-semantic-search-langgraph-memory",
+      "status": "no_explicit_citation"
+    },
+    {
+      "id": "note:langchain:98-langmem-sdk",
+      "status": "no_explicit_citation"
+    },
+    {
+      "id": "note:langchain:99-how-we-built-agent-builder-memory",
+      "status": "no_explicit_citation"
+    },
+    {
+      "id": "note:llamaindex:01-data-agents",
+      "status": "no_explicit_citation"
+    },
+    {
+      "id": "note:llamaindex:02-dumber-agents-better-constraints",
+      "status": "no_explicit_citation"
+    },
+    {
+      "id": "note:llamaindex:03-agent-memory-long-short-term",
+      "status": "no_explicit_citation"
+    },
+    {
+      "id": "note:llamaindex:04-building-better-agent-tools",
+      "status": "no_explicit_citation"
+    },
+    {
+      "id": "note:llamaindex:05-multi-agent-concierge-system",
+      "status": "no_explicit_citation"
+    },
+    {
+      "id": "note:llamaindex:06-optimal-agent-design-patterns",
+      "status": "no_explicit_citation"
+    },
+    {
+      "id": "note:llamaindex:07-agentic-document-processing",
+      "source_id": "source:llamaindex:blog__agentic-document-processing",
+      "status": "matched",
+      "url": "https://www.llamaindex.ai/blog/agentic-document-processing"
+    },
+    {
+      "id": "note:llamaindex:08-agentic-document-workflows",
+      "source_id": "source:llamaindex:blog__introducing-agentic-document-workflows",
+      "status": "matched",
+      "url": "https://www.llamaindex.ai/blog/introducing-agentic-document-workflows"
+    },
+    {
+      "id": "note:openai:harness-engineering:interrogation",
+      "source_id": "source:openai:harness-engineering",
+      "status": "matched",
+      "url": "https://openai.com/index/harness-engineering"
+    },
+    {
+      "id": "note:papers:swe-agent:interrogation",
+      "status": "no_explicit_citation"
+    },
+    {
+      "existing_related_ids": [
+        "paper:transformer"
+      ],
+      "id": "note:papers:transformer:interrogation",
+      "status": "linked_by_id_url_mismatch",
+      "url": "https://arxiv.org/abs/1706.03762"
+    }
+  ],
+  "note_reference_status": {
+    "external_only": 20,
+    "linked_by_id_url_mismatch": 4,
+    "matched": 51,
+    "no_explicit_citation": 48
+  },
+  "note_source_url_matched": 51,
   "officially_verified_field_records": 23,
   "publication_status": {
     "not_published": 596,
@@ -4975,24 +5605,15 @@
     "note:langchain:73-introducing-ambient-agents",
     "note:langchain:74-agent-middleware-patterns",
     "note:langchain:75-agent-frameworks-and-observability",
-    "note:langchain:76-how-correct-are-llm-evaluators",
-    "note:langchain:77-aligning-llm-judge-human-preferences",
-    "note:langchain:78-evaluation-driven-development",
     "note:langchain:79-a-chunk-by-any-other-name",
     "note:langchain:80-graph-metadata-filtering-rag",
     "note:langchain:81-query-construction",
     "note:langchain:82-agent-toolkits",
     "note:langchain:83-tool-calling-with-langchain",
     "note:langchain:84-command-tool-multi-agent",
-    "note:langchain:85-agent-authorization",
-    "note:langchain:86-two-types-agent-authorization",
-    "note:langchain:87-handling-pii-data",
     "note:langchain:88-in-ai-traces-document-the-app",
     "note:langchain:89-production-monitoring",
     "note:langchain:90-self-learning-gpts",
-    "note:langchain:91-scipe-systematic-improvement",
-    "note:langchain:92-promptim-prompt-optimizer",
-    "note:langchain:93-benchmarking-agent-tool-use",
     "note:langchain:94-knowledge-graphs-enhance-rag",
     "note:langchain:95-langgraph-functional-api",
     "note:langchain:96-rebuilding-chat-langchain",

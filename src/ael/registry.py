@@ -25,6 +25,23 @@ ID_PATTERN = re.compile(r"^(?:source|note|paper):[a-z0-9][a-z0-9._:-]*$")
 def classify(relative_path: str) -> dict | None:
     """Classify one source path. Filenames are a bootstrap, not permanent identity."""
     p = Path(relative_path)
+    if p.parts[:3] == ("content", "research", "article-notes"):
+        if len(p.parts) != 5 or p.parts[3] not in (*PROVIDERS, "papers") or p.suffix.lower() != ".md":
+            return None
+        source = p.parts[3]
+        slug = p.stem.lower()
+        is_interrogation = slug.endswith("(musk-interrogation)")
+        if is_interrogation:
+            slug = slug.removesuffix("(musk-interrogation)")
+        ident = f"note:{source}:{slug}" + (":interrogation" if is_interrogation else "")
+        row = {
+            "id": ident, "kind": "article_note", "source": source,
+            "path": p.as_posix(), "review_status": "unreviewed",
+            "publication_status": "unspecified",
+        }
+        if is_interrogation:
+            row["related_ids"] = [f"paper:{slug}" if source == "papers" else f"source:{source}:{slug}"]
+        return row
     if len(p.parts) < 2 or p.parts[0] not in (*PROVIDERS, "papers"):
         return None
     name = p.name
@@ -68,12 +85,24 @@ def classify(relative_path: str) -> dict | None:
 
 
 def inventory(root: Path = ROOT) -> list[dict]:
+    from .migration import read_moves
+    aliases = {move["from"] for move in read_moves(root)}
     rows = []
     for provider in (*PROVIDERS, "papers"):
         base = root / provider
         if not base.is_dir():
             continue
         for path in base.rglob("*"):
+            if path.is_file():
+                relative = path.relative_to(root).as_posix()
+                if relative in aliases:
+                    continue
+                record = classify(relative)
+                if record:
+                    rows.append(record)
+    notes = root / "content" / "research" / "article-notes"
+    if notes.is_dir():
+        for path in notes.rglob("*.md"):
             if path.is_file():
                 record = classify(path.relative_to(root).as_posix())
                 if record:
@@ -165,6 +194,8 @@ def validate(root: Path, registry_path: Path) -> list[str]:
                 errors.append(f"{row.get('id')}: dangling related_ids target {target}")
     for path in sorted(inventory_by_path.keys() - paths):
         errors.append(f"unregistered content: {path}")
+    from .migration import validate_moves
+    errors.extend(validate_moves(root, rows))
     return errors
 
 

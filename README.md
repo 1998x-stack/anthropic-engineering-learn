@@ -1,6 +1,6 @@
 # Engineering Blogs 汇总
 
-> **Architecture migration (Phase 3):** The reconciled source-of-truth inventory and audit live in [registry/records.jsonl](registry/records.jsonl). Use [scripts/README.md](scripts/README.md) for the supported dry-run-first CLI, and [registry/README.md](registry/README.md) for provenance and audits. Legacy source folders and historical HTML remain unchanged; Pages now emits a derived JSON catalog.
+> **Architecture migration (Phase 4):** The reconciled source-of-truth inventory and audit live in [registry/records.jsonl](registry/records.jsonl). Use [scripts/README.md](scripts/README.md) for the supported dry-run-first CLI, and [registry/README.md](registry/README.md) for provenance and audits. Research notes are being moved in small reviewed batches with compatibility links; publisher source articles and historical HTML remain in place.
 
 AI/Infra 领域工程知识合集：Registry 登记 **991 篇来源文章、123 篇研究笔记、5 份 PDF**，按来源保留现有目录。
 

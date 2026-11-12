@@ -114,12 +114,13 @@ def legacy_meta_path(root: Path, row: dict) -> Path | None:
     return path if path.is_file() else None
 
 
-def published_path(root: Path, row: dict) -> str | None:
-    stem = Path(row["path"]).stem
+def published_path(root: Path, row: dict, historical_path: str | None = None) -> str | None:
+    path = historical_path or row["path"]
+    stem = Path(path).stem
     source = row["source"]
     candidates = [Path("docs") / source / (stem + ".html")]
     if source == "anthropic":
-        parts = Path(row["path"]).parts
+        parts = Path(path).parts
         if len(parts) > 2:
             candidates.insert(0, Path("docs") / source / parts[1] / (stem + ".html"))
     return next((p.as_posix() for p in candidates if (root / p).is_file()), None)
@@ -146,6 +147,8 @@ def enrich(root: Path, records: list[dict]) -> tuple[list[dict], dict]:
     """Apply deterministic, explicit source precedence; audit all disagreements."""
     legacy = legacy_indexes(root)
     overrides = read_overrides(root)
+    from .migration import read_moves
+    moves_by_id = {move["id"]: move for move in read_moves(root)}
     ids = {r["id"] for r in records}
     if overrides.keys() - ids:
         raise ValueError("unknown override IDs: " + ", ".join(sorted(overrides.keys() - ids)))
@@ -162,7 +165,7 @@ def enrich(root: Path, records: list[dict]) -> tuple[list[dict], dict]:
         if not path.is_file():
             raise FileNotFoundError(row["path"])
         rec["source_sha256"] = hashlib.sha256(path.read_bytes()).hexdigest()
-        html = published_path(root, row)
+        html = published_path(root, row, moves_by_id.get(row["id"], {}).get("from"))
         if rec.get("publication_status") != "archived":
             rec["publication_status"] = "published" if html else "not_published"
         if html:

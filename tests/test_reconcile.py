@@ -104,6 +104,18 @@ class ReconciliationTests(unittest.TestCase):
         self.assertTrue(any(x["id"] == row["id"] and x["status"] == "external_only"
                             for x in audit["note_reference_links"]))
 
+    def test_preexisting_note_link_is_not_mistaken_for_external_only(self):
+        self.make("anthropic/agents/example(musk-interrogation).md",
+                  "# Example note\\n\\n> **分析对象**: "
+                  "[Article](https://www.anthropic.com/engineering/example)\\n")
+        enriched, report = enrich(self.root, self.rows)
+        note_id = "note:anthropic:example:interrogation"
+        note = next(row for row in enriched if row["id"] == note_id)
+        self.assertIn("source:anthropic:example", note["related_ids"])
+        status = next(row["status"] for row in report["note_reference_links"]
+                      if row["id"] == note_id)
+        self.assertEqual(status, "linked_by_id_url_mismatch")
+
     def test_missing_citation_is_not_guessed_from_title(self):
         self.make("langchain/curated/03-original.md", "# Original\\n(no explicit source)\\n")
         added = self.row("note:langchain:03-original", "article_note",

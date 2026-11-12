@@ -1,0 +1,38 @@
+{
+  "schema_version": 1,
+  "projects": [
+    {
+      "id": "contextual-retrieval",
+      "title": "Contextual Retrieval — 复现仓库",
+      "url": "https://github.com/1998x-stack/Contextual-Retrieval",
+      "description": "关于 Contextual Retrieval 的独立工程链接；不对实验结果作出已验证声明。",
+      "status": "repository_link_only",
+      "related_ids": [
+        "source:anthropic:contextual-retrieval",
+        "note:anthropic:contextual-retrieval:interrogation"
+      ]
+    },
+    {
+      "id": "pi-memory",
+      "title": "pi-memory — Agent 记忆系统",
+      "url": "https://github.com/1998x-stack/pi-memory",
+      "description": "Pi Agent Memory 相关独立工程项目；仅展示代码仓库关联。",
+      "status": "repository_link_only",
+      "related_ids": [
+        "note:langchain:06-your-harness-your-memory",
+        "note:langchain:72-memory-for-agents"
+      ]
+    },
+    {
+      "id": "trajectory-analysis",
+      "title": "trajectory-analysis — Agent 轨迹分析",
+      "url": "https://github.com/1998x-stack/trajectory-analysis",
+      "description": "Agent trajectory 格式与分析工程相关仓库；不代表已复现实验结果。",
+      "status": "repository_link_only",
+      "related_ids": [
+        "note:langchain:21-traces-start-agent-improvement-loop",
+        "note:langchain:26-from-traces-to-insights"
+      ]
+    }
+  ]
+}

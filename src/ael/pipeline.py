@@ -59,7 +59,7 @@ def plan(root: Path) -> dict:
         raise PipelineError("Stale paths or identifier collisions; fix manually before reconciliation")
     merged = records + state["new_records"]
     transformed, audit = enrich(root, merged)
-    catalog = build_catalog(root, transformed)
+    catalog = build_catalog(root, transformed, audit)
     registry_path, report_path = registry_paths(root)
     proposed = {registry_path: render_records(transformed),
                 report_path: canonical_json(audit)}
@@ -147,44 +147,30 @@ def generated_outputs(root: Path, rows: list[dict], audit: dict) -> dict[Path, s
     return {registry_path: render_records(rows), report_path: canonical_json(audit)}
 
 
-def build_catalog(root: Path, records: list[dict]) -> dict:
-    """Build site-readable JSON from registered HTML ONLY, without editing HTML."""
-    from .migration import read_moves
-    aliases_by_id = {m["id"]: m["from"] for m in read_moves(root)}
-    items = []
-    pages = set()
-    ids = set()
-    for record in sorted(records, key=lambda r: r["id"]):
-        if record.get("publication_status") != "published":
-            continue
-        page = record.get("site_path")
+def build_catalog(root: Path, records: list[dict], audit: dict | None = None) -> dict:
+    """Full searchable Registry index, retaining the published 'items' contract."""
+    from .knowledge import KnowledgeError, build_index
+
+    try:
+        result = build_index(root, records, audit)
+    except KnowledgeError as exc:
+        raise PipelineError(str(exc)) from exc
+    page_paths, ids = set(), set()
+    for item in result["items"]:
+        page = item.get("site_path")
         if not isinstance(page, str):
-            raise PipelineError(f"{record['id']}: published record is missing site_path")
+            raise PipelineError(f"{item['id']}: published entry missing site_path")
         rel = Path(page)
-        if rel.is_absolute() or ".." in rel.parts or rel.parts[0] != "docs" or rel.suffix != ".html":
-            raise PipelineError(f"{record['id']}: invalid site_path {page}")
+        if (rel.is_absolute() or ".." in rel.parts or len(rel.parts) < 3
+                or rel.parts[0] != "docs" or rel.suffix != ".html"):
+            raise PipelineError(f"{item['id']}: unsafe site_path: {page}")
         if not (root / rel).is_file():
-            raise PipelineError(f"{record['id']}: HTML page does not exist: {page}")
-        if page in pages or record["id"] in ids:
-            raise PipelineError(f"Duplicate published page or ID: {record['id']}")
-        pages.add(page)
-        ids.add(record["id"])
-        item = {
-            "id": record["id"], "kind": record["kind"],
-            "source": record["source"], "site_path": page,
-            "content_path": record["path"],
-            "title": record.get("title", Path(record["path"]).stem),
-        }
-        if record.get("canonical_url"):
-            item["canonical_url"] = record["canonical_url"]
-        if record.get("source_reference_url"):
-            item["source_reference_url"] = record["source_reference_url"]
-        if record["id"] in aliases_by_id:
-            item["legacy_markdown_path"] = aliases_by_id[record["id"]]
-        if record.get("related_ids"):
-            item["related_ids"] = record["related_ids"]
-        items.append(item)
-    return {"schema_version": 1, "count": len(items), "items": items}
+            raise PipelineError(f"{item['id']}: missing published HTML: {page}")
+        if page in page_paths or item["id"] in ids:
+            raise PipelineError(f"Duplicate site path or ID: {item['id']}")
+        page_paths.add(page)
+        ids.add(item["id"])
+    return result
 
 
 def verify(root: Path, check_catalog: bool = True) -> dict:
@@ -198,7 +184,7 @@ def verify(root: Path, check_catalog: bool = True) -> dict:
              if not p.is_file() or p.read_text(encoding="utf-8") != expected]
     if drift:
         raise PipelineError("Generated metadata drift: " + ", ".join(drift))
-    catalog = build_catalog(root, rows)
+    catalog = build_catalog(root, rows, audit)
     existing_catalog = root / "docs" / "catalog.json"
     if check_catalog and existing_catalog.exists() and existing_catalog.read_text(encoding="utf-8") != canonical_json(catalog):
         raise PipelineError("Generated site catalog drift: docs/catalog.json")
@@ -244,11 +230,12 @@ def run(command: str, root: Path = ROOT, write: bool = False, check: bool = Fals
     if command == "publish":
         if not write:
             # Validate structural and content integrity before building manifest.
-            rows, _ = prepare(root, include_new=False)
+            rows, audit = prepare(root, include_new=False)
         else:
             verify(root, check_catalog=False)
             rows = read_records(registry_paths(root)[0])
-        catalog = canonical_json(build_catalog(root, rows))
+            audit = json.loads((root / "registry" / "audit-report.json").read_text(encoding="utf-8"))
+        catalog = canonical_json(build_catalog(root, rows, audit))
         destination = root / "docs" / "catalog.json"
         if check:
             if not destination.is_file() or destination.read_text(encoding="utf-8") != catalog:

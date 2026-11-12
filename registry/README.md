@@ -47,3 +47,9 @@ A stable note ID can point to a new `content/research/article-notes/<source>/` p
 All 123 registered research notes now live under `content/research/article-notes/`; their 123 legacy Markdown paths are compatibility aliases (not HTTP redirects). `migrations.json` is the identity/path evidence ledger.
 
 `source_reference_url` on a note means an explicitly cited external original; it does not claim that source has been ingested. `audit-report.json` partitions notes into `matched`, `external_only`, `linked_by_id_url_mismatch`, `no_explicit_citation`, and `ambiguous` statuses. Never fabricate a `related_ids` reference when the original is absent.
+
+## Phase 6 — topics, source links, and search index
+
+The search portal at `docs/explore/` consumes the build-time `docs/catalog.json` (schema v2). The prior `count` / `items` still represent only mapped HTML; `records` now covers the full Registry. The search covers titles, metadata and short local excerpts, **not full text or vector embeddings**.
+
+`registry/topics.json` defines transparent title/ID/path keyword heuristics. These are suggestions rather than human-verified topic decisions. `registry/projects.json` contains manually linked, GitHub-confirmed external repositories in `repository_link_only` status; no experimental conclusions are asserted. The page exposes unresolved source associations from the existing citation audit without inventing sources.

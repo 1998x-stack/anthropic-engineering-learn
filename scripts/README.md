@@ -34,7 +34,7 @@ Only these paths are written, and **only** on an explicit \`--write\`:
 
 Original Markdown, PDFs, \`_meta/\`, \`index.json\`, and existing HTML are **read-only**. Write operations use temporary files and atomic-per-file replacement; an interruption between the two Registry outputs may require re-running reconciliation. CI detects drift.
 
-The GitHub Pages job regenerates \`docs/catalog.json\` inside the build workspace before uploading the static site; it does not commit generated site data into Git. Existing HTML design remains unchanged. The catalog includes only registered \`publication_status=published\` pages and may intentionally omit historical unmapped pages.
+The GitHub Pages job regenerates \`docs/catalog.json\` inside the build workspace before uploading the static site; it does not commit generated site data into Git. Existing HTML design remains unchanged. The catalog keeps backward-compatible \`count\` / \`items\` for registered published HTML, and adds \`records\` for every Registry identity (including unpublished source Markdown and PDFs), along with heuristic topics and explicitly related GitHub projects. It may intentionally omit historical unmapped HTML from the published-only items.
 
 ## Legacy scripts: migration status
 

@@ -1,0 +1,206 @@
+{
+  "schema_version": 1,
+  "assignment_policy": "keyword_rules_v1 (title/id/path only; heuristic and not editorially verified)",
+  "topics": [
+    {
+      "id": "agent-harness",
+      "label_zh": "Agent Harness",
+      "label_en": "Agent Harness",
+      "description": "Agent 线束与控制逻辑",
+      "patterns": [
+        "\\bharness\\b",
+        "\\bscaffold\\b",
+        "线束"
+      ]
+    },
+    {
+      "id": "context-engineering",
+      "label_zh": "上下文工程",
+      "label_en": "Context engineering",
+      "description": "Context 组织、压缩与长任务上下文",
+      "patterns": [
+        "\\bcontext\\b",
+        "\\bcontextual\\b",
+        "\\bcompaction\\b",
+        "\\bcompress\\b",
+        "上下文",
+        "压缩"
+      ]
+    },
+    {
+      "id": "agent-memory",
+      "label_zh": "Agent 记忆",
+      "label_en": "Agent memory",
+      "description": "短期及长期记忆",
+      "patterns": [
+        "\\bmemory\\b",
+        "\\bmemories\\b",
+        "记忆"
+      ]
+    },
+    {
+      "id": "evaluation",
+      "label_zh": "评估与基准",
+      "label_en": "Evaluation and benchmarks",
+      "description": "评估框架、评分与基准测试",
+      "patterns": [
+        "\\beval\\b",
+        "\\bevaluation\\b",
+        "\\bevaluator\\b",
+        "\\bbenchmark\\b",
+        "评估",
+        "评测",
+        "基准",
+        "裁判"
+      ]
+    },
+    {
+      "id": "retrieval-rag",
+      "label_zh": "检索与 RAG",
+      "label_en": "Retrieval and RAG",
+      "description": "检索增强、向量搜索、知识库",
+      "patterns": [
+        "\\brag\\b",
+        "\\bretrieval\\b",
+        "\\bembedding\\b",
+        "\\bvector\\b",
+        "\\brerank\\b",
+        "检索",
+        "向量",
+        "知识图谱"
+      ]
+    },
+    {
+      "id": "multi-agent",
+      "label_zh": "多 Agent 协作",
+      "label_en": "Multi-agent systems",
+      "description": "子代理与多 Agent 协作",
+      "patterns": [
+        "\\bmulti[- ]agent\\b",
+        "multi agent",
+        "\\bsubagent\\b",
+        "\\bsubagents\\b",
+        "agent swarm",
+        "多智能体",
+        "多代理",
+        "子代理"
+      ]
+    },
+    {
+      "id": "tools-mcp",
+      "label_zh": "工具、MCP 与 Skills",
+      "label_en": "Tools, MCP and skills",
+      "description": "工具调用、技能与协议",
+      "patterns": [
+        "\\bmcp\\b",
+        "\\btools\\b",
+        "\\btool\\b",
+        "\\bfunction[- ]calling\\b",
+        "\\bskills\\b",
+        "\\bskill\\b",
+        "工具",
+        "技能"
+      ]
+    },
+    {
+      "id": "observability",
+      "label_zh": "可观测性与调试",
+      "label_en": "Observability and debugging",
+      "description": "Tracing、调试与监控",
+      "patterns": [
+        "\\bobservability\\b",
+        "\\bobservability\\b",
+        "\\btraces\\b",
+        "\\btracing\\b",
+        "\\btrace\\b",
+        "\\bdebugging\\b",
+        "\\bmonitoring\\b",
+        "可观测",
+        "追踪",
+        "调试",
+        "监控"
+      ]
+    },
+    {
+      "id": "security",
+      "label_zh": "安全与权限",
+      "label_en": "Security and privacy",
+      "description": "安全、隐私、访问控制",
+      "patterns": [
+        "\\bsecurity\\b",
+        "\\bsandbox\\b",
+        "\\bauthorization\\b",
+        "\\bprivacy\\b",
+        "\\bpii\\b",
+        "安全",
+        "权限",
+        "沙箱",
+        "隐私"
+      ]
+    },
+    {
+      "id": "browser",
+      "label_zh": "浏览器自动化",
+      "label_en": "Browser automation",
+      "description": "Web 浏览器与网页 Agent",
+      "patterns": [
+        "\\bbrowser\\b",
+        "\\bstagehand\\b",
+        "\\bplaywright\\b",
+        "\\bselenium\\b",
+        "浏览器"
+      ]
+    },
+    {
+      "id": "infrastructure",
+      "label_zh": "部署与基础设施",
+      "label_en": "Infrastructure and deployment",
+      "description": "部署、推理、云基础设施",
+      "patterns": [
+        "\\bdeploy\\b",
+        "\\bdeployment\\b",
+        "\\binfrastructure\\b",
+        "\\bkubernetes\\b",
+        "\\bserverless\\b",
+        "\\binference\\b",
+        "\\bdocker\\b",
+        "部署",
+        "推理",
+        "基础设施"
+      ]
+    },
+    {
+      "id": "reliability",
+      "label_zh": "生产可靠性",
+      "label_en": "Reliability and operations",
+      "description": "生产可靠性、运维与性能",
+      "patterns": [
+        "\\breliability\\b",
+        "\\bproduction\\b",
+        "\\bincident\\b",
+        "\\bpostmortem\\b",
+        "\\blatency\\b",
+        "\\bperformance\\b",
+        "可靠性",
+        "故障",
+        "性能",
+        "生产环境"
+      ]
+    },
+    {
+      "id": "agent-patterns",
+      "label_zh": "Agent 架构与实践",
+      "label_en": "Agent architecture",
+      "description": "Agent 生命周期与工作流设计",
+      "patterns": [
+        "\\bagents\\b",
+        "\\bagent\\b",
+        "\\bagentic\\b",
+        "\\bworkflow\\b",
+        "智能体",
+        "工作流",
+        "架构"
+      ]
+    }
+  ]
+}

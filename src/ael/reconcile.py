@@ -290,9 +290,14 @@ def enrich(root: Path, records: list[dict]) -> tuple[list[dict], dict]:
         if rec["id"] in ambiguous_ids:
             link_status.append({"id": rec["id"], "status": "ambiguous"})
         elif url:
-            link_status.append({"id": rec["id"], "status": "matched" if target else
-                                ("ambiguous" if url in [d["url"] for d in duplicates] else "external_only"),
-                                "url": url, **({"source_id": target} if target else {})})
+            existing_targets = [x for x in rec.get("related_ids", [])
+                                if x in ids and (x.startswith("source:") or x.startswith("paper:"))]
+            status = ("matched" if target else
+                      "ambiguous" if url in [d["url"] for d in duplicates] else
+                      "linked_by_id_url_mismatch" if existing_targets else "external_only")
+            link_status.append({"id": rec["id"], "status": status, "url": url,
+                                **({"source_id": target} if target else {}),
+                                **({"existing_related_ids": existing_targets} if existing_targets and not target else {})})
         else:
             link_status.append({"id": rec["id"], "status": "no_explicit_citation"})
         if target and target != rec["id"]:

@@ -5,7 +5,7 @@
 ## Verification is field-level, not assumed
 
 - Data extracted from Markdown, old JSON or the old index is **provisional**. It is not automatically certified as the original publisher's truth.
-- A small, human-checked collection of official URLs and dates lives in `registry/verified-overrides.json`. The `evidence_url` points to the actual primary-source page. Its values override old local metadata, but `review_status` remains `unreviewed` until full editorial review.
+- Existing official URL/date overrides live in `registry/verified-overrides.json`. Some `evidence_url` entries still point to an Anthropic index page rather than the exact article; treat those as **insufficient article-level evidence pending review**. Their values override old local metadata, but they do not imply a full editorial approval.
 - Source-precedence for provisional data: article frontmatter → article header → corresponding `_meta/` JSON → Anthropic `index.json` → Markdown H1 (title only). Verified overrides take precedence over all of these.
 - Every chosen field can be traced to `metadata_provenance`. Conflicting candidates are reported, **not erased**; unsupported/unknown dates and authors are omitted.
 - Research notes have **their own title**; they do not inherit the original author's byline, publication date or canonical source URL. A link to an original source is represented in `related_ids`.
@@ -61,3 +61,27 @@ The `registry/review-queue.json` is a deterministic, evidence-first checklist de
 `registry/review-decisions.json` is the **explicit topic review ledger**. Each decision requires a stable record ID, reviewed topic IDs, current document SHA-256, reviewer identity, review date and evidence rationale. It does not alter `review_status` or automatically create missing `related_ids`. As of this phase the ledger is empty: no human topic approvals are being claimed.
 
 The Explorer's full Markdown index is generated into `docs/explore/data/` with `PYTHONPATH=src python -m ael fulltext --write`; content is neither moved nor edited. PDF records are included by title only. Verify with `... fulltext --check`. No semantic search claims.
+
+
+## Phase 8 — evidence-gated document review
+
+Whole-document review is separate from topic tagging. The append-only
+`registry/content-review-decisions.json` file contains manual review **events**
+and initially has no approvals. Do not mark a document verified by editing the
+generated Registry directly.
+
+Each event requires a unique event ID, stable Registry ID, action
+(approve / reject / revoke), SHA-256 of the reviewed content, reviewer,
+ISO review date, substantive rationale and a list of HTTPS evidence URLs.
+An approval must include at least one evidence URL. The last event for an
+ID determines its status: approve = verified, reject = rejected, revoke =
+unreviewed. Earlier events remain in the ledger as an audit history.
+
+The last event's SHA must match **current file bytes**; any material edit blocks
+CI until a human re-reviews or revokes. An unledgered verified flag in the
+Registry is reset to unreviewed during reconciliation. Topic decisions in
+`review-decisions.json` do not confer full-document approval.
+
+Review new events with `PYTHONPATH=src python -m ael review --check`, then
+run `PYTHONPATH=src python -m ael reconcile --write` to regenerate the
+Registry, and `PYTHONPATH=src python -m ael check` before merging.

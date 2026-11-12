@@ -264,6 +264,7 @@ def enrich(root: Path, records: list[dict]) -> tuple[list[dict], dict]:
     unlinked_notes = sorted(r["id"] for r in output if r["kind"] == "article_note" and not r.get("related_ids"))
     missing_urls = sorted(r["id"] for r in output if r["kind"] == "source_article" and not r.get("canonical_url"))
     missing_dates = sorted(r["id"] for r in output if r["kind"] == "source_article" and not r.get("published_at"))
+    missing_authors = sorted(r["id"] for r in output if r["kind"] == "source_article" and not r.get("author"))
     source_hashes = len([r for r in output if r.get("source_sha256")])
     report = {
         "schema_version": 1,
@@ -275,6 +276,7 @@ def enrich(root: Path, records: list[dict]) -> tuple[list[dict], dict]:
         "with_source_date": sum(bool(r.get("published_at")) for r in output if r["kind"] == "source_article"),
         "with_source_author": sum(bool(r.get("author")) for r in output if r["kind"] == "source_article"),
         "reviewed_records": sum(r["review_status"] == "verified" for r in output),
+        "officially_verified_field_records": sum(any(str(origin).startswith("registry/verified-overrides.json#") for origin in r.get("metadata_provenance", {}).values()) for r in output),
         "site_html_present": sum(bool(r.get("site_path")) for r in output),
         "publication_status": dict(sorted(Counter(r["publication_status"] for r in output).items())),
         "legacy_metadata": {
@@ -285,13 +287,14 @@ def enrich(root: Path, records: list[dict]) -> tuple[list[dict], dict]:
         },
         "missing_source_url": missing_urls,
         "missing_source_date": missing_dates,
+        "missing_source_author": missing_authors,
         "unlinked_notes": unlinked_notes,
         "note_source_url_matched": linked,
         "unmapped_site_html": sorted(site_files - indexed_site_files),
         "duplicate_source_urls": duplicates,
         "field_conflicts": sorted(conflicts, key=lambda c: (c["id"], c["field"])),
         "invalid_candidates": sorted(invalid, key=lambda c: (c["id"], c["field"], c["origin"])),
-        "manual_review_needed": sorted(set(missing_urls + missing_dates + unlinked_notes +
+        "manual_review_needed": sorted(set(missing_urls + missing_dates + missing_authors + unlinked_notes +
                                            [c["id"] for c in conflicts] + [c["id"] for c in invalid] +
                                            [ident for d in duplicates for ident in d["ids"]])),
     }

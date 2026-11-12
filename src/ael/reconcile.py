@@ -171,6 +171,8 @@ def enrich(root: Path, records: list[dict]) -> tuple[list[dict], dict]:
     """Apply deterministic, explicit source precedence; audit all disagreements."""
     legacy = legacy_indexes(root)
     overrides = read_overrides(root)
+    from .review import approved_content_decisions
+    review_states = approved_content_decisions(root, records)
     from .migration import read_moves
     moves_by_id = {move["id"]: move for move in read_moves(root)}
     ids = {r["id"] for r in records}
@@ -186,6 +188,8 @@ def enrich(root: Path, records: list[dict]) -> tuple[list[dict], dict]:
 
     for row in records:
         rec = dict(row)
+        # Review status is derived exclusively from current SHA-bound evidence.
+        rec["review_status"] = review_states.get(row["id"], "unreviewed")
         # Derived metadata must be recalculated from current evidence. Copying the
         # prior Registry record preserves stable identity and editorial state,
         # but stale computed fields and their provenance must not survive a rerun.

@@ -20,6 +20,10 @@
     {
       "candidates": [
         {
+          "origin": "registry/verified-overrides.json#source:anthropic:a-postmortem-of-three-recent-issues",
+          "value": "2025-09-17"
+        },
+        {
           "origin": "anthropic/reliability/a-postmortem-of-three-recent-issues.md#header",
           "value": "2023-11-03"
         },
@@ -28,9 +32,47 @@
           "value": "2025-09-17"
         }
       ],
-      "chosen": "2023-11-03",
+      "chosen": "2025-09-17",
       "field": "published_at",
       "id": "source:anthropic:a-postmortem-of-three-recent-issues"
+    },
+    {
+      "candidates": [
+        {
+          "origin": "registry/verified-overrides.json#source:anthropic:advanced-tool-use",
+          "value": "2025-11-24"
+        },
+        {
+          "origin": "anthropic/tools-mcp/advanced-tool-use.md#header",
+          "value": "2024-11-06"
+        },
+        {
+          "origin": "index.json#anthropic/tools-mcp/advanced-tool-use.md",
+          "value": "2024-11-06"
+        }
+      ],
+      "chosen": "2025-11-24",
+      "field": "published_at",
+      "id": "source:anthropic:advanced-tool-use"
+    },
+    {
+      "candidates": [
+        {
+          "origin": "registry/verified-overrides.json#source:anthropic:ai-resistant-technical-evaluations",
+          "value": "2026-01-21"
+        },
+        {
+          "origin": "anthropic/evals/AI-resistant-technical-evaluations.md#header",
+          "value": "2025-03-19"
+        },
+        {
+          "origin": "index.json#anthropic/evals/AI-resistant-technical-evaluations.md",
+          "value": "2025-03-19"
+        }
+      ],
+      "chosen": "2026-01-21",
+      "field": "published_at",
+      "id": "source:anthropic:ai-resistant-technical-evaluations"
     },
     {
       "candidates": [
@@ -73,6 +115,63 @@
     {
       "candidates": [
         {
+          "origin": "registry/verified-overrides.json#source:anthropic:claude-code-auto-mode",
+          "value": "2026-03-25"
+        },
+        {
+          "origin": "anthropic/claude-code/claude-code-auto-mode.md#header",
+          "value": "2026-03-24"
+        },
+        {
+          "origin": "index.json#anthropic/claude-code/claude-code-auto-mode.md",
+          "value": "2026-03-24"
+        }
+      ],
+      "chosen": "2026-03-25",
+      "field": "published_at",
+      "id": "source:anthropic:claude-code-auto-mode"
+    },
+    {
+      "candidates": [
+        {
+          "origin": "registry/verified-overrides.json#source:anthropic:claude-code-sandboxing",
+          "value": "2025-10-20"
+        },
+        {
+          "origin": "anthropic/claude-code/claude-code-sandboxing.md#header",
+          "value": "2025-04-22"
+        },
+        {
+          "origin": "index.json#anthropic/claude-code/claude-code-sandboxing.md",
+          "value": "2025-04-22"
+        }
+      ],
+      "chosen": "2025-10-20",
+      "field": "published_at",
+      "id": "source:anthropic:claude-code-sandboxing"
+    },
+    {
+      "candidates": [
+        {
+          "origin": "registry/verified-overrides.json#source:anthropic:claude-think-tool",
+          "value": "2025-03-20"
+        },
+        {
+          "origin": "anthropic/tools-mcp/claude-think-tool.md#header",
+          "value": "2025-02-12"
+        },
+        {
+          "origin": "index.json#anthropic/tools-mcp/claude-think-tool.md",
+          "value": "2025-02-12"
+        }
+      ],
+      "chosen": "2025-03-20",
+      "field": "published_at",
+      "id": "source:anthropic:claude-think-tool"
+    },
+    {
+      "candidates": [
+        {
           "origin": "index.json#anthropic/tools-mcp/claude-think-tool.md",
           "value": "The \"think\" tool: Enabling claude to stop and think"
         },
@@ -84,6 +183,25 @@
       "chosen": "The \"think\" tool: Enabling claude to stop and think",
       "field": "title",
       "id": "source:anthropic:claude-think-tool"
+    },
+    {
+      "candidates": [
+        {
+          "origin": "registry/verified-overrides.json#source:anthropic:code-execution-with-mcp",
+          "value": "2025-11-04"
+        },
+        {
+          "origin": "anthropic/tools-mcp/code-execution-with-mcp.md#header",
+          "value": "2025-10-30"
+        },
+        {
+          "origin": "index.json#anthropic/tools-mcp/code-execution-with-mcp.md",
+          "value": "2025-10-30"
+        }
+      ],
+      "chosen": "2025-11-04",
+      "field": "published_at",
+      "id": "source:anthropic:code-execution-with-mcp"
     },
     {
       "candidates": [
@@ -126,6 +244,29 @@
     {
       "candidates": [
         {
+          "origin": "registry/verified-overrides.json#source:anthropic:demystifying-evals-for-ai-agents",
+          "value": "2026-01-09"
+        },
+        {
+          "origin": "anthropic/evals/demystifying-evals-for-ai-agents.md#header",
+          "value": "2026-01-08"
+        },
+        {
+          "origin": "index.json#anthropic/evals/demystifying-evals-for-ai-agents.md",
+          "value": "2026-01-08"
+        }
+      ],
+      "chosen": "2026-01-09",
+      "field": "published_at",
+      "id": "source:anthropic:demystifying-evals-for-ai-agents"
+    },
+    {
+      "candidates": [
+        {
+          "origin": "registry/verified-overrides.json#source:anthropic:desktop-extensions",
+          "value": "2025-06-26"
+        },
+        {
           "origin": "anthropic/tools-mcp/desktop-extensions.md#header",
           "value": "2023-11-03"
         },
@@ -134,7 +275,7 @@
           "value": "2025-04-22"
         }
       ],
-      "chosen": "2023-11-03",
+      "chosen": "2025-06-26",
       "field": "published_at",
       "id": "source:anthropic:desktop-extensions"
     },
@@ -156,6 +297,63 @@
     {
       "candidates": [
         {
+          "origin": "registry/verified-overrides.json#source:anthropic:effective-context-engineering-for-ai-agents",
+          "value": "2025-09-29"
+        },
+        {
+          "origin": "anthropic/agents/effective-context-engineering-for-ai-agents.md#header",
+          "value": "2025-04-22"
+        },
+        {
+          "origin": "index.json#anthropic/agents/effective-context-engineering-for-ai-agents.md",
+          "value": "2025-04-22"
+        }
+      ],
+      "chosen": "2025-09-29",
+      "field": "published_at",
+      "id": "source:anthropic:effective-context-engineering-for-ai-agents"
+    },
+    {
+      "candidates": [
+        {
+          "origin": "registry/verified-overrides.json#source:anthropic:effective-harnesses-for-long-running-agents",
+          "value": "2025-11-26"
+        },
+        {
+          "origin": "anthropic/agents/effective-harnesses-for-long-running-agents.md#header",
+          "value": "2025-11-21"
+        },
+        {
+          "origin": "index.json#anthropic/agents/effective-harnesses-for-long-running-agents.md",
+          "value": "2025-11-21"
+        }
+      ],
+      "chosen": "2025-11-26",
+      "field": "published_at",
+      "id": "source:anthropic:effective-harnesses-for-long-running-agents"
+    },
+    {
+      "candidates": [
+        {
+          "origin": "registry/verified-overrides.json#source:anthropic:equipping-agents-for-the-real-world-with-agent-skills",
+          "value": "2025-10-16"
+        },
+        {
+          "origin": "anthropic/agents/equipping-agents-for-the-real-world-with-agent-skills.md#header",
+          "value": "2025-10-12"
+        },
+        {
+          "origin": "index.json#anthropic/agents/equipping-agents-for-the-real-world-with-agent-skills.md",
+          "value": "2025-10-12"
+        }
+      ],
+      "chosen": "2025-10-16",
+      "field": "published_at",
+      "id": "source:anthropic:equipping-agents-for-the-real-world-with-agent-skills"
+    },
+    {
+      "candidates": [
+        {
           "origin": "index.json#anthropic/evals/eval-awareness-browsecomp.md",
           "value": "Eval awareness in Claude Opus 4.6's BrowseComp performance"
         },
@@ -167,6 +365,44 @@
       "chosen": "Eval awareness in Claude Opus 4.6's BrowseComp performance",
       "field": "title",
       "id": "source:anthropic:eval-awareness-browsecomp"
+    },
+    {
+      "candidates": [
+        {
+          "origin": "registry/verified-overrides.json#source:anthropic:infrastructure-noise",
+          "value": "2026-02-05"
+        },
+        {
+          "origin": "anthropic/reliability/infrastructure-noise.md#header",
+          "value": "2026-02-03"
+        },
+        {
+          "origin": "index.json#anthropic/reliability/infrastructure-noise.md",
+          "value": "2026-02-03"
+        }
+      ],
+      "chosen": "2026-02-05",
+      "field": "published_at",
+      "id": "source:anthropic:infrastructure-noise"
+    },
+    {
+      "candidates": [
+        {
+          "origin": "registry/verified-overrides.json#source:anthropic:managed-agents",
+          "value": "2026-04-08"
+        },
+        {
+          "origin": "anthropic/agents/managed-agents.md#header",
+          "value": "2026-02-04"
+        },
+        {
+          "origin": "index.json#anthropic/agents/managed-agents.md",
+          "value": "2026-02-04"
+        }
+      ],
+      "chosen": "2026-04-08",
+      "field": "published_at",
+      "id": "source:anthropic:managed-agents"
     },
     {
       "candidates": [
@@ -205,6 +441,44 @@
       "chosen": "2025-06-13",
       "field": "published_at",
       "id": "source:anthropic:multi-agent-research-system"
+    },
+    {
+      "candidates": [
+        {
+          "origin": "registry/verified-overrides.json#source:anthropic:swe-bench-sonnet",
+          "value": "2025-01-06"
+        },
+        {
+          "origin": "anthropic/evals/swe-bench-sonnet.md#header",
+          "value": "2024-12-17"
+        },
+        {
+          "origin": "index.json#anthropic/evals/swe-bench-sonnet.md",
+          "value": "2024-12-17"
+        }
+      ],
+      "chosen": "2025-01-06",
+      "field": "published_at",
+      "id": "source:anthropic:swe-bench-sonnet"
+    },
+    {
+      "candidates": [
+        {
+          "origin": "registry/verified-overrides.json#source:anthropic:writing-tools-for-agents",
+          "value": "2025-09-11"
+        },
+        {
+          "origin": "anthropic/tools-mcp/writing-tools-for-agents.md#header",
+          "value": "2025-06-18"
+        },
+        {
+          "origin": "index.json#anthropic/tools-mcp/writing-tools-for-agents.md",
+          "value": "2025-06-18"
+        }
+      ],
+      "chosen": "2025-09-11",
+      "field": "published_at",
+      "id": "source:anthropic:writing-tools-for-agents"
     },
     {
       "candidates": [
@@ -4644,7 +4918,7 @@
   ],
   "missing_source_url": [],
   "note_source_url_matched": 42,
-  "officially_verified_field_records": 3,
+  "officially_verified_field_records": 23,
   "publication_status": {
     "not_published": 596,
     "published": 523

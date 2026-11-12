@@ -133,7 +133,7 @@ def note_reference_urls(text: str, source: str) -> list[str]:
     """
     found = []
     for line in text.splitlines()[:80]:
-        if not re.match(r"^\s*(?:>\s*)?(?:\*\*)?(?:来源|原文(?:链接)?|分析对象|Source(?: URL)?|Original(?: article)?)\b?", line, flags=re.IGNORECASE):
+        if not re.match(r"^\s*(?:>\s*)?(?:\*\*)?(?:来源|原文(?:链接)?|分析对象|Source(?: URL)?|Original(?: article)?)", line, flags=re.IGNORECASE):
             continue
         for match in re.finditer(r"\]\((https://[^\s)]+)\)", line):
             raw = match.group(1)
